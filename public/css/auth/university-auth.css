@@ -1,0 +1,321 @@
+/*===========================================
+  UNIVERSITY AUTHENTICATION THEME
+  Clean, organized CSS for EnrollAssess
+  Maroon & Yellow University Color Scheme
+===========================================*/
+
+/* ===== CSS VARIABLES ===== */
+:root {
+    /* Primary Colors */
+    --maroon-primary: #800020;
+    --maroon-dark: #5c0017;
+    --maroon-light: #a0002a;
+    
+    /* Secondary Colors */
+    --yellow-primary: #FFD700;
+    --yellow-dark: #E6C200;
+    --yellow-light: #FFF8DC;
+    
+    /* Neutral Colors */
+    --white: #FFFFFF;
+    --light-gray: #F8F9FA;
+    --border-gray: #E9ECEF;
+    
+    /* Effects */
+    --shadow-primary: 0 20px 40px rgba(0, 0, 0, 0.3);
+    --shadow-hover: 0 8px 20px rgba(128, 0, 32, 0.3);
+    --transition: all 0.3s ease;
+}
+
+/* ===== RESET & BASE STYLES ===== */
+* {
+    box-sizing: border-box;
+}
+
+body.auth-page {
+    margin: 0;
+    padding: 0;
+    font-family: 'Figtree', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, var(--maroon-primary) 0%, var(--maroon-dark) 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* ===== LAYOUT CONTAINERS ===== */
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.auth-card {
+    background: var(--white);
+    border-radius: 20px;
+    box-shadow: var(--shadow-primary);
+    overflow: hidden;
+    max-width: 380px;
+    width: 100%;
+    border: 3px solid var(--yellow-primary);
+    position: relative;
+}
+
+/* ===== HEADER SECTION ===== */
+.auth-header {
+    background: linear-gradient(135deg, var(--yellow-primary) 0%, var(--yellow-dark) 100%);
+    padding: 40px 30px;
+    text-align: center;
+    position: relative;
+}
+
+.auth-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--maroon-primary);
+}
+
+.university-logo {
+    width: 80px;
+    height: 80px;
+    background: var(--white);
+    border-radius: 50%;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid var(--maroon-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.university-logo img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.university-name {
+    color: var(--maroon-primary);
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
+    line-height: 1.2;
+}
+
+.auth-subtitle {
+    color: var(--maroon-dark);
+    font-size: 14px;
+    margin: 0;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+/* ===== FORM SECTION ===== */
+.auth-body {
+    padding: 40px 30px;
+    background: var(--white);
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-label {
+    color: var(--maroon-primary);
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 8px;
+    display: block;
+    letter-spacing: 0.025em;
+}
+
+.form-control {
+    width: 100%;
+    padding: 16px 20px;
+    border: 2px solid var(--border-gray);
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 500;
+    background: var(--light-gray);
+    transition: var(--transition);
+    
+    /* CENTER EVERYTHING IN THE INPUT */
+    text-align: center;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.form-control::placeholder {
+    color: #6B7280;
+    text-align: center;
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 400;
+    opacity: 0.7;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--yellow-primary);
+    background: var(--white);
+    box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.15);
+    transform: translateY(-1px);
+}
+
+.form-control.is-invalid {
+    border-color: #dc3545;
+    background: #fef2f2;
+}
+
+.invalid-feedback {
+    color: #dc3545;
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 8px;
+    text-align: center;
+}
+
+/* ===== BUTTONS ===== */
+.btn-primary {
+    width: 100%;
+    background: linear-gradient(135deg, var(--maroon-primary) 0%, var(--maroon-light) 100%);
+    border: none;
+    color: var(--white);
+    padding: 16px 32px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 12px rgba(128, 0, 32, 0.2);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--yellow-primary) 0%, var(--yellow-dark) 100%);
+    color: var(--maroon-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ===== INFORMATION SECTION ===== */
+.auth-links {
+    margin-top: 25px;
+    text-align: center;
+}
+
+.info-note {
+    background: var(--yellow-light);
+    border: 1px solid var(--yellow-primary);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 25px;
+    text-align: center;
+}
+
+.info-note-text {
+    color: var(--maroon-primary);
+    font-size: 14px;
+    line-height: 1.6;
+    font-weight: 500;
+    margin: 0;
+}
+
+.info-note strong {
+    font-weight: 700;
+    display: block;
+    margin-bottom: 8px;
+}
+
+/* ===== ALERTS ===== */
+.alert {
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border: none;
+    font-weight: 500;
+    text-align: center;
+}
+
+.alert-success {
+    background: var(--yellow-light);
+    color: var(--maroon-primary);
+    border-left: 4px solid var(--yellow-primary);
+}
+
+.alert-danger {
+    background: #fef2f2;
+    color: #991b1b;
+    border-left: 4px solid #dc3545;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 480px) {
+    .auth-container {
+        padding: 15px;
+    }
+    
+    .auth-card {
+        max-width: 100%;
+        margin: 0;
+        border-radius: 16px;
+    }
+    
+    .auth-header {
+        padding: 30px 20px;
+    }
+    
+    .auth-body {
+        padding: 30px 20px;
+    }
+    
+    .university-name {
+        font-size: 20px;
+    }
+    
+    .university-logo {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .form-control {
+        padding: 14px 16px;
+        font-size: 15px;
+    }
+    
+    .btn-primary {
+        padding: 14px 24px;
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 360px) {
+    .auth-header {
+        padding: 25px 15px;
+    }
+    
+    .auth-body {
+        padding: 25px 15px;
+    }
+    
+    .university-name {
+        font-size: 18px;
+    }
+}
