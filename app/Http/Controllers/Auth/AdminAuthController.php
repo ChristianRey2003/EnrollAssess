@@ -43,7 +43,15 @@ class AdminAuthController extends Controller
                 
                 $request->session()->regenerate();
                 
-                return redirect()->intended(route('admin.dashboard'))
+                // Role-based redirect
+                $redirectRoute = match($user->role) {
+                    'department-head' => 'admin.dashboard',
+                    'administrator' => 'admin.dashboard', 
+                    'instructor' => 'instructor.dashboard',
+                    default => 'admin.dashboard'
+                };
+                
+                return redirect()->intended(route($redirectRoute))
                     ->with('success', 'Welcome back, ' . $user->full_name . '!');
             } else {
                 return back()->withErrors([

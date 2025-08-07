@@ -4,6 +4,9 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\ExamSetController;
+use App\Http\Controllers\ApplicantController;
+use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\InstructorController;
 use Illuminate\Support\Facades\Route;
 
 // Welcome page - redirect to applicant login
@@ -28,8 +31,8 @@ Route::get('/applicant/login', [App\Http\Controllers\Auth\AdminAuthController::c
 Route::post('/applicant/verify', [App\Http\Controllers\Auth\AdminAuthController::class, 'verifyAccessCode'])
     ->name('applicant.verify');
 
-// Protected Admin Routes
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+// Protected Admin Routes (Department Head & Administrator only)
+Route::middleware(['auth', 'role:department-head,administrator'])->prefix('admin')->name('admin.')->group(function () {
 Route::get('/dashboard', function () {
         $stats = [
             'total_applicants' => \App\Models\Applicant::count(),
@@ -48,17 +51,24 @@ Route::get('/dashboard', function () {
 
     Route::get('/questions', [QuestionController::class, 'index'])->name('questions');
 
-    Route::get('/applicants', function () {
-        $applicants = \App\Models\Applicant::with(['examSet', 'accessCode', 'latestInterview'])
-            ->latest()
-            ->get();
-        
-        return view('admin.applicants', compact('applicants'));
-    })->name('applicants');
+    // Applicant management routes
+    Route::get('/applicants', [ApplicantController::class, 'index'])->name('applicants');
+    Route::get('/applicants/create', [ApplicantController::class, 'create'])->name('applicants.create');
+    Route::post('/applicants', [ApplicantController::class, 'store'])->name('applicants.store');
+    Route::get('/applicants/{id}', [ApplicantController::class, 'show'])->name('applicants.show');
+    Route::get('/applicants/{id}/edit', [ApplicantController::class, 'edit'])->name('applicants.edit');
+    Route::put('/applicants/{id}', [ApplicantController::class, 'update'])->name('applicants.update');
+    Route::delete('/applicants/{id}', [ApplicantController::class, 'destroy'])->name('applicants.destroy');
+    
+    // Bulk applicant operations
+    Route::get('/applicants-import', [ApplicantController::class, 'import'])->name('applicants.import');
+    Route::post('/applicants-import', [ApplicantController::class, 'processImport'])->name('applicants.process-import');
+    Route::get('/applicants/template/download', [ApplicantController::class, 'downloadTemplate'])->name('applicants.download-template');
+    Route::post('/applicants/generate-access-codes', [ApplicantController::class, 'generateAccessCodes'])->name('applicants.generate-access-codes');
+    Route::post('/applicants/assign-exam-sets', [ApplicantController::class, 'assignExamSets'])->name('applicants.assign-exam-sets');
+    Route::get('/applicants/export/with-access-codes', [ApplicantController::class, 'exportWithAccessCodes'])->name('applicants.export-with-access-codes');
 
-    Route::get('/reports', function () {
-        return view('admin.reports');
-    })->name('reports');
+    Route::get('/reports', [ReportsController::class, 'index'])->name('reports');
 
     // Question management routes
     Route::get('/questions/create', [QuestionController::class, 'create'])->name('questions.create');
@@ -169,6 +179,19 @@ Route::get('/dashboard', function () {
     Route::get('/settings', function () {
         return redirect('/admin/dashboard')->with('info', 'Settings page (demo)');
     })->name('settings');
+});
+
+// Protected Instructor Routes (Instructor role only)
+Route::middleware(['auth', 'role:instructor'])->prefix('instructor')->name('instructor.')->group(function () {
+    // Instructor Dashboard
+    Route::get('/dashboard', [InstructorController::class, 'dashboard'])->name('dashboard');
+    
+    // Assigned Applicants
+    Route::get('/applicants', [InstructorController::class, 'applicants'])->name('applicants');
+    
+    // Interview Management
+    Route::get('/applicants/{applicant}/interview', [InstructorController::class, 'showInterview'])->name('interview.show');
+    Route::post('/applicants/{applicant}/interview', [InstructorController::class, 'submitInterview'])->name('interview.submit');
 });
 
 // Exam interface route

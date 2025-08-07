@@ -90,23 +90,23 @@
                 <div class="stats-grid reports-stats">
                     <div class="stat-card">
                         <div class="stat-icon">📊</div>
-                        <div class="stat-value">{{ $totalApplicants ?? 145 }}</div>
+                        <div class="stat-value">{{ $totalApplicants }}</div>
                         <div class="stat-label">Total Applicants</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">✅</div>
-                        <div class="stat-value">{{ $recommendedApplicants ?? 67 }}</div>
-                        <div class="stat-label">Recommended</div>
+                        <div class="stat-value">{{ $examCompleted }}</div>
+                        <div class="stat-label">Exam Completed</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">⏳</div>
-                        <div class="stat-value">{{ $waitlistedApplicants ?? 23 }}</div>
-                        <div class="stat-label">Waitlisted</div>
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-value">{{ $admitted }}</div>
+                        <div class="stat-label">Admitted</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">📈</div>
-                        <div class="stat-value">{{ $averageScore ?? 78.5 }}%</div>
-                        <div class="stat-label">Average Score</div>
+                        <div class="stat-value">{{ $passRate }}%</div>
+                        <div class="stat-label">Pass Rate</div>
                     </div>
                 </div>
 
