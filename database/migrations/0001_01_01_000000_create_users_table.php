@@ -12,11 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
+            $table->id('user_id'); // Primary key as per ERD
+            $table->string('username')->unique();
+            $table->string('password_hash'); // Password hash as per ERD
+            $table->string('full_name');
+            $table->enum('role', ['department-head', 'administrator', 'instructor'])->default('instructor');
+            $table->string('email')->unique()->nullable(); // Keep email for Laravel auth
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
             $table->rememberToken();
             $table->timestamps();
         });

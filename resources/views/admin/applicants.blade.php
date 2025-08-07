@@ -56,7 +56,7 @@
             </div>
 
             <div class="sidebar-footer">
-                <form method="POST" action="{{ route('logout') }}">
+                <form method="POST" action="{{ route('admin.logout') }}">
                     @csrf
                     <button type="submit" class="logout-link">
                         <span class="nav-icon">🚪</span>

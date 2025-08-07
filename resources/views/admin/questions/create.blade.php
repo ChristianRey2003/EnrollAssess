@@ -36,6 +36,12 @@
                     </a>
                 </div>
                 <div class="nav-item">
+                    <a href="{{ route('admin.exams.index') }}" class="nav-link">
+                        <span class="nav-icon">📝</span>
+                        <span class="nav-text">Exams</span>
+                    </a>
+                </div>
+                <div class="nav-item">
                     <a href="{{ route('admin.questions') }}" class="nav-link active">
                         <span class="nav-icon">❓</span>
                         <span class="nav-text">Questions</span>
@@ -56,7 +62,7 @@
             </div>
 
             <div class="sidebar-footer">
-                <form method="POST" action="{{ route('logout') }}">
+                <form method="POST" action="{{ route('admin.logout') }}">
                     @csrf
                     <button type="submit" class="logout-link">
                         <span class="nav-icon">🚪</span>
@@ -104,11 +110,45 @@
                         </div>
                     </div>
                     <div class="section-content">
-                        <form method="POST" action="{{ isset($question) ? route('admin.questions.update', $question->id) : route('admin.questions.store') }}" id="questionForm" class="question-form">
+                        <form method="POST" action="{{ isset($question) ? route('admin.questions.update', $question->question_id) : route('admin.questions.store') }}" id="questionForm" class="question-form">
                             @csrf
                             @if(isset($question))
                                 @method('PUT')
                             @endif
+
+                            <!-- Exam Set Selection -->
+                            <div class="form-group">
+                                <label for="exam_set_id" class="form-label required">Exam Set</label>
+                                <select id="exam_set_id" name="exam_set_id" class="form-select @error('exam_set_id') is-invalid @enderror" required>
+                                    <option value="">Select Exam Set</option>
+                                    @foreach($examSets ?? [] as $examSet)
+                                        <option value="{{ $examSet->exam_set_id }}" 
+                                            {{ old('exam_set_id', $question->exam_set_id ?? '') == $examSet->exam_set_id ? 'selected' : '' }}>
+                                            {{ $examSet->exam->title ?? 'Exam' }} - {{ $examSet->set_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('exam_set_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-help">Select which exam set this question belongs to.</div>
+                            </div>
+
+                            <!-- Question Type -->
+                            <div class="form-group">
+                                <label for="question_type" class="form-label required">Question Type</label>
+                                <select id="question_type" name="question_type" class="form-select @error('question_type') is-invalid @enderror" required onchange="toggleQuestionTypeFields()">
+                                    <option value="">Select Question Type</option>
+                                    <option value="multiple_choice" {{ old('question_type', $question->question_type ?? '') == 'multiple_choice' ? 'selected' : '' }}>Multiple Choice</option>
+                                    <option value="true_false" {{ old('question_type', $question->question_type ?? '') == 'true_false' ? 'selected' : '' }}>True/False</option>
+                                    <option value="short_answer" {{ old('question_type', $question->question_type ?? '') == 'short_answer' ? 'selected' : '' }}>Short Answer</option>
+                                    <option value="essay" {{ old('question_type', $question->question_type ?? '') == 'essay' ? 'selected' : '' }}>Essay</option>
+                                </select>
+                                @error('question_type')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-help">Choose the format for this question.</div>
+                            </div>
 
                             <!-- Question Text -->
                             <div class="form-group">
@@ -126,85 +166,177 @@
                             </div>
 
                             <!-- Multiple Choice Options -->
-                            <div class="form-group">
-                                <label class="form-label required">Multiple Choice Options</label>
-                                <div class="options-grid">
-                                    @for($i = 0; $i < 4; $i++)
-                                        @php
-                                            $letter = chr(65 + $i); // A, B, C, D
-                                            $option_value = old("option_{$i}", $question->options[$i]->option_text ?? '');
-                                        @endphp
-                                        <div class="option-input-group">
-                                            <label for="option_{{ $i }}" class="option-label-text">Option {{ $letter }}</label>
-                                            <input type="text" 
-                                                   id="option_{{ $i }}" 
-                                                   name="option_{{ $i }}" 
-                                                   class="form-control option-input @error("option_{$i}") is-invalid @enderror"
-                                                   placeholder="Enter option {{ $letter }}"
-                                                   value="{{ $option_value }}"
-                                                   required>
-                                            @error("option_{$i}")
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    @endfor
+                            <div id="multiple_choice_section" class="question-type-section" style="display: none;">
+                                <div class="form-group">
+                                    <label class="form-label required">Multiple Choice Options</label>
+                                    <div class="options-grid">
+                                        @for($i = 0; $i < 6; $i++)
+                                            @php
+                                                $letter = chr(65 + $i); // A, B, C, D, E, F
+                                                $existing_option = null;
+                                                if (isset($question) && $question->options && $question->options->count() > $i) {
+                                                    $existing_option = $question->options->skip($i)->first();
+                                                }
+                                                $option_value = old("options.{$i}", $existing_option->option_text ?? '');
+                                            @endphp
+                                            <div class="option-input-group">
+                                                <label for="option_{{ $i }}" class="option-label-text">Option {{ $letter }}</label>
+                                                <input type="text" 
+                                                       id="option_{{ $i }}" 
+                                                       name="options[{{ $i }}]" 
+                                                       class="form-control option-input @error("options.{$i}") is-invalid @enderror"
+                                                       placeholder="Enter option {{ $letter }}"
+                                                       value="{{ $option_value }}">
+                                                @error("options.{$i}")
+                                                    <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                        @endfor
+                                    </div>
+                                    <div class="form-help">Enter at least 2 options. Leave unused options blank.</div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label required">Correct Answer</label>
+                                    <div class="correct-answer-options">
+                                        @for($i = 0; $i < 6; $i++)
+                                            @php
+                                                $letter = chr(65 + $i); // A, B, C, D, E, F
+                                                $is_correct = false;
+                                                if (isset($question) && $question->options && $question->options->count() > $i) {
+                                                    $option = $question->options->skip($i)->first();
+                                                    $is_correct = $option && $option->is_correct;
+                                                }
+                                                $is_checked = old('correct_answer', $is_correct ? $i : null) == $i;
+                                            @endphp
+                                            <label class="correct-answer-label" id="correct_label_{{ $i }}" style="display: none;">
+                                                <input type="radio" 
+                                                       name="correct_answer" 
+                                                       value="{{ $i }}"
+                                                       class="correct-answer-input"
+                                                       {{ $is_checked ? 'checked' : '' }}>
+                                                <span class="correct-answer-text">Option {{ $letter }}</span>
+                                            </label>
+                                        @endfor
+                                    </div>
+                                    @error('correct_answer')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <div class="form-help">Select which option is the correct answer to this question.</div>
                                 </div>
                             </div>
 
-                            <!-- Correct Answer -->
-                            <div class="form-group">
-                                <label class="form-label required">Correct Answer</label>
-                                <div class="correct-answer-options">
-                                    @for($i = 0; $i < 4; $i++)
+                            <!-- True/False Section -->
+                            <div id="true_false_section" class="question-type-section" style="display: none;">
+                                <div class="form-group">
+                                    <label class="form-label required">Correct Answer</label>
+                                    <div class="correct-answer-options">
                                         @php
-                                            $letter = chr(65 + $i); // A, B, C, D
-                                            $is_checked = old('correct_answer', $question->correct_answer ?? '') == $i;
+                                            $tf_correct = null;
+                                            if (isset($question) && $question->options && $question->options->count() > 0) {
+                                                $correct_option = $question->options->where('is_correct', true)->first();
+                                                $tf_correct = $correct_option ? strtolower($correct_option->option_text) : null;
+                                            }
+                                            $selected_answer = old('correct_answer', $tf_correct);
                                         @endphp
                                         <label class="correct-answer-label">
                                             <input type="radio" 
                                                    name="correct_answer" 
-                                                   value="{{ $i }}"
+                                                   value="true"
                                                    class="correct-answer-input"
-                                                   {{ $is_checked ? 'checked' : '' }}
-                                                   required>
-                                            <span class="correct-answer-text">Option {{ $letter }}</span>
+                                                   {{ $selected_answer === 'true' ? 'checked' : '' }}>
+                                            <span class="correct-answer-text">True</span>
                                         </label>
-                                    @endfor
+                                        <label class="correct-answer-label">
+                                            <input type="radio" 
+                                                   name="correct_answer" 
+                                                   value="false"
+                                                   class="correct-answer-input"
+                                                   {{ $selected_answer === 'false' ? 'checked' : '' }}>
+                                            <span class="correct-answer-text">False</span>
+                                        </label>
+                                    </div>
+                                    @error('correct_answer')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <div class="form-help">Select whether the statement is true or false.</div>
                                 </div>
-                                @error('correct_answer')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <div class="form-help">Select which option is the correct answer to this question.</div>
+                            </div>
+
+                            <!-- Short Answer Section -->
+                            <div id="short_answer_section" class="question-type-section" style="display: none;">
+                                <div class="form-group">
+                                    <label for="sample_answer" class="form-label">Sample Answer</label>
+                                    <textarea id="sample_answer" 
+                                             name="sample_answer" 
+                                             class="form-textarea @error('sample_answer') is-invalid @enderror"
+                                             rows="3"
+                                             placeholder="Provide a sample correct answer for reference...">{{ old('sample_answer', isset($question) && $question->options && $question->options->count() > 0 ? $question->options->first()->option_text : '') }}</textarea>
+                                    @error('sample_answer')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <div class="form-help">This will help graders evaluate student responses consistently.</div>
+                                </div>
+                            </div>
+
+                            <!-- Essay Section -->
+                            <div id="essay_section" class="question-type-section" style="display: none;">
+                                <div class="form-group">
+                                    <label for="sample_answer" class="form-label">Sample Answer</label>
+                                    <textarea id="essay_sample_answer" 
+                                             name="sample_answer" 
+                                             class="form-textarea @error('sample_answer') is-invalid @enderror"
+                                             rows="5"
+                                             placeholder="Provide a comprehensive sample answer...">{{ old('sample_answer', isset($question) && $question->options && $question->options->count() > 0 ? $question->options->first()->option_text : '') }}</textarea>
+                                    @error('sample_answer')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <div class="form-help">Provide a detailed sample answer to guide the grading process.</div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="grading_criteria" class="form-label">Grading Criteria</label>
+                                    <textarea id="grading_criteria" 
+                                             name="grading_criteria" 
+                                             class="form-textarea @error('grading_criteria') is-invalid @enderror"
+                                             rows="3"
+                                             placeholder="Specify the criteria for grading this essay question...">{{ old('grading_criteria') }}</textarea>
+                                    @error('grading_criteria')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <div class="form-help">Define what elements should be present for full marks.</div>
+                                </div>
                             </div>
 
                             <!-- Additional Settings -->
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="category" class="form-label">Category</label>
-                                    <select id="category" name="category" class="form-select">
-                                        <option value="">Select Category</option>
-                                        <option value="programming" {{ old('category', $question->category ?? '') == 'programming' ? 'selected' : '' }}>Programming</option>
-                                        <option value="database" {{ old('category', $question->category ?? '') == 'database' ? 'selected' : '' }}>Database</option>
-                                        <option value="networking" {{ old('category', $question->category ?? '') == 'networking' ? 'selected' : '' }}>Networking</option>
-                                        <option value="software-engineering" {{ old('category', $question->category ?? '') == 'software-engineering' ? 'selected' : '' }}>Software Engineering</option>
-                                        <option value="data-structures" {{ old('category', $question->category ?? '') == 'data-structures' ? 'selected' : '' }}>Data Structures</option>
-                                    </select>
-                                    @error('category')
+                                    <label for="points" class="form-label">Points</label>
+                                    <input type="number" 
+                                           id="points" 
+                                           name="points" 
+                                           class="form-control @error('points') is-invalid @enderror"
+                                           min="1" 
+                                           max="100" 
+                                           value="{{ old('points', $question->points ?? 1) }}"
+                                           placeholder="1">
+                                    @error('points')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
+                                    <div class="form-help">How many points this question is worth (1-100).</div>
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="difficulty" class="form-label">Difficulty Level</label>
-                                    <select id="difficulty" name="difficulty" class="form-select">
-                                        <option value="">Select Difficulty</option>
-                                        <option value="easy" {{ old('difficulty', $question->difficulty ?? '') == 'easy' ? 'selected' : '' }}>Easy</option>
-                                        <option value="medium" {{ old('difficulty', $question->difficulty ?? '') == 'medium' ? 'selected' : '' }}>Medium</option>
-                                        <option value="hard" {{ old('difficulty', $question->difficulty ?? '') == 'hard' ? 'selected' : '' }}>Hard</option>
-                                    </select>
-                                    @error('difficulty')
+                                    <label for="explanation" class="form-label">Explanation (Optional)</label>
+                                    <textarea id="explanation" 
+                                             name="explanation" 
+                                             class="form-textarea @error('explanation') is-invalid @enderror"
+                                             rows="2"
+                                             placeholder="Provide an explanation for the correct answer...">{{ old('explanation', $question->explanation ?? '') }}</textarea>
+                                    @error('explanation')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
+                                    <div class="form-help">This explanation will be shown to applicants after the exam.</div>
                                 </div>
                             </div>
 
@@ -246,23 +378,54 @@
     </div>
 
     <script>
+        // Toggle question type sections
+        function toggleQuestionTypeFields() {
+            const questionType = document.getElementById('question_type').value;
+            const sections = document.querySelectorAll('.question-type-section');
+            
+            // Hide all sections
+            sections.forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Show relevant section
+            if (questionType) {
+                const targetSection = document.getElementById(`${questionType}_section`);
+                if (targetSection) {
+                    targetSection.style.display = 'block';
+                }
+            }
+            
+            // For multiple choice, update correct answer options visibility
+            if (questionType === 'multiple_choice') {
+                updateMultipleChoiceOptions();
+            }
+        }
+        
+        // Update multiple choice correct answer options based on filled options
+        function updateMultipleChoiceOptions() {
+            const optionInputs = document.querySelectorAll('input[name^="options["]');
+            const correctLabels = document.querySelectorAll('[id^="correct_label_"]');
+            
+            optionInputs.forEach((input, index) => {
+                const label = document.getElementById(`correct_label_${index}`);
+                if (label) {
+                    if (input.value.trim()) {
+                        label.style.display = 'flex';
+                    } else {
+                        label.style.display = 'none';
+                        // Uncheck if hidden
+                        const radio = label.querySelector('input[type="radio"]');
+                        if (radio) radio.checked = false;
+                    }
+                }
+            });
+        }
+        
         // Form validation and preview
         function previewQuestion() {
             const questionText = document.getElementById('question_text').value;
-            const options = [];
-            let correctAnswer = null;
-            
-            // Get all options
-            for (let i = 0; i < 4; i++) {
-                const optionValue = document.getElementById(`option_${i}`).value;
-                options.push(optionValue);
-            }
-            
-            // Get correct answer
-            const correctAnswerInput = document.querySelector('input[name="correct_answer"]:checked');
-            if (correctAnswerInput) {
-                correctAnswer = parseInt(correctAnswerInput.value);
-            }
+            const questionType = document.getElementById('question_type').value;
             
             // Validate
             if (!questionText.trim()) {
@@ -270,34 +433,97 @@
                 return;
             }
             
-            if (options.some(option => !option.trim())) {
-                alert('Please fill in all four options.');
+            if (!questionType) {
+                alert('Please select a question type.');
                 return;
             }
             
-            if (correctAnswer === null) {
-                alert('Please select the correct answer.');
-                return;
+            let previewHtml = '';
+            let correctAnswer = null;
+            
+            // Build preview based on question type
+            switch(questionType) {
+                case 'multiple_choice':
+                    const options = [];
+                    for (let i = 0; i < 6; i++) {
+                        const input = document.querySelector(`input[name="options[${i}]"]`);
+                        if (input && input.value.trim()) {
+                            options.push(input.value.trim());
+                        }
+                    }
+                    
+                    if (options.length < 2) {
+                        alert('Please provide at least 2 options for multiple choice questions.');
+                        return;
+                    }
+                    
+                    const correctAnswerInput = document.querySelector('input[name="correct_answer"]:checked');
+                    if (!correctAnswerInput) {
+                        alert('Please select the correct answer.');
+                        return;
+                    }
+                    
+                    correctAnswer = parseInt(correctAnswerInput.value);
+                    
+                    options.forEach((option, index) => {
+                        const letter = String.fromCharCode(65 + index);
+                        const isCorrect = index === correctAnswer;
+                        previewHtml += `
+                            <div class="preview-option ${isCorrect ? 'correct-option' : ''}">
+                                <span class="option-letter">${letter})</span>
+                                <span class="option-text">${option}</span>
+                                ${isCorrect ? '<span class="correct-indicator">✓ Correct</span>' : ''}
+                            </div>
+                        `;
+                    });
+                    break;
+                    
+                case 'true_false':
+                    const tfCorrect = document.querySelector('input[name="correct_answer"]:checked');
+                    if (!tfCorrect) {
+                        alert('Please select the correct answer.');
+                        return;
+                    }
+                    
+                    ['True', 'False'].forEach((option, index) => {
+                        const isCorrect = (index === 0 && tfCorrect.value === 'true') || (index === 1 && tfCorrect.value === 'false');
+                        previewHtml += `
+                            <div class="preview-option ${isCorrect ? 'correct-option' : ''}">
+                                <span class="option-letter">${option}</span>
+                                ${isCorrect ? '<span class="correct-indicator">✓ Correct</span>' : ''}
+                            </div>
+                        `;
+                    });
+                    break;
+                    
+                case 'short_answer':
+                    const shortSample = document.getElementById('sample_answer').value;
+                    previewHtml = `
+                        <div class="preview-text-answer">
+                            <strong>Answer Type:</strong> Short Answer<br>
+                            ${shortSample ? `<strong>Sample Answer:</strong> ${shortSample}` : '<em>No sample answer provided</em>'}
+                        </div>
+                    `;
+                    break;
+                    
+                case 'essay':
+                    const essaySample = document.getElementById('essay_sample_answer').value;
+                    const criteria = document.getElementById('grading_criteria').value;
+                    previewHtml = `
+                        <div class="preview-text-answer">
+                            <strong>Answer Type:</strong> Essay<br>
+                            ${essaySample ? `<strong>Sample Answer:</strong> ${essaySample}<br>` : ''}
+                            ${criteria ? `<strong>Grading Criteria:</strong> ${criteria}` : ''}
+                        </div>
+                    `;
+                    break;
             }
             
             // Update preview
             document.getElementById('previewQuestionText').textContent = questionText;
-            
-            let optionsHtml = '';
-            options.forEach((option, index) => {
-                const letter = String.fromCharCode(65 + index);
-                const isCorrect = index === correctAnswer;
-                optionsHtml += `
-                    <div class="preview-option ${isCorrect ? 'correct-option' : ''}">
-                        <span class="option-letter">${letter})</span>
-                        <span class="option-text">${option}</span>
-                        ${isCorrect ? '<span class="correct-indicator">✓ Correct</span>' : ''}
-                    </div>
-                `;
-            });
-            
-            document.getElementById('previewOptions').innerHTML = optionsHtml;
-            document.getElementById('previewCorrect').innerHTML = `<strong>Correct Answer: Option ${String.fromCharCode(65 + correctAnswer)}</strong>`;
+            document.getElementById('previewOptions').innerHTML = previewHtml;
+            document.getElementById('previewCorrect').innerHTML = questionType === 'multiple_choice' && correctAnswer !== null ? 
+                `<strong>Correct Answer: Option ${String.fromCharCode(65 + correctAnswer)}</strong>` : '';
             
             // Show modal
             document.getElementById('previewModal').style.display = 'flex';
@@ -322,13 +548,86 @@
             }, 3000);
         }
         
-        // Add auto-save listeners
+        // Add auto-save listeners and initialize form
         document.addEventListener('DOMContentLoaded', function() {
             const inputs = document.querySelectorAll('input, textarea, select');
             inputs.forEach(input => {
                 input.addEventListener('input', autoSave);
             });
+            
+            // Initialize question type display
+            toggleQuestionTypeFields();
+            
+            // Add listeners for multiple choice option changes
+            const optionInputs = document.querySelectorAll('input[name^="options["]');
+            optionInputs.forEach(input => {
+                input.addEventListener('input', updateMultipleChoiceOptions);
+            });
+            
+            // Set up form validation
+            const form = document.getElementById('questionForm');
+            form.addEventListener('submit', function(e) {
+                if (!validateForm()) {
+                    e.preventDefault();
+                }
+            });
         });
+        
+        // Form validation
+        function validateForm() {
+            const questionType = document.getElementById('question_type').value;
+            const questionText = document.getElementById('question_text').value;
+            const examSetId = document.getElementById('exam_set_id').value;
+            
+            if (!examSetId) {
+                alert('Please select an exam set.');
+                return false;
+            }
+            
+            if (!questionType) {
+                alert('Please select a question type.');
+                return false;
+            }
+            
+            if (!questionText.trim()) {
+                alert('Please enter the question text.');
+                return false;
+            }
+            
+            // Type-specific validation
+            switch(questionType) {
+                case 'multiple_choice':
+                    const options = [];
+                    for (let i = 0; i < 6; i++) {
+                        const input = document.querySelector(`input[name="options[${i}]"]`);
+                        if (input && input.value.trim()) {
+                            options.push(input.value.trim());
+                        }
+                    }
+                    
+                    if (options.length < 2) {
+                        alert('Please provide at least 2 options for multiple choice questions.');
+                        return false;
+                    }
+                    
+                    const correctAnswerInput = document.querySelector('input[name="correct_answer"]:checked');
+                    if (!correctAnswerInput) {
+                        alert('Please select the correct answer.');
+                        return false;
+                    }
+                    break;
+                    
+                case 'true_false':
+                    const tfCorrect = document.querySelector('input[name="correct_answer"]:checked');
+                    if (!tfCorrect) {
+                        alert('Please select the correct answer for the True/False question.');
+                        return false;
+                    }
+                    break;
+            }
+            
+            return true;
+        }
         
         // Form submission handling
         document.getElementById('questionForm').addEventListener('submit', function(e) {
@@ -631,6 +930,17 @@
             color: #166534;
             font-weight: 600;
             font-size: 12px;
+        }
+
+        .preview-text-answer {
+            padding: 15px;
+            background: var(--light-gray);
+            border-radius: 8px;
+            line-height: 1.6;
+        }
+
+        .question-type-section {
+            margin-bottom: 20px;
         }
 
         .logout-link {

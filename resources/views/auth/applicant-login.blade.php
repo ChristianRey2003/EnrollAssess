@@ -42,7 +42,7 @@
                     </div>
                 @endif
 
-                <form method="POST" action="#" id="accessForm">
+                <form method="POST" action="{{ route('applicant.verify') }}" id="accessForm">
                     @csrf
 
                     <!-- Access Code -->
@@ -88,25 +88,19 @@
     <script>
         // Enhanced form interaction
         document.getElementById('accessForm').addEventListener('submit', function(e) {
-            e.preventDefault(); // Prevent actual submission for demo
             const submitBtn = document.getElementById('submitBtn');
             const buttonText = document.getElementById('buttonText');
             const accessCode = document.getElementById('access_code').value;
             
             if (accessCode.length < 3) {
+                e.preventDefault();
                 alert('Please enter a valid access code.');
                 return;
             }
             
+            // Show loading state during form submission
             submitBtn.disabled = true;
-            buttonText.textContent = 'Please wait...';
-            
-            // Simulate processing (for demo purposes)
-            setTimeout(() => {
-                submitBtn.disabled = false;
-                buttonText.textContent = 'Begin Examination';
-                alert('Demo: Access code "' + accessCode + '" would be validated here.');
-            }, 2000);
+            buttonText.textContent = 'Verifying...';
         });
 
         // Auto-format access code input

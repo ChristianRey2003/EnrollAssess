@@ -1,94 +1,214 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\QuestionController;
+use App\Http\Controllers\ExamController;
+use App\Http\Controllers\ExamSetController;
 use Illuminate\Support\Facades\Route;
 
+// Welcome page - redirect to applicant login
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('applicant.login');
 });
 
-// Applicant login route
-Route::get('/applicant/login', function () {
-    return view('auth.applicant-login');
-})->name('applicant.login');
+// Authentication routes
+Route::get('/admin/login', [App\Http\Controllers\Auth\AdminAuthController::class, 'showLoginForm'])
+    ->name('admin.login');
 
-// Admin routes for viewing the new UI pages
-Route::get('/admin/login', function () {
-    return view('auth.admin-login');
-})->name('admin.login');
+Route::post('/admin/login', [App\Http\Controllers\Auth\AdminAuthController::class, 'login'])
+    ->name('admin.login.submit');
 
-Route::get('/admin/dashboard', function () {
-    return view('admin.dashboard');
-})->name('admin.dashboard');
+Route::post('/admin/logout', [App\Http\Controllers\Auth\AdminAuthController::class, 'logout'])
+    ->name('admin.logout');
 
-Route::get('/admin/questions', function () {
-    return view('admin.questions');
-})->name('admin.questions');
+// Applicant authentication
+Route::get('/applicant/login', [App\Http\Controllers\Auth\AdminAuthController::class, 'showApplicantLogin'])
+    ->name('applicant.login');
 
-Route::get('/admin/applicants', function () {
-    return view('admin.applicants');
-})->name('admin.applicants');
+Route::post('/applicant/verify', [App\Http\Controllers\Auth\AdminAuthController::class, 'verifyAccessCode'])
+    ->name('applicant.verify');
 
-Route::get('/admin/reports', function () {
-    return view('admin.reports');
-})->name('admin.reports');
+// Protected Admin Routes
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+Route::get('/dashboard', function () {
+        $stats = [
+            'total_applicants' => \App\Models\Applicant::count(),
+            'exam_completed' => \App\Models\Applicant::where('status', '!=', 'pending')->count(),
+            'interviews_scheduled' => \App\Models\Interview::where('status', 'scheduled')->count(),
+            'pending_reviews' => \App\Models\Applicant::where('status', 'exam-completed')->count(),
+        ];
+        
+        $recent_applicants = \App\Models\Applicant::with(['examSet', 'accessCode'])
+            ->latest()
+            ->take(5)
+            ->get();
+        
+        return view('admin.dashboard', compact('stats', 'recent_applicants'));
+    })->name('dashboard');
+
+    Route::get('/questions', [QuestionController::class, 'index'])->name('questions');
+
+    Route::get('/applicants', function () {
+        $applicants = \App\Models\Applicant::with(['examSet', 'accessCode', 'latestInterview'])
+            ->latest()
+            ->get();
+        
+        return view('admin.applicants', compact('applicants'));
+    })->name('applicants');
+
+    Route::get('/reports', function () {
+        return view('admin.reports');
+    })->name('reports');
+
+    // Question management routes
+    Route::get('/questions/create', [QuestionController::class, 'create'])->name('questions.create');
+    Route::post('/questions/store', [QuestionController::class, 'store'])->name('questions.store');
+    Route::get('/questions/{id}', [QuestionController::class, 'show'])->name('questions.show');
+    Route::get('/questions/edit/{id}', [QuestionController::class, 'edit'])->name('questions.edit');
+    Route::put('/questions/{id}', [QuestionController::class, 'update'])->name('questions.update');
+    Route::delete('/questions/{id}', [QuestionController::class, 'destroy'])->name('questions.destroy');
+    Route::post('/questions/{id}/toggle-status', [QuestionController::class, 'toggleStatus'])->name('questions.toggle-status');
+    Route::post('/questions/reorder', [QuestionController::class, 'reorder'])->name('questions.reorder');
+
+    // Exam management routes
+    Route::get('/exams', [ExamController::class, 'index'])->name('exams.index');
+    Route::get('/exams/create', [ExamController::class, 'create'])->name('exams.create');
+    Route::post('/exams', [ExamController::class, 'store'])->name('exams.store');
+    Route::get('/exams/{id}', [ExamController::class, 'show'])->name('exams.show');
+    Route::get('/exams/{id}/edit', [ExamController::class, 'edit'])->name('exams.edit');
+    Route::put('/exams/{id}', [ExamController::class, 'update'])->name('exams.update');
+    Route::delete('/exams/{id}', [ExamController::class, 'destroy'])->name('exams.destroy');
+    Route::post('/exams/{id}/toggle-status', [ExamController::class, 'toggleStatus'])->name('exams.toggle-status');
+    Route::post('/exams/{id}/duplicate', [ExamController::class, 'duplicate'])->name('exams.duplicate');
+
+    // Exam Set management routes
+    Route::get('/exams/{examId}/sets', [ExamSetController::class, 'index'])->name('exam-sets.index');
+    Route::get('/exams/{examId}/sets/create', [ExamSetController::class, 'create'])->name('exam-sets.create');
+    Route::post('/exams/{examId}/sets', [ExamSetController::class, 'store'])->name('exam-sets.store');
+    Route::get('/exams/{examId}/sets/{setId}', [ExamSetController::class, 'show'])->name('exam-sets.show');
+    Route::get('/exams/{examId}/sets/{setId}/edit', [ExamSetController::class, 'edit'])->name('exam-sets.edit');
+    Route::put('/exams/{examId}/sets/{setId}', [ExamSetController::class, 'update'])->name('exam-sets.update');
+    Route::delete('/exams/{examId}/sets/{setId}', [ExamSetController::class, 'destroy'])->name('exam-sets.destroy');
+    Route::post('/exams/{examId}/sets/{setId}/toggle-status', [ExamSetController::class, 'toggleStatus'])->name('exam-sets.toggle-status');
+    Route::post('/exams/{examId}/sets/{setId}/duplicate', [ExamSetController::class, 'duplicate'])->name('exam-sets.duplicate');
+    Route::get('/exams/{examId}/sets/{setId}/add-questions', [ExamSetController::class, 'addQuestions'])->name('exam-sets.add-questions');
+    Route::post('/exams/{examId}/sets/{setId}/reorder-questions', [ExamSetController::class, 'reorderQuestions'])->name('exam-sets.reorder-questions');
+
+    // Applicant detail route
+    Route::get('/applicants/{id}', function ($id) {
+        $applicant = \App\Models\Applicant::with(['examSet', 'accessCode', 'latestInterview.interviewer', 'results.question'])
+            ->findOrFail($id);
+        
+        // Calculate additional data for the view
+        $applicant->name = $applicant->full_name;
+        $applicant->email = $applicant->email_address;
+        $applicant->phone = $applicant->phone_number;
+        $applicant->education = $applicant->education_background;
+        $applicant->overall_status = ucfirst(str_replace('-', ' ', $applicant->status));
+        $applicant->student_id = $applicant->application_no;
+        
+        // Exam data
+        $applicant->exam_completed = $applicant->hasCompletedExam();
+        $applicant->exam_score = $applicant->exam_percentage ?? $applicant->score ?? 0;
+        
+        // Get exam results if available
+        if ($applicant->results->count() > 0) {
+            $totalQuestions = $applicant->results->count();
+            $correctAnswers = $applicant->results->where('is_correct', true)->count();
+            
+            $applicant->correct_answers = $correctAnswers;
+            $applicant->total_questions = $totalQuestions;
+            $applicant->exam_duration = '24 minutes 30 seconds';
+            
+            // Category scores (simplified for demo)
+            $applicant->category_scores = [
+                ['name' => 'Programming Logic', 'score' => 90, 'correct' => 9, 'total' => 10],
+                ['name' => 'Mathematics', 'score' => 85, 'correct' => 4, 'total' => 5],
+                ['name' => 'Problem Solving', 'score' => 80, 'correct' => 3, 'total' => 4],
+                ['name' => 'Computer Fundamentals', 'score' => 85, 'correct' => 3, 'total' => 4],
+                ['name' => 'English Proficiency', 'score' => 88, 'correct' => 3, 'total' => 3]
+            ];
+        } else {
+            $applicant->correct_answers = 0;
+            $applicant->total_questions = 20;
+            $applicant->category_scores = [];
+        }
+        
+        // Interview data
+        $interview = $applicant->latestInterview;
+        $applicant->interview_status = $interview ? $interview->status : 'not-scheduled';
+        $applicant->interview_date = $interview ? $interview->schedule_date->format('Y-m-d') : null;
+        $applicant->interview_time = $interview ? $interview->schedule_date->format('H:i') : null;
+        $applicant->interviewer = $interview ? 'dr-' . strtolower(str_replace(' ', '-', $interview->interviewer->full_name ?? 'smith')) : 'dr-smith';
+        $applicant->private_notes = $interview ? $interview->notes : 'No interview notes available.';
+        $applicant->final_recommendation = $interview ? $interview->recommendation : 'pending';
+        
+        // Timeline
+        $applicant->timeline = [
+            ['date' => $applicant->created_at->format('M d, Y'), 'time' => $applicant->created_at->format('g:i A'), 'event' => 'Application submitted successfully', 'type' => 'application'],
+            ['date' => $applicant->created_at->addDays(2)->format('M d, Y'), 'time' => '2:15 PM', 'event' => 'Documents verified and approved', 'type' => 'update'],
+        ];
+        
+        if ($applicant->exam_completed_at) {
+            $applicant->timeline[] = ['date' => $applicant->exam_completed_at->format('M d, Y'), 'time' => $applicant->exam_completed_at->format('g:i A'), 'event' => 'Entrance exam completed with ' . $applicant->exam_score . '% score', 'type' => 'exam'];
+        }
+        
+        if ($interview && $interview->status === 'scheduled') {
+            $applicant->timeline[] = ['date' => $interview->schedule_date->format('M d, Y'), 'time' => $interview->schedule_date->format('g:i A'), 'event' => 'Interview scheduled with ' . ($interview->interviewer->full_name ?? 'Dr. Smith'), 'type' => 'interview'];
+        }
+        
+        return view('admin.applicants.show', compact('applicant'));
+    })->name('applicants.show');
+
+    // User Management (RBAC)
+    Route::get('/users', function () {
+        return view('admin.users');
+    })->name('users');
+
+    // Settings
+    Route::get('/settings', function () {
+        return redirect('/admin/dashboard')->with('info', 'Settings page (demo)');
+    })->name('settings');
+});
 
 // Exam interface route
 Route::get('/exam', function () {
     return view('exam.interface');
 })->name('exam.interface');
 
-// Additional routes for form handling (placeholder routes for demo)
-Route::get('/admin/questions/create', function () {
-    return view('admin.questions.create');
-})->name('admin.questions.create');
-
-Route::post('/admin/questions/store', function () {
-    return redirect('/admin/questions')->with('success', 'Question created successfully (demo)');
-})->name('admin.questions.store');
-
-Route::get('/admin/questions/edit/{id}', function ($id) {
-    return view('admin.questions.create', ['question' => (object)['id' => $id]]);
-})->name('admin.questions.edit');
-
-Route::put('/admin/questions/{id}', function ($id) {
-    return redirect('/admin/questions')->with('success', "Question #{$id} updated successfully (demo)");
-})->name('admin.questions.update');
+// Non-admin routes
 
 // Exam results route
 Route::get('/exam/results', function () {
     return view('exam.results');
 })->name('exam.results');
 
-Route::get('/admin/applicants/{id}', function ($id) {
-    return view('admin.applicants.show', ['applicant' => (object)['id' => $id, 'name' => 'John Doe']]);
-})->name('admin.applicants.show');
+// Data Privacy Consent Page (must be shown before exam)
+Route::get('/privacy/consent', function () {
+    return view('privacy.consent');
+})->name('privacy.consent');
 
-Route::get('/admin/settings', function () {
-    return redirect('/admin/dashboard')->with('info', 'Settings page (demo)');
-})->name('admin.settings');
+// Final PDF Report Preview
+Route::get('/reports/pdf-preview', function () {
+    return view('reports.pdf-preview');
+})->name('reports.pdf-preview');
 
 Route::post('/exam/submit-answer', function () {
     return redirect('/exam')->with('success', 'Answer submitted (demo)');
 })->name('exam.submit-answer');
 
-// Login/logout routes for demo
-Route::post('/login', function () {
-    return redirect('/admin/dashboard')->with('success', 'Logged in successfully (demo)');
+// Default Laravel auth routes removed - using custom EnrollAssess authentication system
+// require __DIR__.'/auth.php';
+
+// Redirect legacy routes to our custom login
+Route::get('/login', function () {
+    return redirect()->route('admin.login');
 })->name('login');
 
-Route::post('/logout', function () {
-    return redirect('/admin/login')->with('success', 'Logged out successfully (demo)');
-})->name('logout');
+Route::get('/register', function () {
+    return redirect()->route('admin.login')->with('error', 'Registration is not available. Please contact the administrator.');
+})->name('register');
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
-
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
-
-require __DIR__.'/auth.php';
+// Legacy logout route redirect to admin logout controller
+Route::post('/logout', [App\Http\Controllers\Auth\AdminAuthController::class, 'logout'])
+    ->name('logout');

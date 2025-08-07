@@ -36,6 +36,12 @@
                     </a>
                 </div>
                 <div class="nav-item">
+                    <a href="{{ route('admin.exams.index') }}" class="nav-link">
+                        <span class="nav-icon">📝</span>
+                        <span class="nav-text">Exams</span>
+                    </a>
+                </div>
+                <div class="nav-item">
                     <a href="{{ route('admin.questions') }}" class="nav-link">
                         <span class="nav-icon">❓</span>
                         <span class="nav-text">Questions</span>
@@ -56,7 +62,7 @@
             </div>
 
             <div class="sidebar-footer">
-                <form method="POST" action="{{ route('logout') }}">
+                <form method="POST" action="{{ route('admin.logout') }}">
                     @csrf
                     <button type="submit" class="logout-link">
                         <span class="nav-icon">🚪</span>

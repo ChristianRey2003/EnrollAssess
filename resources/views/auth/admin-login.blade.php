@@ -41,22 +41,22 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('login') }}" id="adminLoginForm">
+                <form method="POST" action="{{ route('admin.login.submit') }}" id="adminLoginForm">
                     @csrf
 
-                    <!-- Email Address -->
+                    <!-- Username -->
                     <div class="form-group">
-                        <label for="email" class="form-label">{{ __('Email Address') }}</label>
-                        <input id="email" 
-                               class="form-control admin-input @error('email') is-invalid @enderror" 
-                               type="email" 
-                               name="email" 
-                               value="{{ old('email') }}" 
+                        <label for="username" class="form-label">{{ __('Username') }}</label>
+                        <input id="username" 
+                               class="form-control admin-input @error('username') is-invalid @enderror" 
+                               type="text" 
+                               name="username" 
+                               value="{{ old('username') }}" 
                                required 
                                autofocus 
                                autocomplete="username"
-                               placeholder="admin@university.edu">
-                        @error('email')
+                               placeholder="dept_head or admin1">
+                        @error('username')
                             <div class="invalid-feedback">
                                 {{ $message }}
                             </div>

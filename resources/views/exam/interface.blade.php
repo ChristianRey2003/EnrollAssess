@@ -67,7 +67,7 @@
             <section class="answer-options">
                 <form id="examForm" method="POST" action="{{ route('exam.submit-answer') }}">
                     @csrf
-                    <input type="hidden" name="question_id" value="{{ $question->id ?? 5 }}">
+                    <input type="hidden" name="question_id" value="{{ $question->question_id ?? 5 }}">
                     <input type="hidden" name="exam_session_id" value="{{ $examSession->id ?? 'demo' }}">
 
                     @if(isset($question) && $question->options)

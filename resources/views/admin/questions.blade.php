@@ -36,6 +36,12 @@
                     </a>
                 </div>
                 <div class="nav-item">
+                    <a href="{{ route('admin.exams.index') }}" class="nav-link">
+                        <span class="nav-icon">📝</span>
+                        <span class="nav-text">Exams</span>
+                    </a>
+                </div>
+                <div class="nav-item">
                     <a href="{{ route('admin.questions') }}" class="nav-link active">
                         <span class="nav-icon">❓</span>
                         <span class="nav-text">Questions</span>
@@ -56,7 +62,7 @@
             </div>
 
             <div class="sidebar-footer">
-                <form method="POST" action="{{ route('logout') }}">
+                                        <form method="POST" action="{{ route('admin.logout') }}">
                     @csrf
                     <button type="submit" class="logout-link">
                         <span class="nav-icon">🚪</span>
@@ -95,13 +101,21 @@
                                     <input type="text" placeholder="Search questions..." class="search-input" id="searchInput">
                                     <button class="search-btn">🔍</button>
                                 </div>
-                                <select class="filter-select" id="categoryFilter">
-                                    <option value="">All Categories</option>
-                                    <option value="programming">Programming</option>
-                                    <option value="database">Database</option>
-                                    <option value="networking">Networking</option>
-                                    <option value="software-engineering">Software Engineering</option>
-                                    <option value="data-structures">Data Structures</option>
+                                <select class="filter-select" id="typeFilter" name="type">
+                                    <option value="">All Types</option>
+                                    <option value="multiple_choice" {{ request('type') == 'multiple_choice' ? 'selected' : '' }}>Multiple Choice</option>
+                                    <option value="true_false" {{ request('type') == 'true_false' ? 'selected' : '' }}>True/False</option>
+                                    <option value="short_answer" {{ request('type') == 'short_answer' ? 'selected' : '' }}>Short Answer</option>
+                                    <option value="essay" {{ request('type') == 'essay' ? 'selected' : '' }}>Essay</option>
+                                </select>
+                                
+                                <select class="filter-select" id="examSetFilter" name="exam_set_id">
+                                    <option value="">All Exam Sets</option>
+                                    @foreach($examSets ?? [] as $examSet)
+                                        <option value="{{ $examSet->exam_set_id }}" {{ request('exam_set_id') == $examSet->exam_set_id ? 'selected' : '' }}>
+                                            {{ $examSet->exam->title ?? 'Exam' }} - {{ $examSet->set_name }}
+                                        </option>
+                                    @endforeach
                                 </select>
                             </div>
                             <a href="{{ route('admin.questions.create') }}" class="section-action">
@@ -117,7 +131,11 @@
                     <div class="section-header">
                         <h2 class="section-title">Questions List</h2>
                         <div class="header-stats">
-                            <span class="stat-badge">Total: {{ $totalQuestions ?? 87 }}</span>
+                            <span class="stat-badge">Total: {{ $questionStats['total'] ?? 0 }}</span>
+                            <span class="stat-badge">MC: {{ $questionStats['multiple_choice'] ?? 0 }}</span>
+                            <span class="stat-badge">T/F: {{ $questionStats['true_false'] ?? 0 }}</span>
+                            <span class="stat-badge">SA: {{ $questionStats['short_answer'] ?? 0 }}</span>
+                            <span class="stat-badge">Essay: {{ $questionStats['essay'] ?? 0 }}</span>
                         </div>
                     </div>
                     <div class="section-content">
@@ -126,103 +144,60 @@
                                 <tr>
                                     <th style="width: 60px;">ID</th>
                                     <th>Question Text</th>
-                                    <th style="width: 120px;">Category</th>
-                                    <th style="width: 100px;">Difficulty</th>
-                                    <th style="width: 120px;">Created</th>
+                                    <th style="width: 120px;">Type</th>
+                                    <th style="width: 100px;">Points</th>
+                                    <th style="width: 140px;">Exam Set</th>
+                                    <th style="width: 80px;">Status</th>
                                     <th style="width: 140px;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($questions ?? [] as $question)
+                                @forelse($questions as $question)
                                 <tr>
-                                    <td>#{{ $question->id }}</td>
+                                    <td>#{{ $question->question_id }}</td>
                                     <td class="question-text">{{ Str::limit($question->question_text, 80) }}</td>
                                     <td>
-                                        <span class="category-badge category-{{ strtolower($question->category) }}">
-                                            {{ ucfirst($question->category) }}
+                                        <span class="type-badge type-{{ str_replace('_', '-', $question->question_type) }}">
+                                            {{ ucwords(str_replace('_', ' ', $question->question_type)) }}
                                         </span>
                                     </td>
                                     <td>
-                                        <span class="difficulty-badge difficulty-{{ strtolower($question->difficulty) }}">
-                                            {{ ucfirst($question->difficulty) }}
+                                        <span class="points-badge">{{ $question->points }} pts</span>
+                                    </td>
+                                    <td>
+                                        <span class="exam-set-badge">
+                                            {{ $question->examSet->exam->title ?? 'Unknown' }} - {{ $question->examSet->set_name ?? 'Set' }}
                                         </span>
                                     </td>
-                                    <td>{{ $question->created_at->format('M d, Y') }}</td>
+                                    <td>
+                                        <span class="status-badge status-{{ $question->is_active ? 'active' : 'inactive' }}">
+                                            {{ $question->is_active ? 'Active' : 'Inactive' }}
+                                        </span>
+                                    </td>
                                     <td>
                                         <div class="table-actions">
-                                            <a href="{{ route('admin.questions.edit', $question->id) }}" class="action-btn action-btn-edit" title="Edit Question">
+                                            <a href="{{ route('admin.questions.edit', $question->question_id) }}" class="action-btn action-btn-edit" title="Edit Question">
                                                 ✏️ Edit
                                             </a>
-                                            <button onclick="deleteQuestion({{ $question->id }})" class="action-btn action-btn-delete" title="Delete Question">
+                                            <button onclick="toggleStatus({{ $question->question_id }})" class="action-btn action-btn-toggle" title="Toggle Status">
+                                                {{ $question->is_active ? '🔒' : '🔓' }}
+                                            </button>
+                                            <button onclick="deleteQuestion({{ $question->question_id }})" class="action-btn action-btn-delete" title="Delete Question">
                                                 🗑️ Delete
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
                                 @empty
-                                <!-- Demo data when no questions exist -->
                                 <tr>
-                                    <td>#001</td>
-                                    <td class="question-text">What is object-oriented programming and what are its main principles?</td>
-                                    <td><span class="category-badge category-programming">Programming</span></td>
-                                    <td><span class="difficulty-badge difficulty-medium">Medium</span></td>
-                                    <td>{{ now()->subDays(5)->format('M d, Y') }}</td>
-                                    <td>
-                                        <div class="table-actions">
-                                            <a href="#" class="action-btn action-btn-edit">✏️ Edit</a>
-                                            <button onclick="deleteQuestion(1)" class="action-btn action-btn-delete">🗑️ Delete</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>#002</td>
-                                    <td class="question-text">Define data structures and algorithms. Explain the difference between them.</td>
-                                    <td><span class="category-badge category-data-structures">Data Structures</span></td>
-                                    <td><span class="difficulty-badge difficulty-hard">Hard</span></td>
-                                    <td>{{ now()->subDays(3)->format('M d, Y') }}</td>
-                                    <td>
-                                        <div class="table-actions">
-                                            <a href="#" class="action-btn action-btn-edit">✏️ Edit</a>
-                                            <button onclick="deleteQuestion(2)" class="action-btn action-btn-delete">🗑️ Delete</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>#003</td>
-                                    <td class="question-text">Explain database normalization and its importance in database design.</td>
-                                    <td><span class="category-badge category-database">Database</span></td>
-                                    <td><span class="difficulty-badge difficulty-medium">Medium</span></td>
-                                    <td>{{ now()->subDays(2)->format('M d, Y') }}</td>
-                                    <td>
-                                        <div class="table-actions">
-                                            <a href="#" class="action-btn action-btn-edit">✏️ Edit</a>
-                                            <button onclick="deleteQuestion(3)" class="action-btn action-btn-delete">🗑️ Delete</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>#004</td>
-                                    <td class="question-text">What is network topology? Describe different types of network topologies.</td>
-                                    <td><span class="category-badge category-networking">Networking</span></td>
-                                    <td><span class="difficulty-badge difficulty-easy">Easy</span></td>
-                                    <td>{{ now()->subDay()->format('M d, Y') }}</td>
-                                    <td>
-                                        <div class="table-actions">
-                                            <a href="#" class="action-btn action-btn-edit">✏️ Edit</a>
-                                            <button onclick="deleteQuestion(4)" class="action-btn action-btn-delete">🗑️ Delete</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>#005</td>
-                                    <td class="question-text">Define software engineering and explain the software development life cycle.</td>
-                                    <td><span class="category-badge category-software-engineering">Software Eng</span></td>
-                                    <td><span class="difficulty-badge difficulty-medium">Medium</span></td>
-                                    <td>{{ now()->format('M d, Y') }}</td>
-                                    <td>
-                                        <div class="table-actions">
-                                            <a href="#" class="action-btn action-btn-edit">✏️ Edit</a>
-                                            <button onclick="deleteQuestion(5)" class="action-btn action-btn-delete">🗑️ Delete</button>
+                                    <td colspan="7" class="empty-state">
+                                        <div class="empty-content">
+                                            <span class="empty-icon">❓</span>
+                                            <h3>No Questions Found</h3>
+                                            <p>No questions have been created yet. Click the "Add New Question" button to get started.</p>
+                                            <a href="{{ route('admin.questions.create') }}" class="btn-primary">
+                                                ➕ Create Your First Question
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -231,20 +206,16 @@
                         </table>
 
                         <!-- Pagination -->
+                        @if($questions->hasPages())
                         <div class="pagination">
                             <div class="pagination-info">
-                                Showing 1-5 of {{ $totalQuestions ?? 87 }} questions
+                                Showing {{ $questions->firstItem() ?? 0 }}-{{ $questions->lastItem() ?? 0 }} of {{ $questions->total() }} questions
                             </div>
                             <div class="pagination-controls">
-                                <a href="#" class="page-btn">← Previous</a>
-                                <a href="#" class="page-btn active">1</a>
-                                <a href="#" class="page-btn">2</a>
-                                <a href="#" class="page-btn">3</a>
-                                <span class="page-btn" style="border: none; cursor: default;">...</span>
-                                <a href="#" class="page-btn">18</a>
-                                <a href="#" class="page-btn">Next →</a>
+                                {{ $questions->appends(request()->query())->links() }}
                             </div>
                         </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -271,38 +242,66 @@
     <script>
         let questionToDelete = null;
 
-        // Search functionality
+        // Search functionality with form submission
+        let searchTimeout;
         document.getElementById('searchInput').addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const rows = document.querySelectorAll('.data-table tbody tr');
-            
-            rows.forEach(row => {
-                const questionText = row.querySelector('.question-text').textContent.toLowerCase();
-                if (questionText.includes(searchTerm)) {
-                    row.style.display = '';
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const url = new URL(window.location);
+                if (e.target.value) {
+                    url.searchParams.set('search', e.target.value);
                 } else {
-                    row.style.display = 'none';
+                    url.searchParams.delete('search');
                 }
-            });
+                window.location = url;
+            }, 500);
         });
 
-        // Category filter
-        document.getElementById('categoryFilter').addEventListener('change', function(e) {
-            const selectedCategory = e.target.value.toLowerCase();
-            const rows = document.querySelectorAll('.data-table tbody tr');
-            
-            rows.forEach(row => {
-                const categoryElement = row.querySelector('.category-badge');
-                if (!categoryElement) return;
-                
-                const rowCategory = categoryElement.textContent.toLowerCase().replace(' ', '-');
-                if (!selectedCategory || rowCategory.includes(selectedCategory)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
+        // Type filter
+        document.getElementById('typeFilter').addEventListener('change', function(e) {
+            const url = new URL(window.location);
+            if (e.target.value) {
+                url.searchParams.set('type', e.target.value);
+            } else {
+                url.searchParams.delete('type');
+            }
+            window.location = url;
         });
+
+        // Exam Set filter
+        document.getElementById('examSetFilter').addEventListener('change', function(e) {
+            const url = new URL(window.location);
+            if (e.target.value) {
+                url.searchParams.set('exam_set_id', e.target.value);
+            } else {
+                url.searchParams.delete('exam_set_id');
+            }
+            window.location = url;
+        });
+
+        // Toggle question status
+        function toggleStatus(questionId) {
+            if (confirm('Are you sure you want to toggle the status of this question?')) {
+                fetch(`/admin/questions/${questionId}/toggle-status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Failed to toggle status');
+                    }
+                })
+                .catch(error => {
+                    alert('An error occurred while toggling the status');
+                });
+            }
+        }
 
         // Delete question
         function deleteQuestion(questionId) {
@@ -317,10 +316,25 @@
 
         function confirmDelete() {
             if (questionToDelete) {
-                // In a real application, this would make an AJAX request to delete the question
-                console.log('Deleting question with ID:', questionToDelete);
-                alert('Question deleted successfully! (Demo mode)');
-                closeDeleteModal();
+                fetch(`/admin/questions/${questionToDelete}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        closeDeleteModal();
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Failed to delete question');
+                    }
+                })
+                .catch(error => {
+                    alert('An error occurred while deleting the question');
+                });
             }
         }
 
@@ -426,11 +440,83 @@
             letter-spacing: 0.025em;
         }
 
-        .category-programming { background: #dbeafe; color: #1e40af; }
-        .category-database { background: #dcfce7; color: #166534; }
-        .category-networking { background: #fef3c7; color: #92400e; }
-        .category-software-engineering { background: #f3e8ff; color: #7c3aed; }
-        .category-data-structures { background: #fce7f3; color: #be185d; }
+        /* Type badges */
+        .type-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .type-multiple-choice { background: #dbeafe; color: #1e40af; }
+        .type-true-false { background: #dcfce7; color: #166534; }
+        .type-short-answer { background: #fef3c7; color: #92400e; }
+        .type-essay { background: #f3e8ff; color: #7c3aed; }
+
+        /* Points and status badges */
+        .points-badge {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .exam-set-badge {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active { background: #dcfce7; color: #166534; }
+        .status-inactive { background: #fecaca; color: #dc2626; }
+
+        /* Empty state */
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .empty-content {
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-content h3 {
+            margin: 0 0 8px 0;
+            color: var(--text-dark);
+            font-size: 18px;
+        }
+
+        .empty-content p {
+            margin: 0 0 20px 0;
+            color: var(--text-gray);
+            line-height: 1.5;
+        }
+
+        .empty-content .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
 
         .difficulty-badge {
             padding: 4px 8px;

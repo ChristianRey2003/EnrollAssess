@@ -2,34 +2,36 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
+    protected $primaryKey = 'user_id'; // As per ERD
+    
     /**
      * The attributes that are mass assignable.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'username',
+        'password_hash',
+        'full_name',
+        'role',
         'email',
-        'password',
     ];
 
     /**
      * The attributes that should be hidden for serialization.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $hidden = [
-        'password',
+        'password_hash',
         'remember_token',
     ];
 
@@ -42,7 +44,91 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'password_hash' => 'hashed',
         ];
+    }
+
+    /**
+     * Get the password attribute name for authentication.
+     */
+    public function getAuthPassword()
+    {
+        return $this->password_hash;
+    }
+
+    /**
+     * Get the name of the unique identifier for the user.
+     */
+    public function getAuthIdentifierName()
+    {
+        return 'user_id';
+    }
+
+    /**
+     * Get the unique identifier for the user.
+     */
+    public function getAuthIdentifier()
+    {
+        return $this->user_id;
+    }
+
+    /**
+     * Get the name attribute for display.
+     */
+    public function getNameAttribute()
+    {
+        return $this->full_name;
+    }
+
+    /**
+     * Relationships
+     */
+
+    /**
+     * Get the interviews conducted by this user (as interviewer).
+     */
+    public function conductedInterviews()
+    {
+        return $this->hasMany(Interview::class, 'interviewer_id', 'user_id');
+    }
+
+    /**
+     * Scope queries by role
+     */
+    public function scopeByRole($query, $role)
+    {
+        return $query->where('role', $role);
+    }
+
+    /**
+     * Check if user has a specific role
+     */
+    public function hasRole($role)
+    {
+        return $this->role === $role;
+    }
+
+    /**
+     * Check if user is department head
+     */
+    public function isDepartmentHead()
+    {
+        return $this->role === 'department-head';
+    }
+
+    /**
+     * Check if user is administrator
+     */
+    public function isAdministrator()
+    {
+        return $this->role === 'administrator';
+    }
+
+    /**
+     * Check if user is instructor
+     */
+    public function isInstructor()
+    {
+        return $this->role === 'instructor';
     }
 }
