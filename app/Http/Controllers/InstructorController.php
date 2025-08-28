@@ -55,13 +55,13 @@ class InstructorController extends Controller
     {
         $instructor = Auth::user();
         
-        $applicants = Applicant::whereHas('interviews', function($query) use ($instructor) {
+        $assignedApplicants = Applicant::whereHas('interviews', function($query) use ($instructor) {
             $query->where('interviewer_id', $instructor->user_id);
         })->with(['examSet.exam', 'interviews' => function($query) use ($instructor) {
             $query->where('interviewer_id', $instructor->user_id);
         }])->orderBy('created_at', 'desc')->paginate(15);
 
-        return view('instructor.applicants', compact('applicants'));
+        return view('instructor.applicants', compact('assignedApplicants'));
     }
 
     /**
@@ -82,47 +82,227 @@ class InstructorController extends Controller
             abort(403, 'You are not assigned to interview this applicant.');
         }
 
-        return view('instructor.interview', compact('applicant', 'interview'));
+        return view('instructor.interview-form', compact('applicant', 'interview'));
     }
 
     /**
-     * Submit interview evaluation
+     * Submit interview evaluation with enhanced rubrics
      */
     public function submitInterview(Request $request, $applicantId)
     {
         $instructor = Auth::user();
         
         $request->validate([
-            'technical_score' => 'required|numeric|min:0|max:100',
-            'communication_score' => 'required|numeric|min:0|max:100', 
-            'problem_solving_score' => 'required|numeric|min:0|max:100',
-            'overall_rating' => 'required|in:excellent,good,satisfactory,needs_improvement,poor',
+            // Technical Skills (40 points max)
+            'technical_programming' => 'required|numeric|min:0|max:10',
+            'technical_problem_solving' => 'required|numeric|min:0|max:10',
+            'technical_algorithms' => 'required|numeric|min:0|max:10',
+            'technical_system_design' => 'required|numeric|min:0|max:10',
+            
+            // Communication Skills (30 points max)
+            'communication_clarity' => 'required|numeric|min:0|max:10',
+            'communication_listening' => 'required|numeric|min:0|max:10',
+            'communication_confidence' => 'required|numeric|min:0|max:10',
+            
+            // Analytical Thinking (30 points max)
+            'analytical_critical_thinking' => 'required|numeric|min:0|max:10',
+            'analytical_creativity' => 'required|numeric|min:0|max:10',
+            'analytical_attention_detail' => 'required|numeric|min:0|max:10',
+            
+            // Overall Assessment
+            'overall_rating' => 'required|in:excellent,very_good,good,satisfactory,needs_improvement',
             'recommendation' => 'required|in:highly_recommended,recommended,conditional,not_recommended',
-            'notes' => 'nullable|string|max:2000',
+            'strengths' => 'required|string|max:1000',
+            'areas_improvement' => 'required|string|max:1000',
+            'interview_notes' => 'nullable|string|max:2000',
         ]);
 
         $interview = Interview::where('applicant_id', $applicantId)
                              ->where('interviewer_id', $instructor->user_id)
                              ->firstOrFail();
 
-        // Update interview record
+        // Calculate scores
+        $technicalScore = $request->technical_programming + 
+                         $request->technical_problem_solving + 
+                         $request->technical_algorithms + 
+                         $request->technical_system_design;
+        
+        $communicationScore = $request->communication_clarity + 
+                             $request->communication_listening + 
+                             $request->communication_confidence;
+        
+        $analyticalScore = $request->analytical_critical_thinking + 
+                          $request->analytical_creativity + 
+                          $request->analytical_attention_detail;
+        
+        $totalScore = $technicalScore + $communicationScore + $analyticalScore;
+        $percentage = round(($totalScore / 100) * 100, 2);
+
+        // Update interview record with detailed rubrics
         $interview->update([
-            'technical_score' => $request->technical_score,
-            'communication_score' => $request->communication_score,
-            'problem_solving_score' => $request->problem_solving_score,
+            // Individual rubric scores
+            'rating_technical' => $technicalScore,
+            'rating_communication' => $communicationScore,
+            'rating_problem_solving' => $analyticalScore,
+            'overall_score' => $percentage,
+            
+            // Detailed breakdown (store as JSON)
+            'rubric_scores' => json_encode([
+                'technical' => [
+                    'programming' => $request->technical_programming,
+                    'problem_solving' => $request->technical_problem_solving,
+                    'algorithms' => $request->technical_algorithms,
+                    'system_design' => $request->technical_system_design,
+                ],
+                'communication' => [
+                    'clarity' => $request->communication_clarity,
+                    'listening' => $request->communication_listening,
+                    'confidence' => $request->communication_confidence,
+                ],
+                'analytical' => [
+                    'critical_thinking' => $request->analytical_critical_thinking,
+                    'creativity' => $request->analytical_creativity,
+                    'attention_detail' => $request->analytical_attention_detail,
+                ]
+            ]),
+            
             'overall_rating' => $request->overall_rating,
             'recommendation' => $request->recommendation,
-            'notes' => $request->notes,
+            'strengths' => $request->strengths,
+            'areas_improvement' => $request->areas_improvement,
+            'notes' => $request->interview_notes,
             'interview_date' => now(),
+            'status' => 'completed',
         ]);
 
-        // Update applicant status
+        // Update applicant status and determine admission
         $applicant = Applicant::findOrFail($applicantId);
+        $newStatus = 'interview-completed';
+        
+        // Auto-determine admission based on score and recommendation
+        if ($percentage >= 75 && in_array($request->recommendation, ['highly_recommended', 'recommended'])) {
+            $newStatus = 'admitted';
+        } elseif ($percentage < 50 || $request->recommendation === 'not_recommended') {
+            $newStatus = 'rejected';
+        }
+        
         $applicant->update([
-            'status' => 'interview-completed'
+            'status' => $newStatus,
+            'final_score' => $percentage,
+            'admission_decision_date' => now(),
         ]);
 
         return redirect()->route('instructor.applicants')
-                        ->with('success', 'Interview evaluation submitted successfully!');
+                        ->with('success', 'Interview evaluation submitted successfully! Score: ' . $percentage . '%');
+    }
+
+    /**
+     * Display instructor's interview schedule
+     */
+    public function schedule()
+    {
+        $instructor = Auth::user();
+        
+        // Get upcoming interviews with scheduled dates
+        $upcomingInterviews = Interview::where('interviewer_id', $instructor->user_id)
+            ->where('status', 'scheduled')
+            ->whereNotNull('schedule_date')
+            ->where('schedule_date', '>=', now())
+            ->with('applicant')
+            ->orderBy('schedule_date', 'asc')
+            ->get();
+
+        // Get interviews pending scheduling
+        $pendingScheduling = Interview::where('interviewer_id', $instructor->user_id)
+            ->where(function ($q) {
+                $q->whereNull('schedule_date')
+                  ->orWhere('status', 'assigned');
+            })
+            ->with('applicant')
+            ->get();
+
+        return view('instructor.schedule', compact('upcomingInterviews', 'pendingScheduling'));
+    }
+
+    /**
+     * Display instructor's interview history
+     */
+    public function interviewHistory()
+    {
+        $instructor = Auth::user();
+        
+        $completedInterviews = Interview::where('interviewer_id', $instructor->user_id)
+                                     ->where('status', 'completed')
+                                     ->with(['applicant', 'applicant.examSet'])
+                                     ->orderBy('interview_date', 'desc')
+                                     ->paginate(15);
+
+        $statistics = [
+            'total_completed' => $completedInterviews->total(),
+            'average_score' => Interview::where('interviewer_id', $instructor->user_id)
+                                     ->where('status', 'completed')
+                                     ->avg('overall_score'),
+            'recommended_count' => Interview::where('interviewer_id', $instructor->user_id)
+                                         ->whereIn('recommendation', ['highly_recommended', 'recommended'])
+                                         ->count(),
+            'this_month' => Interview::where('interviewer_id', $instructor->user_id)
+                                  ->where('status', 'completed')
+                                  ->whereMonth('interview_date', now()->month)
+                                  ->count(),
+        ];
+
+        return view('instructor.interview-history', compact('completedInterviews', 'statistics'));
+    }
+
+    /**
+     * Display evaluation guidelines and best practices
+     */
+    public function guidelines()
+    {
+        return view('instructor.guidelines');
+    }
+
+    /**
+     * Show detailed applicant portfolio for instructor preparation
+     */
+    public function portfolio($applicantId)
+    {
+        $instructor = Auth::user();
+
+        // Verify instructor is assigned to this applicant
+        $assignedInterview = Interview::where('applicant_id', $applicantId)
+            ->where('interviewer_id', $instructor->user_id)
+            ->first();
+
+        if (!$assignedInterview) {
+            abort(403, 'You are not assigned to this applicant.');
+        }
+
+        $applicant = Applicant::with([
+            'examSet.exam',
+            'accessCode',
+            'results.question',
+            'interviews' => function ($q) use ($instructor) {
+                $q->where('interviewer_id', $instructor->user_id)->orderBy('created_at', 'desc');
+            },
+        ])->findOrFail($applicantId);
+
+        // Compute basic exam stats
+        $totalQuestions = $applicant->results->count();
+        $correctAnswers = $applicant->results->where('is_correct', true)->count();
+        $examPercentage = $totalQuestions > 0 ? round(($correctAnswers / $totalQuestions) * 100, 2) : ($applicant->exam_percentage ?? 0);
+
+        // Latest interview (for this instructor)
+        $latestInterview = $applicant->interviews->first();
+
+        return view('instructor.applicant-portfolio', [
+            'applicant' => $applicant,
+            'latestInterview' => $latestInterview,
+            'examStats' => [
+                'total_questions' => $totalQuestions,
+                'correct' => $correctAnswers,
+                'percentage' => $examPercentage,
+            ],
+        ]);
     }
 }

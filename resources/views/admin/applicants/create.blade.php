@@ -42,15 +42,27 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.questions') }}" class="nav-link">
+                    <a href="{{ route('admin.questions.index') }}" class="nav-link">
                         <span class="nav-icon">❓</span>
                         <span class="nav-text">Questions</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.applicants') }}" class="nav-link active">
+                    <a href="{{ route('admin.applicants.index') }}" class="nav-link active">
                         <span class="nav-icon">👥</span>
                         <span class="nav-text">Applicants</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.interviews.index') }}" class="nav-link">
+                        <span class="nav-icon">📅</span>
+                        <span class="nav-text">Interviews</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.users.index') }}" class="nav-link">
+                        <span class="nav-icon">👤</span>
+                        <span class="nav-text">Users</span>
                     </a>
                 </div>
                 <div class="nav-item">
@@ -94,7 +106,7 @@
             <div class="main-content">
                 <!-- Breadcrumb -->
                 <div class="breadcrumb">
-                    <a href="{{ route('admin.applicants') }}" class="breadcrumb-link">Applicants</a>
+                    <a href="{{ route('admin.applicants.index') }}" class="breadcrumb-link">Applicants</a>
                     <span class="breadcrumb-separator">›</span>
                     <span class="breadcrumb-current">{{ isset($applicant) ? 'Edit' : 'Add New' }}</span>
                 </div>
@@ -104,7 +116,7 @@
                     <div class="section-header">
                         <h2 class="section-title">{{ isset($applicant) ? 'Edit' : 'Applicant' }} Information</h2>
                         <div class="form-actions-header">
-                            <a href="{{ route('admin.applicants') }}" class="btn-secondary">
+                            <a href="{{ route('admin.applicants.index') }}" class="btn-secondary">
                                 ← Back to Applicants
                             </a>
                         </div>

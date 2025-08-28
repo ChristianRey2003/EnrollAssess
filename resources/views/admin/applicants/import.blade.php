@@ -42,15 +42,27 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.questions') }}" class="nav-link">
+                    <a href="{{ route('admin.questions.index') }}" class="nav-link">
                         <span class="nav-icon">❓</span>
                         <span class="nav-text">Questions</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.applicants') }}" class="nav-link active">
+                    <a href="{{ route('admin.applicants.index') }}" class="nav-link active">
                         <span class="nav-icon">👥</span>
                         <span class="nav-text">Applicants</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.interviews.index') }}" class="nav-link">
+                        <span class="nav-icon">📅</span>
+                        <span class="nav-text">Interviews</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.users.index') }}" class="nav-link">
+                        <span class="nav-icon">👤</span>
+                        <span class="nav-text">Users</span>
                     </a>
                 </div>
                 <div class="nav-item">
@@ -94,7 +106,7 @@
             <div class="main-content">
                 <!-- Breadcrumb -->
                 <div class="breadcrumb">
-                    <a href="{{ route('admin.applicants') }}" class="breadcrumb-link">Applicants</a>
+                    <a href="{{ route('admin.applicants.index') }}" class="breadcrumb-link">Applicants</a>
                     <span class="breadcrumb-separator">›</span>
                     <span class="breadcrumb-current">Import</span>
                 </div>
@@ -210,7 +222,7 @@
 
                             <!-- Import Actions -->
                             <div class="form-actions">
-                                <a href="{{ route('admin.applicants') }}" class="btn-secondary">
+                                <a href="{{ route('admin.applicants.index') }}" class="btn-secondary">
                                     ← Back to Applicants
                                 </a>
                                 <button type="button" onclick="previewImport()" class="btn-secondary" id="previewBtn" disabled>
@@ -536,7 +548,7 @@
 
                 html += `
                     <div class="import-actions">
-                        <a href="{{ route('admin.applicants') }}" class="btn-primary">
+                        <a href="{{ route('admin.applicants.index') }}" class="btn-primary">
                             View Imported Applicants
                         </a>
                         <button onclick="location.reload()" class="btn-secondary">

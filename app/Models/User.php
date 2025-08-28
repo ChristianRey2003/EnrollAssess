@@ -20,6 +20,7 @@ class User extends Authenticatable
     protected $fillable = [
         'username',
         'password_hash',
+        'password', // Laravel standard field
         'full_name',
         'role',
         'email',
@@ -32,6 +33,7 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password_hash',
+        'password', // Laravel standard field
         'remember_token',
     ];
 
@@ -45,6 +47,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password_hash' => 'hashed',
+            'password' => 'hashed', // Laravel standard field
         ];
     }
 
@@ -85,11 +88,19 @@ class User extends Authenticatable
      */
 
     /**
-     * Get the interviews conducted by this user (as interviewer).
+     * Get all interviews conducted by this user (as interviewer).
      */
-    public function conductedInterviews()
+    public function interviews()
     {
         return $this->hasMany(Interview::class, 'interviewer_id', 'user_id');
+    }
+
+    /**
+     * Get completed interviews for this user
+     */
+    public function completedInterviews()
+    {
+        return $this->hasMany(Interview::class, 'interviewer_id', 'user_id')->where('status', 'completed');
     }
 
     /**

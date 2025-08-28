@@ -1,0 +1,299 @@
+/*===========================================
+  BUTTON COMPONENTS
+  Reusable button styles for EnrollAssess
+  Uses centralized design tokens
+===========================================*/
+
+/* Base button styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-lg);
+    font-weight: var(--font-medium);
+    font-size: var(--text-sm);
+    font-family: var(--font-primary);
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition-normal);
+    min-height: var(--touch-target-min);
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.btn:focus {
+    outline: 2px solid var(--form-border-focus);
+    outline-offset: 2px;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Primary buttons */
+.btn-primary {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    box-shadow: var(--btn-primary-shadow);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--btn-primary-bg-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--btn-primary-shadow-hover);
+}
+
+/* Secondary buttons */
+.btn-secondary {
+    background: var(--btn-secondary-bg);
+    color: var(--btn-secondary-text);
+    border: 1px solid var(--btn-secondary-border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--btn-secondary-bg-hover);
+    transform: translateY(-1px);
+}
+
+/* Success buttons */
+.btn-success {
+    background: var(--btn-success-bg);
+    color: var(--btn-success-text);
+}
+
+.btn-success:hover:not(:disabled) {
+    background: var(--btn-success-bg-hover);
+    transform: translateY(-1px);
+}
+
+/* Danger buttons */
+.btn-danger {
+    background: var(--btn-danger-bg);
+    color: var(--btn-danger-text);
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: var(--btn-danger-bg-hover);
+    transform: translateY(-1px);
+}
+
+/* Warning buttons */
+.btn-warning {
+    background: var(--btn-warning-bg);
+    color: var(--btn-warning-text);
+}
+
+.btn-warning:hover:not(:disabled) {
+    background: var(--btn-warning-bg-hover);
+    transform: translateY(-1px);
+}
+
+/* Button sizes */
+.btn-sm {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-xs);
+    min-height: var(--size-sm);
+}
+
+.btn-lg {
+    padding: var(--space-4) var(--space-8);
+    font-size: var(--text-base);
+    min-height: var(--touch-target-comfortable);
+}
+
+/* Button with icons */
+.btn .btn-icon {
+    margin-right: 8px;
+    font-size: 16px;
+}
+
+.btn .btn-icon-right {
+    margin-left: 8px;
+    margin-right: 0;
+}
+
+/* Icon-only buttons */
+.btn-icon-only {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 50%;
+}
+
+.btn-icon-only.btn-sm {
+    width: 32px;
+    height: 32px;
+}
+
+/* Loading state */
+.btn.loading {
+    pointer-events: none;
+}
+
+.btn.loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 8px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Action buttons (for table actions) */
+.action-btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: var(--transition);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    min-width: 32px;
+    justify-content: center;
+}
+
+.action-btn:focus {
+    outline: 2px solid var(--yellow-primary);
+    outline-offset: 1px;
+}
+
+.action-btn-view {
+    background: var(--light-gray);
+    color: var(--text-dark);
+    border: 1px solid var(--border-gray);
+}
+
+.action-btn-view:hover {
+    background: var(--border-gray);
+}
+
+.action-btn-edit {
+    background: var(--yellow-light);
+    color: var(--maroon-primary);
+    border: 1px solid var(--yellow-primary);
+}
+
+.action-btn-edit:hover {
+    background: var(--yellow-primary);
+}
+
+.action-btn-delete {
+    background: #fef2f2;
+    color: #dc3545;
+    border: 1px solid #dc3545;
+}
+
+.action-btn-delete:hover {
+    background: #dc3545;
+    color: var(--white);
+}
+
+.action-btn-code {
+    background: #e3f2fd;
+    color: #1976d2;
+    border: 1px solid #bbdefb;
+}
+
+.action-btn-code:hover {
+    background: #bbdefb;
+}
+
+/* Bulk action buttons */
+.bulk-btn {
+    padding: 8px 16px;
+    border: 1px solid var(--border-gray);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: var(--transition);
+    background: var(--white);
+    min-height: 36px;
+}
+
+.bulk-btn:focus {
+    outline: 2px solid var(--yellow-primary);
+    outline-offset: 1px;
+}
+
+.bulk-btn-codes {
+    background: #e3f2fd;
+    color: #1976d2;
+    border-color: #bbdefb;
+}
+
+.bulk-btn-codes:hover {
+    background: #bbdefb;
+}
+
+.bulk-btn-assign {
+    background: #f3e5f5;
+    color: #7b1fa2;
+    border-color: #ce93d8;
+}
+
+.bulk-btn-assign:hover {
+    background: #ce93d8;
+}
+
+.bulk-btn-export {
+    background: #e8f5e8;
+    color: #2e7d32;
+    border-color: #a5d6a7;
+}
+
+.bulk-btn-export:hover {
+    background: #a5d6a7;
+}
+
+/* Button groups */
+.btn-group {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-group .btn {
+    border-radius: 6px;
+}
+
+.btn-group .btn:first-child {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.btn-group .btn:last-child {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.btn-group .btn:not(:first-child):not(:last-child) {
+    border-radius: 0;
+}
+
+/* Responsive buttons */
+@media (max-width: 768px) {
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        border-radius: 6px;
+        width: 100%;
+    }
+}

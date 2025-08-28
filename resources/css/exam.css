@@ -1,0 +1,202 @@
+/*===========================================
+  EXAM INTERFACE BUNDLE
+  Optimized CSS for exam-taking interface
+===========================================*/
+
+/* Import only what's needed for exam interface */
+@import 'tailwindcss/base';
+@import 'tailwindcss/utilities';
+@import '../../public/css/design-tokens.css';
+
+/* Exam-specific critical styles */
+.exam-container {
+    max-width: 800px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: var(--white);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+}
+
+.exam-header {
+    background: var(--white);
+    border-bottom: 3px solid var(--yellow-primary);
+    padding: var(--space-5) var(--space-8);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky);
+    box-shadow: var(--shadow-sm);
+}
+
+.exam-timer {
+    font-size: var(--text-lg);
+    font-weight: var(--font-bold);
+    color: var(--maroon-primary);
+    background: var(--yellow-light);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--yellow-primary);
+}
+
+.exam-timer.warning {
+    color: var(--error);
+    background: var(--error-light);
+    border-color: var(--error);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Question styles */
+.question-container {
+    padding: var(--space-8);
+    flex: 1;
+}
+
+.question-text {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-dark);
+    line-height: var(--leading-relaxed);
+    margin-bottom: var(--space-6);
+}
+
+.answer-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.answer-option {
+    padding: var(--space-4);
+    border: 2px solid var(--border-gray);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: var(--transition-normal);
+    background: var(--white);
+}
+
+.answer-option:hover {
+    border-color: var(--yellow-primary);
+    background: var(--yellow-light);
+}
+
+.answer-option.selected {
+    border-color: var(--maroon-primary);
+    background: var(--yellow-light);
+    box-shadow: var(--shadow-md);
+}
+
+.answer-option input[type="radio"] {
+    margin-right: var(--space-3);
+    accent-color: var(--maroon-primary);
+}
+
+/* Navigation buttons */
+.exam-navigation {
+    padding: var(--space-6) var(--space-8);
+    border-top: 1px solid var(--border-gray);
+    display: flex;
+    justify-content: space-between;
+    background: var(--light-gray);
+}
+
+.nav-btn {
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-lg);
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    cursor: pointer;
+    transition: var(--transition-normal);
+    min-width: 120px;
+}
+
+.nav-btn-primary {
+    background: var(--maroon-primary);
+    color: var(--white);
+    border: 2px solid var(--maroon-primary);
+}
+
+.nav-btn-primary:hover {
+    background: var(--maroon-dark);
+    transform: translateY(-1px);
+}
+
+.nav-btn-secondary {
+    background: var(--white);
+    color: var(--maroon-primary);
+    border: 2px solid var(--border-gray);
+}
+
+.nav-btn-secondary:hover {
+    border-color: var(--maroon-primary);
+    background: var(--light-gray);
+}
+
+/* Progress indicator */
+.progress-bar {
+    height: 4px;
+    background: var(--border-gray);
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--maroon-primary), var(--yellow-primary));
+    transition: width 0.3s ease;
+}
+
+/* Accessibility enhancements for exam */
+@media (prefers-reduced-motion: reduce) {
+    .exam-timer.warning {
+        animation: none;
+    }
+    
+    .answer-option,
+    .nav-btn {
+        transition: none;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .answer-option {
+        border-width: 3px;
+    }
+    
+    .answer-option.selected {
+        border-width: 4px;
+    }
+}
+
+/* Mobile optimizations for exam */
+@media (max-width: 768px) {
+    .exam-header {
+        padding: var(--space-4);
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+    
+    .question-container {
+        padding: var(--space-6) var(--space-4);
+    }
+    
+    .exam-navigation {
+        padding: var(--space-4);
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+    
+    .nav-btn {
+        width: 100%;
+    }
+}

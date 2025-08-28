@@ -37,8 +37,8 @@ class AdminAuthController extends Controller
         $user = User::where('username', $request->username)->first();
 
         if ($user && Hash::check($request->password, $user->password_hash)) {
-            // Check if user has admin role
-            if (in_array($user->role, ['department-head', 'administrator', 'instructor'])) {
+            // Check if user has valid role
+            if (in_array($user->role, ['department-head', 'instructor'])) {
                 Auth::login($user);
                 
                 $request->session()->regenerate();
@@ -46,7 +46,6 @@ class AdminAuthController extends Controller
                 // Role-based redirect
                 $redirectRoute = match($user->role) {
                     'department-head' => 'admin.dashboard',
-                    'administrator' => 'admin.dashboard', 
                     'instructor' => 'instructor.dashboard',
                     default => 'admin.dashboard'
                 };

@@ -21,20 +21,7 @@ class UserSeeder extends Seeder
                 'role' => 'department-head',
                 'email' => 'maria.santos@evsu.edu.ph',
             ],
-            [
-                'username' => 'admin1',
-                'password_hash' => Hash::make('password'),
-                'full_name' => 'Prof. John Ricardo Dela Cruz',
-                'role' => 'administrator',
-                'email' => 'john.delacruz@evsu.edu.ph',
-            ],
-            [
-                'username' => 'admin2',
-                'password_hash' => Hash::make('password'),
-                'full_name' => 'Prof. Anna Patricia Reyes',
-                'role' => 'administrator',
-                'email' => 'anna.reyes@evsu.edu.ph',
-            ],
+
             [
                 'username' => 'instructor1',
                 'password_hash' => Hash::make('password'),

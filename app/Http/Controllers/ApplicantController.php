@@ -5,58 +5,83 @@ namespace App\Http\Controllers;
 use App\Models\Applicant;
 use App\Models\AccessCode;
 use App\Models\ExamSet;
-use App\Models\Exam;
+use App\Services\ApplicantService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
-use League\Csv\Reader;
-use League\Csv\Writer;
+use Illuminate\View\View;
 use Exception;
 
-class ApplicantController extends Controller
+/**
+ * Applicant Management Controller
+ * 
+ * Handles CRUD operations for applicants, access code generation,
+ * exam set assignment, and bulk operations.
+ */
+class ApplicantController extends BaseController
 {
     /**
+     * Applicant service instance
+     */
+    protected ?ApplicantService $applicantService = null;
+
+    /**
+     * Constructor - inject dependencies
+     */
+    public function __construct()
+    {
+        // Service will be instantiated when needed to avoid circular dependencies
+    }
+
+    /**
      * Display a listing of applicants
+     *
+     * @param Request $request
+     * @return View|\Illuminate\Http\RedirectResponse
      */
     public function index(Request $request)
     {
-        $query = Applicant::with(['examSet.exam', 'accessCode']);
+        try {
+            $query = Applicant::with(['examSet.exam', 'accessCode']);
 
-        // Search functionality
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('full_name', 'like', '%' . $search . '%')
-                  ->orWhere('email_address', 'like', '%' . $search . '%')
-                  ->orWhere('application_no', 'like', '%' . $search . '%');
-            });
+            // Search functionality
+            if ($request->filled('search')) {
+                $search = $request->get('search');
+                $query->where(function($q) use ($search) {
+                    $q->where('full_name', 'like', "%{$search}%")
+                      ->orWhere('email_address', 'like', "%{$search}%")
+                      ->orWhere('application_no', 'like', "%{$search}%");
+                });
+            }
+
+            // Status filter
+            if ($request->filled('status')) {
+                $query->where('status', $request->get('status'));
+            }
+
+            // Exam set filter
+            if ($request->filled('exam_set_id')) {
+                $query->where('exam_set_id', $request->get('exam_set_id'));
+            }
+
+            $applicants = $query->orderBy('created_at', 'desc')->paginate(20);
+
+            // Statistics
+            $stats = [
+                'total' => Applicant::count(),
+                'pending' => Applicant::where('status', 'pending')->count(),
+                'exam_completed' => Applicant::where('status', '!=', 'pending')->count(),
+                'with_access_codes' => Applicant::whereHas('accessCode')->count(),
+                'without_access_codes' => Applicant::whereDoesntHave('accessCode')->count(),
+            ];
+
+            $examSets = ExamSet::with('exam')->where('is_active', true)->get();
+
+            return view('admin.applicants.index', compact('applicants', 'stats', 'examSets'));
+        } catch (Exception $e) {
+            return back()->with('error', 'Failed to load applicants. Please try again.');
         }
-
-        // Status filter
-        if ($request->has('status') && $request->status != '') {
-            $query->where('status', $request->status);
-        }
-
-        // Exam set filter
-        if ($request->has('exam_set_id') && $request->exam_set_id != '') {
-            $query->where('exam_set_id', $request->exam_set_id);
-        }
-
-        $applicants = $query->orderBy('created_at', 'desc')->paginate(20);
-
-        // Statistics
-        $stats = [
-            'total' => Applicant::count(),
-            'pending' => Applicant::byStatus('pending')->count(),
-            'exam_completed' => Applicant::examCompleted()->count(),
-            'with_access_codes' => Applicant::whereHas('accessCode')->count(),
-            'without_access_codes' => Applicant::whereDoesntHave('accessCode')->count(),
-        ];
-
-        $examSets = ExamSet::with('exam')->where('is_active', true)->get();
-
-        return view('admin.applicants.index', compact('applicants', 'stats', 'examSets'));
     }
 
     /**
@@ -101,7 +126,7 @@ class ApplicantController extends Controller
             }
         });
 
-        return redirect()->route('admin.applicants')
+        return redirect()->route('admin.applicants.index')
                         ->with('success', 'Applicant created successfully!');
     }
 
@@ -147,7 +172,7 @@ class ApplicantController extends Controller
 
         $applicant->update($validated);
 
-        return redirect()->route('admin.applicants')
+        return redirect()->route('admin.applicants.index')
                         ->with('success', 'Applicant updated successfully!');
     }
 
@@ -301,15 +326,18 @@ class ApplicantController extends Controller
             'applicant_ids' => 'required|array',
             'applicant_ids.*' => 'exists:applicants,applicant_id',
             'expiry_hours' => 'nullable|integer|min:1|max:720',
+            'send_email' => 'boolean',
         ]);
 
         $generated = 0;
+        $emailsSent = 0;
         $errors = [];
+        $sendEmail = $request->boolean('send_email', false);
 
-        DB::transaction(function () use ($request, &$generated, &$errors) {
+        DB::transaction(function () use ($request, &$generated, &$emailsSent, &$errors, $sendEmail) {
             foreach ($request->applicant_ids as $applicantId) {
                 try {
-                    $applicant = Applicant::find($applicantId);
+                    $applicant = Applicant::with('examSet.exam')->find($applicantId);
                     
                     // Check if applicant already has an access code
                     if ($applicant->accessCode) {
@@ -317,7 +345,8 @@ class ApplicantController extends Controller
                         continue;
                     }
 
-                    AccessCode::createForApplicant(
+                    // Create access code
+                    $accessCode = AccessCode::createForApplicant(
                         $applicantId,
                         'BSIT',
                         8,
@@ -325,16 +354,33 @@ class ApplicantController extends Controller
                     );
 
                     $generated++;
+
+                    // Send email if requested
+                    if ($sendEmail && $applicant->email_address) {
+                        try {
+                            Mail::to($applicant->email_address)->send(new AccessCodeMail($applicant, $accessCode));
+                            $emailsSent++;
+                        } catch (Exception $e) {
+                            $errors[] = "Code generated for {$applicant->full_name} but email failed: " . $e->getMessage();
+                        }
+                    }
+
                 } catch (Exception $e) {
                     $errors[] = "Failed to generate code for applicant ID {$applicantId}: " . $e->getMessage();
                 }
             }
         });
 
+        $message = "Generated {$generated} access codes successfully.";
+        if ($sendEmail) {
+            $message .= " Sent {$emailsSent} email notifications.";
+        }
+
         return response()->json([
             'success' => true,
-            'message' => "Generated {$generated} access codes successfully.",
+            'message' => $message,
             'generated' => $generated,
+            'emails_sent' => $emailsSent,
             'errors' => $errors
         ]);
     }
@@ -382,6 +428,22 @@ class ApplicantController extends Controller
             'success' => true,
             'message' => "Updated {$updated} applicants successfully.",
             'updated' => $updated
+        ]);
+    }
+
+    /**
+     * Get applicants eligible for interview (API endpoint)
+     */
+    public function getEligibleForInterview()
+    {
+        $applicants = Applicant::where('status', 'exam-completed')
+                              ->whereDoesntHave('interviews')
+                              ->with(['examSet.exam'])
+                              ->get();
+
+        return response()->json([
+            'success' => true,
+            'applicants' => $applicants
         ]);
     }
 

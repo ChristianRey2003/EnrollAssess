@@ -1,0 +1,280 @@
+/*===========================================
+  FORM COMPONENTS
+  Reusable form styles for EnrollAssess
+===========================================*/
+
+/* Form groups */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+/* Labels */
+.form-label {
+    display: block;
+    font-weight: 600;
+    color: var(--maroon-primary);
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.form-label.required::after {
+    content: ' *';
+    color: #ef4444;
+}
+
+/* Form controls */
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--border-gray);
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 400;
+    background: var(--white);
+    transition: var(--transition);
+    min-height: 44px; /* Accessibility: minimum touch target */
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--yellow-primary);
+    box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+}
+
+.form-control:disabled {
+    background: var(--light-gray);
+    color: var(--text-gray);
+    cursor: not-allowed;
+}
+
+.form-control.is-invalid {
+    border-color: #ef4444;
+    background: #fef2f2;
+}
+
+.form-control.is-valid {
+    border-color: #22c55e;
+    background: #f0fdf4;
+}
+
+/* Select controls */
+.form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+    background-position: right 12px center;
+    background-repeat: no-repeat;
+    background-size: 16px;
+    padding-right: 40px;
+}
+
+/* Textareas */
+.form-textarea {
+    resize: vertical;
+    min-height: 100px;
+    font-family: inherit;
+}
+
+/* Search inputs */
+.search-input {
+    padding-left: 40px;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m21 21-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0z'/%3E%3C/svg%3E");
+    background-position: left 12px center;
+    background-repeat: no-repeat;
+    background-size: 20px;
+}
+
+/* Filter selects */
+.filter-select {
+    min-width: 150px;
+}
+
+/* Checkboxes and radios */
+.checkbox-input,
+.radio-input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--maroon-primary);
+    cursor: pointer;
+}
+
+.checkbox-label,
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+/* Range sliders */
+.slider {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--light-gray);
+    outline: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--maroon-primary);
+    cursor: pointer;
+    border: 2px solid var(--white);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--maroon-primary);
+    cursor: pointer;
+    border: 2px solid var(--white);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider:focus {
+    box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
+}
+
+/* Form validation */
+.invalid-feedback {
+    color: #ef4444;
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.invalid-feedback::before {
+    content: '⚠️';
+    font-size: 14px;
+}
+
+.valid-feedback {
+    color: #22c55e;
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.valid-feedback::before {
+    content: '✅';
+    font-size: 14px;
+}
+
+/* Form help text */
+.form-help {
+    font-size: 12px;
+    color: var(--text-gray);
+    margin-top: 5px;
+    line-height: 1.4;
+}
+
+/* Input groups */
+.input-group {
+    display: flex;
+    align-items: stretch;
+}
+
+.input-group .form-control {
+    border-radius: 0;
+    border-right: none;
+}
+
+.input-group .form-control:first-child {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.input-group .form-control:last-child {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    border-right: 2px solid var(--border-gray);
+}
+
+.input-group-text {
+    padding: 12px 16px;
+    background: var(--light-gray);
+    border: 2px solid var(--border-gray);
+    border-left: none;
+    color: var(--text-gray);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+
+.input-group-text:first-child {
+    border-left: 2px solid var(--border-gray);
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.input-group-text:last-child {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+/* Form rows */
+.form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+/* Responsive forms */
+@media (max-width: 768px) {
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .input-group {
+        flex-direction: column;
+    }
+    
+    .input-group .form-control,
+    .input-group .input-group-text {
+        border-radius: 8px;
+        border: 2px solid var(--border-gray);
+    }
+    
+    .input-group .form-control + .input-group-text,
+    .input-group .input-group-text + .form-control {
+        margin-top: -2px;
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+    }
+}
+
+/* Screen reader only text */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}

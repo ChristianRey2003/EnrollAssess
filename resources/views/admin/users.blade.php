@@ -470,15 +470,15 @@
                     <span class="nav-icon">📊</span>
                     <span class="nav-text">Dashboard</span>
                 </a>
-                <a href="{{ route('admin.questions') }}" class="nav-item">
+                <a href="{{ route('admin.questions.index') }}" class="nav-item">
                     <span class="nav-icon">❓</span>
                     <span class="nav-text">Questions</span>
                 </a>
-                <a href="{{ route('admin.applicants') }}" class="nav-item">
+                <a href="{{ route('admin.applicants.index') }}" class="nav-item">
                     <span class="nav-icon">👥</span>
                     <span class="nav-text">Applicants</span>
                 </a>
-                <a href="{{ route('admin.users') }}" class="nav-item active">
+                <a href="{{ route('admin.users.index') }}" class="nav-item active">
                     <span class="nav-icon">👤</span>
                     <span class="nav-text">User Management</span>
                 </a>

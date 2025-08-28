@@ -42,6 +42,17 @@ body.admin-page {
     overflow-x: hidden;
 }
 
+/* Instructor Portal Variations */
+body.admin-page.instructor-portal .admin-sidebar {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+}
+
+body.admin-page.instructor-portal .sidebar-subtitle::after {
+    content: " - Interview & Evaluation";
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
 /* ===== MAIN LAYOUT ===== */
 .admin-layout {
     display: flex;
@@ -60,6 +71,8 @@ body.admin-page {
     z-index: 1000;
     overflow-y: auto;
     box-shadow: 4px 0 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
 }
 
 .sidebar-header {
@@ -96,8 +109,11 @@ body.admin-page {
 }
 
 /* ===== NAVIGATION ===== */
-.sidebar-nav {
+.sidebar-nav,
+.nav-menu {
     padding: 20px 0;
+    flex: 1;
+    overflow-y: auto;
 }
 
 .nav-item {
@@ -121,6 +137,21 @@ body.admin-page {
     border-left-color: var(--yellow-primary);
 }
 
+/* Navigation Sections */
+.nav-section {
+    margin: 20px 0 10px 0;
+    padding: 0 16px;
+}
+
+.nav-section-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
 .nav-link.active {
     background: var(--maroon-light);
     color: var(--white);
@@ -139,12 +170,11 @@ body.admin-page {
 }
 
 /* ===== SIDEBAR FOOTER ===== */
-.sidebar-footer {
-    position: absolute;
-    bottom: 20px;
-    left: 0;
-    right: 0;
-    padding: 0 20px;
+.sidebar-footer,
+.nav-bottom {
+    padding: 16px 20px 20px 20px;
+    margin-top: auto;
+    border-top: 1px solid rgba(255, 215, 0, 0.2);
 }
 
 .logout-link {
@@ -156,6 +186,10 @@ body.admin-page {
     border-radius: 8px;
     transition: var(--transition);
     font-size: 14px;
+    width: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
 }
 
 .logout-link:hover {
@@ -169,6 +203,8 @@ body.admin-page {
     margin-left: 260px;
     min-height: 100vh;
     background: var(--light-gray);
+    display: flex !important;
+    flex-direction: column !important;
 }
 
 .main-header {
@@ -179,6 +215,10 @@ body.admin-page {
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    order: 0 !important;
+    flex-shrink: 0 !important;
+    position: relative;
+    z-index: 10;
 }
 
 .header-left h1 {
@@ -213,6 +253,8 @@ body.admin-page {
 /* ===== MAIN CONTENT AREA ===== */
 .main-content {
     padding: 30px;
+    order: 1 !important;
+    flex: 1;
 }
 
 /* ===== STATISTICS CARDS ===== */
@@ -431,11 +473,252 @@ body.admin-page {
     border-color: var(--maroon-primary);
 }
 
+/* ===== QUICK ACTIONS ===== */
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.quick-action-card {
+    background: var(--light-gray);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    padding: 20px;
+    text-decoration: none;
+    transition: var(--transition);
+    text-align: center;
+    display: block;
+}
+
+.quick-action-card:hover {
+    border-color: var(--yellow-primary);
+    background: var(--yellow-light);
+    transform: translateY(-2px);
+}
+
+.quick-action-card:focus {
+    outline: 2px solid var(--yellow-primary);
+    outline-offset: 2px;
+}
+
+.quick-action-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+    display: block;
+}
+
+.quick-action-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--maroon-primary);
+    margin-bottom: 8px;
+}
+
+.quick-action-desc {
+    font-size: 14px;
+    color: var(--text-gray);
+}
+
 /* ===== RESPONSIVE DESIGN ===== */
+/* Mobile-first approach with better breakpoints */
+@media (max-width: 480px) {
+    /* Extra small screens */
+    .admin-header {
+        padding: 12px 16px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .page-title {
+        font-size: 20px;
+    }
+    
+    .breadcrumb {
+        font-size: 12px;
+    }
+    
+    .header-user {
+        font-size: 12px;
+        align-self: flex-end;
+    }
+    
+    .admin-content {
+        padding: 16px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .stat-card {
+        padding: 16px;
+    }
+    
+    .table-responsive {
+        font-size: 12px;
+    }
+    
+    .admin-table th,
+    .admin-table td {
+        padding: 8px 4px;
+    }
+}
+
+/* ===== USER DROPDOWN ===== */
+.user-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.user-dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: var(--white);
+    border: 2px solid var(--light-gray);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: inherit;
+    min-width: 200px;
+}
+
+.user-dropdown-toggle:hover {
+    border-color: var(--maroon-primary);
+    box-shadow: 0 2px 8px rgba(139, 69, 19, 0.1);
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background: var(--maroon-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.avatar-icon {
+    color: var(--white);
+    font-size: 18px;
+}
+
+.user-info {
+    flex: 1;
+    text-align: left;
+}
+
+.user-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--maroon-primary);
+    margin-bottom: 2px;
+}
+
+.user-role {
+    font-size: 12px;
+    color: var(--text-gray);
+}
+
+.dropdown-arrow {
+    font-size: 12px;
+    color: var(--text-gray);
+    transition: var(--transition);
+}
+
+.user-dropdown-toggle:hover .dropdown-arrow {
+    color: var(--maroon-primary);
+}
+
+.user-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: var(--white);
+    border: 1px solid var(--light-gray);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    min-width: 280px;
+    z-index: 1000;
+    display: none;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+.dropdown-section {
+    padding: 12px 0;
+}
+
+.dropdown-section-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-gray);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 8px 20px;
+    margin-bottom: 4px;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    color: var(--text-dark);
+    text-decoration: none;
+    transition: var(--transition);
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.dropdown-item:hover {
+    background: var(--yellow-light);
+    color: var(--maroon-primary);
+}
+
+.logout-item:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.dropdown-icon {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+}
+
+.dropdown-text {
+    flex: 1;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: var(--light-gray);
+    margin: 8px 0;
+}
+
 @media (max-width: 768px) {
+    /* Tablet screens */
     .admin-sidebar {
+        position: fixed;
         transform: translateX(-100%);
         transition: transform 0.3s ease;
+        z-index: 1000;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .admin-sidebar.show {
+        transform: translateX(0);
     }
     
     .admin-sidebar.open {
@@ -473,5 +756,66 @@ body.admin-page {
     .data-table th,
     .data-table td {
         padding: 12px 15px;
+    }
+    
+    /* Mobile menu toggle */
+    .mobile-menu-toggle {
+        display: block;
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: var(--maroon-primary);
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 4px;
+        transition: var(--transition);
+        order: -1;
+        margin-right: auto;
+    }
+    
+    .mobile-menu-toggle:hover {
+        background: var(--light-gray);
+    }
+    
+    .mobile-menu-toggle:focus {
+        outline: 2px solid var(--yellow-primary);
+        outline-offset: 2px;
+    }
+    
+    /* Mobile overlay */
+    .mobile-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .mobile-overlay.show {
+        display: block;
+        opacity: 1;
+    }
+    
+    /* Header adjustments for mobile toggle */
+    .admin-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+}
+
+/* Hide mobile menu toggle on desktop */
+@media (min-width: 769px) {
+    .mobile-menu-toggle {
+        display: none !important;
+    }
+    
+    .mobile-overlay {
+        display: none !important;
     }
 }

@@ -1,118 +1,34 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+@extends('layouts.admin')
 
-    <title>Admin Dashboard - {{ config('app.name', 'EnrollAssess') }}</title>
+@section('title', 'Dashboard')
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+@php
+    $pageTitle = 'Dashboard';
+    $pageSubtitle = 'Computer Studies Department';
+@endphp
 
-    <!-- Admin Dashboard CSS -->
-    <link href="{{ asset('css/admin/admin-dashboard.css') }}" rel="stylesheet">
-</head>
-<body class="admin-page">
-    <div class="admin-layout">
-        <!-- Sidebar -->
-        <nav class="admin-sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-logo">
-                    <img src="{{ asset('images/image-removebg-preview.png') }}" alt="University Logo">
-                    <div>
-                        <h2 class="sidebar-title">EnrollAssess</h2>
-                        <p class="sidebar-subtitle">Admin Portal</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="sidebar-nav">
-                <div class="nav-item">
-                    <a href="{{ route('admin.dashboard') }}" class="nav-link active">
-                        <span class="nav-icon">📊</span>
-                        <span class="nav-text">Dashboard</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('admin.exams.index') }}" class="nav-link">
-                        <span class="nav-icon">📝</span>
-                        <span class="nav-text">Exams</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('admin.questions') }}" class="nav-link">
-                        <span class="nav-icon">❓</span>
-                        <span class="nav-text">Questions</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('admin.applicants') }}" class="nav-link">
-                        <span class="nav-icon">👥</span>
-                        <span class="nav-text">Applicants</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('admin.reports') }}" class="nav-link">
-                        <span class="nav-icon">📈</span>
-                        <span class="nav-text">Reports</span>
-                    </a>
-                </div>
-            </div>
-
-            <div class="sidebar-footer">
-                <form method="POST" action="{{ route('admin.logout') }}">
-                    @csrf
-                    <button type="submit" class="logout-link">
-                        <span class="nav-icon">🚪</span>
-                        <span class="nav-text">Logout</span>
-                    </button>
-                </form>
-            </div>
-        </nav>
-
-        <!-- Main Content -->
-        <main class="admin-main">
-            <!-- Header -->
-            <div class="main-header">
-                <div class="header-left">
-                    <h1>Dashboard</h1>
-                    <p class="header-subtitle">Computer Studies Department</p>
-                </div>
-                <div class="header-right">
-                    <div class="header-time">
-                        🕐 {{ now()->format('M d, Y g:i A') }}
-                    </div>
-                    <div class="header-user">
-                        Welcome, {{ auth()->user()->name ?? 'Dr. Admin' }}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Content -->
-            <div class="main-content">
+@section('content')
                 <!-- Statistics Cards -->
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-icon">👥</div>
-                        <div class="stat-value">{{ $totalApplicants ?? 145 }}</div>
+                        <div class="stat-value">{{ $stats['total_applicants'] ?? 0 }}</div>
                         <div class="stat-label">Total Applicants</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">✅</div>
-                        <div class="stat-value">{{ $examsCompleted ?? 89 }}</div>
+                        <div class="stat-value">{{ $stats['exam_completed'] ?? 0 }}</div>
                         <div class="stat-label">Exams Completed</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">⏳</div>
-                        <div class="stat-value">{{ $pendingInterviews ?? 23 }}</div>
-                        <div class="stat-label">Pending Interviews</div>
+                        <div class="stat-icon">📅</div>
+                        <div class="stat-value">{{ $stats['interviews_scheduled'] ?? 0 }}</div>
+                        <div class="stat-label">Interviews Scheduled</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">🎯</div>
-                        <div class="stat-value">{{ $passRate ?? 78 }}%</div>
-                        <div class="stat-label">Pass Rate</div>
+                        <div class="stat-icon">⏳</div>
+                        <div class="stat-value">{{ $stats['pending_reviews'] ?? 0 }}</div>
+                        <div class="stat-label">Pending Reviews</div>
                     </div>
                 </div>
 
@@ -120,7 +36,7 @@
                 <div class="content-section">
                     <div class="section-header">
                         <h2 class="section-title">Recent Applicant Activity</h2>
-                        <a href="{{ route('admin.applicants') }}" class="section-action">
+                        <a href="{{ route('admin.applicants.index') }}" class="section-action">
                             <span class="section-action-icon">👁️</span>
                             View All
                         </a>
@@ -138,10 +54,10 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($recentApplicants ?? [] as $applicant)
+                                @forelse($recent_applicants ?? [] as $applicant)
                                 <tr>
-                                    <td>{{ $applicant->name }}</td>
-                                    <td>{{ $applicant->email }}</td>
+                                    <td>{{ $applicant->full_name }}</td>
+                                    <td>{{ $applicant->email_address }}</td>
                                     <td>
                                         <span class="status-badge status-{{ strtolower($applicant->status) }}">
                                             {{ $applicant->status }}
@@ -151,8 +67,11 @@
                                     <td>{{ $applicant->created_at->format('M d, Y') }}</td>
                                     <td>
                                         <div class="table-actions">
-                                            <a href="{{ route('admin.applicants.show', $applicant->id) }}" class="action-btn action-btn-edit">
-                                                👁️ View
+                                            <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}" 
+                                               class="action-btn action-btn-view"
+                                               aria-label="View details for {{ $applicant->full_name }}">
+                                                <span aria-hidden="true">👁️</span>
+                                                <span class="sr-only">View</span>
                                             </a>
                                         </div>
                                     </td>
@@ -167,7 +86,11 @@
                                     <td>{{ now()->format('M d, Y') }}</td>
                                     <td>
                                         <div class="table-actions">
-                                            <a href="#" class="action-btn action-btn-edit">👁️ View</a>
+                                            <a href="#" class="action-btn action-btn-view" 
+                                               aria-label="View details">
+                                                <span aria-hidden="true">👁️</span>
+                                                <span class="sr-only">View</span>
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -179,7 +102,11 @@
                                     <td>{{ now()->format('M d, Y') }}</td>
                                     <td>
                                         <div class="table-actions">
-                                            <a href="#" class="action-btn action-btn-edit">👁️ View</a>
+                                            <a href="#" class="action-btn action-btn-view" 
+                                               aria-label="View details">
+                                                <span aria-hidden="true">👁️</span>
+                                                <span class="sr-only">View</span>
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -191,7 +118,11 @@
                                     <td>{{ now()->subDay()->format('M d, Y') }}</td>
                                     <td>
                                         <div class="table-actions">
-                                            <a href="#" class="action-btn action-btn-edit">👁️ View</a>
+                                            <a href="#" class="action-btn action-btn-view" 
+                                               aria-label="View details">
+                                                <span aria-hidden="true">👁️</span>
+                                                <span class="sr-only">View</span>
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -203,7 +134,11 @@
                                     <td>{{ now()->subDay()->format('M d, Y') }}</td>
                                     <td>
                                         <div class="table-actions">
-                                            <a href="#" class="action-btn action-btn-edit">👁️ View</a>
+                                            <a href="#" class="action-btn action-btn-view" 
+                                               aria-label="View details">
+                                                <span aria-hidden="true">👁️</span>
+                                                <span class="sr-only">View</span>
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -215,7 +150,11 @@
                                     <td>{{ now()->subDays(2)->format('M d, Y') }}</td>
                                     <td>
                                         <div class="table-actions">
-                                            <a href="#" class="action-btn action-btn-edit">👁️ View</a>
+                                            <a href="#" class="action-btn action-btn-view" 
+                                               aria-label="View details">
+                                                <span aria-hidden="true">👁️</span>
+                                                <span class="sr-only">View</span>
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -237,7 +176,7 @@
                                 <div class="quick-action-title">Add New Question</div>
                                 <div class="quick-action-desc">Create a new exam question</div>
                             </a>
-                            <a href="{{ route('admin.applicants') }}" class="quick-action-card">
+                            <a href="{{ route('admin.applicants.index') }}" class="quick-action-card">
                                 <div class="quick-action-icon">📊</div>
                                 <div class="quick-action-title">Generate Report</div>
                                 <div class="quick-action-desc">Export applicant data</div>
@@ -251,92 +190,6 @@
                     </div>
                 </div>
             </div>
-        </main>
+        </div>
     </div>
-
-    <style>
-        /* Additional styles for dashboard-specific elements */
-        .status-badge {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
-        }
-
-        .status-completed {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .status-in-progress {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .status-pending {
-            background: #f3f4f6;
-            color: #374151;
-        }
-
-        .logout-link {
-            background: none;
-            border: none;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            padding: 12px 16px;
-            color: rgba(255, 255, 255, 0.8);
-            text-decoration: none;
-            border-radius: 8px;
-            transition: var(--transition);
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        .logout-link:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--yellow-primary);
-        }
-
-        .quick-actions-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-        }
-
-        .quick-action-card {
-            background: var(--light-gray);
-            border: 2px solid transparent;
-            border-radius: 12px;
-            padding: 20px;
-            text-decoration: none;
-            transition: var(--transition);
-            text-align: center;
-        }
-
-        .quick-action-card:hover {
-            border-color: var(--yellow-primary);
-            background: var(--yellow-light);
-        }
-
-        .quick-action-icon {
-            font-size: 32px;
-            margin-bottom: 12px;
-        }
-
-        .quick-action-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--maroon-primary);
-            margin-bottom: 8px;
-        }
-
-        .quick-action-desc {
-            font-size: 14px;
-            color: var(--text-gray);
-        }
-    </style>
-</body>
-</html>
+@endsection

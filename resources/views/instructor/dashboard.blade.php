@@ -13,6 +13,11 @@
 
     <!-- Admin Dashboard CSS -->
     <link href="{{ asset('css/admin/admin-dashboard.css') }}" rel="stylesheet">
+    <!-- Component CSS -->
+    <link href="{{ asset('css/components/status-badges.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/buttons.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/modals.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/forms.css') }}" rel="stylesheet">
 </head>
 <body class="admin-page instructor-portal">
     <div class="admin-layout">
@@ -42,10 +47,21 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="#" class="nav-link disabled">
+                    <a href="{{ route('instructor.schedule') }}" class="nav-link">
                         <span class="nav-icon">📅</span>
                         <span class="nav-text">Schedule</span>
-                        <small class="nav-badge">Soon</small>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('instructor.interview-history') }}" class="nav-link">
+                        <span class="nav-icon">📝</span>
+                        <span class="nav-text">Interview History</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('instructor.guidelines') }}" class="nav-link">
+                        <span class="nav-icon">📋</span>
+                        <span class="nav-text">Guidelines</span>
                     </a>
                 </div>
             </div>
@@ -550,5 +566,11 @@
             }
         }
     </style>
+
+    <!-- Enhanced JavaScript -->
+    <script src="{{ asset('js/utils/modal-manager.js') }}" defer></script>
+    <script src="{{ asset('js/utils/form-validator.js') }}" defer></script>
+    <script src="{{ asset('js/utils/mobile-menu.js') }}" defer></script>
+    <script src="{{ asset('js/notifications.js') }}" defer></script>
 </body>
 </html>

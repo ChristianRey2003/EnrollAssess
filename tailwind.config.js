@@ -14,6 +14,35 @@ export default {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
+            colors: {
+                primary: {
+                    DEFAULT: '#4F46E5',
+                    hover: '#4338CA',
+                    focus: '#6366F1',
+                },
+                secondary: {
+                    DEFAULT: '#FFFFFF',
+                    hover: '#F9FAFB',
+                    focus: '#F3F4F6',
+                },
+                danger: {
+                    DEFAULT: '#DC2626',
+                    hover: '#B91C1C',
+                    focus: '#EF4444',
+                },
+                success: {
+                    DEFAULT: '#16A34A',
+                    hover: '#15803D',
+                    focus: '#22C55E',
+                },
+                warning: {
+                    DEFAULT: '#F59E0B',
+                    hover: '#D97706',
+                    focus: '#FBBF24',
+                },
+                light: '#F9FAFB',
+                dark: '#1F2937',
+            },
         },
     },
 

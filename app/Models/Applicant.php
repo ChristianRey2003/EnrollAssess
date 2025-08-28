@@ -22,11 +22,16 @@ class Applicant extends Model
         'score',
         'status',
         'exam_completed_at',
+        'final_score',
+        'admission_decision_date',
+        'decision_made_by',
     ];
 
     protected $casts = [
         'score' => 'decimal:2',
         'exam_completed_at' => 'datetime',
+        'final_score' => 'decimal:2',
+        'admission_decision_date' => 'datetime',
     ];
 
     /**

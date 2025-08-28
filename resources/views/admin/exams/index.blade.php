@@ -1,97 +1,13 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+@extends('layouts.admin')
 
-    <title>Manage Exams - {{ config('app.name', 'EnrollAssess') }}</title>
+@section('title', 'Exam Management')
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+@php
+    $pageTitle = 'Exam Management';
+    $pageSubtitle = 'Create and manage examination templates and their question sets';
+@endphp
 
-    <!-- Admin Dashboard CSS -->
-    <link href="{{ asset('css/admin/admin-dashboard.css') }}" rel="stylesheet">
-</head>
-<body class="admin-page">
-    <div class="admin-layout">
-        <!-- Sidebar -->
-        <nav class="admin-sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-logo">
-                    <img src="{{ asset('images/image-removebg-preview.png') }}" alt="University Logo">
-                    <div>
-                        <h2 class="sidebar-title">EnrollAssess</h2>
-                        <p class="sidebar-subtitle">Admin Portal</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="sidebar-nav">
-                <div class="nav-item">
-                    <a href="{{ route('admin.dashboard') }}" class="nav-link">
-                        <span class="nav-icon">📊</span>
-                        <span class="nav-text">Dashboard</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('admin.exams.index') }}" class="nav-link active">
-                        <span class="nav-icon">📝</span>
-                        <span class="nav-text">Exams</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('admin.questions') }}" class="nav-link">
-                        <span class="nav-icon">❓</span>
-                        <span class="nav-text">Questions</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('admin.applicants') }}" class="nav-link">
-                        <span class="nav-icon">👥</span>
-                        <span class="nav-text">Applicants</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('admin.reports') }}" class="nav-link">
-                        <span class="nav-icon">📈</span>
-                        <span class="nav-text">Reports</span>
-                    </a>
-                </div>
-            </div>
-
-            <div class="sidebar-footer">
-                <form method="POST" action="{{ route('admin.logout') }}">
-                    @csrf
-                    <button type="submit" class="logout-link">
-                        <span class="nav-icon">🚪</span>
-                        <span class="nav-text">Logout</span>
-                    </button>
-                </form>
-            </div>
-        </nav>
-
-        <!-- Main Content -->
-        <main class="admin-main">
-            <!-- Header -->
-            <div class="main-header">
-                <div class="header-left">
-                    <h1>Exam Management</h1>
-                    <p class="header-subtitle">Create and manage examination templates and their question sets</p>
-                </div>
-                <div class="header-right">
-                    <div class="header-time">
-                        🕐 {{ now()->format('M d, Y g:i A') }}
-                    </div>
-                    <div class="header-user">
-                        {{ auth()->user()->name ?? 'Dr. Admin' }}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Content -->
-            <div class="main-content">
+@section('content')
                 <!-- Search and Filter Section -->
                 <div class="content-section" style="margin-bottom: 20px;">
                     <div class="section-content" style="padding: 20px 30px;">
@@ -222,9 +138,7 @@
                         @endif
                     </div>
                 </div>
-            </div>
-        </main>
-    </div>
+        </div>
 
     <!-- Delete Confirmation Modal -->
     <div id="deleteModal" class="modal-overlay" style="display: none;">
@@ -242,7 +156,9 @@
             </div>
         </div>
     </div>
+@endsection
 
+@push('scripts')
     <script>
         let examToDelete = null;
 
@@ -367,7 +283,9 @@
             }
         });
     </script>
+@endpush
 
+@push('styles')
     <style>
         /* Additional styles for exams page */
         .exams-toolbar {
@@ -514,5 +432,4 @@
             }
         }
     </style>
-</body>
-</html>
+@endpush

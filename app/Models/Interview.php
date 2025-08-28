@@ -22,14 +22,21 @@ class Interview extends Model
         'notes',
         'overall_score',
         'recommendation',
+        'rubric_scores',
+        'strengths',
+        'areas_improvement',
+        'overall_rating',
+        'interview_date',
     ];
 
     protected $casts = [
         'schedule_date' => 'datetime',
+        'interview_date' => 'datetime',
         'rating_communication' => 'integer',
         'rating_technical' => 'integer',
         'rating_problem_solving' => 'integer',
         'overall_score' => 'decimal:2',
+        'rubric_scores' => 'array',
     ];
 
     /**

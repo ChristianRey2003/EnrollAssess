@@ -36,21 +36,33 @@
                     </a>
                 </div>
                 <div class="nav-item">
+                    <a href="{{ route('admin.applicants.index') }}" class="nav-link">
+                        <span class="nav-icon">👥</span>
+                        <span class="nav-text">Applicants</span>
+                    </a>
+                </div>
+                <div class="nav-item">
                     <a href="{{ route('admin.exams.index') }}" class="nav-link">
                         <span class="nav-icon">📝</span>
                         <span class="nav-text">Exams</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.questions') }}" class="nav-link active">
+                    <a href="{{ route('admin.questions.index') }}" class="nav-link active">
                         <span class="nav-icon">❓</span>
                         <span class="nav-text">Questions</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.applicants') }}" class="nav-link">
-                        <span class="nav-icon">👥</span>
-                        <span class="nav-text">Applicants</span>
+                    <a href="{{ route('admin.interviews.index') }}" class="nav-link">
+                        <span class="nav-icon">📅</span>
+                        <span class="nav-text">Interviews</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.users.index') }}" class="nav-link">
+                        <span class="nav-icon">👤</span>
+                        <span class="nav-text">Users</span>
                     </a>
                 </div>
                 <div class="nav-item">
@@ -60,41 +72,20 @@
                     </a>
                 </div>
             </div>
-
-            <div class="sidebar-footer">
-                <form method="POST" action="{{ route('admin.logout') }}">
-                    @csrf
-                    <button type="submit" class="logout-link">
-                        <span class="nav-icon">🚪</span>
-                        <span class="nav-text">Logout</span>
-                    </button>
-                </form>
-            </div>
         </nav>
 
         <!-- Main Content -->
         <main class="admin-main">
             <!-- Header -->
-            <div class="main-header">
-                <div class="header-left">
-                    <h1>{{ isset($question) ? 'Edit Question' : 'Add New Question' }}</h1>
-                    <p class="header-subtitle">{{ isset($question) ? 'Modify existing exam question' : 'Create a new exam question for BSIT entrance examination' }}</p>
-                </div>
-                <div class="header-right">
-                    <div class="header-time">
-                        🕐 {{ now()->format('M d, Y g:i A') }}
-                    </div>
-                    <div class="header-user">
-                        {{ auth()->user()->name ?? 'Dr. Admin' }}
-                    </div>
-                </div>
-            </div>
+            <x-admin-header 
+                :title="isset($question) ? 'Edit Question' : 'Add New Question'" 
+                :subtitle="isset($question) ? 'Modify existing exam question' : 'Create a new exam question for BSIT entrance examination'" />
 
             <!-- Content -->
             <div class="main-content">
                 <!-- Breadcrumb -->
                 <div class="breadcrumb">
-                    <a href="{{ route('admin.questions') }}" class="breadcrumb-link">Questions</a>
+                    <a href="{{ route('admin.questions.index') }}" class="breadcrumb-link">Questions</a>
                     <span class="breadcrumb-separator">›</span>
                     <span class="breadcrumb-current">{{ isset($question) ? 'Edit Question' : 'Add New Question' }}</span>
                 </div>
@@ -104,7 +95,7 @@
                     <div class="section-header">
                         <h2 class="section-title">Question Details</h2>
                         <div class="form-actions-header">
-                            <a href="{{ route('admin.questions') }}" class="btn-secondary">
+                            <a href="{{ route('admin.questions.index') }}" class="btn-secondary">
                                 ← Back to Questions
                             </a>
                         </div>

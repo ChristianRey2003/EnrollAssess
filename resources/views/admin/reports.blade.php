@@ -1,91 +1,13 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+@extends('layouts.admin')
 
-    <title>Generate Reports - {{ config('app.name', 'EnrollAssess') }}</title>
+@section('title', 'Generate Reports')
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+@php
+    $pageTitle = 'Generate Reports';
+    $pageSubtitle = 'Export and analyze examination data for decision making';
+@endphp
 
-    <!-- Admin Dashboard CSS -->
-    <link href="{{ asset('css/admin/admin-dashboard.css') }}" rel="stylesheet">
-</head>
-<body class="admin-page">
-    <div class="admin-layout">
-        <!-- Sidebar -->
-        <nav class="admin-sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-logo">
-                    <img src="{{ asset('images/image-removebg-preview.png') }}" alt="University Logo">
-                    <div>
-                        <h2 class="sidebar-title">EnrollAssess</h2>
-                        <p class="sidebar-subtitle">Admin Portal</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="sidebar-nav">
-                <div class="nav-item">
-                    <a href="{{ route('admin.dashboard') }}" class="nav-link">
-                        <span class="nav-icon">📊</span>
-                        <span class="nav-text">Dashboard</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('admin.questions') }}" class="nav-link">
-                        <span class="nav-icon">❓</span>
-                        <span class="nav-text">Questions</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('admin.applicants') }}" class="nav-link">
-                        <span class="nav-icon">👥</span>
-                        <span class="nav-text">Applicants</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('admin.reports') }}" class="nav-link active">
-                        <span class="nav-icon">📈</span>
-                        <span class="nav-text">Reports</span>
-                    </a>
-                </div>
-            </div>
-
-            <div class="sidebar-footer">
-                <form method="POST" action="{{ route('admin.logout') }}">
-                    @csrf
-                    <button type="submit" class="logout-link">
-                        <span class="nav-icon">🚪</span>
-                        <span class="nav-text">Logout</span>
-                    </button>
-                </form>
-            </div>
-        </nav>
-
-        <!-- Main Content -->
-        <main class="admin-main">
-            <!-- Header -->
-            <div class="main-header">
-                <div class="header-left">
-                    <h1>Generate Reports</h1>
-                    <p class="header-subtitle">Export and analyze examination data for decision making</p>
-                </div>
-                <div class="header-right">
-                    <div class="header-time">
-                        🕐 {{ now()->format('M d, Y g:i A') }}
-                    </div>
-                    <div class="header-user">
-                        {{ auth()->user()->name ?? 'Dr. Admin' }}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Content -->
-            <div class="main-content">
+@section('content')
                 <!-- Quick Stats Overview -->
                 <div class="stats-grid reports-stats">
                     <div class="stat-card">
@@ -398,10 +320,9 @@
                         </table>
                     </div>
                 </div>
-            </div>
-        </main>
-    </div>
+@endsection
 
+@push('scripts')
     <!-- Report Preview Modal -->
     <div id="reportPreviewModal" class="modal-overlay" style="display: none;">
         <div class="modal-content report-preview-modal">
@@ -1003,5 +924,4 @@
             }
         }
     </style>
-</body>
-</html>
+@endpush

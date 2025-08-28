@@ -36,15 +36,33 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.questions') }}" class="nav-link">
+                    <a href="{{ route('admin.applicants.index') }}" class="nav-link active">
+                        <span class="nav-icon">👥</span>
+                        <span class="nav-text">Applicants</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.exams.index') }}" class="nav-link">
+                        <span class="nav-icon">📝</span>
+                        <span class="nav-text">Exams</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.questions.index') }}" class="nav-link">
                         <span class="nav-icon">❓</span>
                         <span class="nav-text">Questions</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.applicants') }}" class="nav-link active">
-                        <span class="nav-icon">👥</span>
-                        <span class="nav-text">Applicants</span>
+                    <a href="{{ route('admin.interviews.index') }}" class="nav-link">
+                        <span class="nav-icon">📅</span>
+                        <span class="nav-text">Interviews</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.users.index') }}" class="nav-link">
+                        <span class="nav-icon">👤</span>
+                        <span class="nav-text">Users</span>
                     </a>
                 </div>
                 <div class="nav-item">
@@ -54,43 +72,22 @@
                     </a>
                 </div>
             </div>
-
-            <div class="sidebar-footer">
-                <form method="POST" action="{{ route('admin.logout') }}">
-                    @csrf
-                    <button type="submit" class="logout-link">
-                        <span class="nav-icon">🚪</span>
-                        <span class="nav-text">Logout</span>
-                    </button>
-                </form>
-            </div>
         </nav>
 
         <!-- Main Content -->
         <main class="admin-main">
             <!-- Header -->
-            <div class="main-header">
-                <div class="header-left">
-                    <h1>Applicant Details</h1>
-                    <p class="header-subtitle">Complete screening journey and assessment</p>
-                </div>
-                <div class="header-right">
-                    <div class="header-time">
-                        🕐 {{ now()->format('M d, Y g:i A') }}
-                    </div>
-                    <div class="header-user">
-                        {{ auth()->user()->name ?? 'Dr. Admin' }}
-                    </div>
-                </div>
-            </div>
+            <x-admin-header 
+                title="Applicant Details" 
+                subtitle="Complete screening journey and assessment" />
 
             <!-- Content -->
             <div class="main-content">
                 <!-- Breadcrumb -->
                 <div class="breadcrumb">
-                    <a href="{{ route('admin.applicants') }}" class="breadcrumb-link">Applicants</a>
+                    <a href="{{ route('admin.applicants.index') }}" class="breadcrumb-link">Applicants</a>
                     <span class="breadcrumb-separator">›</span>
-                    <span class="breadcrumb-current">{{ $applicant->name ?? 'John Doe' }}</span>
+                    <span class="breadcrumb-current">{{ $applicant->full_name ?? 'John Doe' }}</span>
                 </div>
 
                 <!-- Applicant Profile Header -->
@@ -271,7 +268,7 @@
                     <div class="section-content" style="padding: 30px;">
                         <form id="interviewForm" class="interview-form">
                             @csrf
-                            <input type="hidden" name="applicant_id" value="{{ $applicant->id ?? 1 }}">
+                            <input type="hidden" name="applicant_id" value="{{ $applicant->applicant_id ?? 1 }}">
                             
                             <!-- Interview Status -->
                             <div class="form-group">

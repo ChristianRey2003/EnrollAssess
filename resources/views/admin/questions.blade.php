@@ -36,21 +36,33 @@
                     </a>
                 </div>
                 <div class="nav-item">
+                    <a href="{{ route('admin.applicants.index') }}" class="nav-link">
+                        <span class="nav-icon">👥</span>
+                        <span class="nav-text">Applicants</span>
+                    </a>
+                </div>
+                <div class="nav-item">
                     <a href="{{ route('admin.exams.index') }}" class="nav-link">
                         <span class="nav-icon">📝</span>
                         <span class="nav-text">Exams</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.questions') }}" class="nav-link active">
+                    <a href="{{ route('admin.questions.index') }}" class="nav-link active">
                         <span class="nav-icon">❓</span>
                         <span class="nav-text">Questions</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.applicants') }}" class="nav-link">
-                        <span class="nav-icon">👥</span>
-                        <span class="nav-text">Applicants</span>
+                    <a href="{{ route('admin.interviews.index') }}" class="nav-link">
+                        <span class="nav-icon">📅</span>
+                        <span class="nav-text">Interviews</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.users.index') }}" class="nav-link">
+                        <span class="nav-icon">👤</span>
+                        <span class="nav-text">Users</span>
                     </a>
                 </div>
                 <div class="nav-item">
@@ -59,16 +71,6 @@
                         <span class="nav-text">Reports</span>
                     </a>
                 </div>
-            </div>
-
-            <div class="sidebar-footer">
-                                        <form method="POST" action="{{ route('admin.logout') }}">
-                    @csrf
-                    <button type="submit" class="logout-link">
-                        <span class="nav-icon">🚪</span>
-                        <span class="nav-text">Logout</span>
-                    </button>
-                </form>
             </div>
         </nav>
 
@@ -84,8 +86,42 @@
                     <div class="header-time">
                         🕐 {{ now()->format('M d, Y g:i A') }}
                     </div>
-                    <div class="header-user">
-                        {{ auth()->user()->name ?? 'Dr. Admin' }}
+                    <div class="user-dropdown">
+                        <button class="user-dropdown-toggle" onclick="toggleUserDropdown()">
+                            <div class="user-avatar">
+                                <span class="avatar-icon">👤</span>
+                            </div>
+                            <div class="user-info">
+                                <div class="user-name">{{ auth()->user()->full_name ?? 'Dr. Admin' }}</div>
+                                <div class="user-role">Department Head</div>
+                            </div>
+                            <span class="dropdown-arrow">▼</span>
+                        </button>
+                        
+                        <div class="user-dropdown-menu" id="userDropdownMenu">
+                            <!-- Department Head Features -->
+                            <div class="dropdown-section">
+                                <div class="dropdown-section-title">Department Head</div>
+                                <a href="{{ route('admin.interview-results') }}" class="dropdown-item">
+                                    <span class="dropdown-icon">🎯</span>
+                                    <span class="dropdown-text">Interview Results</span>
+                                </a>
+                                <a href="{{ route('admin.analytics') }}" class="dropdown-item">
+                                    <span class="dropdown-icon">📊</span>
+                                    <span class="dropdown-text">Analytics</span>
+                                </a>
+                            </div>
+                            
+                            <div class="dropdown-divider"></div>
+                            
+                            <form method="POST" action="{{ route('admin.logout') }}">
+                                @csrf
+                                <button type="submit" class="dropdown-item logout-item">
+                                    <span class="dropdown-icon">🚪</span>
+                                    <span class="dropdown-text">Logout</span>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -667,6 +703,22 @@
                 max-width: none;
             }
         }
+
+        // User dropdown functionality
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('userDropdownMenu');
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('userDropdownMenu');
+            const toggle = document.querySelector('.user-dropdown-toggle');
+            
+            if (!toggle.contains(event.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
     </style>
 </body>
 </html>

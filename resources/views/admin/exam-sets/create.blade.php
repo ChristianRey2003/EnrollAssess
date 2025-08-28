@@ -36,21 +36,33 @@
                     </a>
                 </div>
                 <div class="nav-item">
+                    <a href="{{ route('admin.applicants.index') }}" class="nav-link">
+                        <span class="nav-icon">👥</span>
+                        <span class="nav-text">Applicants</span>
+                    </a>
+                </div>
+                <div class="nav-item">
                     <a href="{{ route('admin.exams.index') }}" class="nav-link active">
                         <span class="nav-icon">📝</span>
                         <span class="nav-text">Exams</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.questions') }}" class="nav-link">
+                    <a href="{{ route('admin.questions.index') }}" class="nav-link">
                         <span class="nav-icon">❓</span>
                         <span class="nav-text">Questions</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.applicants') }}" class="nav-link">
-                        <span class="nav-icon">👥</span>
-                        <span class="nav-text">Applicants</span>
+                    <a href="{{ route('admin.interviews.index') }}" class="nav-link">
+                        <span class="nav-icon">📅</span>
+                        <span class="nav-text">Interviews</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ route('admin.users.index') }}" class="nav-link">
+                        <span class="nav-icon">👤</span>
+                        <span class="nav-text">Users</span>
                     </a>
                 </div>
                 <div class="nav-item">
