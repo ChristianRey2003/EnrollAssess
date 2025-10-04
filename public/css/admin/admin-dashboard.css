@@ -43,8 +43,9 @@ body.admin-page {
 }
 
 /* Instructor Portal Variations */
-body.admin-page.instructor-portal .admin-sidebar {
-    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+body.admin-page.instructor-portal .admin-sidebar,
+body.admin-page.instructor-portal .admin-sidebar.instructor-sidebar {
+    background: linear-gradient(180deg, var(--maroon-primary) 0%, var(--maroon-dark) 100%) !important;
 }
 
 body.admin-page.instructor-portal .sidebar-subtitle::after {

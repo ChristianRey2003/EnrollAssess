@@ -19,6 +19,12 @@ class RoleMiddleware
     {
         // Check if user is authenticated
         if (!Auth::check()) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authentication required. Please log in.'
+                ], 401);
+            }
             return redirect()->route('admin.login');
         }
 
@@ -26,6 +32,12 @@ class RoleMiddleware
 
         // Check if user has any of the required roles
         if (!in_array($user->role, $roles)) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied. You do not have permission to access this area.'
+                ], 403);
+            }
             abort(403, 'Access denied. You do not have permission to access this area.');
         }
 

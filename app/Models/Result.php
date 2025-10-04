@@ -94,6 +94,13 @@ class Result extends Model
     {
         parent::boot();
 
+        static::creating(function ($result) {
+            // Ensure answered_at is always set when creating a result
+            if (!$result->answered_at) {
+                $result->answered_at = now();
+            }
+        });
+
         static::saving(function ($result) {
             if ($result->question) {
                 $isCorrect = $result->question->checkAnswer(

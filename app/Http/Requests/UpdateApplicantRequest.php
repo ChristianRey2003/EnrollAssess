@@ -31,7 +31,10 @@ class UpdateApplicantRequest extends FormRequest
         $applicantId = $this->route('id');
 
         return [
-            'full_name' => 'required|string|max:255|min:2',
+            'first_name' => 'required|string|max:255|min:2',
+            'middle_name' => 'nullable|string|max:255',
+            'last_name' => 'required|string|max:255|min:2',
+            'preferred_course' => 'nullable|string|max:255',
             'email_address' => [
                 'required',
                 'email',
@@ -39,12 +42,10 @@ class UpdateApplicantRequest extends FormRequest
                 Rule::unique('applicants', 'email_address')->ignore($applicantId, 'applicant_id')
             ],
             'phone_number' => 'nullable|string|max:20|regex:/^[\d\s\-\+\(\)]+$/',
-            'address' => 'nullable|string|max:500',
-            'education_background' => 'nullable|string|max:255',
             'exam_set_id' => 'nullable|exists:exam_sets,exam_set_id',
             'status' => 'required|in:pending,exam-completed,interview-scheduled,interview-completed,admitted,rejected',
             'score' => 'nullable|numeric|min:0|max:100',
-            'exam_percentage' => 'nullable|numeric|min:0|max:100',
+            'verbal_description' => 'nullable|string|max:255',
         ];
     }
 
@@ -56,8 +57,10 @@ class UpdateApplicantRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'full_name.required' => 'Full name is required.',
-            'full_name.min' => 'Full name must be at least 2 characters.',
+            'first_name.required' => 'First name is required.',
+            'first_name.min' => 'First name must be at least 2 characters.',
+            'last_name.required' => 'Last name is required.',
+            'last_name.min' => 'Last name must be at least 2 characters.',
             'email_address.required' => 'Email address is required.',
             'email_address.email' => 'Please provide a valid email address.',
             'email_address.unique' => 'This email address is already registered to another applicant.',
@@ -66,8 +69,6 @@ class UpdateApplicantRequest extends FormRequest
             'status.in' => 'Invalid status selected.',
             'score.numeric' => 'Score must be a number.',
             'score.max' => 'Score cannot exceed 100.',
-            'exam_percentage.numeric' => 'Exam percentage must be a number.',
-            'exam_percentage.max' => 'Exam percentage cannot exceed 100.',
             'exam_set_id.exists' => 'The selected exam set is invalid.',
         ];
     }
@@ -80,12 +81,14 @@ class UpdateApplicantRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'full_name' => 'full name',
+            'first_name' => 'first name',
+            'middle_name' => 'middle name',
+            'last_name' => 'last name',
+            'preferred_course' => 'preferred course',
             'email_address' => 'email address',
             'phone_number' => 'phone number',
-            'education_background' => 'education background',
             'exam_set_id' => 'exam set',
-            'exam_percentage' => 'exam percentage',
+            'verbal_description' => 'verbal description',
         ];
     }
 
@@ -96,7 +99,10 @@ class UpdateApplicantRequest extends FormRequest
     {
         $this->merge([
             'email_address' => strtolower(trim($this->email_address)),
-            'full_name' => trim($this->full_name),
+            'first_name' => trim($this->first_name ?? ''),
+            'middle_name' => trim($this->middle_name ?? ''),
+            'last_name' => trim($this->last_name ?? ''),
+            'preferred_course' => trim($this->preferred_course ?? ''),
             'phone_number' => $this->phone_number ? preg_replace('/[^\d\-\+\(\)\s]/', '', $this->phone_number) : null,
         ]);
     }

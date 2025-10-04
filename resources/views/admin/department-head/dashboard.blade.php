@@ -30,13 +30,13 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('department-head.interview-results') }}" class="nav-link">
+                    <a href="{{ route('admin.interview-results') }}" class="nav-link">
                         <span class="nav-icon">📝</span>
                         <span class="nav-text">Interview Results</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('department-head.analytics') }}" class="nav-link">
+                    <a href="{{ route('admin.analytics') }}" class="nav-link">
                         <span class="nav-icon">📈</span>
                         <span class="nav-text">Analytics</span>
                     </a>
@@ -110,7 +110,7 @@
                     </div>
                     <div class="section-content">
                         <div class="quick-actions-grid">
-                            <a href="{{ route('department-head.interview-results') }}" class="quick-action-card">
+                            <a href="{{ route('admin.interview-results') }}" class="quick-action-card">
                                 <div class="action-icon">📝</div>
                                 <div class="action-content">
                                     <h3>Review Interview Results</h3>
@@ -119,7 +119,7 @@
                                 <div class="action-arrow">→</div>
                             </a>
                             
-                            <a href="{{ route('department-head.analytics') }}" class="quick-action-card">
+                            <a href="{{ route('admin.analytics') }}" class="quick-action-card">
                                 <div class="action-icon">📈</div>
                                 <div class="action-content">
                                     <h3>View Analytics</h3>
@@ -128,7 +128,7 @@
                                 <div class="action-arrow">→</div>
                             </a>
                             
-                            <a href="{{ route('department-head.export-interview-results') }}" class="quick-action-card">
+                            <a href="{{ route('admin.export-interview-results') }}" class="quick-action-card">
                                 <div class="action-icon">📊</div>
                                 <div class="action-content">
                                     <h3>Export Results</h3>
@@ -146,7 +146,7 @@
                     <div class="section-header">
                         <h2 class="section-title">Recent Interview Submissions</h2>
                         <div class="section-actions">
-                            <a href="{{ route('department-head.interview-results') }}" class="btn-primary">View All</a>
+                            <a href="{{ route('admin.interview-results') }}" class="btn-primary">View All</a>
                         </div>
                     </div>
                     <div class="section-content">
@@ -184,7 +184,7 @@
                                         </td>
                                         <td>{{ $interview->updated_at->format('M d, Y') }}</td>
                                         <td>
-                                            <a href="{{ route('department-head.interview-detail', $interview->interview_id) }}" 
+                                            <a href="{{ route('admin.interview-detail', $interview->interview_id) }}" 
                                                class="btn-sm btn-primary">View Details</a>
                                         </td>
                                     </tr>

@@ -5,11 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\Applicant;
 use App\Models\Interview;
 use App\Models\User;
+use App\Services\InterviewPoolService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class InterviewController extends Controller
 {
+    protected $interviewPoolService;
+
+    public function __construct(InterviewPoolService $interviewPoolService)
+    {
+        $this->interviewPoolService = $interviewPoolService;
+    }
     /**
      * Display interview management dashboard
      */
@@ -21,7 +29,8 @@ class InterviewController extends Controller
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
             $query->whereHas('applicant', function($q) use ($search) {
-                $q->where('full_name', 'like', '%' . $search . '%')
+                $q->where('first_name', 'like', '%' . $search . '%')
+                  ->orWhere('last_name', 'like', '%' . $search . '%')
                   ->orWhere('email_address', 'like', '%' . $search . '%');
             })->orWhereHas('interviewer', function($q) use ($search) {
                 $q->where('full_name', 'like', '%' . $search . '%');
@@ -47,6 +56,8 @@ class InterviewController extends Controller
             'completed' => Interview::where('status', 'completed')->count(),
             'pending_assignment' => Applicant::where('status', 'exam-completed')
                                            ->whereDoesntHave('interviews')->count(),
+            // Available interviews in the pool (for stat card)
+            'pool_available' => Interview::availableInPool()->count(),
         ];
 
         // Available instructors
@@ -98,105 +109,65 @@ class InterviewController extends Controller
     }
 
     /**
-     * Bulk assign applicants to instructors for interviews
+     * Bulk assign applicants to a specific instructor for interviews
      */
     public function bulkAssignToInstructors(Request $request)
     {
         $request->validate([
             'applicant_ids' => 'required|array',
             'applicant_ids.*' => 'exists:applicants,applicant_id',
-            'assignment_strategy' => 'required|in:balanced,manual',
-            'assignments' => 'required_if:assignment_strategy,manual|array',
-            'assignments.*.instructor_id' => 'required_if:assignment_strategy,manual|exists:users,user_id',
-            'assignments.*.applicant_count' => 'required_if:assignment_strategy,manual|integer|min:1',
+            'interviewer_id' => 'required|exists:users,user_id',
         ]);
 
         $assigned = 0;
         $errors = [];
-        $instructors = User::where('role', 'instructor')->get();
+        $instructor = User::find($request->interviewer_id);
 
-        if ($instructors->isEmpty()) {
+        if (!$instructor || $instructor->role !== 'instructor') {
             return response()->json([
                 'success' => false,
-                'message' => 'No instructors available for assignment.'
+                'message' => 'Selected instructor not found or invalid.'
             ]);
         }
 
-        DB::transaction(function () use ($request, &$assigned, &$errors, $instructors) {
-            if ($request->assignment_strategy === 'balanced') {
-                // Balanced distribution among all instructors
-                $applicantIds = $request->applicant_ids;
-                $instructorIndex = 0;
-                
-                foreach ($applicantIds as $applicantId) {
-                    try {
-                        // Check if already has interview
-                        if (Interview::where('applicant_id', $applicantId)->exists()) {
-                            $applicant = Applicant::find($applicantId);
-                            $errors[] = "Interview already exists for {$applicant->full_name}";
-                            continue;
-                        }
-
-                        $instructor = $instructors[$instructorIndex % $instructors->count()];
-
-                        Interview::create([
-                            'applicant_id' => $applicantId,
-                            'interviewer_id' => $instructor->user_id,
-                            'status' => 'assigned',
-                            'schedule_date' => null, // To be scheduled later
-                        ]);
-
-                        // Update applicant status
-                        Applicant::where('applicant_id', $applicantId)
-                                 ->update(['status' => 'interview-assigned']);
-
-                        $assigned++;
-                        $instructorIndex++;
-
-                    } catch (\Exception $e) {
-                        $errors[] = "Failed to assign applicant ID {$applicantId}: " . $e->getMessage();
+        DB::transaction(function () use ($request, &$assigned, &$errors, $instructor) {
+            foreach ($request->applicant_ids as $applicantId) {
+                try {
+                    // Check if already has interview
+                    if (Interview::where('applicant_id', $applicantId)->exists()) {
+                        $applicant = Applicant::find($applicantId);
+                        $errors[] = "Interview already exists for {$applicant->full_name}";
+                        continue;
                     }
-                }
-            } else {
-                // Manual assignment with specific counts
-                foreach ($request->assignments as $assignment) {
-                    $instructorId = $assignment['instructor_id'];
-                    $requestedCount = $assignment['applicant_count'];
-                    
-                    $availableApplicants = collect($request->applicant_ids)
-                        ->filter(function($applicantId) {
-                            return !Interview::where('applicant_id', $applicantId)->exists();
-                        })
-                        ->take($requestedCount);
 
-                    foreach ($availableApplicants as $applicantId) {
-                        try {
-                            Interview::create([
-                                'applicant_id' => $applicantId,
-                                'interviewer_id' => $instructorId,
-                                'status' => 'assigned',
-                                'schedule_date' => null,
-                            ]);
+                    // Create interview assignment
+                    Interview::create([
+                        'applicant_id' => $applicantId,
+                        'interviewer_id' => $instructor->user_id,
+                        'status' => 'assigned',
+                        'schedule_date' => null, // To be scheduled by instructor
+                    ]);
 
-                            Applicant::where('applicant_id', $applicantId)
-                                     ->update(['status' => 'interview-assigned']);
+                    // Update applicant status
+                    Applicant::where('applicant_id', $applicantId)
+                             ->update(['status' => 'interview-assigned']);
 
-                            $assigned++;
+                    $assigned++;
 
-                            // Remove from available pool
-                            $request->applicant_ids = array_diff($request->applicant_ids, [$applicantId]);
-
-                        } catch (\Exception $e) {
-                            $errors[] = "Failed to assign applicant ID {$applicantId}: " . $e->getMessage();
-                        }
-                    }
+                } catch (\Exception $e) {
+                    $errors[] = "Failed to assign applicant ID {$applicantId}: " . $e->getMessage();
                 }
             }
         });
 
+        $message = "Successfully assigned {$assigned} applicants to {$instructor->full_name}.";
+        if (!empty($errors)) {
+            $message .= " " . count($errors) . " assignments failed.";
+        }
+
         return response()->json([
             'success' => true,
-            'message' => "Assigned {$assigned} applicants to instructors successfully.",
+            'message' => $message,
             'assigned' => $assigned,
             'errors' => $errors
         ]);
@@ -438,5 +409,482 @@ class InterviewController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Department Head Interview Pool Override Methods
+     */
+
+    /**
+     * Get interview pool overview for Department Head
+     */
+    public function poolOverview(Request $request)
+    {
+        $filters = $request->only(['priority', 'search', 'status']);
+        
+        // Get all interviews (available, claimed, assigned)
+        $availableInterviews = $this->interviewPoolService->getAvailableInterviews($filters);
+        $claimedInterviews = Interview::with(['applicant', 'claimedBy'])
+            ->claimed()
+            ->get();
+        
+        $poolStats = $this->interviewPoolService->getPoolStatistics();
+        
+        // Get all instructors for assignment
+        $instructors = User::where('role', 'instructor')->get();
+        
+        return view('admin.interviews.pool-overview', compact(
+            'availableInterviews',
+            'claimedInterviews', 
+            'poolStats',
+            'instructors',
+            'filters'
+        ));
+    }
+
+    /**
+     * Department Head claims an interview for themselves
+     */
+    public function dhClaimInterview(Request $request, $interviewId)
+    {
+        try {
+            $interview = $this->interviewPoolService->claimInterview($interviewId, Auth::id());
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Interview claimed by Department Head successfully!',
+                'interview' => $interview
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * Department Head assigns interview to specific instructor (override)
+     */
+    public function assignToInstructor(Request $request)
+    {
+        $request->validate([
+            'interview_id' => 'required|exists:interviews,interview_id',
+            'instructor_id' => 'required|exists:users,user_id',
+            'notes' => 'nullable|string|max:500'
+        ]);
+
+        try {
+            $interview = $this->interviewPoolService->assignInterviewToInstructor(
+                $request->interview_id,
+                $request->instructor_id,
+                $request->notes
+            );
+            
+            $instructor = User::find($request->instructor_id);
+            
+            return response()->json([
+                'success' => true,
+                'message' => "Interview assigned to {$instructor->full_name} successfully!",
+                'interview' => $interview
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * Department Head overrides and releases any claimed interview
+     */
+    public function dhReleaseInterview(Request $request, $interviewId)
+    {
+        try {
+            $interview = $this->interviewPoolService->releaseInterview($interviewId, Auth::id());
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Interview released back to pool successfully!',
+                'interview' => $interview
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * Set interview priority (Department Head only)
+     */
+    public function setPriority(Request $request)
+    {
+        $request->validate([
+            'interview_id' => 'required|exists:interviews,interview_id',
+            'priority' => 'required|in:high,medium,low'
+        ]);
+
+        try {
+            $interview = $this->interviewPoolService->setInterviewPriority(
+                $request->interview_id,
+                $request->priority
+            );
+            
+            return response()->json([
+                'success' => true,
+                'message' => "Interview priority set to {$request->priority} successfully!",
+                'interview' => $interview
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * Bulk assign multiple interviews to instructors
+     */
+    public function bulkAssignToPool(Request $request)
+    {
+        $request->validate([
+            'interview_ids' => 'required|array',
+            'interview_ids.*' => 'exists:interviews,interview_id',
+            'assignment_type' => 'required|in:specific_instructor,department_head,release_to_pool',
+            'instructor_id' => 'required_if:assignment_type,specific_instructor|exists:users,user_id',
+            'notes' => 'nullable|string|max:500'
+        ]);
+
+        $processed = 0;
+        $errors = [];
+
+        DB::transaction(function () use ($request, &$processed, &$errors) {
+            foreach ($request->interview_ids as $interviewId) {
+                try {
+                    switch ($request->assignment_type) {
+                        case 'specific_instructor':
+                            $this->interviewPoolService->assignInterviewToInstructor(
+                                $interviewId,
+                                $request->instructor_id,
+                                $request->notes
+                            );
+                            break;
+                            
+                        case 'department_head':
+                            $this->interviewPoolService->claimInterview($interviewId, Auth::id());
+                            break;
+                            
+                        case 'release_to_pool':
+                            $this->interviewPoolService->releaseInterview($interviewId, Auth::id());
+                            break;
+                    }
+                    
+                    $processed++;
+                } catch (\Exception $e) {
+                    $errors[] = "Interview {$interviewId}: " . $e->getMessage();
+                }
+            }
+        });
+
+        $message = "Successfully processed {$processed} interviews.";
+        if (!empty($errors)) {
+            $message .= " " . count($errors) . " operations failed.";
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'processed' => $processed,
+            'errors' => $errors
+        ]);
+    }
+
+    /**
+     * Get real-time pool data for AJAX updates
+     */
+    public function getPoolData(Request $request)
+    {
+        $filters = $request->only(['priority', 'search', 'status']);
+        
+        return response()->json([
+            'available_interviews' => $this->interviewPoolService->getAvailableInterviews($filters),
+            'claimed_interviews' => Interview::with(['applicant', 'claimedBy'])
+                ->claimed()
+                ->get(),
+            'pool_stats' => $this->interviewPoolService->getPoolStatistics()
+        ]);
+    }
+
+    /**
+     * Admin Conduct Interview Methods
+     */
+
+    /**
+     * Show admin interview conduct form
+     */
+    public function adminConductForm(Interview $interview)
+    {
+        $user = Auth::user();
+        
+        // Authorization check - only department-head or administrator
+        if (!in_array($user->role, ['department-head', 'administrator'])) {
+            abort(403, 'You are not authorized to conduct interviews.');
+        }
+
+        // Load interview with applicant and exam data
+        $interview->load(['applicant.examSet.exam']);
+        $applicant = $interview->applicant;
+
+        // Check if interview is already completed by someone else
+        if ($interview->status === 'completed' && $interview->claimed_by !== $user->user_id) {
+            return redirect()->route('admin.interviews.index')
+                    ->with('error', 'This interview has already been completed by another evaluator.');
+        }
+
+        // Check soft lock - if claimed by someone else within timeout period
+        if ($interview->claimed_by && 
+            $interview->claimed_by !== $user->user_id && 
+            !$interview->isClaimedTooLong(1)) { // 1 hour timeout
+            
+            $claimedBy = User::find($interview->claimed_by);
+            return redirect()->route('admin.interviews.index')
+                    ->with('warning', "This interview is currently being conducted by {$claimedBy->full_name}. Please try again later.");
+        }
+
+        // Soft claim the interview if not already claimed by current user
+        if ($interview->claimed_by !== $user->user_id) {
+            $interview->update([
+                'claimed_by' => $user->user_id,
+                'claimed_at' => now(),
+                'status' => $interview->status === 'available' ? 'claimed' : $interview->status
+            ]);
+        }
+
+        return view('admin.interviews.conduct', compact('interview', 'applicant'));
+    }
+
+    /**
+     * Submit admin interview evaluation
+     */
+    public function adminConductSubmit(Request $request, Interview $interview)
+    {
+        $user = Auth::user();
+        
+        // Authorization check
+        if (!in_array($user->role, ['department-head', 'administrator'])) {
+            abort(403, 'You are not authorized to conduct interviews.');
+        }
+
+        // Verify claim ownership
+        if ($interview->claimed_by !== $user->user_id) {
+            return redirect()->route('admin.interviews.index')
+                    ->with('error', 'You cannot submit an evaluation for an interview you do not have claimed.');
+        }
+
+        // Validation - reuse same rules as instructor
+        $request->validate([
+            // Technical Skills (40 points max)
+            'technical_programming' => 'required|numeric|min:0|max:10',
+            'technical_problem_solving' => 'required|numeric|min:0|max:10',
+            'technical_algorithms' => 'required|numeric|min:0|max:10',
+            'technical_system_design' => 'required|numeric|min:0|max:10',
+            
+            // Communication Skills (30 points max)
+            'communication_clarity' => 'required|numeric|min:0|max:10',
+            'communication_listening' => 'required|numeric|min:0|max:10',
+            'communication_confidence' => 'required|numeric|min:0|max:10',
+            
+            // Analytical Thinking (30 points max)
+            'analytical_critical_thinking' => 'required|numeric|min:0|max:10',
+            'analytical_creativity' => 'required|numeric|min:0|max:10',
+            'analytical_attention_detail' => 'required|numeric|min:0|max:10',
+            
+            // Overall Assessment
+            'overall_rating' => 'required|in:excellent,very_good,good,satisfactory,needs_improvement',
+            'recommendation' => 'required|in:highly_recommended,recommended,conditional,not_recommended',
+            'strengths' => 'required|string|max:1000',
+            'areas_improvement' => 'required|string|max:1000',
+            'interview_notes' => 'nullable|string|max:2000',
+            'action' => 'required|in:save_draft,submit_final'
+        ]);
+
+        // Calculate scores using same logic as instructor
+        $technicalScore = $request->technical_programming + 
+                         $request->technical_problem_solving + 
+                         $request->technical_algorithms + 
+                         $request->technical_system_design;
+        
+        $communicationScore = $request->communication_clarity + 
+                             $request->communication_listening + 
+                             $request->communication_confidence;
+        
+        $analyticalScore = $request->analytical_critical_thinking + 
+                          $request->analytical_creativity + 
+                          $request->analytical_attention_detail;
+        
+        $totalScore = $technicalScore + $communicationScore + $analyticalScore;
+        $percentage = round(($totalScore / 100) * 100, 2);
+
+        DB::transaction(function () use ($request, $interview, $user, $technicalScore, $communicationScore, $analyticalScore, $totalScore, $percentage) {
+            
+            // Update interview record with detailed rubrics
+            $interview->update([
+                // Individual rubric scores
+                'rating_technical' => $technicalScore,
+                'rating_communication' => $communicationScore,
+                'rating_problem_solving' => $analyticalScore,
+                'overall_score' => $percentage,
+                
+                // Detailed breakdown (store as JSON)
+                'rubric_scores' => json_encode([
+                    'technical' => [
+                        'programming' => $request->technical_programming,
+                        'problem_solving' => $request->technical_problem_solving,
+                        'algorithms' => $request->technical_algorithms,
+                        'system_design' => $request->technical_system_design,
+                    ],
+                    'communication' => [
+                        'clarity' => $request->communication_clarity,
+                        'listening' => $request->communication_listening,
+                        'confidence' => $request->communication_confidence,
+                    ],
+                    'analytical' => [
+                        'critical_thinking' => $request->analytical_critical_thinking,
+                        'creativity' => $request->analytical_creativity,
+                        'attention_detail' => $request->analytical_attention_detail,
+                    ]
+                ]),
+                
+                'overall_rating' => $request->overall_rating,
+                'recommendation' => $request->recommendation,
+                'strengths' => $request->strengths,
+                'areas_improvement' => $request->areas_improvement,
+                'notes' => $request->interview_notes,
+                'schedule_date' => $interview->schedule_date ?? now(),
+                
+                // Track evaluator details
+                'interviewer_id' => $user->user_id, // Admin becomes the interviewer
+                'claimed_by' => $user->user_id,
+                'status' => $request->action === 'submit_final' ? 'completed' : 'in-progress',
+            ]);
+
+            // Only update applicant status if submitting final (not draft)
+            if ($request->action === 'submit_final') {
+                $applicant = $interview->applicant;
+                $newStatus = 'interview-completed';
+                
+                // Auto-determine admission based on score and recommendation (same logic as instructor)
+                if ($percentage >= 75 && in_array($request->recommendation, ['highly_recommended', 'recommended'])) {
+                    $newStatus = 'admitted';
+                } elseif ($percentage < 50 || $request->recommendation === 'not_recommended') {
+                    $newStatus = 'rejected';
+                }
+                
+                $applicant->update([
+                    'status' => $newStatus,
+                    'final_score' => $percentage,
+                    'admission_decision_date' => now(),
+                ]);
+            }
+        });
+
+        $message = $request->action === 'submit_final' 
+            ? "Interview evaluation submitted successfully! Score: {$percentage}%"
+            : "Interview draft saved successfully! Score: {$percentage}%";
+
+        return redirect()->route('admin.interviews.index')
+                        ->with('success', $message);
+    }
+
+    /**
+     * Admin claim interview (explicit)
+     */
+    public function adminClaimInterview(Request $request, Interview $interview)
+    {
+        $user = Auth::user();
+        
+        if (!in_array($user->role, ['department-head', 'administrator'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to claim interviews.'
+            ], 403);
+        }
+
+        try {
+            // Check if already claimed by someone else within timeout
+            if ($interview->claimed_by && 
+                $interview->claimed_by !== $user->user_id && 
+                !$interview->isClaimedTooLong(1)) {
+                
+                $claimedBy = User::find($interview->claimed_by);
+                return response()->json([
+                    'success' => false,
+                    'message' => "Interview is currently claimed by {$claimedBy->full_name}."
+                ], 400);
+            }
+
+            $interview->update([
+                'claimed_by' => $user->user_id,
+                'claimed_at' => now(),
+                'status' => 'claimed',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Interview claimed successfully!',
+                'interview' => $interview
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * Admin release interview claim
+     */
+    public function adminReleaseInterview(Request $request, Interview $interview)
+    {
+        $user = Auth::user();
+        
+        if (!in_array($user->role, ['department-head', 'administrator'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to release interviews.'
+            ], 403);
+        }
+
+        try {
+            // Department Head can release any interview, Administrator can only release their own
+            if ($user->role === 'administrator' && $interview->claimed_by !== $user->user_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You can only release interviews you have claimed.'
+                ], 403);
+            }
+
+            $interview->update([
+                'claimed_by' => null,
+                'claimed_at' => null,
+                'status' => 'available',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Interview released successfully!',
+                'interview' => $interview
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
     }
 }

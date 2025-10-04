@@ -290,8 +290,8 @@ class ApplicantService
                     $rowNumber = $index + 2; // Account for header row
 
                     // Validate required fields
-                    if (empty($row['full_name']) || empty($row['email_address'])) {
-                        $results['errors'][] = "Row {$rowNumber}: Missing required fields (full_name, email_address)";
+                    if (empty($row['first_name']) || empty($row['last_name']) || empty($row['email_address'])) {
+                        $results['errors'][] = "Row {$rowNumber}: Missing required fields (first_name, last_name, email_address)";
                         continue;
                     }
 
@@ -303,10 +303,12 @@ class ApplicantService
 
                     // Create applicant
                     $this->createApplicant([
-                        'full_name' => $row['full_name'],
+                        'first_name' => $row['first_name'],
+                        'middle_name' => $row['middle_name'] ?? null,
+                        'last_name' => $row['last_name'],
+                        'preferred_course' => $row['preferred_course'] ?? null,
                         'email_address' => $row['email_address'],
                         'phone_number' => $row['phone_number'] ?? null,
-                        'education_background' => $row['education_background'] ?? null,
                         'status' => 'pending'
                     ]);
 

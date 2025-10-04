@@ -11,22 +11,22 @@
                 <!-- Statistics Cards -->
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-icon">👥</div>
+                        <div class="stat-icon" aria-hidden="true"></div>
                         <div class="stat-value">{{ $stats['total_applicants'] ?? 0 }}</div>
                         <div class="stat-label">Total Applicants</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">✅</div>
+                        <div class="stat-icon" aria-hidden="true"></div>
                         <div class="stat-value">{{ $stats['exam_completed'] ?? 0 }}</div>
                         <div class="stat-label">Exams Completed</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">📅</div>
+                        <div class="stat-icon" aria-hidden="true"></div>
                         <div class="stat-value">{{ $stats['interviews_scheduled'] ?? 0 }}</div>
                         <div class="stat-label">Interviews Scheduled</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">⏳</div>
+                        <div class="stat-icon" aria-hidden="true"></div>
                         <div class="stat-value">{{ $stats['pending_reviews'] ?? 0 }}</div>
                         <div class="stat-label">Pending Reviews</div>
                     </div>
@@ -36,10 +36,7 @@
                 <div class="content-section">
                     <div class="section-header">
                         <h2 class="section-title">Recent Applicant Activity</h2>
-                        <a href="{{ route('admin.applicants.index') }}" class="section-action">
-                            <span class="section-action-icon">👁️</span>
-                            View All
-                        </a>
+                        <a href="{{ route('admin.applicants.index') }}" class="section-action">View All</a>
                     </div>
                     <div class="section-content">
                         <table class="data-table">

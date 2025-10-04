@@ -74,7 +74,7 @@
                     <div class="auth-links">
                         <div class="info-note">
                             <div class="info-note-text">
-                                <strong>📋 Important:</strong>
+                                <strong>Important:</strong>
                                 You will receive your access code from the Computer Studies Department.<br>
                                 Please ensure you have a stable internet connection before beginning the examination.
                             </div>
@@ -105,7 +105,7 @@
 
         // Auto-format access code input
         document.getElementById('access_code').addEventListener('input', function(e) {
-            e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9\-]/g, '');
         });
 
         // Remove error state on input

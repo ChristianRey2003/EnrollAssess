@@ -41,19 +41,16 @@
 
                 <!-- Status Message -->
                 <div class="status-message {{ ($percentage ?? 90) >= 75 ? 'status-passed' : 'status-failed' }}">
-                    @if(($percentage ?? 90) >= 75)
-                        <div class="status-icon">🎉</div>
-                        <div class="status-text">
-                            <h3>Congratulations!</h3>
-                            <p>You have <strong>passed</strong> the BSIT entrance examination.</p>
-                        </div>
-                    @else
-                        <div class="status-icon">📝</div>
-                        <div class="status-text">
-                            <h3>Results Complete</h3>
-                            <p>Thank you for taking the BSIT entrance examination.</p>
-                        </div>
-                    @endif
+                    <div class="status-text">
+                        <h3>{{ (($percentage ?? 90) >= 75) ? 'Congratulations' : 'Results Complete' }}</h3>
+                        <p>
+                            @if(($percentage ?? 90) >= 75)
+                                You have <strong>passed</strong> the BSIT entrance examination.
+                            @else
+                                Thank you for taking the BSIT entrance examination.
+                            @endif
+                        </p>
+                    </div>
                 </div>
 
                 <!-- Performance Breakdown -->
@@ -113,19 +110,16 @@
                     @if(($percentage ?? 90) >= 75)
                         <div class="next-steps-content">
                             <div class="step-item">
-                                <div class="step-icon">📧</div>
                                 <div class="step-text">
                                     <strong>Email Notification:</strong> You will receive an email from the Computer Studies Department within 2-3 business days.
                                 </div>
                             </div>
                             <div class="step-item">
-                                <div class="step-icon">🗓️</div>
                                 <div class="step-text">
                                     <strong>Interview Schedule:</strong> The email will contain your interview date, time, and location details.
                                 </div>
                             </div>
                             <div class="step-item">
-                                <div class="step-icon">📋</div>
                                 <div class="step-text">
                                     <strong>Required Documents:</strong> Please prepare your academic transcripts, certificates, and valid ID for the interview.
                                 </div>
@@ -134,13 +128,11 @@
                     @else
                         <div class="next-steps-content">
                             <div class="step-item">
-                                <div class="step-icon">📧</div>
                                 <div class="step-text">
                                     <strong>Result Notification:</strong> You will receive an official result letter via email within 2-3 business days.
                                 </div>
                             </div>
                             <div class="step-item">
-                                <div class="step-icon">🔄</div>
                                 <div class="step-text">
                                     <strong>Future Opportunities:</strong> You may reapply for the next admission period. Check the university website for dates.
                                 </div>
@@ -153,29 +145,16 @@
                 <div class="contact-info">
                     <h4 class="contact-title">Need Help?</h4>
                     <div class="contact-details">
-                        <div class="contact-item">
-                            <span class="contact-icon">📞</span>
-                            <span class="contact-text">Phone: (123) 456-7890</span>
-                        </div>
-                        <div class="contact-item">
-                            <span class="contact-icon">📧</span>
-                            <span class="contact-text">Email: admissions@university.edu</span>
-                        </div>
-                        <div class="contact-item">
-                            <span class="contact-icon">🏢</span>
-                            <span class="contact-text">Office: Computer Studies Department, Room 201</span>
-                        </div>
+                        <div class="contact-item"><span class="contact-text">Phone: (123) 456-7890</span></div>
+                        <div class="contact-item"><span class="contact-text">Email: admissions@university.edu</span></div>
+                        <div class="contact-item"><span class="contact-text">Office: Computer Studies Department, Room 201</span></div>
                     </div>
                 </div>
 
                 <!-- Print/Download Actions -->
                 <div class="result-actions">
-                    <button onclick="window.print()" class="btn-secondary">
-                        🖨️ Print Results
-                    </button>
-                    <button onclick="downloadPDF()" class="btn-secondary">
-                        📄 Download PDF
-                    </button>
+                    <button onclick="window.print()" class="btn-secondary">Print Results</button>
+                    <button onclick="downloadPDF()" class="btn-secondary">Download PDF</button>
                 </div>
             </div>
         </div>

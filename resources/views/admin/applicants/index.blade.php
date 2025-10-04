@@ -9,6 +9,95 @@
 
 @push('styles')
     <link href="{{ asset('css/admin/applicants.css') }}" rel="stylesheet">
+    <style>
+        .floating-actions {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+        }
+        
+        .floating-actions .action-btn {
+            padding: 6px 8px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        
+        .floating-actions .action-btn:hover {
+            background: #f3f4f6;
+        }
+        
+        .floating-actions .action-btn-delete:hover {
+            background: #fee2e2;
+        }
+        
+        tr:hover {
+            background-color: rgba(255, 215, 0, 0.1) !important;
+        }
+        
+        /* Ensure table stays within container */
+        .applicants-table {
+            max-width: 100%;
+            overflow-x: auto;
+        }
+        
+        .data-table {
+            table-layout: fixed;
+            width: 100%;
+            max-width: 100%;
+        }
+        
+        .status-badge {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            word-break: break-word;
+        }
+        
+        /* Compact toolbar responsive styles */
+        @media (max-width: 1200px) {
+            .applicants-toolbar {
+                flex-direction: column !important;
+                gap: 10px !important;
+                align-items: stretch !important;
+            }
+            
+            .toolbar-left, .toolbar-right {
+                justify-content: center !important;
+                flex-wrap: wrap !important;
+            }
+            
+            .toolbar-right {
+                gap: 6px !important;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .applicants-toolbar input[type="text"] {
+                width: 150px !important;
+            }
+            
+            .applicants-toolbar select {
+                width: 100px !important;
+            }
+            
+            .toolbar-right a {
+                padding: 4px 8px !important;
+                font-size: 12px !important;
+            }
+        }
+    </style>
 @endpush
 
 @section('content')
@@ -16,191 +105,209 @@
                 <!-- Statistics Section -->
                 <section class="stats-section">
                     <div class="stat-card">
-                        <div class="stat-icon">👥</div>
+                        <div class="stat-icon" aria-hidden="true"></div>
                         <div class="stat-value">{{ $stats['total_applicants'] ?? 0 }}</div>
                         <div class="stat-label">Total Applicants</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">✅</div>
+                        <div class="stat-icon" aria-hidden="true"></div>
                         <div class="stat-value">{{ $stats['with_access_codes'] ?? 0 }}</div>
                         <div class="stat-label">With Access Codes</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">📝</div>
+                        <div class="stat-icon" aria-hidden="true"></div>
                         <div class="stat-value">{{ $stats['exam_completed'] ?? 0 }}</div>
                         <div class="stat-label">Exam Completed</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">⏳</div>
+                        <div class="stat-icon" aria-hidden="true"></div>
                         <div class="stat-value">{{ $stats['pending_admission'] ?? 0 }}</div>
                         <div class="stat-label">Pending Admission</div>
                     </div>
                 </section>
 
-                <!-- Toolbar -->
-                <div class="applicants-toolbar">
-                    <div class="toolbar-left">
-                        <div class="search-group">
-                            <input type="text" 
-                                   id="searchInput" 
-                                   class="form-control search-input" 
-                                   placeholder="Search applicants..." 
-                                   value="{{ request('search') }}"
-                                   aria-label="Search applicants">
-                        </div>
-                        <button onclick="performSearch()" class="btn btn-secondary">
-                            🔍 Search
-                        </button>
+                <!-- Compact Toolbar -->
+                <div class="applicants-toolbar" style="display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 20px; padding: 12px 0;">
+                    <div class="toolbar-left" style="display: flex; align-items: center; gap: 8px;">
+                        <input type="text" 
+                               id="searchInput" 
+                               class="form-control" 
+                               placeholder="Search applicants..." 
+                               value="{{ request('search') }}"
+                               style="width: 200px; height: 32px; padding: 4px 8px; font-size: 13px; border: 1px solid #d1d5db; border-radius: 4px;"
+                               aria-label="Search applicants">
+                        <button onclick="performSearch()" 
+                                class="btn btn-secondary" 
+                                style="height: 32px; padding: 4px 12px; font-size: 13px; border-radius: 4px;">Search</button>
                     </div>
-                    <div class="toolbar-right">
-                        <div class="filter-group">
-                            <select id="statusFilter" class="form-control filter-select" onchange="applyFilter()" aria-label="Filter by status">
-                                <option value="">All Status</option>
-                                <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                                <option value="exam_completed" {{ request('status') == 'exam_completed' ? 'selected' : '' }}>Exam Completed</option>
-                                <option value="interview_scheduled" {{ request('status') == 'interview_scheduled' ? 'selected' : '' }}>Interview Scheduled</option>
-                                <option value="interview_completed" {{ request('status') == 'interview_completed' ? 'selected' : '' }}>Interview Completed</option>
-                                <option value="admitted" {{ request('status') == 'admitted' ? 'selected' : '' }}>Admitted</option>
-                                <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
-                            </select>
-                            <select id="examSetFilter" class="form-control filter-select" onchange="applyFilter()" aria-label="Filter by exam set">
-                                <option value="">All Exam Sets</option>
-                                @foreach($examSets ?? [] as $examSet)
-                                    <option value="{{ $examSet->id }}" {{ request('exam_set_id') == $examSet->id ? 'selected' : '' }}>
-                                        {{ $examSet->title }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <a href="{{ route('admin.applicants.create') }}" class="btn btn-primary">
-                            ➕ Add Applicant
-                        </a>
-                        <a href="{{ route('admin.applicants.import') }}" class="btn btn-secondary">
-                            📁 Import
-                        </a>
+                    <div class="toolbar-right" style="display: flex; align-items: center; gap: 8px;">
+                        <select id="statusFilter" 
+                                class="form-control" 
+                                onchange="applyFilter()" 
+                                style="width: 120px; height: 32px; padding: 4px 8px; font-size: 13px; border: 1px solid #d1d5db; border-radius: 4px;"
+                                aria-label="Filter by status">
+                            <option value="">All Status</option>
+                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                            <option value="exam_completed" {{ request('status') == 'exam_completed' ? 'selected' : '' }}>Exam Completed</option>
+                            <option value="interview_scheduled" {{ request('status') == 'interview_scheduled' ? 'selected' : '' }}>Interview Scheduled</option>
+                            <option value="interview_completed" {{ request('status') == 'interview_completed' ? 'selected' : '' }}>Interview Completed</option>
+                            <option value="admitted" {{ request('status') == 'admitted' ? 'selected' : '' }}>Admitted</option>
+                            <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                        </select>
+                        <select id="examSetFilter" 
+                                class="form-control" 
+                                onchange="applyFilter()" 
+                                style="width: 120px; height: 32px; padding: 4px 8px; font-size: 13px; border: 1px solid #d1d5db; border-radius: 4px;"
+                                aria-label="Filter by exam set">
+                            <option value="">All Exam Sets</option>
+                            @foreach($examSets ?? [] as $examSet)
+                                <option value="{{ $examSet->id }}" {{ request('exam_set_id') == $examSet->id ? 'selected' : '' }}>
+                                    {{ $examSet->title }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <a href="{{ route('admin.applicants.assign-exam-sets') }}" 
+                           class="btn btn-primary" 
+                           style="height: 32px; padding: 4px 12px; font-size: 13px; border-radius: 4px; background: #991b1b; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Assign Exam Sets</a>
+                        <a href="{{ route('admin.applicants.exam-results') }}" 
+                           class="btn btn-primary" 
+                           style="height: 32px; padding: 4px 12px; font-size: 13px; border-radius: 4px; background: #059669; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Exam Results</a>
+                        <a href="{{ route('admin.applicants.create') }}" 
+                           class="btn btn-secondary" 
+                           style="height: 32px; padding: 4px 10px; font-size: 13px; border-radius: 4px; background: #6b7280; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Add</a>
+                        <a href="{{ route('admin.applicants.import') }}" 
+                           class="btn btn-secondary" 
+                           style="height: 32px; padding: 4px 10px; font-size: 13px; border-radius: 4px; background: #6b7280; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Import</a>
                     </div>
                 </div>
 
-                <!-- Bulk Actions -->
-                <div id="bulkActions" class="bulk-actions">
-                    <div class="bulk-info">
-                        <span id="selectedCount">0 selected</span>
-                    </div>
-                    <div class="bulk-buttons">
-                        <button onclick="showGenerateAccessCodesModal()" class="bulk-btn bulk-btn-codes">
-                            🔑 Generate Access Codes
-                        </button>
-                        <button onclick="showAssignExamSetsModal()" class="bulk-btn bulk-btn-assign">
-                            📋 Assign Exam Sets
-                        </button>
-                        <button onclick="bulkExport()" class="bulk-btn bulk-btn-export">
-                            📊 Export Selected
-                        </button>
+                <!-- Compact Bulk Actions -->
+                <div id="bulkActions" class="bulk-actions" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 8px 12px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span id="selectedCount" style="font-size: 13px; font-weight: 500; color: #1e40af;">0 selected</span>
+                        <div style="display: flex; gap: 6px;">
+                            <button onclick="showGenerateAccessCodesModal()" 
+                                    class="bulk-btn" 
+                                    style="height: 28px; padding: 4px 8px; font-size: 12px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                Generate Codes
+                            </button>
+                            <button onclick="showAssignExamSetsModal()" 
+                                    class="bulk-btn" 
+                                    style="height: 28px; padding: 4px 8px; font-size: 12px; background: #059669; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                Assign Sets
+                            </button>
+                            <button onclick="bulkExport()" 
+                                    class="bulk-btn" 
+                                    style="height: 28px; padding: 4px 8px; font-size: 12px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                Export
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Applicants Table -->
-                <div class="applicants-table">
-                    <table class="data-table">
+                <div class="applicants-table" style="overflow-x: auto;">
+                    <table class="data-table" style="width: 100%; table-layout: fixed;">
                         <thead>
                             <tr>
-                                <th>
-                                    <input type="checkbox" 
-                                           id="tableSelectAll" 
-                                           class="checkbox-input" 
-                                           onchange="toggleTableSelectAll()"
-                                           aria-label="Select all applicants">
-                                </th>
-                                <th>Applicant Info</th>
-                                <th>Contact</th>
-                                <th>Status</th>
-                                <th>Access Code</th>
-                                <th>Exam Score</th>
-                                <th>Actions</th>
+                                <th style="width: 40px;">NO.</th>
+                                <th style="width: 120px;">APPLICANT NO.</th>
+                                <th style="width: 180px;">FULL NAME</th>
+                                <th style="width: 200px;">CONTACT INFORMATION</th>
+                                <th style="width: 120px;">PREFERRED COURSE</th>
+                                <th style="width: 100px;">WEIGHTED EXAM % (60%)</th>
+                                <th style="width: 120px;">VERBAL DESCRIPTION</th>
+                                <th style="width: 120px;">STATUS</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($applicants ?? [] as $applicant)
-                                <tr>
-                                    <td>
-                                        <input type="checkbox" 
-                                               class="checkbox-input applicant-checkbox" 
-                                               value="{{ $applicant->applicant_id }}"
-                                               onchange="updateBulkActions()"
-                                               aria-label="Select {{ $applicant->full_name }}">
+                            @forelse($applicants ?? [] as $index => $applicant)
+                                <tr style="page-break-inside: avoid; position: relative;" 
+                                    onmouseover="showActions({{ $applicant->applicant_id }})" 
+                                    onmouseout="hideActions({{ $applicant->applicant_id }})">
+                                    <td class="text-center font-medium">
+                                        {{ ($applicants->currentPage() - 1) * $applicants->perPage() + $index + 1 }}
                                     </td>
                                     <td>
-                                        <div class="applicant-info">
-                                            <div class="applicant-name">{{ $applicant->full_name }}</div>
-                                            <div class="applicant-id">ID: {{ $applicant->application_no }}</div>
+                                        <div class="applicant-number">
+                                            <span class="font-mono text-sm">{{ $applicant->application_no ?: $applicant->formatted_applicant_no }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="applicant-name">
+                                            <div class="font-medium text-gray-900" style="font-size: 14px;">{{ strtoupper($applicant->full_name) }}</div>
+                                            @if($applicant->examSet)
+                                                <div style="font-size: 11px; color: #1e40af; font-weight: 500; margin-top: 2px;">
+                                                    Set {{ $applicant->examSet->set_name }}
+                                                </div>
+                                            @else
+                                                <div style="font-size: 11px; color: #9ca3af; margin-top: 2px;">
+                                                    Not Assigned
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <!-- Floating Actions -->
+                                        <div id="actions-{{ $applicant->applicant_id }}" class="floating-actions" style="display: none;">
+                                            <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}" 
+                                               class="action-btn action-btn-view" 
+                                               title="View details">
+                                                👁️
+                                            </a>
+                                            <a href="{{ route('admin.applicants.edit', $applicant->applicant_id) }}" 
+                                               class="action-btn action-btn-edit" 
+                                               title="Edit applicant">
+                                                ✏️
+                                            </a>
+                                            <button onclick="deleteApplicant({{ $applicant->applicant_id }})" 
+                                                    class="action-btn action-btn-delete" 
+                                                    title="Delete applicant">
+                                                🗑️
+                                            </button>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="contact-info">
-                                            <div class="contact-email">{{ $applicant->email_address }}</div>
-                                            <div class="contact-phone">{{ $applicant->phone_number }}</div>
+                                            <div class="email-address text-sm" style="font-size: 13px;">{{ $applicant->email_address }}</div>
+                                            @if($applicant->phone_number)
+                                                <div class="phone-number text-sm text-gray-500">{{ $applicant->phone_number }}</div>
+                                            @endif
                                         </div>
                                     </td>
-                                    <td>
-                                        <span class="status-badge status-{{ $applicant->status }}">
-                                            {{ ucfirst(str_replace('_', ' ', $applicant->status)) }}
-                                        </span>
+                                    <td class="text-center" style="font-size: 13px;">
+                                        {{ $applicant->preferred_course ?: '-' }}
                                     </td>
-                                    <td>
-                                        @if($applicant->accessCode)
-                                            <div class="access-code-display">{{ $applicant->accessCode->code }}</div>
-                                        @else
-                                            <span class="no-code">Not Generated</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($applicant->score)
-                                            <div class="score-display">
-                                                <span class="score-value {{ $applicant->score >= 75 ? 'score-passed' : 'score-failed' }}">
-                                                    {{ $applicant->score }}%
-                                                </span>
-                                                <span class="score-details">{{ $applicant->correct_answers }}/{{ $applicant->total_questions }}</span>
-                                            </div>
+                                    <td class="text-center">
+                                        @if($applicant->score !== null)
+                                            <span class="score-value">{{ number_format((float) $applicant->score, 2) }}%</span>
                                         @else
                                             <span class="no-score">-</span>
                                         @endif
                                     </td>
-                                    <td>
-                                        <div class="table-actions">
-                                            <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}" 
-                                               class="action-btn action-btn-view" 
-                                               aria-label="View details for {{ $applicant->full_name }}">
-                                                <span aria-hidden="true">👁️</span>
-                                                <span class="sr-only">View Details</span>
-                                            </a>
-                                            <a href="{{ route('admin.applicants.edit', $applicant->applicant_id) }}" 
-                                               class="action-btn action-btn-edit" 
-                                               aria-label="Edit {{ $applicant->full_name }}">
-                                                <span aria-hidden="true">✏️</span>
-                                                <span class="sr-only">Edit</span>
-                                            </a>
-                                            @if(!$applicant->accessCode)
-                                            <button onclick="generateSingleAccessCode({{ $applicant->applicant_id }})" 
-                                                    class="action-btn action-btn-code" 
-                                                    aria-label="Generate access code for {{ $applicant->full_name }}">
-                                                <span aria-hidden="true">🔑</span>
-                                                <span class="sr-only">Generate Access Code</span>
-                                            </button>
-                                            @endif
-                                            <button onclick="deleteApplicant({{ $applicant->applicant_id }})" 
-                                                    class="action-btn action-btn-delete" 
-                                                    aria-label="Delete {{ $applicant->full_name }}">
-                                                <span aria-hidden="true">🗑️</span>
-                                                <span class="sr-only">Delete</span>
-                                            </button>
-                                        </div>
+                                    <td class="text-center" style="font-size: 13px;">
+                                        <span class="verbal-description">{{ $applicant->computed_verbal_description ?: '-' }}</span>
+                                    </td>
+                                    <td class="text-center" style="padding: 6px 4px;">
+                                        <span class="status-badge status-pending" style="font-size: 9px; padding: 2px 4px; border-radius: 3px; background: #fef3c7; color: #92400e; font-weight: 500; white-space: nowrap; display: inline-block;">
+                                            @php
+                                                $status = $applicant->status;
+                                                $statusMap = [
+                                                    'exam-completed' => 'EXAM DONE',
+                                                    'interview-available' => 'INTERVIEW READY',
+                                                    'interview-scheduled' => 'INTERVIEW SET',
+                                                    'interview-completed' => 'INTERVIEW DONE',
+                                                    'admitted' => 'ADMITTED',
+                                                    'rejected' => 'REJECTED',
+                                                    'pending' => 'PENDING'
+                                                ];
+                                                echo $statusMap[$status] ?? strtoupper(str_replace('-', ' ', $status));
+                                            @endphp
+                                        </span>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center py-8">
+                                    <td colspan="8" class="text-center py-8">
                                         <div class="empty-state">
-                                            <div class="empty-icon">📋</div>
                                             <div class="empty-title">No applicants found</div>
                                             <div class="empty-message">
                                                 @if(request()->hasAny(['search', 'status', 'exam_set_id']))
@@ -314,4 +421,13 @@
 
 @push('scripts')
     <script src="{{ asset('js/modules/applicant-manager.js') }}" defer></script>
+    <script>
+        function showActions(applicantId) {
+            document.getElementById('actions-' + applicantId).style.display = 'flex';
+        }
+        
+        function hideActions(applicantId) {
+            document.getElementById('actions-' + applicantId).style.display = 'none';
+        }
+    </script>
 @endpush

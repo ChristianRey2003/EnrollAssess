@@ -1,109 +1,14 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+@extends('layouts.admin')
 
-    <title>Import Applicants - {{ config('app.name', 'EnrollAssess') }}</title>
+@section('title', 'Import Applicants')
+@section('description', 'Bulk import applicants from a CSV file with automatic access code generation')
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+@php
+    $pageTitle = 'Import Applicants';
+    $pageSubtitle = 'Bulk import applicants from a CSV file with automatic access code generation';
+@endphp
 
-    <!-- Admin Dashboard CSS -->
-    <link href="{{ asset('css/admin/admin-dashboard.css') }}" rel="stylesheet">
-</head>
-<body class="admin-page">
-    <div class="admin-layout">
-        <!-- Sidebar -->
-        <nav class="admin-sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-logo">
-                    <img src="{{ asset('images/image-removebg-preview.png') }}" alt="University Logo">
-                    <div>
-                        <h2 class="sidebar-title">EnrollAssess</h2>
-                        <p class="sidebar-subtitle">Admin Portal</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="sidebar-nav">
-                <div class="nav-item">
-                    <a href="{{ route('admin.dashboard') }}" class="nav-link">
-                        <span class="nav-icon">📊</span>
-                        <span class="nav-text">Dashboard</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('admin.exams.index') }}" class="nav-link">
-                        <span class="nav-icon">📝</span>
-                        <span class="nav-text">Exams</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('admin.questions.index') }}" class="nav-link">
-                        <span class="nav-icon">❓</span>
-                        <span class="nav-text">Questions</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('admin.applicants.index') }}" class="nav-link active">
-                        <span class="nav-icon">👥</span>
-                        <span class="nav-text">Applicants</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('admin.interviews.index') }}" class="nav-link">
-                        <span class="nav-icon">📅</span>
-                        <span class="nav-text">Interviews</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('admin.users.index') }}" class="nav-link">
-                        <span class="nav-icon">👤</span>
-                        <span class="nav-text">Users</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('admin.reports') }}" class="nav-link">
-                        <span class="nav-icon">📈</span>
-                        <span class="nav-text">Reports</span>
-                    </a>
-                </div>
-            </div>
-
-            <div class="sidebar-footer">
-                <form method="POST" action="{{ route('admin.logout') }}">
-                    @csrf
-                    <button type="submit" class="logout-link">
-                        <span class="nav-icon">🚪</span>
-                        <span class="nav-text">Logout</span>
-                    </button>
-                </form>
-            </div>
-        </nav>
-
-        <!-- Main Content -->
-        <main class="admin-main">
-            <!-- Header -->
-            <div class="main-header">
-                <div class="header-left">
-                    <h1>Import Applicants</h1>
-                    <p class="header-subtitle">Bulk import applicants from a CSV file with automatic access code generation</p>
-                </div>
-                <div class="header-right">
-                    <div class="header-time">
-                        🕐 {{ now()->format('M d, Y g:i A') }}
-                    </div>
-                    <div class="header-user">
-                        {{ auth()->user()->name ?? 'Dr. Admin' }}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Content -->
-            <div class="main-content">
+@section('content')
                 <!-- Breadcrumb -->
                 <div class="breadcrumb">
                     <a href="{{ route('admin.applicants.index') }}" class="breadcrumb-link">Applicants</a>
@@ -124,7 +29,7 @@
                                     <h3>Download Template</h3>
                                     <p>Start by downloading our CSV template with the correct format and sample data.</p>
                                     <a href="{{ route('admin.applicants.download-template') }}" class="btn-secondary">
-                                        📥 Download CSV Template
+                                        Download CSV Template
                                     </a>
                                 </div>
                             </div>
@@ -133,13 +38,18 @@
                                 <div class="step-number">2</div>
                                 <div class="step-content">
                                     <h3>Prepare Your Data</h3>
-                                    <p>Fill in the template with your applicant data. Required columns:</p>
+                                    <p>Your CSV file should contain these exact column headers (only <strong>First Name</strong>, <strong>Last Name</strong>, and <strong>E-mail</strong> are required):</p>
                                     <ul class="required-columns">
-                                        <li><strong>full_name</strong> - Complete name of the applicant</li>
-                                        <li><strong>email_address</strong> - Valid email address (must be unique)</li>
-                                        <li><strong>phone_number</strong> - Contact number (optional)</li>
-                                        <li><strong>address</strong> - Full address (optional)</li>
-                                        <li><strong>education_background</strong> - Educational background (optional)</li>
+                                        <li><strong>No.</strong> - Row number (auto-generated, can be left empty)</li>
+                                        <li><strong>Applicant No.</strong> - Application number (auto-generated if empty)</li>
+                                        <li><strong>Preferred Course</strong> - Course preference (optional)</li>
+                                        <li><strong>Last Name</strong> - Last name of the applicant (required)</li>
+                                        <li><strong>First Name</strong> - First name of the applicant (required)</li>
+                                        <li><strong>Middle Name</strong> - Middle name of the applicant (optional)</li>
+                                        <li><strong>E-mail</strong> - Valid email address (required, must be unique)</li>
+                                        <li><strong>Contact #</strong> - Phone/contact number (optional)</li>
+                                        <li><strong>Weighted Exam Percentage (60%)</strong> - Exam score (auto-calculated, can be left empty)</li>
+                                        <li><strong>Verbal Description</strong> - Performance description (auto-generated, can be left empty)</li>
                                     </ul>
                                 </div>
                             </div>
@@ -170,7 +80,15 @@
                                 <div class="file-upload-area" id="fileUploadArea">
                                     <input type="file" id="csv_file" name="csv_file" accept=".csv,.txt" required class="file-input">
                                     <div class="upload-content">
-                                        <div class="upload-icon">📄</div>
+                                        <div class="upload-icon">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                <polyline points="14,2 14,8 20,8"/>
+                                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                                <polyline points="10,9 9,9 8,9"/>
+                                            </svg>
+                                        </div>
                                         <div class="upload-text">
                                             <strong>Click to browse</strong> or drag and drop your CSV file here
                                         </div>
@@ -191,7 +109,7 @@
                                         </option>
                                     @endforeach
                                 </select>
-                                <div class="form-help">All imported applicants will be assigned to this exam set. You can change assignments later.</div>
+                                <div class="form-help">All imported applicants will be assigned to this exam set. You can change assignments later.<br><small class="text-muted">Note: If the exam set has a configured exam window, access will only be allowed during that time period.</small></div>
                             </div>
 
                             <!-- Access Code Settings -->
@@ -206,18 +124,18 @@
                             </div>
 
                             <div class="form-group" id="accessCodeSettings">
-                                <label for="access_code_expiry_hours" class="form-label">Access Code Expiry (Hours)</label>
+                                <label for="access_code_expiry_days" class="form-label">Expires In (Days)</label>
                                 <div class="duration-input-group">
-                                    <input type="number" id="access_code_expiry_hours" name="access_code_expiry_hours" class="form-control duration-input" value="72" min="1" max="720">
-                                    <span class="duration-label">hours</span>
+                                    <input type="number" id="access_code_expiry_days" name="access_code_expiry_days" class="form-control duration-input" value="30" min="1" max="365">
+                                    <span class="duration-label">days</span>
                                     <div class="duration-presets">
-                                        <button type="button" onclick="setExpiry(24)" class="preset-btn">1 day</button>
-                                        <button type="button" onclick="setExpiry(72)" class="preset-btn">3 days</button>
-                                        <button type="button" onclick="setExpiry(168)" class="preset-btn">1 week</button>
-                                        <button type="button" onclick="setExpiry(720)" class="preset-btn">30 days</button>
+                                        <button type="button" onclick="setExpiry(7)" class="preset-btn">7 days</button>
+                                        <button type="button" onclick="setExpiry(30)" class="preset-btn">30 days</button>
+                                        <button type="button" onclick="setExpiry(60)" class="preset-btn">60 days</button>
+                                        <button type="button" onclick="setExpiry(90)" class="preset-btn">90 days</button>
                                     </div>
                                 </div>
-                                <div class="form-help">Access codes will expire after this duration. Default: 72 hours (3 days).</div>
+                                <div class="form-help">Access codes are single-use and will expire after this duration. Default: 30 days. Applicants can resume the same attempt if interrupted.</div>
                             </div>
 
                             <!-- Import Actions -->
@@ -226,10 +144,10 @@
                                     ← Back to Applicants
                                 </a>
                                 <button type="button" onclick="previewImport()" class="btn-secondary" id="previewBtn" disabled>
-                                    👁️ Preview Import
+                                    Preview Import
                                 </button>
                                 <button type="submit" class="btn-primary" id="importBtn" disabled>
-                                    📤 Start Import
+                                    Start Import
                                 </button>
                             </div>
                         </form>
@@ -270,11 +188,10 @@
                         <div id="resultsContent"></div>
                     </div>
                 </div>
-            </div>
-        </main>
-    </div>
+@endsection
 
-    <script>
+@push('scripts')
+<script>
         let csvData = null;
         let isImporting = false;
 
@@ -326,7 +243,7 @@
                 // Show file info
                 fileInfo.innerHTML = `
                     <div class="file-details">
-                        <span class="file-name">📄 ${file.name}</span>
+                        <span class="file-name">${file.name}</span>
                         <span class="file-size">${(file.size / 1024).toFixed(1)} KB</span>
                     </div>
                 `;
@@ -383,20 +300,90 @@
                 
                 <div class="preview-table">
                     <h4>Sample Data (First 5 rows):</h4>
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                ${csvData.headers.map(header => `<th>${header}</th>`).join('')}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${csvData.rows.map(row => `
+                    <div class="applicants-table">
+                        <table class="data-table">
+                            <thead>
                                 <tr>
-                                    ${row.map(cell => `<td>${cell}</td>`).join('')}
+                                    <th>No.</th>
+                                    <th>Applicant No.</th>
+                                    <th>Full Name</th>
+                                    <th>Contact Information</th>
+                                    <th>Preferred Course</th>
+                                    <th>Weighted Exam % (60%)</th>
+                                    <th>Verbal Description</th>
+                                    <th>Status</th>
                                 </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                ${csvData.rows.map((row, index) => {
+                                    // Create header mapping for official template
+                                    const headerMapping = {
+                                        'First Name': 'first_name',
+                                        'Middle Name': 'middle_name', 
+                                        'Last Name': 'last_name',
+                                        'Preferred Course': 'preferred_course',
+                                        'E-mail': 'email_address',
+                                        'Contact #': 'phone_number',
+                                        'Applicant No.': 'applicant_no',
+                                        'Weighted Exam Percentage (60%)': 'weighted_exam',
+                                        'Weighted Exam % (60%)': 'weighted_exam',
+                                        'Verbal Description': 'verbal_description'
+                                    };
+                                    
+                                    // Map CSV columns to internal format
+                                    const rowData = {};
+                                    csvData.headers.forEach((header, i) => {
+                                        const mappedField = headerMapping[header] || header.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                                        rowData[mappedField] = row[i] || '';
+                                    });
+                                    
+                                    const fullName = [rowData.first_name, rowData.middle_name, rowData.last_name]
+                                        .filter(name => name && name.trim())
+                                        .join(' ');
+                                    
+                                    const formalName = [rowData.last_name, rowData.first_name, rowData.middle_name]
+                                        .filter(name => name && name.trim())
+                                        .join(', ');
+                                    
+                                    return `
+                                        <tr>
+                                            <td>${index + 1}</td>
+                                            <td>
+                                                <div class="applicant-number">
+                                                    <span class="font-mono text-sm">${rowData.applicant_no || 'Auto-generated'}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="applicant-name">
+                                                    <div class="font-medium text-gray-900">${fullName || '-'}</div>
+                                                    <div class="text-sm text-gray-500">${formalName || '-'}</div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="contact-info">
+                                                    <div class="contact-email">${rowData.email_address || ''}</div>
+                                                    <div class="contact-phone">${rowData.phone_number || ''}</div>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">${rowData.preferred_course || '-'}</td>
+                                            <td class="text-center">
+                                                ${rowData.weighted_exam ? 
+                                                    `<span class="score-value">${rowData.weighted_exam}%</span>` : 
+                                                    `<span class="no-score text-gray-400">-</span>`
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="verbal-description">${rowData.verbal_description || '-'}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="status-badge status-pending">Pending</span>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             `;
 
@@ -405,8 +392,8 @@
             previewSection.scrollIntoView({ behavior: 'smooth' });
         }
 
-        function setExpiry(hours) {
-            document.getElementById('access_code_expiry_hours').value = hours;
+        function setExpiry(days) {
+            document.getElementById('access_code_expiry_days').value = days;
         }
 
         // Toggle access code settings
@@ -451,8 +438,13 @@
             const formData = new FormData();
             formData.append('csv_file', fileInput.files[0]);
             formData.append('exam_set_id', document.getElementById('exam_set_id').value);
-            formData.append('generate_access_codes', document.getElementById('generate_access_codes').checked);
-            formData.append('access_code_expiry_hours', document.getElementById('access_code_expiry_hours').value);
+            // Send as 1/0 to satisfy strict boolean validation on backend
+            formData.append('generate_access_codes', document.getElementById('generate_access_codes').checked ? '1' : '0');
+            
+            // Convert days to hours for backend compatibility
+            const expiryDays = document.getElementById('access_code_expiry_days').value;
+            const expiryHours = expiryDays * 24;
+            formData.append('access_code_expiry_hours', expiryHours);
             
             // Add CSRF token
             formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
@@ -469,11 +461,23 @@
             }, 200);
 
             // Submit form
-            fetch('/admin/applicants-import', {
+            fetch('/admin/applicants/bulk/import', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData,
+                credentials: 'same-origin'
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`HTTP ${response.status}: ${text}`);
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 clearInterval(progressInterval);
                 progressFill.style.width = '100%';
@@ -488,6 +492,17 @@
                 progressFill.style.width = '100%';
                 progressText.textContent = 'Import failed!';
                 
+                console.error('Import error:', error);
+                
+                // Check if it's an authentication error
+                if (error.message.includes('Authentication required')) {
+                    setTimeout(() => {
+                        alert('Your session has expired. Please log in again.');
+                        window.location.href = '/admin/login';
+                    }, 500);
+                    return;
+                }
+                
                 setTimeout(() => {
                     showResults({
                         success: false,
@@ -498,7 +513,7 @@
             .finally(() => {
                 isImporting = false;
                 importBtn.disabled = false;
-                importBtn.textContent = '📤 Start Import';
+                importBtn.textContent = 'Start Import';
             });
         }
 
@@ -512,7 +527,12 @@
                 const results = data.results;
                 html = `
                     <div class="import-success">
-                        <div class="success-icon">✅</div>
+                        <div class="success-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                <polyline points="22,4 12,14.01 9,11.01"/>
+                            </svg>
+                        </div>
                         <div class="success-message">
                             <h3>Import Completed Successfully!</h3>
                             <p>${data.message}</p>
@@ -559,7 +579,13 @@
             } else {
                 html = `
                     <div class="import-error">
-                        <div class="error-icon">❌</div>
+                        <div class="error-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="15" y1="9" x2="9" y2="15"/>
+                                <line x1="9" y1="9" x2="15" y2="15"/>
+                            </svg>
+                        </div>
                         <div class="error-message">
                             <h3>Import Failed</h3>
                             <p>${data.message}</p>
@@ -578,9 +604,11 @@
             resultsSection.style.display = 'block';
             resultsSection.scrollIntoView({ behavior: 'smooth' });
         }
-    </script>
+</script>
+@endpush
 
-    <style>
+@push('styles')
+<style>
         /* Import page styles */
         .import-instructions {
             padding: 20px;
@@ -656,9 +684,14 @@
         }
 
         .upload-icon {
-            font-size: 48px;
             margin-bottom: 16px;
             opacity: 0.7;
+            color: var(--text-gray);
+        }
+        
+        .upload-icon svg {
+            width: 48px;
+            height: 48px;
         }
 
         .upload-text strong {
@@ -758,6 +791,58 @@
             color: var(--maroon-primary);
         }
 
+        /* Applicant table styles for preview */
+        .applicants-table {
+            background: var(--white);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .applicant-number .font-mono {
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+
+        .applicant-name .font-medium {
+            font-weight: 500;
+            color: #1f2937;
+        }
+
+        .applicant-name .text-sm {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .contact-info .contact-email {
+            font-weight: 500;
+            color: #1f2937;
+            margin-bottom: 2px;
+        }
+
+        .contact-info .contact-phone {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .no-score {
+            color: #9ca3af !important;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
         .import-progress {
             padding: 20px;
         }
@@ -804,7 +889,15 @@
         }
 
         .success-icon, .error-icon {
-            font-size: 32px;
+            flex-shrink: 0;
+        }
+        
+        .success-icon svg {
+            color: #2e7d32;
+        }
+        
+        .error-icon svg {
+            color: #d32f2f;
         }
 
         .success-message h3, .error-message h3 {
@@ -909,6 +1002,5 @@
                 flex-direction: column;
             }
         }
-    </style>
-</body>
-</html>
+</style>
+@endpush

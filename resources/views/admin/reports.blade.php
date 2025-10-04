@@ -11,22 +11,22 @@
                 <!-- Quick Stats Overview -->
                 <div class="stats-grid reports-stats">
                     <div class="stat-card">
-                        <div class="stat-icon">📊</div>
+                        <div class="stat-icon" aria-hidden="true"></div>
                         <div class="stat-value">{{ $totalApplicants }}</div>
                         <div class="stat-label">Total Applicants</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">✅</div>
+                        <div class="stat-icon" aria-hidden="true"></div>
                         <div class="stat-value">{{ $examCompleted }}</div>
                         <div class="stat-label">Exam Completed</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">🎯</div>
+                        <div class="stat-icon" aria-hidden="true"></div>
                         <div class="stat-value">{{ $admitted }}</div>
                         <div class="stat-label">Admitted</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">📈</div>
+                        <div class="stat-icon" aria-hidden="true"></div>
                         <div class="stat-value">{{ $passRate }}%</div>
                         <div class="stat-label">Pass Rate</div>
                     </div>
@@ -36,11 +36,7 @@
                 <div class="content-section primary-report-card">
                     <div class="section-content" style="padding: 40px;">
                         <div class="primary-report-layout">
-                            <div class="report-icon">
-                                <div class="icon-container">
-                                    <span class="report-emoji">📋</span>
-                                </div>
-                            </div>
+                            <div class="report-icon" aria-hidden="true"></div>
                             <div class="report-content">
                                 <h2 class="report-title">Final Applicant Ranking</h2>
                                 <p class="report-description">
@@ -49,23 +45,13 @@
                                     and admission recommendations for the Computer Studies Department.
                                 </p>
                                 <div class="report-meta">
-                                    <div class="meta-item">
-                                        <span class="meta-icon">📊</span>
-                                        <span class="meta-text">{{ $totalApplicants ?? 145 }} Applicants Included</span>
-                                    </div>
-                                    <div class="meta-item">
-                                        <span class="meta-icon">📅</span>
-                                        <span class="meta-text">Last Updated: {{ now()->format('M d, Y g:i A') }}</span>
-                                    </div>
-                                    <div class="meta-item">
-                                        <span class="meta-icon">🎯</span>
-                                        <span class="meta-text">Pass Rate: {{ $passRate ?? 78 }}%</span>
-                                    </div>
+                                    <div class="meta-item"><span class="meta-text">{{ $totalApplicants ?? 145 }} Applicants Included</span></div>
+                                    <div class="meta-item"><span class="meta-text">Last Updated: {{ now()->format('M d, Y g:i A') }}</span></div>
+                                    <div class="meta-item"><span class="meta-text">Pass Rate: {{ $passRate ?? 78 }}%</span></div>
                                 </div>
                             </div>
                             <div class="report-action">
                                 <button onclick="generateMainReport()" class="btn-generate-main">
-                                    <span class="btn-icon">📄</span>
                                     <span class="btn-text">Generate PDF Report</span>
                                 </button>
                             </div>
@@ -77,9 +63,7 @@
                 <div class="content-section">
                     <div class="section-header">
                         <h2 class="section-title">Report Filters</h2>
-                        <button onclick="resetFilters()" class="section-action">
-                            🔄 Reset Filters
-                        </button>
+                        <button onclick="resetFilters()" class="section-action">Reset Filters</button>
                     </div>
                     <div class="section-content" style="padding: 24px 30px;">
                         <form id="reportFiltersForm" class="filters-form">
@@ -146,12 +130,8 @@
                             </div>
 
                             <div class="filters-actions">
-                                <button type="button" onclick="applyFilters()" class="btn-apply-filters">
-                                    🔍 Apply Filters
-                                </button>
-                                <button type="button" onclick="previewReport()" class="btn-preview">
-                                    👁️ Preview Report
-                                </button>
+                                <button type="button" onclick="applyFilters()" class="btn-apply-filters">Apply Filters</button>
+                                <button type="button" onclick="previewReport()" class="btn-preview">Preview Report</button>
                             </div>
                         </form>
                     </div>
@@ -165,7 +145,7 @@
                     <div class="section-content" style="padding: 30px;">
                         <div class="additional-reports-grid">
                             <div class="report-card">
-                                <div class="report-card-icon">📊</div>
+                                <div class="report-card-icon" aria-hidden="true"></div>
                                 <div class="report-card-content">
                                     <h3 class="report-card-title">Statistical Analysis</h3>
                                     <p class="report-card-description">
@@ -174,14 +154,12 @@
                                     </p>
                                 </div>
                                 <div class="report-card-actions">
-                                    <button onclick="generateStatReport()" class="btn-report-action">
-                                        📈 Generate
-                                    </button>
+                                    <button onclick="generateStatReport()" class="btn-report-action">Generate</button>
                                 </div>
                             </div>
 
                             <div class="report-card">
-                                <div class="report-card-icon">📋</div>
+                                <div class="report-card-icon" aria-hidden="true"></div>
                                 <div class="report-card-content">
                                     <h3 class="report-card-title">Interview Summary</h3>
                                     <p class="report-card-description">
@@ -190,14 +168,12 @@
                                     </p>
                                 </div>
                                 <div class="report-card-actions">
-                                    <button onclick="generateInterviewReport()" class="btn-report-action">
-                                        📝 Generate
-                                    </button>
+                                    <button onclick="generateInterviewReport()" class="btn-report-action">Generate</button>
                                 </div>
                             </div>
 
                             <div class="report-card">
-                                <div class="report-card-icon">🎯</div>
+                                <div class="report-card-icon" aria-hidden="true"></div>
                                 <div class="report-card-content">
                                     <h3 class="report-card-title">Question Analytics</h3>
                                     <p class="report-card-description">
@@ -206,14 +182,12 @@
                                     </p>
                                 </div>
                                 <div class="report-card-actions">
-                                    <button onclick="generateQuestionReport()" class="btn-report-action">
-                                        📊 Generate
-                                    </button>
+                                    <button onclick="generateQuestionReport()" class="btn-report-action">Generate</button>
                                 </div>
                             </div>
 
                             <div class="report-card">
-                                <div class="report-card-icon">📧</div>
+                                <div class="report-card-icon" aria-hidden="true"></div>
                                 <div class="report-card-content">
                                     <h3 class="report-card-title">Communication Log</h3>
                                     <p class="report-card-description">
@@ -222,14 +196,12 @@
                                     </p>
                                 </div>
                                 <div class="report-card-actions">
-                                    <button onclick="generateCommReport()" class="btn-report-action">
-                                        📬 Generate
-                                    </button>
+                                    <button onclick="generateCommReport()" class="btn-report-action">Generate</button>
                                 </div>
                             </div>
 
                             <div class="report-card">
-                                <div class="report-card-icon">🔒</div>
+                                <div class="report-card-icon" aria-hidden="true"></div>
                                 <div class="report-card-content">
                                     <h3 class="report-card-title">Security Audit</h3>
                                     <p class="report-card-description">
@@ -238,14 +210,12 @@
                                     </p>
                                 </div>
                                 <div class="report-card-actions">
-                                    <button onclick="generateSecurityReport()" class="btn-report-action">
-                                        🛡️ Generate
-                                    </button>
+                                    <button onclick="generateSecurityReport()" class="btn-report-action">Generate</button>
                                 </div>
                             </div>
 
                             <div class="report-card">
-                                <div class="report-card-icon">⏱️</div>
+                                <div class="report-card-icon" aria-hidden="true"></div>
                                 <div class="report-card-content">
                                     <h3 class="report-card-title">Timing Analysis</h3>
                                     <p class="report-card-description">
@@ -254,9 +224,7 @@
                                     </p>
                                 </div>
                                 <div class="report-card-actions">
-                                    <button onclick="generateTimingReport()" class="btn-report-action">
-                                        ⏰ Generate
-                                    </button>
+                                    <button onclick="generateTimingReport()" class="btn-report-action">Generate</button>
                                 </div>
                             </div>
                         </div>
@@ -267,9 +235,7 @@
                 <div class="content-section">
                     <div class="section-header">
                         <h2 class="section-title">Recent Reports</h2>
-                        <button onclick="clearReportHistory()" class="section-action">
-                            🗑️ Clear History
-                        </button>
+                        <button onclick="clearReportHistory()" class="section-action">Clear History</button>
                     </div>
                     <div class="section-content">
                         <table class="data-table reports-history-table">
@@ -306,12 +272,8 @@
                                     </td>
                                     <td>
                                         <div class="table-actions">
-                                            <button onclick="downloadReport({{ $report['id'] }})" class="action-btn action-btn-download" title="Download Report">
-                                                📄 Download
-                                            </button>
-                                            <button onclick="viewReport({{ $report['id'] }})" class="action-btn action-btn-view" title="View Report">
-                                                👁️ View
-                                            </button>
+                                            <button onclick="downloadReport({{ $report['id'] }})" class="action-btn action-btn-download" title="Download Report">Download</button>
+                                            <button onclick="viewReport({{ $report['id'] }})" class="action-btn action-btn-view" title="View Report">View</button>
                                         </div>
                                     </td>
                                 </tr>

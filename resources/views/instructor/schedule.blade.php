@@ -1,639 +1,594 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+@extends('layouts.instructor')
 
-    <title>Interview Schedule - {{ config('app.name', 'EnrollAssess') }}</title>
+@section('title', 'Schedule')
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+@php
+    $pageTitle = 'Interview Schedule';
+    $pageSubtitle = 'Manage your interview appointments and schedule';
+@endphp
 
-    <!-- Admin Dashboard CSS -->
-    <link href="{{ asset('css/admin/admin-dashboard.css') }}" rel="stylesheet">
-</head>
-<body class="admin-page instructor-portal">
-    <div class="admin-layout">
-        <!-- Sidebar -->
-        <nav class="admin-sidebar instructor-sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-logo">
-                    <img src="{{ asset('images/image-removebg-preview.png') }}" alt="University Logo">
-                    <div>
-                        <h2 class="sidebar-title">EnrollAssess</h2>
-                        <p class="sidebar-subtitle">Instructor Portal</p>
-                    </div>
-                </div>
-            </div>
+@push('styles')
+<style>
+    .schedule-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
 
-            <div class="sidebar-nav">
-                <div class="nav-item">
-                    <a href="{{ route('instructor.dashboard') }}" class="nav-link">
-                        <span class="nav-icon">📊</span>
-                        <span class="nav-text">Dashboard</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('instructor.applicants') }}" class="nav-link">
-                        <span class="nav-icon">👥</span>
-                        <span class="nav-text">My Applicants</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('instructor.schedule') }}" class="nav-link active">
-                        <span class="nav-icon">📅</span>
-                        <span class="nav-text">Schedule</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('instructor.interview-history') }}" class="nav-link">
-                        <span class="nav-icon">📝</span>
-                        <span class="nav-text">Interview History</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('instructor.guidelines') }}" class="nav-link">
-                        <span class="nav-icon">📋</span>
-                        <span class="nav-text">Guidelines</span>
-                    </a>
-                </div>
-            </div>
+    .schedule-stats {
+        display: flex;
+        gap: 32px;
+        margin-bottom: 32px;
+        background: white;
+        padding: 20px 24px;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #E5E7EB;
+    }
 
-            <div class="sidebar-footer">
-                <div class="instructor-info">
-                    <div class="instructor-avatar">{{ substr(Auth::user()->full_name, 0, 2) }}</div>
-                    <div>
-                        <div class="instructor-name">{{ Auth::user()->full_name }}</div>
-                        <div class="instructor-role">Instructor</div>
-                    </div>
-                </div>
-                <form method="POST" action="{{ route('admin.logout') }}">
-                    @csrf
-                    <button type="submit" class="logout-link">
-                        <span class="nav-icon">🚪</span>
-                        <span class="nav-text">Logout</span>
-                    </button>
-                </form>
-            </div>
-        </nav>
+    .stat-item {
+        flex: 1;
+        text-align: center;
+        padding: 0 16px;
+        border-right: 1px solid #E5E7EB;
+    }
 
-        <!-- Main Content -->
-        <main class="admin-main">
-            <!-- Header -->
-            <div class="main-header instructor-header">
-                <div class="header-left">
-                    <h1>Interview Schedule</h1>
-                    <p class="header-subtitle">Manage your interview appointments and schedule</p>
-                </div>
-                <div class="header-right">
-                    <div class="header-stats">
-                        <div class="stat-item">
-                            <span class="stat-value">{{ $upcomingInterviews->count() }}</span>
-                            <span class="stat-label">Upcoming</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value">{{ $pendingScheduling->count() }}</span>
-                            <span class="stat-label">Pending Schedule</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    .stat-item:last-child {
+        border-right: none;
+    }
 
-            <!-- Content -->
-            <div class="main-content">
-                <!-- Upcoming Interviews -->
-                @if($upcomingInterviews->count() > 0)
-                <div class="content-section">
-                    <div class="section-header">
-                        <h2 class="section-title">📅 Upcoming Interviews</h2>
-                    </div>
-                    <div class="section-content">
-                        <div class="schedule-timeline">
-                            @foreach($upcomingInterviews as $interview)
-                            <div class="timeline-item">
-                                <div class="timeline-date">
-                                    <div class="date-day">{{ $interview->schedule_date->format('d') }}</div>
-                                    <div class="date-month">{{ $interview->schedule_date->format('M') }}</div>
-                                    <div class="date-time">{{ $interview->schedule_date->format('g:i A') }}</div>
-                                </div>
-                                <div class="timeline-content">
-                                    <div class="interview-card">
-                                        <div class="interview-header">
-                                            <div class="applicant-info">
-                                                <div class="applicant-avatar">{{ substr($interview->applicant->full_name, 0, 2) }}</div>
-                                                <div>
-                                                    <h4>{{ $interview->applicant->full_name }}</h4>
-                                                    <p>{{ $interview->applicant->application_no }}</p>
-                                                </div>
-                                            </div>
-                                            <div class="interview-status">
-                                                <span class="status-badge status-scheduled">Scheduled</span>
-                                            </div>
-                                        </div>
-                                        <div class="interview-details">
-                                            <div class="detail-item">
-                                                <span class="detail-label">Email:</span>
-                                                <span class="detail-value">{{ $interview->applicant->email_address }}</span>
-                                            </div>
-                                            <div class="detail-item">
-                                                <span class="detail-label">Exam Score:</span>
-                                                <span class="detail-value">
-                                                    @if($interview->applicant->score)
-                                                        {{ number_format($interview->applicant->score, 1) }}%
-                                                    @else
-                                                        Pending
-                                                    @endif
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="interview-actions">
-                                            <a href="{{ route('instructor.interview.show', $interview->applicant->applicant_id) }}" 
-                                               class="btn-sm btn-primary">Start Interview</a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-                @endif
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--maroon-primary);
+        margin-bottom: 4px;
+    }
 
-                <!-- Pending Scheduling -->
-                @if($pendingScheduling->count() > 0)
-                <div class="content-section">
-                    <div class="section-header">
-                        <h2 class="section-title">⏳ Pending Scheduling</h2>
-                        <p class="section-subtitle">These interviews need to be scheduled</p>
-                    </div>
-                    <div class="section-content">
-                        <div class="pending-grid">
-                            @foreach($pendingScheduling as $interview)
-                            <div class="pending-card">
-                                <div class="pending-header">
-                                    <div class="applicant-info">
-                                        <div class="applicant-avatar">{{ substr($interview->applicant->full_name, 0, 2) }}</div>
-                                        <div>
-                                            <h4>{{ $interview->applicant->full_name }}</h4>
-                                            <p>{{ $interview->applicant->application_no }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="pending-details">
-                                    <div class="detail-item">
-                                        <span class="detail-label">Email:</span>
-                                        <span class="detail-value">{{ $interview->applicant->email_address }}</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <span class="detail-label">Assigned:</span>
-                                        <span class="detail-value">{{ $interview->created_at->diffForHumans() }}</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <span class="detail-label">Exam Score:</span>
-                                        <span class="detail-value">
-                                            @if($interview->applicant->score)
-                                                {{ number_format($interview->applicant->score, 1) }}%
-                                            @else
-                                                Pending
-                                            @endif
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="pending-actions">
-                                    <button class="btn-sm btn-outline" onclick="scheduleInterview({{ $interview->interview_id }})">
-                                        📅 Schedule Interview
-                                    </button>
-                                    <a href="{{ route('instructor.interview.show', $interview->applicant->applicant_id) }}" 
-                                       class="btn-sm btn-primary">Start Now</a>
-                                </div>
-                            </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-                @endif
+    .stat-label {
+        color: #6B7280;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
 
-                <!-- Empty State -->
-                @if($upcomingInterviews->count() == 0 && $pendingScheduling->count() == 0)
-                <div class="content-section">
-                    <div class="section-content">
-                        <div class="empty-state">
-                            <div class="empty-icon">📅</div>
-                            <h3>No Interviews Scheduled</h3>
-                            <p>You don't have any upcoming interviews. Check back later or contact the administrator.</p>
-                        </div>
-                    </div>
-                </div>
-                @endif
-            </div>
-        </main>
-    </div>
+    .schedule-sections {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+    }
 
-    <!-- Schedule Modal -->
-    <div id="scheduleModal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Schedule Interview</h3>
-                <button class="modal-close" onclick="closeScheduleModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="scheduleForm">
-                    <div class="form-group">
-                        <label for="scheduleDate">Date</label>
-                        <input type="date" id="scheduleDate" name="schedule_date" required min="{{ date('Y-m-d') }}">
-                    </div>
-                    <div class="form-group">
-                        <label for="scheduleTime">Time</label>
-                        <input type="time" id="scheduleTime" name="schedule_time" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="scheduleNotes">Notes (Optional)</label>
-                        <textarea id="scheduleNotes" name="notes" rows="3" placeholder="Any special instructions or preparation notes..."></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeScheduleModal()">Cancel</button>
-                <button class="btn-primary" onclick="confirmSchedule()">Schedule Interview</button>
-            </div>
+    .schedule-section {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #E5E7EB;
+        overflow: hidden;
+    }
+
+    .section-header {
+        padding: 20px 24px;
+        background: #F9FAFB;
+        border-bottom: 1px solid #E5E7EB;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .section-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1F2937;
+        margin: 0;
+    }
+
+    .section-count {
+        background: var(--maroon-primary);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .section-content {
+        padding: 24px;
+        max-height: 600px;
+        overflow-y: auto;
+    }
+
+    .interview-card {
+        background: #F9FAFB;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 16px;
+        transition: all 0.3s ease;
+    }
+
+    .interview-card:hover {
+        border-color: var(--maroon-primary);
+        box-shadow: 0 2px 8px rgba(128, 0, 32, 0.1);
+    }
+
+    .interview-card:last-child {
+        margin-bottom: 0;
+    }
+
+    .interview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+    }
+
+    .applicant-info h4 {
+        font-weight: 600;
+        color: #1F2937;
+        margin: 0 0 4px 0;
+    }
+
+    .applicant-info p {
+        color: #6B7280;
+        font-size: 0.875rem;
+        margin: 0;
+    }
+
+    .interview-meta {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 16px;
+        font-size: 0.875rem;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #6B7280;
+    }
+
+    .meta-label {
+        font-weight: 500;
+        color: #374151;
+    }
+
+    .interview-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-primary {
+        background: var(--maroon-primary);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #5C0016;
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #6B7280;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #4B5563;
+        color: white;
+    }
+
+    .btn-outline {
+        background: transparent;
+        color: var(--maroon-primary);
+        border: 2px solid var(--maroon-primary);
+    }
+
+    .btn-outline:hover {
+        background: var(--maroon-primary);
+        color: white;
+    }
+
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-scheduled {
+        background: #DBEAFE;
+        color: #3B82F6;
+    }
+
+    .status-pending {
+        background: #FEF3C7;
+        color: #F59E0B;
+    }
+
+    .status-completed {
+        background: #D1FAE5;
+        color: #059669;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: #6B7280;
+    }
+
+    .empty-state h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 8px;
+    }
+
+    .schedule-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .schedule-modal.show {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 8px;
+        padding: 24px;
+        width: 90%;
+        max-width: 500px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .modal-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1F2937;
+        margin: 0;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6B7280;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        color: #374151;
+        font-size: 0.875rem;
+    }
+
+    .form-input, .form-textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #D1D5DB;
+        border-radius: 6px;
+        font-size: 0.875rem;
+    }
+
+    .form-input:focus, .form-textarea:focus {
+        outline: none;
+        border-color: var(--maroon-primary);
+        box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1);
+    }
+
+    .form-textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    @media (max-width: 768px) {
+        .schedule-sections {
+            grid-template-columns: 1fr;
+        }
+        
+        .schedule-stats {
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .stat-item {
+            border-right: none;
+            border-bottom: 1px solid #E5E7EB;
+            padding-bottom: 16px;
+        }
+        
+        .stat-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        
+        .interview-meta {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+@endpush
+
+@section('content')
+<div class="schedule-container">
+    <!-- Statistics -->
+    <div class="schedule-stats">
+        <div class="stat-item">
+            <div class="stat-value">{{ $upcomingInterviews->count() }}</div>
+            <div class="stat-label">Upcoming</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ $pendingScheduling->count() }}</div>
+            <div class="stat-label">Pending Schedule</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ $upcomingInterviews->where('schedule_date', '<=', now()->addDay())->count() }}</div>
+            <div class="stat-label">Due Soon</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ $upcomingInterviews->count() + $pendingScheduling->count() }}</div>
+            <div class="stat-label">Total Active</div>
         </div>
     </div>
 
-    <style>
-        /* Schedule-specific styles */
-        .instructor-portal {
-            --primary-color: #2563eb;
-        }
+    <!-- Schedule Sections -->
+    <div class="schedule-sections">
+        <!-- Upcoming Interviews -->
+        <div class="schedule-section">
+            <div class="section-header">
+                <h2 class="section-title">Upcoming Interviews</h2>
+                <span class="section-count">{{ $upcomingInterviews->count() }}</span>
+            </div>
+            <div class="section-content">
+                @forelse($upcomingInterviews as $interview)
+                    <div class="interview-card">
+                        <div class="interview-header">
+                            <div class="applicant-info">
+                                <h4>{{ $interview->applicant->first_name }} {{ $interview->applicant->last_name }}</h4>
+                                <p>{{ $interview->applicant->email_address }}</p>
+                            </div>
+                            <span class="status-badge status-scheduled">Scheduled</span>
+                        </div>
+                        
+                        <div class="interview-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">Date:</span>
+                                <span>{{ $interview->schedule_date->format('M d, Y') }}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Time:</span>
+                                <span>{{ $interview->schedule_date->format('g:i A') }}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">App No:</span>
+                                <span>{{ $interview->applicant->application_no }}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Score:</span>
+                                <span>{{ $interview->applicant->score ? number_format($interview->applicant->score, 1) . '%' : 'N/A' }}</span>
+                            </div>
+                        </div>
 
-        .instructor-sidebar {
-            background: linear-gradient(180deg, var(--primary-color) 0%, #1e40af 100%);
-        }
+                        <div class="interview-actions">
+                            <a href="{{ route('instructor.interview.show', $interview->applicant->applicant_id) }}" 
+                               class="btn btn-primary">
+                                Conduct Interview
+                            </a>
+                            <button onclick="rescheduleInterview({{ $interview->interview_id }})" 
+                                    class="btn btn-outline">
+                                Reschedule
+                            </button>
+                        </div>
+                    </div>
+                @empty
+                    <div class="empty-state">
+                        <h3>No Upcoming Interviews</h3>
+                        <p>You don't have any interviews scheduled for the coming days.</p>
+                    </div>
+                @endforelse
+            </div>
+        </div>
 
-        .instructor-header {
-            border-bottom: 3px solid var(--primary-color);
-        }
+        <!-- Pending Scheduling -->
+        <div class="schedule-section">
+            <div class="section-header">
+                <h2 class="section-title">Pending Scheduling</h2>
+                <span class="section-count">{{ $pendingScheduling->count() }}</span>
+            </div>
+            <div class="section-content">
+                @forelse($pendingScheduling as $interview)
+                    <div class="interview-card">
+                        <div class="interview-header">
+                            <div class="applicant-info">
+                                <h4>{{ $interview->applicant->first_name }} {{ $interview->applicant->last_name }}</h4>
+                                <p>{{ $interview->applicant->email_address }}</p>
+                            </div>
+                            <span class="status-badge status-pending">Pending</span>
+                        </div>
+                        
+                        <div class="interview-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">App No:</span>
+                                <span>{{ $interview->applicant->application_no }}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Score:</span>
+                                <span>{{ $interview->applicant->score ? number_format($interview->applicant->score, 1) . '%' : 'N/A' }}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Exam Date:</span>
+                                <span>{{ $interview->applicant->exam_completed_at ? $interview->applicant->exam_completed_at->format('M d, Y') : 'N/A' }}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Course:</span>
+                                <span>{{ $interview->applicant->preferred_course ?? 'N/A' }}</span>
+                            </div>
+                        </div>
 
-        .header-stats {
-            display: flex;
-            gap: 20px;
-        }
+                        <div class="interview-actions">
+                            <button onclick="scheduleInterview({{ $interview->interview_id }})" 
+                                    class="btn btn-primary">
+                                Schedule Interview
+                            </button>
+                        </div>
+                    </div>
+                @empty
+                    <div class="empty-state">
+                        <h3>No Pending Scheduling</h3>
+                        <p>All assigned applicants have been scheduled for interviews.</p>
+                    </div>
+                @endforelse
+            </div>
+        </div>
+    </div>
+</div>
 
-        .stat-item {
-            text-align: center;
-        }
+<!-- Schedule Modal -->
+<div id="scheduleModal" class="schedule-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Schedule Interview</h3>
+            <button class="close-btn" onclick="closeScheduleModal()">&times;</button>
+        </div>
+        <form id="scheduleForm">
+            @csrf
+            <input type="hidden" id="interviewId" name="interview_id">
+            
+            <div class="form-group">
+                <label class="form-label">Interview Date & Time</label>
+                <input type="datetime-local" id="scheduleDate" name="schedule_date" class="form-input" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Notes (Optional)</label>
+                <textarea id="scheduleNotes" name="notes" class="form-textarea" 
+                          placeholder="Any special instructions or notes for this interview..."></textarea>
+            </div>
+            
+            <div class="interview-actions">
+                <button type="submit" class="btn btn-primary">Schedule Interview</button>
+                <button type="button" class="btn btn-secondary" onclick="closeScheduleModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+@endsection
 
-        .stat-value {
-            display: block;
-            font-size: 24px;
-            font-weight: bold;
-            color: var(--primary-color);
-        }
+@push('scripts')
+<script>
+    function scheduleInterview(interviewId) {
+        document.getElementById('interviewId').value = interviewId;
+        document.getElementById('scheduleModal').classList.add('show');
+        
+        // Set minimum date to current date + 1 hour
+        const now = new Date();
+        now.setHours(now.getHours() + 1);
+        document.getElementById('scheduleDate').min = now.toISOString().slice(0, 16);
+    }
 
-        .stat-label {
-            font-size: 12px;
-            color: var(--text-gray);
-        }
+    function rescheduleInterview(interviewId) {
+        // Find the interview data to pre-populate the form
+        const interviewCard = document.querySelector(`button[onclick="rescheduleInterview(${interviewId})"]`).closest('.interview-card');
+        const scheduleDate = interviewCard.querySelector('.meta-item span').textContent; // This would need to be improved
+        
+        document.getElementById('interviewId').value = interviewId;
+        document.getElementById('scheduleModal').classList.add('show');
+        
+        // Set minimum date to current date + 1 hour
+        const now = new Date();
+        now.setHours(now.getHours() + 1);
+        document.getElementById('scheduleDate').min = now.toISOString().slice(0, 16);
+        
+        // Update modal title for rescheduling
+        document.querySelector('.modal-title').textContent = 'Reschedule Interview';
+    }
 
-        .schedule-timeline {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
+    function closeScheduleModal() {
+        document.getElementById('scheduleModal').classList.remove('show');
+        document.getElementById('scheduleForm').reset();
+        document.querySelector('.modal-title').textContent = 'Schedule Interview';
+    }
 
-        .timeline-item {
-            display: flex;
-            gap: 20px;
-            align-items: flex-start;
-        }
-
-        .timeline-date {
-            min-width: 80px;
-            text-align: center;
-            background: var(--primary-color);
-            color: white;
-            padding: 15px 10px;
-            border-radius: 12px;
-        }
-
-        .date-day {
-            font-size: 24px;
-            font-weight: bold;
-        }
-
-        .date-month {
-            font-size: 12px;
-            margin: 5px 0;
-        }
-
-        .date-time {
-            font-size: 11px;
-            opacity: 0.9;
-        }
-
-        .timeline-content {
-            flex: 1;
-        }
-
-        .interview-card, .pending-card {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 20px;
-        }
-
-        .interview-header, .pending-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 15px;
-        }
-
-        .applicant-info {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .applicant-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--primary-color);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .applicant-info h4 {
-            margin: 0;
-            font-size: 16px;
-        }
-
-        .applicant-info p {
-            margin: 2px 0 0 0;
-            font-size: 12px;
-            color: var(--text-gray);
-        }
-
-        .interview-details, .pending-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .detail-item {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .detail-label {
-            font-size: 12px;
-            color: var(--text-gray);
-            font-weight: 500;
-        }
-
-        .detail-value {
-            font-size: 14px;
-            color: var(--text-dark);
-        }
-
-        .interview-actions, .pending-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .pending-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 20px;
-        }
-
-        .btn-sm {
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        .btn-primary {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        .btn-outline {
-            background: white;
-            color: var(--primary-color);
-            border: 1px solid var(--primary-color);
-        }
-
-        .status-badge {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .status-scheduled {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        /* Modal styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 500px;
-        }
-
-        .modal-header {
-            padding: 20px;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-        }
-
-        .modal-body {
-            padding: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        .modal-footer {
-            padding: 20px;
-            border-top: 1px solid #e5e7eb;
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-        }
-
-        .btn-secondary {
-            background: #6b7280;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-        }
-
-        .instructor-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            margin-bottom: 15px;
-        }
-
-        .instructor-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--white);
-            color: var(--primary-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .instructor-name {
-            color: var(--white);
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .instructor-role {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 12px;
-        }
-
-        @media (max-width: 768px) {
-            .timeline-item {
-                flex-direction: column;
+    // Handle form submission
+    document.getElementById('scheduleForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch('{{ route("instructor.schedule.update", ":id") }}'.replace(':id', formData.get('interview_id')), {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                schedule_date: formData.get('schedule_date'),
+                notes: formData.get('notes')
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Interview scheduled successfully!');
+                location.reload();
+            } else {
+                alert('Failed to schedule interview. Please try again.');
             }
-
-            .pending-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .interview-details, .pending-details {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-
-    <script>
-        let currentInterviewId = null;
-
-        function scheduleInterview(interviewId) {
-            currentInterviewId = interviewId;
-            document.getElementById('scheduleModal').style.display = 'flex';
-        }
-
-        function closeScheduleModal() {
-            document.getElementById('scheduleModal').style.display = 'none';
-            document.getElementById('scheduleForm').reset();
-            currentInterviewId = null;
-        }
-
-        async function confirmSchedule() {
-            const date = document.getElementById('scheduleDate').value;
-            const time = document.getElementById('scheduleTime').value;
-            const notes = document.getElementById('scheduleNotes').value;
-
-            if (!date || !time) {
-                alert('Please select both date and time.');
-                return;
-            }
-
-            const scheduleDateTime = `${date} ${time}:00`;
-
-            try {
-                const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                const response = await fetch(`{{ url('/instructor/schedule') }}/${currentInterviewId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': token,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        schedule_date: scheduleDateTime,
-                        notes: notes
-                    })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    alert('Interview scheduled successfully.');
-                    window.location.reload();
-                } else {
-                    alert(data.message || 'Failed to schedule interview.');
-                }
-            } catch (e) {
-                alert('An error occurred. Please try again.');
-            } finally {
-                closeScheduleModal();
-            }
-        }
-
-        // Close modal when clicking outside
-        document.getElementById('scheduleModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeScheduleModal();
-            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
         });
-    </script>
-</body>
-</html>
+    });
+
+    // Close modal when clicking outside
+    document.getElementById('scheduleModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeScheduleModal();
+        }
+    });
+</script>
+@endpush

@@ -76,7 +76,7 @@ class QueryOptimizationService
                 'examSet.exam:exam_id,exam_name',
                 'accessCode:applicant_id,code,is_used,expires_at',
                 'latestInterview:interview_id,applicant_id,interviewer_id,status,schedule_date,overall_score,recommendation',
-                'latestInterview.interviewer:user_id,full_name',
+                'latestInterview.interviewer:user_id,first_name,last_name',
                 'results:result_id,applicant_id,question_id,is_correct,points_earned',
                 'results.question:question_id,question_text,points'
             ])->find($applicantId);
@@ -135,7 +135,9 @@ class QueryOptimizationService
         return $this->cacheService->remember($cacheKey, function() use ($limit) {
             return Applicant::select([
                 'applicant_id',
-                'full_name',
+                'first_name',
+                'middle_name',
+                'last_name',
                 'email_address',
                 'status',
                 'exam_set_id',
@@ -279,7 +281,9 @@ class QueryOptimizationService
         if (!empty($filters['search'])) {
             $search = $filters['search'];
             $query->where(function($q) use ($search) {
-                $q->where('applicants.full_name', 'like', "%{$search}%")
+                $q->where('applicants.first_name', 'like', "%{$search}%")
+                  ->orWhere('applicants.middle_name', 'like', "%{$search}%")
+                  ->orWhere('applicants.last_name', 'like', "%{$search}%")
                   ->orWhere('applicants.email_address', 'like', "%{$search}%")
                   ->orWhere('applicants.application_no', 'like', "%{$search}%");
             });
@@ -338,7 +342,9 @@ class QueryOptimizationService
         return $this->cacheService->remember($cacheKey, function() {
             return Applicant::select([
                 'applicants.applicant_id',
-                'applicants.full_name',
+                'applicants.first_name',
+                'applicants.middle_name',
+                'applicants.last_name',
                 'applicants.email_address',
                 'applicants.score',
                 'exam_sets.set_name'

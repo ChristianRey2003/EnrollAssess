@@ -28,13 +28,15 @@ class StoreApplicantRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'full_name' => 'required|string|max:255|min:2',
+            'first_name' => 'required|string|max:255|min:2',
+            'middle_name' => 'nullable|string|max:255',
+            'last_name' => 'required|string|max:255|min:2',
+            'preferred_course' => 'nullable|string|max:255',
             'email_address' => 'required|email|max:255|unique:applicants,email_address',
             'phone_number' => 'nullable|string|max:20|regex:/^[\d\s\-\+\(\)]+$/',
-            'address' => 'nullable|string|max:500',
-            'education_background' => 'nullable|string|max:255',
             'exam_set_id' => 'nullable|exists:exam_sets,exam_set_id',
             'generate_access_code' => 'boolean',
+            'verbal_description' => 'nullable|string|max:255',
         ];
     }
 
@@ -46,8 +48,10 @@ class StoreApplicantRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'full_name.required' => 'Full name is required.',
-            'full_name.min' => 'Full name must be at least 2 characters.',
+            'first_name.required' => 'First name is required.',
+            'first_name.min' => 'First name must be at least 2 characters.',
+            'last_name.required' => 'Last name is required.',
+            'last_name.min' => 'Last name must be at least 2 characters.',
             'email_address.required' => 'Email address is required.',
             'email_address.email' => 'Please provide a valid email address.',
             'email_address.unique' => 'This email address is already registered.',
@@ -64,11 +68,14 @@ class StoreApplicantRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'full_name' => 'full name',
+            'first_name' => 'first name',
+            'middle_name' => 'middle name',
+            'last_name' => 'last name',
+            'preferred_course' => 'preferred course',
             'email_address' => 'email address',
             'phone_number' => 'phone number',
-            'education_background' => 'education background',
             'exam_set_id' => 'exam set',
+            'verbal_description' => 'verbal description',
         ];
     }
 
@@ -79,7 +86,10 @@ class StoreApplicantRequest extends FormRequest
     {
         $this->merge([
             'email_address' => strtolower(trim($this->email_address)),
-            'full_name' => trim($this->full_name),
+            'first_name' => trim($this->first_name ?? ''),
+            'middle_name' => trim($this->middle_name ?? ''),
+            'last_name' => trim($this->last_name ?? ''),
+            'preferred_course' => trim($this->preferred_course ?? ''),
             'phone_number' => $this->phone_number ? preg_replace('/[^\d\-\+\(\)\s]/', '', $this->phone_number) : null,
         ]);
     }

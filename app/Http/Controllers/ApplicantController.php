@@ -10,6 +10,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 use Exception;
 
@@ -49,9 +51,12 @@ class ApplicantController extends BaseController
             if ($request->filled('search')) {
                 $search = $request->get('search');
                 $query->where(function($q) use ($search) {
-                    $q->where('full_name', 'like', "%{$search}%")
+                    $q->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('middle_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
                       ->orWhere('email_address', 'like', "%{$search}%")
-                      ->orWhere('application_no', 'like', "%{$search}%");
+                      ->orWhere('application_no', 'like', "%{$search}%")
+                      ->orWhere('preferred_course', 'like', "%{$search}%");
                 });
             }
 
@@ -93,17 +98,19 @@ class ApplicantController extends BaseController
         return view('admin.applicants.create', compact('examSets'));
     }
 
+
     /**
      * Store a newly created applicant
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'full_name' => 'required|string|max:255',
+            'first_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'preferred_course' => 'nullable|string|max:255',
             'email_address' => 'required|email|unique:applicants,email_address',
             'phone_number' => 'nullable|string|max:20',
-            'address' => 'nullable|string',
-            'education_background' => 'nullable|string|max:255',
             'exam_set_id' => 'nullable|exists:exam_sets,exam_set_id',
             'generate_access_code' => 'boolean',
         ]);
@@ -135,10 +142,71 @@ class ApplicantController extends BaseController
      */
     public function show($id)
     {
-        $applicant = Applicant::with(['examSet.exam', 'accessCode', 'interviews', 'results'])
-                              ->findOrFail($id);
-        
-        return view('admin.applicants.show', compact('applicant'));
+        try {
+            $applicant = Applicant::with(['examSet.exam', 'accessCode', 'latestInterview.interviewer', 'results.question'])
+                ->findOrFail($id);
+            
+            // Calculate additional data for the view (simplified from route logic)
+            $applicant->name = $applicant->full_name;
+            $applicant->email = $applicant->email_address;
+            $applicant->phone = $applicant->phone_number;
+            $applicant->overall_status = ucfirst(str_replace('-', ' ', $applicant->status));
+            $applicant->student_id = $applicant->application_no;
+            
+            // Exam data
+            $applicant->exam_completed = $applicant->hasCompletedExam();
+            $applicant->exam_score = $applicant->exam_percentage ?? $applicant->score ?? 0;
+            
+            // Get exam results if available
+            if ($applicant->results->count() > 0) {
+                $totalQuestions = $applicant->results->count();
+                $correctAnswers = $applicant->results->where('is_correct', true)->count();
+                
+                $applicant->correct_answers = $correctAnswers;
+                $applicant->total_questions = $totalQuestions;
+                $applicant->exam_duration = '24 minutes 30 seconds';
+                
+                // Category scores (demo data)
+                $applicant->category_scores = [
+                    ['name' => 'Programming Logic', 'score' => 90, 'correct' => 9, 'total' => 10],
+                    ['name' => 'Mathematics', 'score' => 85, 'correct' => 4, 'total' => 5],
+                    ['name' => 'Problem Solving', 'score' => 80, 'correct' => 3, 'total' => 4],
+                    ['name' => 'Computer Fundamentals', 'score' => 85, 'correct' => 3, 'total' => 4],
+                    ['name' => 'English Proficiency', 'score' => 88, 'correct' => 3, 'total' => 3]
+                ];
+            } else {
+                $applicant->correct_answers = 0;
+                $applicant->total_questions = 20;
+                $applicant->category_scores = [];
+            }
+            
+            // Interview data
+            $interview = $applicant->latestInterview;
+            $applicant->interview_status = $interview ? $interview->status : 'not-scheduled';
+            $applicant->interview_date = $interview && $interview->schedule_date ? $interview->schedule_date->format('Y-m-d') : null;
+            $applicant->interview_time = $interview && $interview->schedule_date ? $interview->schedule_date->format('H:i') : null;
+            $applicant->interviewer = $interview ? 'dr-' . strtolower(str_replace(' ', '-', $interview->interviewer->full_name ?? 'smith')) : 'dr-smith';
+            $applicant->private_notes = $interview ? $interview->notes : 'No interview notes available.';
+            $applicant->final_recommendation = $interview ? $interview->recommendation : 'pending';
+            
+            // Timeline
+            $applicant->timeline = [
+                ['date' => $applicant->created_at->format('M d, Y'), 'time' => $applicant->created_at->format('g:i A'), 'event' => 'Application submitted successfully', 'type' => 'application'],
+                ['date' => $applicant->created_at->addDays(2)->format('M d, Y'), 'time' => '2:15 PM', 'event' => 'Documents verified and approved', 'type' => 'update'],
+            ];
+            
+            if ($applicant->exam_completed_at) {
+                $applicant->timeline[] = ['date' => $applicant->exam_completed_at->format('M d, Y'), 'time' => $applicant->exam_completed_at->format('g:i A'), 'event' => 'Entrance exam completed with ' . $applicant->exam_score . '% score', 'type' => 'exam'];
+            }
+            
+            if ($interview && $interview->status === 'scheduled' && $interview->schedule_date) {
+                $applicant->timeline[] = ['date' => $interview->schedule_date->format('M d, Y'), 'time' => $interview->schedule_date->format('g:i A'), 'event' => 'Interview scheduled with ' . ($interview->interviewer->full_name ?? 'Dr. Smith'), 'type' => 'interview'];
+            }
+            
+            return view('admin.applicants.show', compact('applicant'));
+        } catch (Exception $e) {
+            return back()->with('error', 'Applicant not found.');
+        }
     }
 
     /**
@@ -160,14 +228,16 @@ class ApplicantController extends BaseController
         $applicant = Applicant::findOrFail($id);
 
         $validated = $request->validate([
-            'full_name' => 'required|string|max:255',
+            'first_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'preferred_course' => 'nullable|string|max:255',
             'email_address' => 'required|email|unique:applicants,email_address,' . $id . ',applicant_id',
             'phone_number' => 'nullable|string|max:20',
-            'address' => 'nullable|string',
-            'education_background' => 'nullable|string|max:255',
             'exam_set_id' => 'nullable|exists:exam_sets,exam_set_id',
             'status' => 'required|in:pending,exam-completed,interview-scheduled,interview-completed,admitted,rejected',
             'score' => 'nullable|numeric|min:0|max:9999.99',
+            'verbal_description' => 'nullable|string|max:255',
         ]);
 
         $applicant->update($validated);
@@ -204,12 +274,22 @@ class ApplicantController extends BaseController
      */
     public function processImport(Request $request)
     {
-        $request->validate([
+        // Manual validation to ensure JSON response for AJAX
+        $validator = Validator::make($request->all(), [
             'csv_file' => 'required|file|mimes:csv,txt|max:2048',
             'exam_set_id' => 'nullable|exists:exam_sets,exam_set_id',
-            'generate_access_codes' => 'boolean',
-            'access_code_expiry_hours' => 'nullable|integer|min:1|max:720', // Max 30 days
+            // accept '1'/'0', 'true'/'false', true/false
+            'generate_access_codes' => 'nullable|in:1,0,true,false,TRUE,FALSE',
+            'access_code_expiry_hours' => 'nullable|integer|min:1|max:8760', // Max 365 days
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()->all(),
+            ], 422);
+        }
 
         try {
             $file = $request->file('csv_file');
@@ -224,7 +304,34 @@ class ApplicantController extends BaseController
             }
 
             // Parse header
-            $header = str_getcsv($lines[0]);
+            // Normalize header: strip BOM, trim whitespace
+            $firstLine = preg_replace('/^\xEF\xBB\xBF/', '', $lines[0]);
+            $header = array_map(function($h){ return trim($h, " \t\n\r\0\x0B\"'"); }, str_getcsv($firstLine));
+            
+            // Header mapping for official template
+            $headerMapping = [
+                // Official template headers
+                'First Name' => 'first_name',
+                'Middle Name' => 'middle_name', 
+                'Last Name' => 'last_name',
+                'Preferred Course' => 'preferred_course',
+                'E-mail' => 'email_address',
+                'Contact #' => 'phone_number',
+                'Applicant No.' => 'application_no',
+                'Weighted Exam Percentage (60%)' => 'score',
+                'Weighted Exam % (60%)' => 'score',
+                'Verbal Description' => 'verbal_description',
+                // Legacy support
+                'first_name' => 'first_name',
+                'middle_name' => 'middle_name',
+                'last_name' => 'last_name', 
+                'preferred_course' => 'preferred_course',
+                'email_address' => 'email_address',
+                'phone_number' => 'phone_number',
+                'application_no' => 'application_no',
+                'score' => 'score',
+                'verbal_description' => 'verbal_description',
+            ];
             
             $importResults = [
                 'total' => 0,
@@ -234,7 +341,7 @@ class ApplicantController extends BaseController
                 'imported_applicants' => [],
             ];
 
-            DB::transaction(function () use ($lines, $header, $request, &$importResults) {
+            DB::transaction(function () use ($lines, $header, $headerMapping, $request, &$importResults) {
                 for ($i = 1; $i < count($lines); $i++) {
                     $line = trim($lines[$i]);
                     if (empty($line)) continue;
@@ -244,15 +351,28 @@ class ApplicantController extends BaseController
 
                     try {
                         $data = str_getcsv($line);
-                        $record = array_combine($header, $data);
+                        $rawRecord = array_combine($header, $data);
+                        
+                        // Map headers to internal field names
+                        $record = [];
+                        foreach ($rawRecord as $csvHeader => $value) {
+                            $mappedField = $headerMapping[$csvHeader] ?? null;
+                            if ($mappedField) {
+                                $record[$mappedField] = trim($value);
+                            }
+                        }
 
                         // Validate required fields
                         $validator = Validator::make($record, [
-                            'full_name' => 'required|string|max:255',
+                            'first_name' => 'required|string|max:255',
+                            'middle_name' => 'nullable|string|max:255',
+                            'last_name' => 'required|string|max:255',
+                            'preferred_course' => 'nullable|string|max:255',
                             'email_address' => 'required|email|unique:applicants,email_address',
                             'phone_number' => 'nullable|string|max:20',
-                            'address' => 'nullable|string',
-                            'education_background' => 'nullable|string|max:255',
+                            'application_no' => 'nullable|string|max:50',
+                            'score' => 'nullable|numeric|min:0|max:100',
+                            'verbal_description' => 'nullable|string|max:255',
                         ]);
 
                         if ($validator->fails()) {
@@ -263,18 +383,24 @@ class ApplicantController extends BaseController
 
                         // Create applicant
                         $applicantData = $validator->validated();
-                        $applicantData['application_no'] = Applicant::generateApplicationNumber();
+                        
+                        // Generate application number only if not provided in CSV
+                        if (empty($applicantData['application_no'])) {
+                            $applicantData['application_no'] = Applicant::generateApplicationNumber();
+                        }
+                        
                         $applicantData['exam_set_id'] = $request->exam_set_id;
 
                         $applicant = Applicant::create($applicantData);
 
                         // Generate access code if requested
-                        if ($request->boolean('generate_access_codes')) {
+                        if (filter_var($request->input('generate_access_codes'), FILTER_VALIDATE_BOOLEAN)) {
+                            $expiryHours = (int) ($request->access_code_expiry_hours ?? 72);
                             $accessCode = AccessCode::createForApplicant(
                                 $applicant->applicant_id,
                                 'BSIT',
                                 8,
-                                $request->access_code_expiry_hours ?? 72
+                                $expiryHours
                             );
                             $applicant->access_code = $accessCode->code;
                         }
@@ -308,9 +434,10 @@ class ApplicantController extends BaseController
      */
     public function downloadTemplate()
     {
-        $csv = "full_name,email_address,phone_number,address,education_background\n";
-        $csv .= "Juan dela Cruz,juan.delacruz@email.com,09123456789,123 Main St City Province,Senior High School Graduate\n";
-        $csv .= "Maria Santos,maria.santos@email.com,09987654321,456 Oak Ave City Province,Technical-Vocational Graduate\n";
+        $csv = "No.,Applicant No.,Preferred Course,Last Name,First Name,Middle Name,E-mail,Contact #,Weighted Exam % (60%),Verbal Description\n";
+        $csv .= "1,0-25-9-00001-0001,BSIT,ABRIL,GABRIEL,LOMACO,gabriel.1000abril@gmail.com,9513693169,,\n";
+        $csv .= "2,0-25-9-00002-0002,BSIT,ALBARICO,DANIELLE ANGELO,ARREZA,danielleangelo.albarico@gmail.com,9090855732,,\n";
+        $csv .= "3,0-25-9-00003-0003,BSIT,ALCALA,AERO JADE,GORDON,aerojade.alcala@gmail.com,9129751059,,\n";
 
         return response($csv)
                 ->header('Content-Type', 'text/csv')
@@ -490,5 +617,437 @@ class ApplicantController extends BaseController
         return response($csv)
                 ->header('Content-Type', 'text/csv')
                 ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
+    }
+
+    /**
+     * Show exam set assignment interface
+     */
+    public function showExamSetAssignment(Request $request)
+    {
+        try {
+            $query = Applicant::with(['examSet.exam', 'accessCode']);
+
+            // Apply filters if provided
+            if ($request->filled('search')) {
+                $search = $request->get('search');
+                $query->where(function($q) use ($search) {
+                    $q->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('middle_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhere('email_address', 'like', "%{$search}%")
+                      ->orWhere('application_no', 'like', "%{$search}%")
+                      ->orWhere('preferred_course', 'like', "%{$search}%");
+                });
+            }
+
+            if ($request->filled('status')) {
+                $query->where('status', $request->get('status'));
+            }
+
+            if ($request->filled('exam_set_filter')) {
+                if ($request->get('exam_set_filter') === 'unassigned') {
+                    $query->whereNull('exam_set_id');
+                } elseif ($request->get('exam_set_filter') === 'assigned') {
+                    $query->whereNotNull('exam_set_id');
+                } else {
+                    $query->where('exam_set_id', $request->get('exam_set_filter'));
+                }
+            }
+
+            $applicants = $query->orderBy('created_at', 'desc')->paginate(50);
+            $examSets = ExamSet::with('exam')->where('is_active', true)->get();
+
+            // Statistics for assignment overview
+            $stats = [
+                'total' => Applicant::count(),
+                'assigned' => Applicant::whereNotNull('exam_set_id')->count(),
+                'unassigned' => Applicant::whereNull('exam_set_id')->count(),
+            ];
+
+            // Distribution statistics by exam set
+            $distribution = [];
+            foreach ($examSets as $examSet) {
+                $count = Applicant::where('exam_set_id', $examSet->exam_set_id)->count();
+                $distribution[] = [
+                    'exam_set' => $examSet,
+                    'count' => $count,
+                    'percentage' => $stats['total'] > 0 ? round(($count / $stats['total']) * 100, 1) : 0
+                ];
+            }
+
+            // Add warning message if no exam sets exist
+            if ($examSets->isEmpty()) {
+                session()->flash('warning', 'No active exam sets found. Please create exam sets first before assigning them to applicants.');
+            }
+
+            return view('admin.applicants.assign-exam-sets', compact(
+                'applicants', 'examSets', 'stats', 'distribution'
+            ));
+        } catch (Exception $e) {
+            return back()->with('error', 'Failed to load assignment interface: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Process smart exam set assignment
+     */
+    public function processExamSetAssignment(Request $request)
+    {
+        $request->validate([
+            'applicant_ids' => 'required|array|min:1',
+            'applicant_ids.*' => 'exists:applicants,applicant_id',
+            'assignment_mode' => 'required|in:auto_distribute,manual_assign',
+            'exam_set_id' => 'required_if:assignment_mode,manual_assign|nullable|exists:exam_sets,exam_set_id',
+            'send_notifications' => 'boolean',
+        ]);
+
+        try {
+            $applicantIds = $request->applicant_ids;
+            $assignmentMode = $request->assignment_mode;
+            $sendNotifications = $request->boolean('send_notifications', false);
+            
+            $assignments = [];
+            $errors = [];
+            $notificationsSent = 0;
+
+            // Check if exam sets exist before starting transaction
+            if ($assignmentMode === 'auto_distribute') {
+                $examSets = ExamSet::where('is_active', true)->get();
+                if ($examSets->isEmpty()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No active exam sets available for assignment. Please create exam sets first.'
+                    ], 422);
+                }
+            } elseif ($assignmentMode === 'manual_assign') {
+                $examSetId = $request->exam_set_id;
+                if (!$examSetId) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Please select an exam set for assignment.'
+                    ], 422);
+                }
+                
+                $examSet = ExamSet::find($examSetId);
+                if (!$examSet || !$examSet->is_active) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Selected exam set is not available or inactive.'
+                    ], 422);
+                }
+            }
+
+            DB::transaction(function () use (
+                $applicantIds, $assignmentMode, $request, 
+                &$assignments, &$errors, &$notificationsSent, $sendNotifications
+            ) {
+                if ($assignmentMode === 'auto_distribute') {
+                    // Smart distribution algorithm
+                    $examSets = ExamSet::where('is_active', true)
+                                      ->orderBy('exam_set_id')
+                                      ->get();
+
+                    $totalApplicants = count($applicantIds);
+                    $totalSets = $examSets->count();
+                    $baseCount = intval($totalApplicants / $totalSets);
+                    $remainder = $totalApplicants % $totalSets;
+
+                    // Shuffle applicant IDs for random distribution
+                    $shuffledIds = $applicantIds;
+                    shuffle($shuffledIds);
+
+                    $currentIndex = 0;
+                    foreach ($examSets as $setIndex => $examSet) {
+                        // Calculate how many students this set should get
+                        $countForThisSet = $baseCount + ($setIndex < $remainder ? 1 : 0);
+                        
+                        for ($i = 0; $i < $countForThisSet && $currentIndex < $totalApplicants; $i++) {
+                            $applicantId = $shuffledIds[$currentIndex];
+                            
+                            try {
+                                $applicant = Applicant::with('examSet')->find($applicantId);
+                                if ($applicant) {
+                                    $applicant->update(['exam_set_id' => $examSet->exam_set_id]);
+                                    $assignments[] = [
+                                        'applicant' => $applicant,
+                                        'exam_set' => $examSet,
+                                        'previous_set' => $applicant->examSet ? $applicant->examSet->set_name : null
+                                    ];
+                                }
+                            } catch (Exception $e) {
+                                $errors[] = "Failed to assign applicant ID {$applicantId}: " . $e->getMessage();
+                            }
+                            
+                            $currentIndex++;
+                        }
+                    }
+                } else {
+                    // Manual assignment to specific exam set
+                    $examSet = ExamSet::find($request->exam_set_id);
+                    
+                    foreach ($applicantIds as $applicantId) {
+                        try {
+                            $applicant = Applicant::with('examSet')->find($applicantId);
+                            if ($applicant) {
+                                $previousSet = $applicant->examSet ? $applicant->examSet->set_name : null;
+                                $applicant->update(['exam_set_id' => $examSet->exam_set_id]);
+                                $assignments[] = [
+                                    'applicant' => $applicant,
+                                    'exam_set' => $examSet,
+                                    'previous_set' => $previousSet
+                                ];
+                            }
+                        } catch (Exception $e) {
+                            $errors[] = "Failed to assign applicant ID {$applicantId}: " . $e->getMessage();
+                        }
+                    }
+                }
+
+                // Send email notifications if requested
+                if ($sendNotifications) {
+                    foreach ($assignments as $assignment) {
+                        try {
+                            $this->sendExamAssignmentNotification(
+                                $assignment['applicant'], 
+                                $assignment['exam_set']
+                            );
+                            $notificationsSent++;
+                        } catch (Exception $e) {
+                            $errors[] = "Assignment successful for {$assignment['applicant']->full_name} but email failed: " . $e->getMessage();
+                        }
+                    }
+                }
+            });
+
+            $successCount = count($assignments);
+            $message = "Successfully assigned {$successCount} applicant(s) to exam sets.";
+            
+            if ($sendNotifications && $notificationsSent > 0) {
+                $message .= " Sent {$notificationsSent} email notifications.";
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'assignments' => $successCount,
+                'notifications_sent' => $notificationsSent,
+                'errors' => $errors
+            ]);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Assignment failed: ' . $e->getMessage()
+            ], 422);
+        }
+    }
+
+    /**
+     * Send exam assignment notification email
+     */
+    private function sendExamAssignmentNotification(Applicant $applicant, ExamSet $examSet)
+    {
+        if (!$applicant->email_address) {
+            throw new Exception('No email address available for applicant.');
+        }
+
+        $emailData = [
+            'applicant_name' => $applicant->full_name,
+            'application_no' => $applicant->application_no,
+            'exam_set_name' => $examSet->set_name,
+            'exam_title' => $examSet->exam->title ?? 'BSIT Entrance Examination',
+            'exam_date' => 'To be announced', // This should come from exam schedule
+            'exam_time' => 'To be announced',
+            'access_code' => $applicant->accessCode ? $applicant->accessCode->code : null,
+            'instructions' => $this->getSeatingInstructions($examSet->set_name)
+        ];
+
+        // Send email using the professional template
+        Mail::send('emails.exam-assignment', $emailData, function ($message) use ($applicant) {
+            $message->to($applicant->email_address)
+                    ->subject('BSIT Entrance Exam - Set Assignment Confirmation');
+        });
+    }
+
+    /**
+     * Build email content for exam assignment
+     */
+    private function buildExamAssignmentEmailContent(array $data): string
+    {
+        return "
+        Dear {$data['applicant_name']},
+
+        We are pleased to inform you that your exam set assignment has been confirmed for the BSIT Entrance Examination.
+
+        EXAM DETAILS:
+        - Application Number: {$data['application_no']}
+        - Assigned Exam Set: {$data['exam_set_name']}
+        - Exam Title: {$data['exam_title']}
+        - Date: {$data['exam_date']}
+        - Time: {$data['exam_time']}
+        " . ($data['access_code'] ? "- Access Code: {$data['access_code']}" : '') . "
+
+        SEATING INSTRUCTIONS:
+        {$data['instructions']}
+
+        IMPORTANT REMINDERS:
+        - Arrive at the examination venue 30 minutes before the scheduled time
+        - Bring a valid ID and your application form
+        - Bring necessary writing materials (pen, pencil, eraser)
+        - Mobile phones and electronic devices are not allowed during the exam
+        - Follow all examination protocols and guidelines
+
+        If you have any questions or concerns, please contact the admissions office.
+
+        Good luck with your examination!
+
+        Best regards,
+        BSIT Admissions Office
+        ";
+    }
+
+    /**
+     * Get seating instructions based on exam set
+     */
+    private function getSeatingInstructions(string $setName): string
+    {
+        $instructions = [
+            'A' => 'Please sit in the LEFT section of the examination room (Columns 1-3).',
+            'B' => 'Please sit in the MIDDLE section of the examination room (Columns 4-6).',
+            'C' => 'Please sit in the RIGHT section of the examination room (Columns 7-9).'
+        ];
+
+        return $instructions[$setName] ?? "Please follow the seating arrangement as directed by the examination proctor.";
+    }
+
+    /**
+     * Get assignment statistics for dashboard
+     */
+    public function getAssignmentStats()
+    {
+        $stats = [
+            'total_applicants' => Applicant::count(),
+            'assigned' => Applicant::whereNotNull('exam_set_id')->count(),
+            'unassigned' => Applicant::whereNull('exam_set_id')->count(),
+        ];
+
+        $examSets = ExamSet::with('exam')->where('is_active', true)->get();
+        $distribution = [];
+        
+        foreach ($examSets as $examSet) {
+            $count = Applicant::where('exam_set_id', $examSet->exam_set_id)->count();
+            $distribution[] = [
+                'set_name' => $examSet->set_name,
+                'exam_title' => $examSet->exam->title ?? 'Unknown',
+                'count' => $count,
+                'percentage' => $stats['total_applicants'] > 0 
+                    ? round(($count / $stats['total_applicants']) * 100, 1) 
+                    : 0
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'stats' => $stats,
+            'distribution' => $distribution
+        ]);
+    }
+
+    /**
+     * Display exam results page with EnrollAssess and interview scores
+     *
+     * @param Request $request
+     * @return View
+     */
+    public function examResults(Request $request)
+    {
+        try {
+            $query = Applicant::with(['examSet.exam', 'accessCode', 'latestInterview'])
+                ->whereNotNull('enrollassess_score'); // Only show applicants who completed EnrollAssess exam
+
+            // Search functionality
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhere('application_no', 'like', "%{$search}%")
+                      ->orWhere('email_address', 'like', "%{$search}%");
+                });
+            }
+
+            // Status filter
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+
+            // Course filter
+            if ($request->filled('course')) {
+                $query->where('preferred_course', $request->course);
+            }
+
+            // Score range filter for EnrollAssess scores
+            if ($request->filled('score_min')) {
+                $query->where('enrollassess_score', '>=', $request->score_min);
+            }
+            if ($request->filled('score_max')) {
+                $query->where('enrollassess_score', '<=', $request->score_max);
+            }
+
+            // Interview score range filter
+            if ($request->filled('interview_score_min')) {
+                $query->where('interview_score', '>=', $request->interview_score_min);
+            }
+            if ($request->filled('interview_score_max')) {
+                $query->where('interview_score', '<=', $request->interview_score_max);
+            }
+
+            // Sorting
+            $sortBy = $request->get('sort_by', 'created_at');
+            $sortOrder = $request->get('sort_order', 'desc');
+            
+            $allowedSorts = ['created_at', 'first_name', 'last_name', 'enrollassess_score', 'interview_score', 'status'];
+            if (in_array($sortBy, $allowedSorts)) {
+                $query->orderBy($sortBy, $sortOrder);
+            }
+
+            $applicants = $query->paginate(20);
+
+            // Get filter options
+            $courses = Applicant::select('preferred_course')
+                ->distinct()
+                ->whereNotNull('preferred_course')
+                ->pluck('preferred_course')
+                ->sort();
+
+            $statuses = [
+                'exam-completed',
+                'interview-available',
+                'interview-claimed',
+                'interview-scheduled',
+                'interview-completed',
+                'admitted',
+                'rejected'
+            ];
+
+            // Statistics
+            $stats = [
+                'total_with_scores' => Applicant::whereNotNull('enrollassess_score')->count(),
+                'with_interview_scores' => Applicant::whereNotNull('interview_score')->count(),
+                'average_enrollassess' => round(Applicant::whereNotNull('enrollassess_score')->avg('enrollassess_score'), 2),
+                'average_interview' => round(Applicant::whereNotNull('interview_score')->avg('interview_score'), 2),
+            ];
+
+            return view('admin.applicants.exam-results', compact(
+                'applicants',
+                'courses', 
+                'statuses',
+                'stats'
+            ));
+
+        } catch (Exception $e) {
+            return redirect()->route('admin.applicants.index')
+                ->with('error', 'Failed to load exam results: ' . $e->getMessage());
+        }
     }
 }

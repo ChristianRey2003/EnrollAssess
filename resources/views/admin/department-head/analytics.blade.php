@@ -30,13 +30,13 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('department-head.interview-results') }}" class="nav-link">
+                    <a href="{{ route('admin.interview-results') }}" class="nav-link">
                         <span class="nav-icon">📝</span>
                         <span class="nav-text">Interview Results</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('department-head.analytics') }}" class="nav-link active">
+                    <a href="{{ route('admin.analytics') }}" class="nav-link active">
                         <span class="nav-icon">📈</span>
                         <span class="nav-text">Analytics</span>
                     </a>
@@ -74,7 +74,7 @@
                     <p class="header-subtitle">Comprehensive insights into the admission process performance</p>
                 </div>
                 <div class="header-right">
-                    <a href="{{ route('department-head.export-interview-results') }}" class="btn-secondary">📊 Export Data</a>
+                    <a href="{{ route('admin.export-interview-results') }}" class="btn-secondary">📊 Export Data</a>
                 </div>
             </div>
 

@@ -53,19 +53,18 @@ class ExamSetController extends Controller
     /**
      * Store a newly created exam set in storage.
      */
-    public function store(Request $request, $examId)
+    public function store(Request $request)
     {
-        $exam = Exam::findOrFail($examId);
-
         $validator = Validator::make($request->all(), [
+            'exam_id' => 'required|exists:exams,exam_id',
             'set_name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
-            'copy_from_set' => 'nullable|exists:exam_sets,exam_set_id',
+            'is_active' => 'boolean',
         ]);
 
         // Check for unique set name within the exam
-        $validator->after(function ($validator) use ($request, $examId) {
-            $exists = ExamSet::where('exam_id', $examId)
+        $validator->after(function ($validator) use ($request) {
+            $exists = ExamSet::where('exam_id', $request->exam_id)
                             ->where('set_name', $request->set_name)
                             ->exists();
             if ($exists) {
@@ -74,36 +73,31 @@ class ExamSetController extends Controller
         });
 
         if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . $validator->errors()->first()
+            ]);
         }
 
         try {
-            DB::transaction(function () use ($request, $exam) {
-                $examSet = ExamSet::create([
-                    'exam_id' => $exam->exam_id,
-                    'set_name' => $request->set_name,
-                    'description' => $request->description,
-                    'is_active' => true,
-                ]);
+            $examSet = ExamSet::create([
+                'exam_id' => $request->exam_id,
+                'set_name' => $request->set_name,
+                'description' => $request->description,
+                'is_active' => $request->boolean('is_active', false),
+            ]);
 
-                // Copy questions from another set if specified
-                if ($request->filled('copy_from_set')) {
-                    $sourceSet = ExamSet::with('questions.options')->findOrFail($request->copy_from_set);
-                    $this->copyQuestionsToSet($sourceSet, $examSet);
-                }
-
-                return $examSet;
-            });
-
-            return redirect()->route('admin.exam-sets.index', $exam->exam_id)
-                ->with('success', 'Exam set created successfully!');
+            return response()->json([
+                'success' => true,
+                'message' => 'Exam set created successfully!',
+                'data' => $examSet
+            ]);
 
         } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Failed to create exam set. Please try again.')
-                ->withInput();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create exam set: ' . $e->getMessage()
+            ]);
         }
     }
 
@@ -192,11 +186,10 @@ class ExamSetController extends Controller
     /**
      * Remove the specified exam set from storage.
      */
-    public function destroy($examId, $setId)
+    public function destroy($setId)
     {
         try {
-            $exam = Exam::findOrFail($examId);
-            $examSet = $exam->examSets()->findOrFail($setId);
+            $examSet = ExamSet::findOrFail($setId);
 
             // Check if exam set has questions
             if ($examSet->questions()->count() > 0) {
@@ -224,12 +217,10 @@ class ExamSetController extends Controller
     /**
      * Toggle exam set active status.
      */
-    public function toggleStatus($examId, $setId)
+    public function toggleStatus($setId)
     {
         try {
-            $exam = Exam::findOrFail($examId);
-            $examSet = $exam->examSets()->findOrFail($setId);
-            
+            $examSet = ExamSet::findOrFail($setId);
             $examSet->update(['is_active' => !$examSet->is_active]);
 
             return response()->json([
@@ -249,22 +240,25 @@ class ExamSetController extends Controller
     /**
      * Duplicate an exam set with all its questions.
      */
-    public function duplicate($examId, $setId)
+    public function duplicate($setId)
     {
         try {
-            $exam = Exam::findOrFail($examId);
-            $originalSet = $exam->examSets()->with('questions.options')->findOrFail($setId);
+            $originalSet = ExamSet::with('questions.options')->findOrFail($setId);
 
-            DB::transaction(function () use ($originalSet, $exam) {
+            $newSet = DB::transaction(function () use ($originalSet) {
+                // Generate unique name to prevent collisions
+                $baseName = $originalSet->set_name . ' (Copy)';
+                $newSetName = $this->generateUniqueSetName($originalSet->exam_id, $baseName);
+
                 // Create new exam set
                 $newSet = ExamSet::create([
-                    'exam_id' => $exam->exam_id,
-                    'set_name' => $originalSet->set_name . ' (Copy)',
+                    'exam_id' => $originalSet->exam_id,
+                    'set_name' => $newSetName,
                     'description' => $originalSet->description,
-                    'is_active' => false, // Start as inactive
+                    'is_active' => false, // Start as draft
                 ]);
 
-                // Copy questions
+                // Copy questions with preserved order, types, points, and explanations
                 $this->copyQuestionsToSet($originalSet, $newSet);
 
                 return $newSet;
@@ -272,13 +266,67 @@ class ExamSetController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Exam set duplicated successfully!'
+                'message' => 'Exam set duplicated successfully!',
+                'data' => $newSet
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to duplicate exam set. Please try again.'
+                'message' => 'Failed to duplicate exam set: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Shuffle questions in an exam set.
+     */
+    public function shuffleQuestions($setId)
+    {
+        try {
+            $examSet = ExamSet::with('questions')->findOrFail($setId);
+            
+            if ($examSet->questions->count() === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No questions to shuffle in this set.'
+                ]);
+            }
+
+            $previousOrder = null;
+            
+            DB::transaction(function () use ($examSet, &$previousOrder) {
+                $questions = $examSet->questions;
+                
+                // Store previous order for undo functionality
+                $previousOrder = $questions->map(function($question) {
+                    return [
+                        'id' => $question->question_id,
+                        'order' => $question->order_number
+                    ];
+                })->toArray();
+                
+                // Shuffle and reassign order numbers
+                $shuffledQuestions = $questions->shuffle();
+                $newOrder = 1;
+                
+                foreach ($shuffledQuestions as $question) {
+                    Question::where('question_id', $question->question_id)
+                        ->update(['order_number' => $newOrder]);
+                    $newOrder++;
+                }
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Questions shuffled successfully!',
+                'previous_order' => ['questions' => $previousOrder]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to shuffle questions: ' . $e->getMessage()
             ]);
         }
     }
@@ -314,10 +362,10 @@ class ExamSetController extends Controller
                 'points' => $originalQuestion->points,
                 'order_number' => $originalQuestion->order_number,
                 'explanation' => $originalQuestion->explanation,
-                'is_active' => $originalQuestion->is_active,
+                'is_active' => false, // Start as draft for review
             ]);
 
-            // Copy question options
+            // Copy question options with preserved order
             foreach ($originalQuestion->options as $originalOption) {
                 QuestionOption::create([
                     'question_id' => $newQuestion->question_id,
@@ -330,9 +378,25 @@ class ExamSetController extends Controller
     }
 
     /**
+     * Generate a unique set name to prevent collisions.
+     */
+    private function generateUniqueSetName($examId, $baseName)
+    {
+        $counter = 1;
+        $newName = $baseName;
+        
+        while (ExamSet::where('exam_id', $examId)->where('set_name', $newName)->exists()) {
+            $counter++;
+            $newName = $baseName . ' (' . $counter . ')';
+        }
+        
+        return $newName;
+    }
+
+    /**
      * Reorder questions within an exam set.
      */
-    public function reorderQuestions(Request $request, $examId, $setId)
+    public function reorderQuestions(Request $request, $setId)
     {
         $request->validate([
             'questions' => 'required|array',
@@ -341,8 +405,7 @@ class ExamSetController extends Controller
         ]);
 
         try {
-            $exam = Exam::findOrFail($examId);
-            $examSet = $exam->examSets()->findOrFail($setId);
+            $examSet = ExamSet::findOrFail($setId);
 
             DB::transaction(function () use ($request, $examSet) {
                 foreach ($request->questions as $questionData) {

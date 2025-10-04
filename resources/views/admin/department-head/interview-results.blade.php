@@ -37,7 +37,7 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('department-head.analytics') }}" class="nav-link">
+                    <a href="{{ route('admin.analytics') }}" class="nav-link">
                         <span class="nav-icon">📈</span>
                         <span class="nav-text">Analytics</span>
                     </a>
@@ -75,7 +75,7 @@
                     <p class="header-subtitle">Review completed interviews and make admission decisions</p>
                 </div>
                 <div class="header-right">
-                    <a href="{{ route('department-head.export-interview-results') }}" class="btn-secondary">📊 Export Results</a>
+                    <a href="{{ route('admin.export-interview-results') }}" class="btn-secondary">📊 Export Results</a>
                 </div>
             </div>
 
@@ -135,7 +135,7 @@
                             </div>
                             <div class="filter-actions">
                                 <button type="submit" class="btn-primary">Apply Filters</button>
-                                <a href="{{ route('department-head.interview-results') }}" class="btn-secondary">Clear</a>
+                                <a href="{{ route('admin.interview-results') }}" class="btn-secondary">Clear</a>
                             </div>
                         </form>
                     </div>
@@ -202,7 +202,7 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <a href="{{ route('department-head.interview-detail', $interview->interview_id) }}" 
+                                            <a href="{{ route('admin.interview-detail', $interview->interview_id) }}" 
                                                class="btn-sm btn-primary">View Details</a>
                                         </td>
                                     </tr>
@@ -307,7 +307,7 @@
 
             try {
                 const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                const response = await fetch('{{ route("department-head.bulk-admission-decision") }}', {
+                const response = await fetch('{{ route("admin.bulk-admission-decision") }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

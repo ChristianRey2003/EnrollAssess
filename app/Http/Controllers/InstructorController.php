@@ -5,11 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\Applicant;
 use App\Models\Interview;
 use App\Models\User;
+use App\Services\InterviewPoolService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 class InstructorController extends Controller
 {
+    protected $interviewPoolService;
+
+    public function __construct(InterviewPoolService $interviewPoolService)
+    {
+        $this->interviewPoolService = $interviewPoolService;
+    }
     /**
      * Display the instructor dashboard
      */
@@ -138,16 +146,22 @@ class InstructorController extends Controller
         $totalScore = $technicalScore + $communicationScore + $analyticalScore;
         $percentage = round(($totalScore / 100) * 100, 2);
 
-        // Update interview record with detailed rubrics
-        $interview->update([
+        // Build update payload with only existing columns to avoid SQL errors
+        $updateData = [
             // Individual rubric scores
             'rating_technical' => $technicalScore,
             'rating_communication' => $communicationScore,
             'rating_problem_solving' => $analyticalScore,
             'overall_score' => $percentage,
-            
-            // Detailed breakdown (store as JSON)
-            'rubric_scores' => json_encode([
+            'recommendation' => $request->recommendation,
+            'notes' => $request->interview_notes,
+            'schedule_date' => now(),
+            'status' => 'completed',
+        ];
+
+        // Conditionally include optional columns if they exist
+        if (Schema::hasColumn('interviews', 'rubric_scores')) {
+            $updateData['rubric_scores'] = [
                 'technical' => [
                     'programming' => $request->technical_programming,
                     'problem_solving' => $request->technical_problem_solving,
@@ -163,17 +177,23 @@ class InstructorController extends Controller
                     'critical_thinking' => $request->analytical_critical_thinking,
                     'creativity' => $request->analytical_creativity,
                     'attention_detail' => $request->analytical_attention_detail,
-                ]
-            ]),
-            
-            'overall_rating' => $request->overall_rating,
-            'recommendation' => $request->recommendation,
-            'strengths' => $request->strengths,
-            'areas_improvement' => $request->areas_improvement,
-            'notes' => $request->interview_notes,
-            'interview_date' => now(),
-            'status' => 'completed',
-        ]);
+                ],
+            ];
+        }
+
+        if (Schema::hasColumn('interviews', 'overall_rating')) {
+            $updateData['overall_rating'] = $request->overall_rating;
+        }
+
+        if (Schema::hasColumn('interviews', 'strengths')) {
+            $updateData['strengths'] = $request->strengths;
+        }
+
+        if (Schema::hasColumn('interviews', 'areas_improvement')) {
+            $updateData['areas_improvement'] = $request->areas_improvement;
+        }
+
+        $interview->update($updateData);
 
         // Update applicant status and determine admission
         $applicant = Applicant::findOrFail($applicantId);
@@ -234,7 +254,7 @@ class InstructorController extends Controller
         $completedInterviews = Interview::where('interviewer_id', $instructor->user_id)
                                      ->where('status', 'completed')
                                      ->with(['applicant', 'applicant.examSet'])
-                                     ->orderBy('interview_date', 'desc')
+                                     ->orderBy('schedule_date', 'desc')
                                      ->paginate(15);
 
         $statistics = [
@@ -247,7 +267,7 @@ class InstructorController extends Controller
                                          ->count(),
             'this_month' => Interview::where('interviewer_id', $instructor->user_id)
                                   ->where('status', 'completed')
-                                  ->whereMonth('interview_date', now()->month)
+                                  ->whereMonth('schedule_date', now()->month)
                                   ->count(),
         ];
 
@@ -303,6 +323,98 @@ class InstructorController extends Controller
                 'correct' => $correctAnswers,
                 'percentage' => $examPercentage,
             ],
+        ]);
+    }
+
+    /**
+     * Interview Pool Methods
+     */
+
+    /**
+     * Display available interviews in the pool
+     */
+    public function interviewPool(Request $request)
+    {
+        $filters = $request->only(['priority', 'search']);
+        
+        $availableInterviews = $this->interviewPoolService->getAvailableInterviews($filters);
+        $myClaimedInterviews = $this->interviewPoolService->getUserClaimedInterviews(Auth::id());
+        $poolStats = $this->interviewPoolService->getPoolStatistics();
+
+        return view('instructor.interview-pool', compact(
+            'availableInterviews',
+            'myClaimedInterviews',
+            'poolStats',
+            'filters'
+        ));
+    }
+
+    /**
+     * Claim an interview from the pool
+     */
+    public function claimInterview(Request $request, $interviewId)
+    {
+        try {
+            $interview = $this->interviewPoolService->claimInterview($interviewId, Auth::id());
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Interview claimed successfully!',
+                'interview' => $interview
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * Release a claimed interview back to the pool
+     */
+    public function releaseInterview(Request $request, $interviewId)
+    {
+        try {
+            $interview = $this->interviewPoolService->releaseInterview($interviewId, Auth::id());
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Interview released back to pool successfully!',
+                'interview' => $interview
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * Get available interviews for AJAX updates
+     */
+    public function getAvailableInterviews(Request $request)
+    {
+        $filters = $request->only(['priority', 'search']);
+        $availableInterviews = $this->interviewPoolService->getAvailableInterviews($filters);
+        
+        return response()->json([
+            'interviews' => $availableInterviews,
+            'count' => $availableInterviews->count()
+        ]);
+    }
+
+    /**
+     * Get my claimed interviews for AJAX updates
+     */
+    public function getMyClaimedInterviews()
+    {
+        $claimedInterviews = $this->interviewPoolService->getUserClaimedInterviews(Auth::id());
+        
+        return response()->json([
+            'interviews' => $claimedInterviews,
+            'count' => $claimedInterviews->count()
         ]);
     }
 }

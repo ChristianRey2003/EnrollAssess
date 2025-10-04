@@ -114,7 +114,7 @@ class UserManagementController extends Controller
         if ($user->role === 'instructor') {
             $relatedData['assigned_interviews'] = \App\Models\Interview::where('interviewer_id', $user->user_id)->count();
             $relatedData['completed_interviews'] = \App\Models\Interview::where('interviewer_id', $user->user_id)
-                                                                       ->whereNotNull('interview_date')->count();
+                                                                       ->whereNotNull('schedule_date')->count();
         }
 
         return view('admin.users.show', compact('user', 'userStats', 'relatedData'));

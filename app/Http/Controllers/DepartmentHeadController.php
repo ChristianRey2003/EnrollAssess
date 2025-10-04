@@ -232,7 +232,7 @@ class DepartmentHeadController extends Controller
                     $interview->applicant->full_name ?? '',
                     $interview->applicant->email_address ?? '',
                     $interview->interviewer->full_name ?? '',
-                    $interview->interview_date ? $interview->interview_date->format('Y-m-d H:i') : '',
+                    $interview->schedule_date ? $interview->schedule_date->format('Y-m-d H:i') : '',
                     $interview->rating_technical ?? '',
                     $interview->rating_communication ?? '',
                     $interview->rating_problem_solving ?? '',
@@ -288,8 +288,8 @@ class DepartmentHeadController extends Controller
 
             // Monthly trends
             'monthly_trends' => Interview::where('status', 'completed')
-                ->where('interview_date', '>=', now()->subMonths(6))
-                ->selectRaw('DATE_FORMAT(interview_date, "%Y-%m") as month, COUNT(*) as count, AVG(overall_score) as avg_score')
+                ->where('schedule_date', '>=', now()->subMonths(6))
+                ->selectRaw('DATE_FORMAT(schedule_date, "%Y-%m") as month, COUNT(*) as count, AVG(overall_score) as avg_score')
                 ->groupBy('month')
                 ->orderBy('month')
                 ->get(),

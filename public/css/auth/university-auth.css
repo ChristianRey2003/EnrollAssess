@@ -1,7 +1,7 @@
 /*===========================================
   UNIVERSITY AUTHENTICATION THEME
   Clean, organized CSS for EnrollAssess
-  Maroon & Yellow University Color Scheme
+  Minimalist: Maroon + Grayscale Only
 ===========================================*/
 
 /* ===== CSS VARIABLES ===== */
@@ -9,21 +9,17 @@
     /* Primary Colors */
     --maroon-primary: #800020;
     --maroon-dark: #5c0017;
-    --maroon-light: #a0002a;
-    
-    /* Secondary Colors */
-    --yellow-primary: #FFD700;
-    --yellow-dark: #E6C200;
-    --yellow-light: #FFF8DC;
-    
+    --maroon-light: #861a30;
+
     /* Neutral Colors */
     --white: #FFFFFF;
     --light-gray: #F8F9FA;
-    --border-gray: #E9ECEF;
-    
+    --border-gray: #E5E7EB;
+    --text-gray: #6B7280;
+
     /* Effects */
-    --shadow-primary: 0 20px 40px rgba(0, 0, 0, 0.3);
-    --shadow-hover: 0 8px 20px rgba(128, 0, 32, 0.3);
+    --shadow-primary: 0 20px 40px rgba(0, 0, 0, 0.12);
+    --shadow-hover: 0 8px 20px rgba(0, 0, 0, 0.12);
     --transition: all 0.3s ease;
 }
 
@@ -36,7 +32,7 @@ body.auth-page {
     margin: 0;
     padding: 0;
     font-family: 'Figtree', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, var(--maroon-primary) 0%, var(--maroon-dark) 100%);
+    background: var(--light-gray);
     min-height: 100vh;
     overflow-x: hidden;
 }
@@ -52,32 +48,25 @@ body.auth-page {
 
 .auth-card {
     background: var(--white);
-    border-radius: 20px;
+    border-radius: 16px;
     box-shadow: var(--shadow-primary);
     overflow: hidden;
     max-width: 380px;
     width: 100%;
-    border: 3px solid var(--yellow-primary);
+    border: 1px solid var(--border-gray);
     position: relative;
 }
 
 /* ===== HEADER SECTION ===== */
 .auth-header {
-    background: linear-gradient(135deg, var(--yellow-primary) 0%, var(--yellow-dark) 100%);
-    padding: 40px 30px;
+    background: var(--white);
+    padding: 32px 24px;
     text-align: center;
     position: relative;
+    border-bottom: 1px solid var(--border-gray);
 }
 
-.auth-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: var(--maroon-primary);
-}
+.auth-header::before { display: none; }
 
 .university-logo {
     width: 80px;
@@ -100,19 +89,17 @@ body.auth-page {
 
 .university-name {
     color: var(--maroon-primary);
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 700;
     margin: 0 0 8px 0;
-    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
     line-height: 1.2;
 }
 
 .auth-subtitle {
-    color: var(--maroon-dark);
-    font-size: 14px;
+    color: var(--text-gray);
+    font-size: 13px;
     margin: 0;
     font-weight: 500;
-    opacity: 0.9;
 }
 
 /* ===== FORM SECTION ===== */
@@ -161,10 +148,10 @@ body.auth-page {
 
 .form-control:focus {
     outline: none;
-    border-color: var(--yellow-primary);
+    border-color: var(--maroon-primary);
     background: var(--white);
-    box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.15);
-    transform: translateY(-1px);
+    box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.12);
+    transform: none;
 }
 
 .form-control.is-invalid {
@@ -183,25 +170,23 @@ body.auth-page {
 /* ===== BUTTONS ===== */
 .btn-primary {
     width: 100%;
-    background: linear-gradient(135deg, var(--maroon-primary) 0%, var(--maroon-light) 100%);
+    background: var(--maroon-primary);
     border: none;
     color: var(--white);
     padding: 16px 32px;
-    border-radius: 12px;
+    border-radius: 10px;
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
     transition: var(--transition);
     text-transform: uppercase;
     letter-spacing: 1px;
-    box-shadow: 0 4px 12px rgba(128, 0, 32, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--yellow-primary) 0%, var(--yellow-dark) 100%);
-    color: var(--maroon-primary);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-hover);
+    background: var(--maroon-dark);
+    transform: translateY(-1px);
 }
 
 .btn-primary:active {
@@ -222,9 +207,9 @@ body.auth-page {
 }
 
 .info-note {
-    background: var(--yellow-light);
-    border: 1px solid var(--yellow-primary);
-    border-radius: 12px;
+    background: var(--light-gray);
+    border: 1px solid var(--border-gray);
+    border-radius: 10px;
     padding: 20px;
     margin-top: 25px;
     text-align: center;
@@ -255,9 +240,9 @@ body.auth-page {
 }
 
 .alert-success {
-    background: var(--yellow-light);
+    background: var(--light-gray);
     color: var(--maroon-primary);
-    border-left: 4px solid var(--yellow-primary);
+    border-left: 4px solid var(--border-gray);
 }
 
 .alert-danger {

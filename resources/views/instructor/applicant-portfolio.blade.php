@@ -1,251 +1,559 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+@extends('layouts.instructor')
 
-    <title>Applicant Portfolio - {{ $applicant->full_name }} - {{ config('app.name', 'EnrollAssess') }}</title>
+@section('title', 'Applicant Portfolio - ' . $applicant->full_name)
 
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-    <link href="{{ asset('css/admin/admin-dashboard.css') }}" rel="stylesheet">
-</head>
-<body class="admin-page instructor-portal">
-    <div class="admin-layout">
-        <nav class="admin-sidebar instructor-sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-logo">
-                    <img src="{{ asset('images/image-removebg-preview.png') }}" alt="University Logo">
-                    <div>
-                        <h2 class="sidebar-title">EnrollAssess</h2>
-                        <p class="sidebar-subtitle">Instructor Portal</p>
+@php
+    $pageTitle = 'Applicant Portfolio';
+    $pageSubtitle = 'Comprehensive overview for interview preparation';
+@endphp
+
+@push('styles')
+<link href="{{ asset('css/admin/admin-dashboard.css') }}" rel="stylesheet">
+<style>
+    .portfolio-layout {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 24px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .portfolio-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #E5E7EB;
+        overflow: hidden;
+    }
+
+    .card-header {
+        background: #F9FAFB;
+        padding: 16px 20px;
+        border-bottom: 1px solid #E5E7EB;
+    }
+
+    .card-header h3 {
+        margin: 0;
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1F2937;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+
+    .summary-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .avatar-lg {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: var(--maroon-primary);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    .summary-header .name {
+        margin: 0 0 8px 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1F2937;
+    }
+
+    .muted {
+        font-size: 0.875rem;
+        color: #6B7280;
+        margin: 2px 0;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .info-item {
+        padding: 12px;
+        background: #F9FAFB;
+        border-radius: 6px;
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #6B7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+
+    .info-value {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #1F2937;
+    }
+
+    .exam-performance {
+        margin-bottom: 24px;
+    }
+
+    .exam-performance h4 {
+        margin: 0 0 12px 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1F2937;
+    }
+
+    .score-display {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .score-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .score-circle.good {
+        background: #D1FAE5;
+        color: #059669;
+    }
+
+    .score-circle.needs-improvement {
+        background: #FEE2E2;
+        color: #DC2626;
+    }
+
+    .score-details p {
+        margin: 2px 0;
+        font-size: 0.75rem;
+        color: #6B7280;
+    }
+
+    .interview-history {
+        margin-bottom: 24px;
+    }
+
+    .interview-history h4 {
+        margin: 0 0 12px 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1F2937;
+    }
+
+    .interview-item {
+        padding: 12px;
+        background: #F9FAFB;
+        border-radius: 6px;
+        margin-bottom: 8px;
+    }
+
+    .interview-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .interview-date {
+        font-size: 0.75rem;
+        color: #6B7280;
+        margin-bottom: 4px;
+    }
+
+    .interview-score {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #1F2937;
+    }
+
+    .main-content-section {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #E5E7EB;
+        overflow: hidden;
+    }
+
+    .section-header {
+        background: #F9FAFB;
+        padding: 20px 24px;
+        border-bottom: 1px solid #E5E7EB;
+    }
+
+    .section-header h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1F2937;
+    }
+
+    .section-content {
+        padding: 24px;
+    }
+
+    .exam-details {
+        margin-bottom: 32px;
+    }
+
+    .exam-details h4 {
+        margin: 0 0 16px 0;
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1F2937;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--maroon-primary);
+    }
+
+    .exam-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: #F9FAFB;
+        padding: 16px;
+        border-radius: 6px;
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--maroon-primary);
+        margin-bottom: 4px;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        color: #6B7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .question-analysis {
+        margin-bottom: 32px;
+    }
+
+    .question-analysis h4 {
+        margin: 0 0 16px 0;
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1F2937;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--maroon-primary);
+    }
+
+    .question-item {
+        padding: 16px;
+        border: 1px solid #E5E7EB;
+        border-radius: 6px;
+        margin-bottom: 12px;
+    }
+
+    .question-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .question-text {
+        font-size: 0.875rem;
+        color: #1F2937;
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+
+    .question-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.75rem;
+        color: #6B7280;
+    }
+
+    .correct-answer {
+        color: #059669;
+        font-weight: 500;
+    }
+
+    .incorrect-answer {
+        color: #DC2626;
+        font-weight: 500;
+    }
+
+    .interview-preparation {
+        margin-bottom: 32px;
+    }
+
+    .interview-preparation h4 {
+        margin: 0 0 16px 0;
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1F2937;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--maroon-primary);
+    }
+
+    .preparation-tips {
+        background: #F0F9FF;
+        border: 1px solid #BAE6FD;
+        border-radius: 6px;
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+
+    .preparation-tips h5 {
+        margin: 0 0 8px 0;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #1E40AF;
+    }
+
+    .preparation-tips ul {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 0.875rem;
+        color: #1E40AF;
+    }
+
+    .preparation-tips li {
+        margin-bottom: 4px;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        padding-top: 24px;
+        border-top: 1px solid #E5E7EB;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-primary {
+        background: var(--maroon-primary);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #5C0016;
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #6B7280;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #4B5563;
+        color: white;
+    }
+
+    @media (max-width: 768px) {
+        .portfolio-layout {
+            grid-template-columns: 1fr;
+        }
+        
+        .summary-header {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .exam-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+@endpush
+
+@section('content')
+<div class="portfolio-layout">
+    <!-- Left: Applicant summary -->
+    <section class="portfolio-card">
+        <div class="card-header"><h3>👤 Applicant Summary</h3></div>
+        <div class="card-body">
+            <div class="summary-header">
+                <div class="avatar-lg">{{ $applicant->initials }}</div>
+                <div>
+                    <h2 class="name">{{ $applicant->full_name }}</h2>
+                    <div class="muted">Application No: {{ $applicant->application_no }}</div>
+                    <div class="muted">Email: {{ $applicant->email_address }}</div>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Phone</div>
+                    <div class="info-value">{{ $applicant->phone_number ?? 'N/A' }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Education</div>
+                    <div class="info-value">{{ $applicant->education_background ?? 'N/A' }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Preferred Course</div>
+                    <div class="info-value">{{ $applicant->preferred_course ?? 'N/A' }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Application Date</div>
+                    <div class="info-value">{{ $applicant->created_at->format('M d, Y') }}</div>
+                </div>
+            </div>
+
+            <div class="exam-performance">
+                <h4>📊 Exam Performance</h4>
+                @if($examStats['total_questions'] > 0)
+                    <div class="score-display">
+                        <div class="score-circle {{ $examStats['percentage'] >= 70 ? 'good' : 'needs-improvement' }}">
+                            {{ number_format($examStats['percentage'], 1) }}%
+                        </div>
+                        <div class="score-details">
+                            <p><strong>Correct:</strong> {{ $examStats['correct'] }}/{{ $examStats['total_questions'] }}</p>
+                            <p><strong>Exam Set:</strong> {{ $applicant->examSet->name ?? 'N/A' }}</p>
+                            <p><strong>Completed:</strong> {{ $applicant->exam_completed_at ? $applicant->exam_completed_at->format('M d, Y') : 'N/A' }}</p>
+                        </div>
+                    </div>
+                @else
+                    <p class="muted">Exam not completed yet</p>
+                @endif
+            </div>
+
+            <div class="interview-history">
+                <h4>📝 Interview History</h4>
+                @if($latestInterview)
+                    <div class="interview-item">
+                        <div class="interview-date">
+                            {{ $latestInterview->schedule_date ? $latestInterview->schedule_date->format('M d, Y g:i A') : 'N/A' }}
+                        </div>
+                        <div class="interview-score">
+                            Score: {{ $latestInterview->overall_score ?? 'N/A' }}%
+                        </div>
+                    </div>
+                @else
+                    <p class="muted">No interviews conducted yet</p>
+                @endif
+            </div>
+        </div>
+    </section>
+
+    <!-- Right: Detailed analysis -->
+    <section class="main-content-section">
+        <div class="section-header">
+            <h3>📋 Detailed Analysis</h3>
+        </div>
+        <div class="section-content">
+            <!-- Exam Details -->
+            <div class="exam-details">
+                <h4>Exam Performance Breakdown</h4>
+                <div class="exam-stats">
+                    <div class="stat-card">
+                        <div class="stat-value">{{ $examStats['total_questions'] }}</div>
+                        <div class="stat-label">Total Questions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ $examStats['correct'] }}</div>
+                        <div class="stat-label">Correct Answers</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ $examStats['total_questions'] - $examStats['correct'] }}</div>
+                        <div class="stat-label">Incorrect Answers</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ number_format($examStats['percentage'], 1) }}%</div>
+                        <div class="stat-label">Overall Score</div>
                     </div>
                 </div>
             </div>
 
-            <div class="sidebar-nav">
-                <div class="nav-item">
-                    <a href="{{ route('instructor.dashboard') }}" class="nav-link">
-                        <span class="nav-icon">📊</span>
-                        <span class="nav-text">Dashboard</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('instructor.applicants') }}" class="nav-link">
-                        <span class="nav-icon">👥</span>
-                        <span class="nav-text">My Applicants</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('instructor.schedule') }}" class="nav-link">
-                        <span class="nav-icon">📅</span>
-                        <span class="nav-text">Schedule</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('instructor.interview-history') }}" class="nav-link">
-                        <span class="nav-icon">📝</span>
-                        <span class="nav-text">Interview History</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="{{ route('instructor.guidelines') }}" class="nav-link">
-                        <span class="nav-icon">📋</span>
-                        <span class="nav-text">Guidelines</span>
-                    </a>
-                </div>
-            </div>
-
-            <div class="sidebar-footer">
-                <div class="instructor-info">
-                    <div class="instructor-avatar">{{ substr(Auth::user()->full_name, 0, 2) }}</div>
-                    <div>
-                        <div class="instructor-name">{{ Auth::user()->full_name }}</div>
-                        <div class="instructor-role">Instructor</div>
-                    </div>
-                </div>
-                <form method="POST" action="{{ route('admin.logout') }}">
-                    @csrf
-                    <button type="submit" class="logout-link">
-                        <span class="nav-icon">🚪</span>
-                        <span class="nav-text">Logout</span>
-                    </button>
-                </form>
-            </div>
-        </nav>
-
-        <main class="admin-main">
-            <div class="main-header instructor-header">
-                <div class="header-left">
-                    <h1>Applicant Portfolio</h1>
-                    <p class="header-subtitle">Comprehensive overview for interview preparation</p>
-                </div>
-                <div class="header-right">
-                    <a href="{{ route('instructor.applicants') }}" class="btn-secondary">← Back to Applicants</a>
-                </div>
-            </div>
-
-            <div class="main-content">
-                <div class="portfolio-layout">
-                    <!-- Left: Applicant summary -->
-                    <section class="portfolio-card">
-                        <div class="card-header"><h3>👤 Applicant Summary</h3></div>
-                        <div class="card-body">
-                            <div class="summary-header">
-                                <div class="avatar-lg">{{ $applicant->initials }}</div>
-                                <div>
-                                    <h2 class="name">{{ $applicant->full_name }}</h2>
-                                    <div class="muted">Application No: {{ $applicant->application_no }}</div>
-                                    <div class="muted">Email: {{ $applicant->email_address }}</div>
-                                    <div class="muted">Phone: {{ $applicant->phone_number }}</div>
-                                </div>
+            <!-- Question Analysis -->
+            <div class="question-analysis">
+                <h4>Question-by-Question Analysis</h4>
+                @if($applicant->results->count() > 0)
+                    @foreach($applicant->results->take(10) as $result)
+                        <div class="question-item">
+                            <div class="question-text">
+                                {{ $result->question->question_text ?? 'Question not available' }}
                             </div>
-                            <div class="grid two-cols">
-                                <div>
-                                    <div class="label">Education</div>
-                                    <div class="value">{{ $applicant->education_background ?? 'N/A' }}</div>
-                                </div>
-                                <div>
-                                    <div class="label">Status</div>
-                                    <div class="value"><span class="badge">{{ ucfirst(str_replace('-', ' ', $applicant->status)) }}</span></div>
-                                </div>
-                                <div>
-                                    <div class="label">Exam Set</div>
-                                    <div class="value">{{ $applicant->examSet->name ?? 'N/A' }}</div>
-                                </div>
-                                <div>
-                                    <div class="label">Access Code</div>
-                                    <div class="value">{{ $applicant->accessCode->code ?? 'N/A' }}</div>
-                                </div>
+                            <div class="question-meta">
+                                <span class="{{ $result->is_correct ? 'correct-answer' : 'incorrect-answer' }}">
+                                    {{ $result->is_correct ? '✓ Correct' : '✗ Incorrect' }}
+                                </span>
+                                <span>Question {{ $loop->iteration }}</span>
                             </div>
                         </div>
-                    </section>
+                    @endforeach
+                    @if($applicant->results->count() > 10)
+                        <p class="muted">... and {{ $applicant->results->count() - 10 }} more questions</p>
+                    @endif
+                @else
+                    <p class="muted">No exam results available</p>
+                @endif
+            </div>
 
-                    <!-- Right: Actions -->
-                    <section class="portfolio-card">
-                        <div class="card-header"><h3>⚙️ Actions</h3></div>
-                        <div class="card-body actions">
-                            @if($latestInterview && $latestInterview->status === 'scheduled')
-                                <a class="btn-primary" href="{{ route('instructor.interview.show', $applicant->applicant_id) }}">Start Interview</a>
-                            @elseif($latestInterview && $latestInterview->status === 'completed')
-                                <a class="btn-secondary" href="{{ route('instructor.interview.show', $applicant->applicant_id) }}">View Interview</a>
-                            @else
-                                <a class="btn-outline" href="{{ route('instructor.schedule') }}">Schedule Interview</a>
-                            @endif
-                            <a class="btn-outline" href="{{ route('instructor.interview-history') }}">View History</a>
-                        </div>
-                    </section>
-
-                    <!-- Exam Overview -->
-                    <section class="portfolio-card span-2">
-                        <div class="card-header"><h3>📊 Exam Overview</h3></div>
-                        <div class="card-body">
-                            <div class="grid three-cols">
-                                <div class="metric">
-                                    <div class="metric-label">Score</div>
-                                    <div class="metric-value">{{ number_format($applicant->score ?? 0, 1) }}%</div>
-                                </div>
-                                <div class="metric">
-                                    <div class="metric-label">Correct / Total</div>
-                                    <div class="metric-value">{{ $examStats['correct'] }} / {{ $examStats['total_questions'] }}</div>
-                                </div>
-                                <div class="metric">
-                                    <div class="metric-label">Percentage</div>
-                                    <div class="metric-value">{{ number_format($examStats['percentage'], 1) }}%</div>
-                                </div>
-                            </div>
-
-                            @if($applicant->results->count())
-                                <div class="results-table-wrapper">
-                                    <table class="results-table">
-                                        <thead>
-                                            <tr>
-                                                <th>#</th>
-                                                <th>Question</th>
-                                                <th>Your Answer</th>
-                                                <th>Correct</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach($applicant->results->take(10) as $idx => $result)
-                                            <tr>
-                                                <td>{{ $idx + 1 }}</td>
-                                                <td>{{ Str::limit($result->question->question_text ?? 'N/A', 80) }}</td>
-                                                <td>{{ $result->selected_answer ?? '-' }}</td>
-                                                <td>
-                                                    @if($result->is_correct)
-                                                        <span class="chip good">✔ Correct</span>
-                                                    @else
-                                                        <span class="chip bad">✖ Incorrect</span>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                    <div class="muted small">Showing first 10 results.</div>
-                                </div>
-                            @else
-                                <div class="muted">No exam results available.</div>
-                            @endif
-                        </div>
-                    </section>
-
-                    <!-- Timeline -->
-                    <section class="portfolio-card span-2">
-                        <div class="card-header"><h3>🕒 Timeline</h3></div>
-                        <div class="card-body">
-                            <ul class="timeline">
-                                <li><span class="time">{{ $applicant->created_at->format('M d, Y g:i A') }}</span> Application submitted</li>
-                                @if($applicant->exam_completed_at)
-                                    <li><span class="time">{{ $applicant->exam_completed_at->format('M d, Y g:i A') }}</span> Exam completed</li>
-                                @endif
-                                @if($latestInterview && $latestInterview->schedule_date)
-                                    <li><span class="time">{{ $latestInterview->schedule_date->format('M d, Y g:i A') }}</span> Interview scheduled</li>
-                                @endif
-                                @if($latestInterview && $latestInterview->status === 'completed')
-                                    <li><span class="time">{{ $latestInterview->interview_date?->format('M d, Y g:i A') ?? $latestInterview->updated_at->format('M d, Y g:i A') }}</span> Interview completed</li>
-                                @endif
-                            </ul>
-                        </div>
-                    </section>
+            <!-- Interview Preparation -->
+            <div class="interview-preparation">
+                <h4>Interview Preparation Notes</h4>
+                <div class="preparation-tips">
+                    <h5>Key Areas to Focus On:</h5>
+                    <ul>
+                        @if($examStats['percentage'] < 70)
+                            <li>Review fundamental concepts where applicant struggled</li>
+                            <li>Focus on problem-solving approach and methodology</li>
+                        @else
+                            <li>Explore advanced topics and real-world applications</li>
+                            <li>Assess critical thinking and creativity</li>
+                        @endif
+                        <li>Evaluate communication skills and confidence</li>
+                        <li>Discuss career goals and motivation</li>
+                    </ul>
                 </div>
             </div>
-        </main>
-    </div>
 
-    <style>
-        .instructor-portal { --primary-color: #2563eb; }
-        .portfolio-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .portfolio-card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; }
-        .portfolio-card .card-header { padding: 16px 20px; border-bottom: 1px solid #e5e7eb; }
-        .portfolio-card .card-body { padding: 20px; }
-        .span-2 { grid-column: span 2; }
-        .summary-header { display: flex; gap: 15px; align-items: center; margin-bottom: 15px; }
-        .avatar-lg { width: 56px; height: 56px; border-radius: 50%; background: var(--primary-color); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; }
-        .name { margin: 0 0 5px 0; }
-        .muted { color: #6b7280; font-size: 12px; }
-        .small { font-size: 11px; }
-        .label { font-size: 12px; color: #6b7280; }
-        .value { font-weight: 600; color: #111827; }
-        .badge { background: #eef2ff; color: #3730a3; padding: 4px 10px; border-radius: 9999px; font-size: 12px; }
-        .grid.two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-        .grid.three-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0; }
-        .metric { background: #f9fafb; padding: 12px; border-radius: 8px; text-align: center; }
-        .metric-label { font-size: 12px; color: #6b7280; }
-        .metric-value { font-size: 18px; font-weight: 700; color: #111827; }
-        .results-table { width: 100%; border-collapse: collapse; }
-        .results-table th, .results-table td { padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: left; }
-        .chip { padding: 2px 8px; border-radius: 12px; font-size: 12px; }
-        .chip.good { background: #dcfce7; color: #166534; }
-        .chip.bad { background: #fee2e2; color: #991b1b; }
-        .timeline { list-style: none; padding: 0; margin: 0; }
-        .timeline li { padding: 8px 0; border-left: 2px solid #e5e7eb; margin-left: 10px; padding-left: 10px; position: relative; }
-        .timeline li::before { content: ''; position: absolute; left: -6px; top: 14px; width: 8px; height: 8px; border-radius: 50%; background: var(--primary-color); }
-        @media (max-width: 900px) { .portfolio-layout { grid-template-columns: 1fr; } .span-2 { grid-column: span 1; } }
-    </style>
-</body>
-</html>
-
-
+            <div class="action-buttons">
+                <a href="{{ route('instructor.applicants') }}" class="btn btn-secondary">
+                    ← Back to Applicants
+                </a>
+                @if(!$latestInterview || $latestInterview->status !== 'completed')
+                    <a href="{{ route('instructor.interview.show', $applicant->applicant_id) }}" class="btn btn-primary">
+                        Conduct Interview
+                    </a>
+                @endif
+            </div>
+        </div>
+    </section>
+</div>
+@endsection

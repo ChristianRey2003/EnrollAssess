@@ -12,19 +12,32 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Add new columns required by ERD
-            $table->string('username')->unique()->after('id');
-            $table->string('password_hash')->after('password');
-            $table->string('full_name')->after('username');
-            $table->enum('role', ['department-head', 'administrator', 'instructor'])->default('instructor')->after('full_name');
+            // Check if columns exist before adding them
+            if (!Schema::hasColumn('users', 'username')) {
+                $table->string('username')->unique()->after('id');
+            }
+            if (!Schema::hasColumn('users', 'password_hash')) {
+                $table->string('password_hash')->nullable()->after('password');
+            }
+            if (!Schema::hasColumn('users', 'full_name')) {
+                $table->string('full_name')->nullable()->after('username');
+            }
+            if (!Schema::hasColumn('users', 'role')) {
+                $table->enum('role', ['department-head', 'administrator', 'instructor'])->default('instructor')->after('full_name');
+            }
             
             // Modify existing columns
             $table->string('email')->nullable()->change();
-            
-            // Drop the old password column (we'll use password_hash)
-            // Note: In production, you'd want to migrate data first
-            $table->dropColumn('password');
-            $table->dropColumn('name');
+        });
+        
+        // Drop columns in separate operation to avoid conflicts
+        Schema::table('users', function (Blueprint $table) {
+            if (Schema::hasColumn('users', 'password') && Schema::hasColumn('users', 'password_hash')) {
+                $table->dropColumn('password');
+            }
+            if (Schema::hasColumn('users', 'name')) {
+                $table->dropColumn('name');
+            }
         });
         
         // Add an alias for user_id to maintain compatibility

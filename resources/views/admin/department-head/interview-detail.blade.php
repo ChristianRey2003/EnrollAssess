@@ -30,13 +30,13 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('department-head.interview-results') }}" class="nav-link">
+                    <a href="{{ route('admin.interview-results') }}" class="nav-link">
                         <span class="nav-icon">📝</span>
                         <span class="nav-text">Interview Results</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('department-head.analytics') }}" class="nav-link">
+                    <a href="{{ route('admin.analytics') }}" class="nav-link">
                         <span class="nav-icon">📈</span>
                         <span class="nav-text">Analytics</span>
                     </a>
@@ -74,7 +74,7 @@
                     <p class="header-subtitle">{{ $interview->applicant->full_name }} - Detailed Interview Results</p>
                 </div>
                 <div class="header-right">
-                    <a href="{{ route('department-head.interview-results') }}" class="btn-secondary">← Back to Results</a>
+                    <a href="{{ route('admin.interview-results') }}" class="btn-secondary">← Back to Results</a>
                 </div>
             </div>
 
@@ -384,7 +384,7 @@
 
             try {
                 const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                const response = await fetch('{{ route("department-head.bulk-admission-decision") }}', {
+                const response = await fetch('{{ route("admin.bulk-admission-decision") }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

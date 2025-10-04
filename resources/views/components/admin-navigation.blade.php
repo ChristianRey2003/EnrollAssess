@@ -38,49 +38,49 @@
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.dashboard') ? 'active' : '' }}"
                    @if(str_starts_with($currentRoute, 'admin.dashboard')) aria-current="page" @endif
                    aria-label="Dashboard - Main admin overview">
-                    <span class="nav-icon" aria-hidden="true">📊</span>
+                    <span class="nav-icon" aria-hidden="true"></span>
                     <span class="nav-text">Dashboard</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="{{ route('admin.applicants.index') }}" 
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.applicants') ? 'active' : '' }}">
-                    <span class="nav-icon">👥</span>
+                    <span class="nav-icon"></span>
                     <span class="nav-text">Applicants</span>
                 </a>
             </div>
             <div class="nav-item">
-                <a href="{{ route('admin.exams.index') }}" 
-                   class="nav-link {{ str_starts_with($currentRoute, 'admin.exams') ? 'active' : '' }}">
-                    <span class="nav-icon">📝</span>
-                    <span class="nav-text">Exams</span>
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="{{ route('admin.questions.index') }}" 
-                   class="nav-link {{ str_starts_with($currentRoute, 'admin.questions') ? 'active' : '' }}">
-                    <span class="nav-icon">❓</span>
-                    <span class="nav-text">Questions</span>
+                <a href="{{ route('admin.sets-questions.index') }}" 
+                   class="nav-link {{ str_starts_with($currentRoute, 'admin.sets-questions') || str_starts_with($currentRoute, 'admin.exams') || str_starts_with($currentRoute, 'admin.questions') ? 'active' : '' }}">
+                    <span class="nav-icon"></span>
+                    <span class="nav-text">Sets & Questions</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="{{ route('admin.interviews.index') }}" 
-                   class="nav-link {{ str_starts_with($currentRoute, 'admin.interviews') ? 'active' : '' }}">
-                    <span class="nav-icon">📅</span>
+                   class="nav-link {{ str_starts_with($currentRoute, 'admin.interviews') && !str_contains($currentRoute, 'pool') ? 'active' : '' }}">
+                    <span class="nav-icon"></span>
                     <span class="nav-text">Interviews</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="{{ route('admin.interviews.pool.overview') }}" 
+                   class="nav-link {{ str_contains($currentRoute, 'interviews.pool') ? 'active' : '' }}">
+                    <span class="nav-icon"></span>
+                    <span class="nav-text">Interview Pool</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="{{ route('admin.users.index') }}" 
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.users') ? 'active' : '' }}">
-                    <span class="nav-icon">👤</span>
+                    <span class="nav-icon"></span>
                     <span class="nav-text">Users</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="{{ route('admin.reports') }}" 
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.reports') ? 'active' : '' }}">
-                    <span class="nav-icon">📈</span>
+                    <span class="nav-icon"></span>
                     <span class="nav-text">Reports</span>
                 </a>
             </div>
@@ -90,35 +90,42 @@
             <div class="nav-item">
                 <a href="{{ route('instructor.dashboard') }}" 
                    class="nav-link {{ str_starts_with($currentRoute, 'instructor.dashboard') ? 'active' : '' }}">
-                    <span class="nav-icon">📊</span>
+                    <span class="nav-icon"></span>
                     <span class="nav-text">Dashboard</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="{{ route('instructor.interview-pool.index') }}" 
+                   class="nav-link {{ str_starts_with($currentRoute, 'instructor.interview-pool') ? 'active' : '' }}">
+                    <span class="nav-icon"></span>
+                    <span class="nav-text">Interview Pool</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="{{ route('instructor.applicants') }}" 
                    class="nav-link {{ str_starts_with($currentRoute, 'instructor.applicants') ? 'active' : '' }}">
-                    <span class="nav-icon">👥</span>
+                    <span class="nav-icon"></span>
                     <span class="nav-text">My Applicants</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="{{ route('instructor.schedule') }}" 
                    class="nav-link {{ str_starts_with($currentRoute, 'instructor.schedule') ? 'active' : '' }}">
-                    <span class="nav-icon">📅</span>
+                    <span class="nav-icon"></span>
                     <span class="nav-text">Schedule</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="{{ route('instructor.interview-history') }}" 
                    class="nav-link {{ str_starts_with($currentRoute, 'instructor.interview-history') ? 'active' : '' }}">
-                    <span class="nav-icon">📝</span>
+                    <span class="nav-icon"></span>
                     <span class="nav-text">Interview History</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="{{ route('instructor.guidelines') }}" 
                    class="nav-link {{ str_starts_with($currentRoute, 'instructor.guidelines') ? 'active' : '' }}">
-                    <span class="nav-icon">📋</span>
+                    <span class="nav-icon"></span>
                     <span class="nav-text">Guidelines</span>
                 </a>
             </div>
@@ -129,7 +136,7 @@
         <form method="POST" action="{{ $userRole === 'instructor' ? route('admin.logout') : route('admin.logout') }}">
             @csrf
             <button type="submit" class="logout-link">
-                <span class="nav-icon">🚪</span>
+                <span class="nav-icon"></span>
                 <span class="nav-text">Logout</span>
             </button>
         </form>

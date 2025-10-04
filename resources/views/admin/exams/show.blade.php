@@ -42,7 +42,7 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.exams.index') }}" class="nav-link active">
+                    <a href="{{ route('admin.sets-questions.index') }}" class="nav-link active">
                         <span class="nav-icon">📝</span>
                         <span class="nav-text">Exams</span>
                     </a>
@@ -85,7 +85,7 @@
             <div class="main-content">
                 <!-- Breadcrumb -->
                 <div class="breadcrumb">
-                    <a href="{{ route('admin.exams.index') }}" class="breadcrumb-link">Exams</a>
+                    <a href="{{ route('admin.sets-questions.index') }}" class="breadcrumb-link">Exams</a>
                     <span class="breadcrumb-separator">›</span>
                     <span class="breadcrumb-current">{{ $exam->title }}</span>
                 </div>

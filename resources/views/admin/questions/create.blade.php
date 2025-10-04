@@ -42,7 +42,7 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.exams.index') }}" class="nav-link">
+                    <a href="{{ route('admin.sets-questions.index') }}" class="nav-link">
                         <span class="nav-icon">📝</span>
                         <span class="nav-text">Exams</span>
                     </a>

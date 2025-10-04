@@ -67,13 +67,20 @@ class QuestionController extends Controller
         $validator = $this->validateQuestionData($request);
 
         if ($validator->fails()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed: ' . $validator->errors()->first()
+                ]);
+            }
             return redirect()->back()
                 ->withErrors($validator)
                 ->withInput();
         }
 
         try {
-            DB::transaction(function () use ($request) {
+            $question = null;
+            DB::transaction(function () use ($request, &$question) {
                 // Create the question
                 $question = Question::create([
                     'exam_set_id' => $request->exam_set_id,
@@ -82,17 +89,31 @@ class QuestionController extends Controller
                     'points' => $request->points ?? 1,
                     'order_number' => $this->getNextOrderNumber($request->exam_set_id),
                     'explanation' => $request->explanation,
-                    'is_active' => true,
+                    'is_active' => $request->boolean('is_active', true),
                 ]);
 
                 // Create options based on question type
                 $this->createQuestionOptions($question, $request);
             });
 
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Question created successfully!',
+                    'data' => $question
+                ]);
+            }
+
             return redirect()->route('admin.questions')
                 ->with('success', 'Question created successfully!');
 
         } catch (\Exception $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to create question: ' . $e->getMessage()
+                ]);
+            }
             return redirect()->back()
                 ->with('error', 'Failed to create question. Please try again.')
                 ->withInput();
@@ -231,11 +252,11 @@ class QuestionController extends Controller
             case 'multiple_choice':
                 $rules['options'] = 'required|array|min:2|max:6';
                 $rules['options.*'] = 'required|string|max:500';
-                $rules['correct_answer'] = 'required|integer|min:0|max:5';
+                $rules['correct_option'] = 'required|integer|min:0|max:5';
                 break;
 
             case 'true_false':
-                $rules['correct_answer'] = 'required|in:true,false';
+                $rules['tf_answer'] = 'required|in:true,false';
                 break;
 
             case 'short_answer':
@@ -258,15 +279,17 @@ class QuestionController extends Controller
     {
         switch ($request->question_type) {
             case 'multiple_choice':
-                foreach ($request->options as $index => $optionText) {
-                    if (empty(trim($optionText))) continue;
-                    
-                    QuestionOption::create([
-                        'question_id' => $question->question_id,
-                        'option_text' => trim($optionText),
-                        'is_correct' => $index == $request->correct_answer,
-                        'order_number' => $index + 1,
-                    ]);
+                if ($request->has('options')) {
+                    foreach ($request->options as $index => $optionText) {
+                        if (empty(trim($optionText))) continue;
+                        
+                        QuestionOption::create([
+                            'question_id' => $question->question_id,
+                            'option_text' => trim($optionText),
+                            'is_correct' => $index == $request->correct_option,
+                            'order_number' => $index + 1,
+                        ]);
+                    }
                 }
                 break;
 
@@ -275,14 +298,14 @@ class QuestionController extends Controller
                 QuestionOption::create([
                     'question_id' => $question->question_id,
                     'option_text' => 'True',
-                    'is_correct' => $request->correct_answer === 'true',
+                    'is_correct' => $request->tf_answer === 'true',
                     'order_number' => 1,
                 ]);
 
                 QuestionOption::create([
                     'question_id' => $question->question_id,
                     'option_text' => 'False',
-                    'is_correct' => $request->correct_answer === 'false',
+                    'is_correct' => $request->tf_answer === 'false',
                     'order_number' => 2,
                 ]);
                 break;
@@ -339,6 +362,52 @@ class QuestionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to reorder questions.'
+            ]);
+        }
+    }
+
+    /**
+     * Duplicate a question with all its options.
+     */
+    public function duplicate($id)
+    {
+        try {
+            $originalQuestion = Question::with('options')->findOrFail($id);
+
+            DB::transaction(function () use ($originalQuestion) {
+                // Create new question
+                $newQuestion = Question::create([
+                    'exam_set_id' => $originalQuestion->exam_set_id,
+                    'question_text' => $originalQuestion->question_text . ' (Copy)',
+                    'question_type' => $originalQuestion->question_type,
+                    'points' => $originalQuestion->points,
+                    'order_number' => $this->getNextOrderNumber($originalQuestion->exam_set_id),
+                    'explanation' => $originalQuestion->explanation,
+                    'is_active' => false, // Start as inactive
+                ]);
+
+                // Copy question options
+                foreach ($originalQuestion->options as $originalOption) {
+                    QuestionOption::create([
+                        'question_id' => $newQuestion->question_id,
+                        'option_text' => $originalOption->option_text,
+                        'is_correct' => $originalOption->is_correct,
+                        'order_number' => $originalOption->order_number,
+                    ]);
+                }
+
+                return $newQuestion;
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Question duplicated successfully!'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to duplicate question. Please try again.'
             ]);
         }
     }

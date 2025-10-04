@@ -31,43 +31,43 @@
             <div class="sidebar-nav">
                 <div class="nav-item">
                     <a href="{{ route('admin.dashboard') }}" class="nav-link">
-                        <span class="nav-icon">📊</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Dashboard</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.applicants.index') }}" class="nav-link">
-                        <span class="nav-icon">👥</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Applicants</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.exams.index') }}" class="nav-link">
-                        <span class="nav-icon">📝</span>
+                    <a href="{{ route('admin.sets-questions.index') }}" class="nav-link">
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Exams</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.questions.index') }}" class="nav-link active">
-                        <span class="nav-icon">❓</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Questions</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.interviews.index') }}" class="nav-link">
-                        <span class="nav-icon">📅</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Interviews</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.users.index') }}" class="nav-link">
-                        <span class="nav-icon">👤</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Users</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.reports') }}" class="nav-link">
-                        <span class="nav-icon">📈</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Reports</span>
                     </a>
                 </div>
@@ -83,13 +83,11 @@
                     <p class="header-subtitle">Manage questions for BSIT entrance examination</p>
                 </div>
                 <div class="header-right">
-                    <div class="header-time">
-                        🕐 {{ now()->format('M d, Y g:i A') }}
-                    </div>
+                    <div class="header-time">{{ now()->format('M d, Y g:i A') }}</div>
                     <div class="user-dropdown">
                         <button class="user-dropdown-toggle" onclick="toggleUserDropdown()">
                             <div class="user-avatar">
-                                <span class="avatar-icon">👤</span>
+                                <span class="avatar-icon"></span>
                             </div>
                             <div class="user-info">
                                 <div class="user-name">{{ auth()->user()->full_name ?? 'Dr. Admin' }}</div>
@@ -103,11 +101,11 @@
                             <div class="dropdown-section">
                                 <div class="dropdown-section-title">Department Head</div>
                                 <a href="{{ route('admin.interview-results') }}" class="dropdown-item">
-                                    <span class="dropdown-icon">🎯</span>
+                                    <span class="dropdown-icon"></span>
                                     <span class="dropdown-text">Interview Results</span>
                                 </a>
                                 <a href="{{ route('admin.analytics') }}" class="dropdown-item">
-                                    <span class="dropdown-icon">📊</span>
+                                    <span class="dropdown-icon"></span>
                                     <span class="dropdown-text">Analytics</span>
                                 </a>
                             </div>
@@ -117,7 +115,7 @@
                             <form method="POST" action="{{ route('admin.logout') }}">
                                 @csrf
                                 <button type="submit" class="dropdown-item logout-item">
-                                    <span class="dropdown-icon">🚪</span>
+                                    <span class="dropdown-icon"></span>
                                     <span class="dropdown-text">Logout</span>
                                 </button>
                             </form>
@@ -135,7 +133,7 @@
                             <div class="search-filter-group">
                                 <div class="search-box">
                                     <input type="text" placeholder="Search questions..." class="search-input" id="searchInput">
-                                    <button class="search-btn">🔍</button>
+                                    <button class="search-btn">Search</button>
                                 </div>
                                 <select class="filter-select" id="typeFilter" name="type">
                                     <option value="">All Types</option>
@@ -154,10 +152,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <a href="{{ route('admin.questions.create') }}" class="section-action">
-                                <span class="section-action-icon">➕</span>
-                                Add New Question
-                            </a>
+                                            <a href="{{ route('admin.questions.create') }}" class="section-action">Add New Question</a>
                         </div>
                     </div>
                 </div>
@@ -213,13 +208,13 @@
                                     <td>
                                         <div class="table-actions">
                                             <a href="{{ route('admin.questions.edit', $question->question_id) }}" class="action-btn action-btn-edit" title="Edit Question">
-                                                ✏️ Edit
+                                                Edit
                                             </a>
                                             <button onclick="toggleStatus({{ $question->question_id }})" class="action-btn action-btn-toggle" title="Toggle Status">
-                                                {{ $question->is_active ? '🔒' : '🔓' }}
+                                                {{ $question->is_active ? 'Disable' : 'Enable' }}
                                             </button>
                                             <button onclick="deleteQuestion({{ $question->question_id }})" class="action-btn action-btn-delete" title="Delete Question">
-                                                🗑️ Delete
+                                                Delete
                                             </button>
                                         </div>
                                     </td>
@@ -228,12 +223,10 @@
                                 <tr>
                                     <td colspan="7" class="empty-state">
                                         <div class="empty-content">
-                                            <span class="empty-icon">❓</span>
+                                            <span class="empty-icon" aria-hidden="true"></span>
                                             <h3>No Questions Found</h3>
                                             <p>No questions have been created yet. Click the "Add New Question" button to get started.</p>
-                                            <a href="{{ route('admin.questions.create') }}" class="btn-primary">
-                                                ➕ Create Your First Question
-                                            </a>
+                                            <a href="{{ route('admin.questions.create') }}" class="btn-primary">Create Your First Question</a>
                                         </div>
                                     </td>
                                 </tr>

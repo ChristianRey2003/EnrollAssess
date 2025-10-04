@@ -424,8 +424,8 @@
                 ip: 'system-tracked' // In real implementation, this would be server-side
             }));
 
-            // Redirect to exam interface
-            window.location.href = "{{ route('exam.interface') }}";
+            // Redirect to new pre-requirements page
+            window.location.href = "{{ route('exam.pre-requirements') }}";
         }
 
         // Prevent back button after consent (optional security measure)

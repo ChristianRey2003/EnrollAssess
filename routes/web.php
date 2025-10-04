@@ -18,8 +18,8 @@ require __DIR__.'/public.php';
 // Authentication Routes
 require __DIR__.'/auth.php';
 
-// Protected Admin Routes (Department Head role required)
-Route::middleware(['auth', 'role:department-head'])->prefix('admin')->name('admin.')->group(function () {
+// Protected Admin Routes (Department Head or Administrator roles required)
+Route::middleware(['ajax.auth'])->prefix('admin')->name('admin.')->group(function () {
     require __DIR__.'/admin.php';
 });
 

@@ -37,10 +37,12 @@
     <style>
         /* Critical above-the-fold styles */
         :root {
-            --maroon-primary: #800020;
-            --yellow-primary: #FFD700;
+            --maroon-primary: #800020; /* Primary */
             --white: #FFFFFF;
             --light-gray: #F8F9FA;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-400: #9CA3AF;
             --sidebar-width: 260px;
         }
         
@@ -58,7 +60,7 @@
         
         .admin-sidebar {
             width: var(--sidebar-width);
-            background: linear-gradient(180deg, var(--maroon-primary) 0%, #5c0017 100%);
+            background: var(--maroon-primary);
             color: var(--white);
             position: fixed;
             height: 100vh;
@@ -79,7 +81,7 @@
         .main-header {
             background: var(--white);
             padding: 20px 30px;
-            border-bottom: 1px solid #E9ECEF;
+            border-bottom: 1px solid var(--gray-200);
             order: 0; /* Ensure header appears first */
             flex-shrink: 0;
             position: relative;
@@ -166,6 +168,9 @@
             </div>
         </main>
     </div>
+
+    <!-- Page-specific Modals -->
+    @stack('modals')
 
     <!-- Optimized JavaScript Bundles -->
     @vite(['resources/js/admin.js'])

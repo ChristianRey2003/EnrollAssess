@@ -11,22 +11,22 @@
                 <!-- Quick Stats -->
                 <div class="stats-grid users-stats">
                     <div class="stat-card">
-                        <div class="stat-icon">👥</div>
+                        <div class="stat-icon" aria-hidden="true"></div>
                         <div class="stat-value">{{ $stats['total_users'] }}</div>
                         <div class="stat-label">Total Users</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">🏛️</div>
+                        <div class="stat-icon" aria-hidden="true"></div>
                         <div class="stat-value">{{ $stats['department_heads'] }}</div>
                         <div class="stat-label">Department Heads</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">👨‍💼</div>
+                        <div class="stat-icon" aria-hidden="true"></div>
                         <div class="stat-value">{{ $stats['administrators'] }}</div>
                         <div class="stat-label">Administrators</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">👨‍🏫</div>
+                        <div class="stat-icon" aria-hidden="true"></div>
                         <div class="stat-value">{{ $stats['instructors'] }}</div>
                         <div class="stat-label">Instructors</div>
                     </div>
@@ -37,11 +37,9 @@
                     <div class="section-header">
                         <h2 class="section-title">Faculty Accounts</h2>
                         <div class="section-actions">
-                            <a href="{{ route('admin.users.export') }}" class="btn-secondary" id="exportUsers">
-                                📊 Export CSV
-                            </a>
+                            <a href="{{ route('admin.users.export') }}" class="btn-secondary" id="exportUsers">Export CSV</a>
                             <a href="{{ route('admin.users.create') }}" class="btn-primary">
-                                + Add New User
+                                Add New User
                             </a>
                         </div>
                     </div>
@@ -53,7 +51,7 @@
                                     <div class="search-input-group">
                                         <input type="text" name="search" placeholder="Search users by name, username, or email..." 
                                                value="{{ request('search') }}" class="search-input">
-                                        <button type="submit" class="search-btn">🔍</button>
+                                        <button type="submit" class="search-btn">Search</button>
                                     </div>
                                     
                                     <div class="filter-group">
@@ -132,23 +130,23 @@
                                             <div class="action-buttons">
                                                 <a href="{{ route('admin.users.show', $user->user_id) }}" 
                                                    class="btn-sm btn-info" title="View Details">
-                                                    👁️
+                                                    View
                                                 </a>
                                                 
                                                 @if($user->user_id !== auth()->id())
                                                     <a href="{{ route('admin.users.edit', $user->user_id) }}" 
                                                        class="btn-sm btn-warning" title="Edit User">
-                                                        ✏️
+                                                        Edit
                                                     </a>
                                                     
                                                     <button onclick="resetPassword({{ $user->user_id }}, '{{ $user->full_name }}')" 
                                                             class="btn-sm btn-secondary" title="Reset Password">
-                                                        🔑
+                                                        Reset
                                                     </button>
                                                     
                                                     <button onclick="deleteUser({{ $user->user_id }}, '{{ $user->full_name }}')" 
                                                             class="btn-sm btn-danger" title="Delete User">
-                                                        🗑️
+                                                        Delete
                                                     </button>
                                                 @else
                                                     <span class="text-muted small">Your Account</span>
