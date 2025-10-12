@@ -34,7 +34,7 @@ class StoreApplicantRequest extends FormRequest
             'preferred_course' => 'nullable|string|max:255',
             'email_address' => 'required|email|max:255|unique:applicants,email_address',
             'phone_number' => 'nullable|string|max:20|regex:/^[\d\s\-\+\(\)]+$/',
-            'exam_set_id' => 'nullable|exists:exam_sets,exam_set_id',
+            'assigned_instructor_id' => 'nullable|exists:users,user_id',
             'generate_access_code' => 'boolean',
             'verbal_description' => 'nullable|string|max:255',
         ];
@@ -56,7 +56,7 @@ class StoreApplicantRequest extends FormRequest
             'email_address.email' => 'Please provide a valid email address.',
             'email_address.unique' => 'This email address is already registered.',
             'phone_number.regex' => 'Please provide a valid phone number.',
-            'exam_set_id.exists' => 'The selected exam set is invalid.',
+            'assigned_instructor_id.exists' => 'The selected instructor is invalid.',
         ];
     }
 
@@ -74,7 +74,7 @@ class StoreApplicantRequest extends FormRequest
             'preferred_course' => 'preferred course',
             'email_address' => 'email address',
             'phone_number' => 'phone number',
-            'exam_set_id' => 'exam set',
+            'assigned_instructor_id' => 'assigned instructor',
             'verbal_description' => 'verbal description',
         ];
     }

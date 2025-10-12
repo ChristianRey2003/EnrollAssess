@@ -56,8 +56,9 @@ class InterviewController extends Controller
             'completed' => Interview::where('status', 'completed')->count(),
             'pending_assignment' => Applicant::where('status', 'exam-completed')
                                            ->whereDoesntHave('interviews')->count(),
-            // Available interviews in the pool (for stat card)
-            'pool_available' => Interview::availableInPool()->count(),
+            // Interview pool deprecated: mirror pending_assignment for compatibility
+            'pool_available' => Applicant::where('status', 'exam-completed')
+                                           ->whereDoesntHave('interviews')->count(),
         ];
 
         // Available instructors
@@ -108,70 +109,6 @@ class InterviewController extends Controller
         ]);
     }
 
-    /**
-     * Bulk assign applicants to a specific instructor for interviews
-     */
-    public function bulkAssignToInstructors(Request $request)
-    {
-        $request->validate([
-            'applicant_ids' => 'required|array',
-            'applicant_ids.*' => 'exists:applicants,applicant_id',
-            'interviewer_id' => 'required|exists:users,user_id',
-        ]);
-
-        $assigned = 0;
-        $errors = [];
-        $instructor = User::find($request->interviewer_id);
-
-        if (!$instructor || $instructor->role !== 'instructor') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Selected instructor not found or invalid.'
-            ]);
-        }
-
-        DB::transaction(function () use ($request, &$assigned, &$errors, $instructor) {
-            foreach ($request->applicant_ids as $applicantId) {
-                try {
-                    // Check if already has interview
-                    if (Interview::where('applicant_id', $applicantId)->exists()) {
-                        $applicant = Applicant::find($applicantId);
-                        $errors[] = "Interview already exists for {$applicant->full_name}";
-                        continue;
-                    }
-
-                    // Create interview assignment
-                    Interview::create([
-                        'applicant_id' => $applicantId,
-                        'interviewer_id' => $instructor->user_id,
-                        'status' => 'assigned',
-                        'schedule_date' => null, // To be scheduled by instructor
-                    ]);
-
-                    // Update applicant status
-                    Applicant::where('applicant_id', $applicantId)
-                             ->update(['status' => 'interview-assigned']);
-
-                    $assigned++;
-
-                } catch (\Exception $e) {
-                    $errors[] = "Failed to assign applicant ID {$applicantId}: " . $e->getMessage();
-                }
-            }
-        });
-
-        $message = "Successfully assigned {$assigned} applicants to {$instructor->full_name}.";
-        if (!empty($errors)) {
-            $message .= " " . count($errors) . " assignments failed.";
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => $message,
-            'assigned' => $assigned,
-            'errors' => $errors
-        ]);
-    }
 
     /**
      * Bulk schedule interviews
@@ -546,62 +483,6 @@ class InterviewController extends Controller
         }
     }
 
-    /**
-     * Bulk assign multiple interviews to instructors
-     */
-    public function bulkAssignToPool(Request $request)
-    {
-        $request->validate([
-            'interview_ids' => 'required|array',
-            'interview_ids.*' => 'exists:interviews,interview_id',
-            'assignment_type' => 'required|in:specific_instructor,department_head,release_to_pool',
-            'instructor_id' => 'required_if:assignment_type,specific_instructor|exists:users,user_id',
-            'notes' => 'nullable|string|max:500'
-        ]);
-
-        $processed = 0;
-        $errors = [];
-
-        DB::transaction(function () use ($request, &$processed, &$errors) {
-            foreach ($request->interview_ids as $interviewId) {
-                try {
-                    switch ($request->assignment_type) {
-                        case 'specific_instructor':
-                            $this->interviewPoolService->assignInterviewToInstructor(
-                                $interviewId,
-                                $request->instructor_id,
-                                $request->notes
-                            );
-                            break;
-                            
-                        case 'department_head':
-                            $this->interviewPoolService->claimInterview($interviewId, Auth::id());
-                            break;
-                            
-                        case 'release_to_pool':
-                            $this->interviewPoolService->releaseInterview($interviewId, Auth::id());
-                            break;
-                    }
-                    
-                    $processed++;
-                } catch (\Exception $e) {
-                    $errors[] = "Interview {$interviewId}: " . $e->getMessage();
-                }
-            }
-        });
-
-        $message = "Successfully processed {$processed} interviews.";
-        if (!empty($errors)) {
-            $message .= " " . count($errors) . " operations failed.";
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => $message,
-            'processed' => $processed,
-            'errors' => $errors
-        ]);
-    }
 
     /**
      * Get real-time pool data for AJAX updates
@@ -635,8 +516,8 @@ class InterviewController extends Controller
             abort(403, 'You are not authorized to conduct interviews.');
         }
 
-        // Load interview with applicant and exam data
-        $interview->load(['applicant.examSet.exam']);
+        // Load interview with applicant data
+        $interview->load(['applicant']);
         $applicant = $interview->applicant;
 
         // Check if interview is already completed by someone else

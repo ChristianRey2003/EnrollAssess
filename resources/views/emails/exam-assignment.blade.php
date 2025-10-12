@@ -151,10 +151,6 @@
                     <span class="detail-value">{{ $application_no }}</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Assigned Exam Set:</span>
-                    <span class="detail-value exam-set-highlight">Set {{ $exam_set_name }}</span>
-                </div>
-                <div class="detail-row">
                     <span class="detail-label">Exam Title:</span>
                     <span class="detail-value">{{ $exam_title }}</span>
                 </div>

@@ -154,21 +154,9 @@
                             <option value="admitted" {{ request('status') == 'admitted' ? 'selected' : '' }}>Admitted</option>
                             <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
                         </select>
-                        <select id="examSetFilter" 
-                                class="form-control" 
-                                onchange="applyFilter()" 
-                                style="width: 120px; height: 32px; padding: 4px 8px; font-size: 13px; border: 1px solid #d1d5db; border-radius: 4px;"
-                                aria-label="Filter by exam set">
-                            <option value="">All Exam Sets</option>
-                            @foreach($examSets ?? [] as $examSet)
-                                <option value="{{ $examSet->id }}" {{ request('exam_set_id') == $examSet->id ? 'selected' : '' }}>
-                                    {{ $examSet->title }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <a href="{{ route('admin.applicants.assign-exam-sets') }}" 
+                        <a href="{{ route('admin.applicants.assign') }}" 
                            class="btn btn-primary" 
-                           style="height: 32px; padding: 4px 12px; font-size: 13px; border-radius: 4px; background: #991b1b; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Assign Exam Sets</a>
+                           style="height: 32px; padding: 4px 12px; font-size: 13px; border-radius: 4px; background: #800020; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Assign</a>
                         <a href="{{ route('admin.applicants.exam-results') }}" 
                            class="btn btn-primary" 
                            style="height: 32px; padding: 4px 12px; font-size: 13px; border-radius: 4px; background: #059669; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Exam Results</a>
@@ -191,10 +179,10 @@
                                     style="height: 28px; padding: 4px 8px; font-size: 12px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
                                 Generate Codes
                             </button>
-                            <button onclick="showAssignExamSetsModal()" 
+                            <button onclick="openEmailNotificationDrawer()" 
                                     class="bulk-btn" 
                                     style="height: 28px; padding: 4px 8px; font-size: 12px; background: #059669; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                Assign Sets
+                                Send Exam Notifications
                             </button>
                             <button onclick="bulkExport()" 
                                     class="bulk-btn" 
@@ -210,6 +198,12 @@
                     <table class="data-table" style="width: 100%; table-layout: fixed;">
                         <thead>
                             <tr>
+                                <th style="width: 40px; text-align: center;">
+                                    <input type="checkbox" 
+                                           id="selectAll" 
+                                           onchange="toggleSelectAll()"
+                                           style="cursor: pointer;">
+                                </th>
                                 <th style="width: 40px;">NO.</th>
                                 <th style="width: 120px;">APPLICANT NO.</th>
                                 <th style="width: 180px;">FULL NAME</th>
@@ -225,6 +219,13 @@
                                 <tr style="page-break-inside: avoid; position: relative;" 
                                     onmouseover="showActions({{ $applicant->applicant_id }})" 
                                     onmouseout="hideActions({{ $applicant->applicant_id }})">
+                                    <td class="text-center">
+                                        <input type="checkbox" 
+                                               class="applicant-checkbox" 
+                                               value="{{ $applicant->applicant_id }}"
+                                               onchange="updateBulkActions()"
+                                               style="cursor: pointer;">
+                                    </td>
                                     <td class="text-center font-medium">
                                         {{ ($applicants->currentPage() - 1) * $applicants->perPage() + $index + 1 }}
                                     </td>
@@ -236,13 +237,13 @@
                                     <td>
                                         <div class="applicant-name">
                                             <div class="font-medium text-gray-900" style="font-size: 14px;">{{ strtoupper($applicant->full_name) }}</div>
-                                            @if($applicant->examSet)
+                                            @if($applicant->assignedInstructor)
                                                 <div style="font-size: 11px; color: #1e40af; font-weight: 500; margin-top: 2px;">
-                                                    Set {{ $applicant->examSet->set_name }}
+                                                    Instructor: {{ $applicant->assignedInstructor->full_name }}
                                                 </div>
                                             @else
                                                 <div style="font-size: 11px; color: #9ca3af; margin-top: 2px;">
-                                                    Not Assigned
+                                                    No Instructor
                                                 </div>
                                             @endif
                                         </div>
@@ -258,6 +259,11 @@
                                                title="Edit applicant">
                                                 ✏️
                                             </a>
+                                            <button onclick="sendIndividualNotification({{ $applicant->applicant_id }})" 
+                                                    class="action-btn action-btn-notify" 
+                                                    title="Send exam notification">
+                                                📧
+                                            </button>
                                             <button onclick="deleteApplicant({{ $applicant->applicant_id }})" 
                                                     class="action-btn action-btn-delete" 
                                                     title="Delete applicant">
@@ -306,11 +312,11 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="text-center py-8">
+                                    <td colspan="9" class="text-center py-8">
                                         <div class="empty-state">
                                             <div class="empty-title">No applicants found</div>
                                             <div class="empty-message">
-                                                @if(request()->hasAny(['search', 'status', 'exam_set_id']))
+                                                @if(request()->hasAny(['search', 'status']))
                                                     Try adjusting your search criteria or filters.
                                                 @else
                                                     Start by importing applicants or adding them manually.
@@ -375,49 +381,10 @@
         </div>
     </div>
 
-    <!-- Assign Exam Sets Modal -->
-    <div id="assignSetsModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Assign Exam Sets</h3>
-                <button type="button" class="modal-close" onclick="closeAssignSetsModal()" aria-label="Close modal">×</button>
-            </div>
-            <div class="modal-body">
-                <form id="assignSetsForm">
-                    <div class="form-group">
-                        <label for="exam_set_id" class="form-label required">Exam Set</label>
-                        <select id="exam_set_id" 
-                                name="exam_set_id" 
-                                class="form-control form-select" 
-                                required
-                                aria-describedby="exam-set-help">
-                            <option value="">Select an exam set</option>
-                            @foreach($examSets ?? [] as $examSet)
-                                <option value="{{ $examSet->id }}">{{ $examSet->title }}</option>
-                            @endforeach
-                        </select>
-                        <div id="exam-set-help" class="form-help">Choose which exam set to assign to selected applicants</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="assignment_strategy" class="form-label">Assignment Strategy</label>
-                        <select id="assignment_strategy" 
-                                name="assignment_strategy" 
-                                class="form-control form-select"
-                                aria-describedby="strategy-help">
-                            <option value="replace">Replace existing assignments</option>
-                            <option value="only_unassigned">Only assign to unassigned applicants</option>
-                        </select>
-                        <div id="strategy-help" class="form-help">How to handle applicants who already have exam assignments</div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeAssignSetsModal()">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="confirmAssignExamSets()">Assign Sets</button>
-            </div>
-        </div>
-    </div>
 @endsection
+
+<!-- Include Exam Notification Modal -->
+@include('components.exam-notification-modal')
 
 @push('scripts')
     <script src="{{ asset('js/modules/applicant-manager.js') }}" defer></script>
@@ -428,6 +395,23 @@
         
         function hideActions(applicantId) {
             document.getElementById('actions-' + applicantId).style.display = 'none';
+        }
+
+        // Send individual exam notification
+        function sendIndividualNotification(applicantId) {
+            console.log('Sending individual notification to applicant:', applicantId);
+            
+            // Set the global selectedApplicants to just this applicant
+            window.selectedApplicants = [applicantId];
+            
+            // Also update the applicant manager if available
+            if (window.applicantManager) {
+                window.applicantManager.selectedApplicants.clear();
+                window.applicantManager.selectedApplicants.add(applicantId);
+            }
+            
+            // Open the email notification drawer
+            openEmailNotificationDrawer();
         }
     </script>
 @endpush

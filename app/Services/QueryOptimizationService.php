@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\Applicant;
-use App\Models\ExamSet;
+use App\Models\Exam;
 use App\Models\Interview;
 use App\Models\Question;
 use App\Models\User;
@@ -43,13 +43,12 @@ class QueryOptimizationService
                 $query = Applicant::query()
                     ->select([
                         'applicants.*',
-                        'exam_sets.set_name',
-                        'exams.exam_name',
+                        'users.first_name as instructor_first_name',
+                        'users.last_name as instructor_last_name',
                         'access_codes.code as access_code',
                         'access_codes.is_used as code_used'
                     ])
-                    ->leftJoin('exam_sets', 'applicants.exam_set_id', '=', 'exam_sets.exam_set_id')
-                    ->leftJoin('exams', 'exam_sets.exam_id', '=', 'exams.exam_id')
+                    ->leftJoin('users', 'applicants.assigned_instructor_id', '=', 'users.user_id')
                     ->leftJoin('access_codes', 'applicants.applicant_id', '=', 'access_codes.applicant_id');
 
                 // Apply filters efficiently
@@ -72,9 +71,9 @@ class QueryOptimizationService
     {
         return $this->cacheService->cacheApplicant($applicantId, function() use ($applicantId) {
             return Applicant::with([
-                'examSet:exam_set_id,exam_id,set_name',
-                'examSet.exam:exam_id,exam_name',
                 'accessCode:applicant_id,code,is_used,expires_at',
+                'accessCode.exam:exam_id,title,duration_minutes',
+                'assignedInstructor:user_id,first_name,last_name,email',
                 'latestInterview:interview_id,applicant_id,interviewer_id,status,schedule_date,overall_score,recommendation',
                 'latestInterview.interviewer:user_id,first_name,last_name',
                 'results:result_id,applicant_id,question_id,is_correct,points_earned',
@@ -97,7 +96,7 @@ class QueryOptimizationService
                     COUNT(*) as total_applicants,
                     COUNT(CASE WHEN status != 'pending' THEN 1 END) as exam_completed,
                     COUNT(CASE WHEN status = 'exam-completed' THEN 1 END) as pending_reviews,
-                    COUNT(CASE WHEN exam_set_id IS NOT NULL THEN 1 END) as with_exam_sets,
+                    COUNT(CASE WHEN assigned_instructor_id IS NOT NULL THEN 1 END) as with_instructors,
                     AVG(CASE WHEN score IS NOT NULL THEN score END) as average_score
                 FROM applicants
             ")[0];
@@ -114,7 +113,7 @@ class QueryOptimizationService
                 'total_applicants' => $stats->total_applicants,
                 'exam_completed' => $stats->exam_completed,
                 'pending_reviews' => $stats->pending_reviews,
-                'with_exam_sets' => $stats->with_exam_sets,
+                'with_instructors' => $stats->with_instructors,
                 'average_score' => round($stats->average_score ?? 0, 2),
                 'interviews_scheduled' => $interviewStats->interviews_scheduled,
                 'interviews_completed' => $interviewStats->interviews_completed,
@@ -140,12 +139,12 @@ class QueryOptimizationService
                 'last_name',
                 'email_address',
                 'status',
-                'exam_set_id',
+                'assigned_instructor_id',
                 'score',
                 'created_at'
             ])
             ->with([
-                'examSet:exam_set_id,set_name',
+                'assignedInstructor:user_id,first_name,last_name',
                 'accessCode:applicant_id,code,is_used'
             ])
             ->latest()
@@ -244,25 +243,26 @@ class QueryOptimizationService
     /**
      * Get questions with options in optimized way
      *
-     * @param int $examSetId
+     * @param int $examId
      * @return Collection
      */
-    public function getQuestionsWithOptions(int $examSetId): Collection
+    public function getQuestionsWithOptions(int $examId): Collection
     {
-        $cacheKey = $this->cacheService->generateKey('questions:with_options', [$examSetId]);
+        $cacheKey = $this->cacheService->generateKey('questions:with_options', [$examId]);
         
-        return $this->cacheService->remember($cacheKey, function() use ($examSetId) {
+        return $this->cacheService->remember($cacheKey, function() use ($examId) {
             return Question::with([
                 'options:option_id,question_id,option_text,is_correct,order_number'
             ])
-            ->where('exam_set_id', $examSetId)
+            ->where('exam_id', $examId)
             ->where('is_active', true)
             ->orderBy('order_number')
             ->get([
                 'question_id',
-                'exam_set_id',
+                'exam_id',
                 'question_text',
                 'question_type',
+                'correct_answer',
                 'points',
                 'order_number'
             ]);
@@ -293,8 +293,8 @@ class QueryOptimizationService
             $query->where('applicants.status', $filters['status']);
         }
 
-        if (!empty($filters['exam_set_id'])) {
-            $query->where('applicants.exam_set_id', $filters['exam_set_id']);
+        if (!empty($filters['assigned_instructor_id'])) {
+            $query->where('applicants.assigned_instructor_id', $filters['assigned_instructor_id']);
         }
 
         if (!empty($filters['date_from'])) {
@@ -347,9 +347,8 @@ class QueryOptimizationService
                 'applicants.last_name',
                 'applicants.email_address',
                 'applicants.score',
-                'exam_sets.set_name'
+                'applicants.assigned_instructor_id'
             ])
-            ->leftJoin('exam_sets', 'applicants.exam_set_id', '=', 'exam_sets.exam_set_id')
             ->leftJoin('interviews', function($join) {
                 $join->on('applicants.applicant_id', '=', 'interviews.applicant_id')
                      ->whereIn('interviews.status', ['scheduled', 'completed']);

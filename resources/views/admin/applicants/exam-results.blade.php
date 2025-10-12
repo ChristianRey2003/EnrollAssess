@@ -289,10 +289,9 @@
                         </td>
                         <td>{{ $applicant->preferred_course ?? 'N/A' }}</td>
                         <td>
-                            @if($applicant->enrollassess_score)
+                            @if($applicant->enrollassess_score || $applicant->exam_percentage)
                                 @php
-                                    $score = $applicant->enrollassess_score;
-                                    $percentage = $applicant->examSet ? round(($score / $applicant->examSet->total_points) * 100, 2) : 0;
+                                    $percentage = $applicant->exam_percentage ?? $applicant->enrollassess_score ?? 0;
                                     $class = 'score-needs-improvement';
                                     if ($percentage >= 95) $class = 'score-excellent';
                                     elseif ($percentage >= 85) $class = 'score-very-good';
@@ -301,10 +300,10 @@
                                     elseif ($percentage >= 50) $class = 'score-fair';
                                 @endphp
                                 <div class="score-badge {{ $class }}">
-                                    {{ $percentage }}%
+                                    {{ round($percentage, 2) }}%
                                 </div>
                                 <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">
-                                    {{ $score }}/{{ $applicant->examSet->total_points ?? 'N/A' }}
+                                    {{ $applicant->results->where('is_correct', true)->count() }}/{{ $applicant->results->count() }} correct
                                 </div>
                             @else
                                 <span style="color: #9ca3af;">No score</span>
@@ -329,11 +328,11 @@
                             @endif
                         </td>
                         <td>
-                            @if($applicant->examSet)
-                                <div style="font-weight: 500;">{{ $applicant->examSet->set_name }}</div>
-                                <div style="font-size: 12px; color: #6b7280;">{{ $applicant->examSet->exam->title ?? 'N/A' }}</div>
+                            @if($applicant->accessCode && $applicant->accessCode->exam)
+                                <div style="font-weight: 500;">{{ $applicant->accessCode->exam->title }}</div>
+                                <div style="font-size: 12px; color: #6b7280;">{{ $applicant->accessCode->exam->duration_minutes ?? 'N/A' }} mins</div>
                             @else
-                                <span style="color: #9ca3af;">No exam set</span>
+                                <span style="color: #9ca3af;">No exam assigned</span>
                             @endif
                         </td>
                         <td>

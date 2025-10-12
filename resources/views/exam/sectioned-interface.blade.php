@@ -4,43 +4,147 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
-    <title>BSIT Entrance Examination - {{ config('app.name', 'EnrollAssess') }}</title>
-
+    <title>Entrance Examination - {{ config('app.name', 'EnrollAssess') }}</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-    <link href="{{ asset('css/exam/exam-interface.css') }}" rel="stylesheet">
-
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
+    
     <style>
-        .exam-content {
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f8f9fa;
+            color: #1f2937;
             -webkit-user-select: none;
             -moz-user-select: none;
-            -ms-user-select: none;
             user-select: none;
         }
-        
-        .option-label, .option-input, .essay-textarea {
-            -webkit-user-select: auto;
-            -moz-user-select: auto;
-            -ms-user-select: auto;
-            user-select: auto;
+
+        /* Fullscreen exam container */
+        .exam-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+        }
+
+        /* Top header bar */
+        .exam-header {
+            background: #800020;
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .exam-title {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .exam-meta {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .exam-timer {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            min-width: 100px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .exam-timer.warning {
+            background: #dc2626;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .violation-badge {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .violation-badge.warning {
+            background: #f59e0b;
+            color: #000;
+        }
+
+        .violation-badge.danger {
+            background: #dc2626;
+            animation: shake 0.5s infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        /* Progress bar */
+        .progress-bar-container {
+            height: 4px;
+            background: #e5e7eb;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #800020, #dc2626);
+            transition: width 0.3s ease;
+        }
+
+        /* Main content area */
+        .exam-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px 24px;
         }
 
         .exam-sections {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
             max-width: 900px;
             margin: 0 auto;
-            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
         }
 
+        /* Section card */
         .exam-section {
-            background: #fff;
+            background: white;
+            border: 1px solid #e5e7eb;
             border-radius: 12px;
-            border: 2px solid #e5e7eb;
             overflow: hidden;
-            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+        }
+
+        .exam-section:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .exam-section.completed {
@@ -48,138 +152,175 @@
             background: #f0fdf4;
         }
 
+        /* Section header */
         .section-header {
             background: #f9fafb;
-            padding: 16px 24px;
+            padding: 20px 24px;
             border-bottom: 1px solid #e5e7eb;
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
         }
 
         .exam-section.completed .section-header {
-            background: #dcfce7;
+            background: #ecfdf5;
         }
 
         .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
             display: flex;
             align-items: center;
             gap: 12px;
-            font-weight: 600;
-            font-size: 18px;
-            color: #1f2937;
         }
 
-        .section-icon {
-            background: #3b82f6;
+        .section-badge {
+            background: #800020;
             color: white;
-            padding: 6px 12px;
+            padding: 4px 12px;
             border-radius: 6px;
             font-size: 12px;
             font-weight: 600;
+            letter-spacing: 0.05em;
         }
 
-        .exam-section.completed .section-icon {
+        .exam-section.completed .section-badge {
             background: #10b981;
         }
 
-        .section-meta {
-            display: flex;
-            align-items: center;
-            gap: 16px;
+        .section-status {
             font-size: 14px;
             color: #6b7280;
+            font-weight: 500;
         }
 
+        .exam-section.completed .section-status {
+            color: #059669;
+        }
+
+        /* Section content */
         .section-content {
-            padding: 24px;
+            padding: 32px 24px;
         }
 
         .question-grid {
-            display: grid;
-            gap: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
         }
 
+        /* Question card */
         .question-item {
-            border: 1px solid #e5e7eb;
+            padding: 24px;
+            background: #f9fafb;
             border-radius: 8px;
-            padding: 20px;
-            background: #fafafa;
+            border-left: 4px solid #800020;
         }
 
         .question-number {
+            font-size: 13px;
             font-weight: 600;
-            color: #3b82f6;
-            font-size: 14px;
-            margin-bottom: 8px;
+            color: #800020;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
         }
 
         .question-text {
             font-size: 16px;
             font-weight: 500;
             color: #1f2937;
-            margin-bottom: 16px;
-            line-height: 1.5;
+            line-height: 1.6;
+            margin-bottom: 20px;
         }
 
+        /* Options */
         .question-options {
-            display: grid;
-            gap: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
 
         .option-group {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
             display: flex;
             align-items: flex-start;
             gap: 12px;
-            padding: 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
         }
 
         .option-group:hover {
-            background: #f3f4f6;
+            border-color: #800020;
+            background: #fef2f2;
         }
 
         .option-group.selected {
-            background: #dbeafe;
-            border: 1px solid #3b82f6;
+            border-color: #800020;
+            background: #fef2f2;
+            box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1);
         }
 
         .option-input {
+            width: 20px;
+            height: 20px;
             margin-top: 2px;
+            cursor: pointer;
+            flex-shrink: 0;
+            -webkit-user-select: auto;
+            -moz-user-select: auto;
+            user-select: auto;
+        }
+
+        .option-content {
+            flex: 1;
         }
 
         .option-letter {
             font-weight: 600;
-            color: #374151;
-            min-width: 24px;
+            color: #800020;
+            margin-right: 8px;
         }
 
         .option-text {
-            flex: 1;
             color: #374151;
+            font-size: 15px;
+            line-height: 1.5;
+            -webkit-user-select: auto;
+            -moz-user-select: auto;
+            user-select: auto;
         }
 
+        /* Essay textarea */
         .essay-textarea {
             width: 100%;
-            min-height: 120px;
-            padding: 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
+            min-height: 150px;
+            padding: 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
             font-family: inherit;
-            font-size: 14px;
+            font-size: 15px;
+            line-height: 1.6;
             resize: vertical;
+            transition: all 0.2s;
+            -webkit-user-select: auto;
+            -moz-user-select: auto;
+            user-select: auto;
         }
 
         .essay-textarea:focus {
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            border-color: #800020;
+            box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1);
         }
 
-        .section-actions {
-            padding: 16px 24px;
+        /* Section footer */
+        .section-footer {
+            padding: 20px 24px;
             background: #f9fafb;
             border-top: 1px solid #e5e7eb;
             display: flex;
@@ -192,27 +333,25 @@
             color: #6b7280;
         }
 
-        .section-buttons {
-            display: flex;
-            gap: 12px;
-        }
-
         .btn {
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-weight: 500;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
             cursor: pointer;
+            transition: all 0.2s;
             border: none;
-            transition: all 0.2s ease;
         }
 
         .btn-primary {
-            background: #3b82f6;
+            background: #800020;
             color: white;
         }
 
         .btn-primary:hover:not(:disabled) {
-            background: #2563eb;
+            background: #5c0017;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(128, 0, 32, 0.3);
         }
 
         .btn-success {
@@ -222,133 +361,212 @@
 
         .btn-success:hover:not(:disabled) {
             background: #059669;
-        }
-
-        .btn-secondary {
-            background: #6b7280;
-            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
 
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
         }
 
-        .violation-counter {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            border: 2px solid transparent;
-        }
-
-        .violation-counter.warning {
-            background: rgba(245, 158, 11, 0.2);
-            border-color: #F59E0B;
-        }
-
-        .violation-counter.danger {
-            background: rgba(220, 38, 38, 0.2);
-            border-color: #DC2626;
-        }
-
-        .violation-text {
-            color: #fff;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
+        /* Modal styles */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 10000;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
         }
 
         .modal-content {
             background: white;
             border-radius: 16px;
-            padding: 30px;
+            padding: 32px;
             max-width: 500px;
             width: 90%;
-            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
 
         .modal-header h3 {
+            font-size: 20px;
+            font-weight: 600;
             color: #1f2937;
-            font-size: 24px;
-            font-weight: 700;
-            margin: 0 0 16px 0;
+            margin-bottom: 16px;
+        }
+
+        .modal-body p {
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 12px;
         }
 
         .modal-footer {
             display: flex;
             gap: 12px;
-            justify-content: center;
             margin-top: 24px;
         }
 
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        /* Notification toast */
+        .notification {
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            background: white;
+            border-radius: 8px;
+            padding: 16px 20px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+            min-width: 320px;
+            max-width: 420px;
+            z-index: 10001;
+            animation: slideIn 0.3s ease-out;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .notification.warning {
+            border-left-color: #f59e0b;
+        }
+
+        .notification.error {
+            border-left-color: #dc2626;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .notification-content p {
+            color: #374151;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: pre-line;
+            margin: 0;
+        }
+
+        .notification-close {
+            background: #800020;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .notification-close:hover {
+            background: #5c0017;
+        }
+
+        /* Responsive */
         @media (max-width: 768px) {
+            .exam-header {
+                padding: 12px 16px;
+            }
+
+            .exam-title {
+                font-size: 16px;
+            }
+
+            .exam-meta {
+                gap: 12px;
+            }
+
+            .exam-timer {
+                font-size: 14px;
+                padding: 6px 12px;
+                min-width: 80px;
+            }
+
+            .violation-badge {
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+
+            .exam-content {
+                padding: 20px 16px;
+            }
+
             .exam-sections {
-                padding: 12px;
-                gap: 16px;
+                gap: 24px;
             }
 
             .section-header {
-                padding: 12px 16px;
+                padding: 16px;
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 8px;
             }
 
             .section-content {
+                padding: 20px 16px;
+            }
+
+            .question-item {
                 padding: 16px;
             }
 
-            .section-actions {
-                padding: 12px 16px;
-                flex-direction: column;
-                gap: 12px;
+            .notification {
+                top: 60px;
+                right: 16px;
+                left: 16px;
+                min-width: auto;
             }
         }
     </style>
 </head>
-<body class="exam-page" oncontextmenu="return false;">
+<body oncontextmenu="return false;">
     <div class="exam-container">
+        <!-- Header -->
         <header class="exam-header">
-            <h1 class="exam-title">BSIT Entrance Examination</h1>
-            <div class="exam-progress">
-                <div class="progress-indicator">
-                    @if(isset($sections))
-                        {{ $sections->sum('count') }} Questions in {{ $sections->count() }} Sections
-                    @else
-                        {{ $totalQuestions ?? 20 }} Questions
-                    @endif
+            <div class="exam-title">Entrance Examination</div>
+            <div class="exam-meta">
+                <div class="violation-badge" id="violationBadge">
+                    Violations: <span id="violationCount">0</span>/5
                 </div>
-                <div class="exam-meta">
-                    <div class="violation-counter" id="violationCounter">
-                        <span class="violation-icon">⚠️</span>
-                        <span class="violation-text">Violations: <span id="violationCount">0</span>/5</span>
-                    </div>
-                    <div class="exam-timer" id="examTimer">
-                        <span id="timeRemaining">{{ gmdate('i:s', $timeRemaining ?? 1800) }}</span>
-                    </div>
+                <div class="exam-timer" id="examTimer">
+                    <span id="timeRemaining">{{ gmdate('i:s', $timeRemaining ?? 1800) }}</span>
                 </div>
             </div>
         </header>
 
+        <!-- Progress bar -->
         <div class="progress-bar-container">
             <div class="progress-bar" id="progressBar" style="width: 0%;"></div>
         </div>
 
+        <!-- Main content -->
         <main class="exam-content">
             <div class="exam-sections">
                 @if(isset($sections) && $sections->count() > 0)
@@ -356,12 +574,11 @@
                         <div class="exam-section" id="section-{{ $index }}" data-section-type="{{ $section['type'] }}">
                             <div class="section-header">
                                 <div class="section-title">
-                                    <span class="section-icon">{{ $section['icon'] }}</span>
+                                    <span class="section-badge">{{ $section['icon'] }}</span>
                                     <span>{{ $section['label'] }}</span>
                                 </div>
-                                <div class="section-meta">
-                                    <span>{{ $section['count'] }} Question{{ $section['count'] !== 1 ? 's' : '' }}</span>
-                                    <span class="section-status" id="status-{{ $index }}">Pending</span>
+                                <div class="section-status" id="status-{{ $index }}">
+                                    {{ $section['count'] }} Question{{ $section['count'] !== 1 ? 's' : '' }} | Pending
                                 </div>
                             </div>
 
@@ -382,8 +599,10 @@
                                                                        value="{{ $option->option_id }}" 
                                                                        class="option-input"
                                                                        id="q{{ $question->question_id }}_{{ $optionIndex }}">
-                                                                <span class="option-letter">{{ chr(65 + $optionIndex) }})</span>
-                                                                <span class="option-text">{{ $option->option_text }}</span>
+                                                                <div class="option-content">
+                                                                    <span class="option-letter">{{ chr(65 + $optionIndex) }})</span>
+                                                                    <span class="option-text">{{ $option->option_text }}</span>
+                                                                </div>
                                                             </div>
                                                         @endforeach
                                                     </div>
@@ -399,11 +618,9 @@
                                 </form>
                             </div>
 
-                            <div class="section-actions">
-                                <div class="section-progress">
-                                    <span id="progress-{{ $index }}">0/{{ $section['count'] }} answered</span>
-                                </div>
-                                <div class="section-buttons">
+                            <div class="section-footer">
+                                <div class="section-progress" id="progress-{{ $index }}">0/{{ $section['count'] }} answered</div>
+                                <div>
                                     @if($index === $sections->count() - 1)
                                         <button type="button" class="btn btn-success" onclick="submitSection({{ $index }}, true)">
                                             Complete Exam
@@ -420,29 +637,22 @@
                 @else
                     <div class="exam-section">
                         <div class="section-content">
-                            <p>No questions available for this exam set.</p>
+                            <p style="text-align: center; color: #6b7280; padding: 40px 20px;">No questions available for this exam.</p>
                         </div>
                     </div>
                 @endif
             </div>
         </main>
-
-        <footer class="exam-footer">
-            <p class="exam-instructions">
-                <strong>Instructions:</strong> Answer all questions in each section before submitting. 
-                You can navigate within the current section but cannot return to completed sections.
-            </p>
-        </footer>
     </div>
 
-    <!-- Modals -->
+    <!-- Submit Section Modal -->
     <div id="submitModal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Submit Section</h3>
             </div>
             <div class="modal-body">
-                <p><strong>Are you sure you want to submit this section?</strong></p>
+                <p>Are you sure you want to submit this section?</p>
                 <p>Once submitted, you cannot return to modify your answers.</p>
                 <div id="sectionSummary"></div>
             </div>
@@ -453,15 +663,16 @@
         </div>
     </div>
 
+    <!-- Final Submit Modal -->
     <div id="finalSubmitModal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Complete Examination</h3>
             </div>
             <div class="modal-body">
-                <p><strong>Are you sure you want to complete your examination?</strong></p>
-                <p>Once submitted, you will not be able to make any changes to your answers.</p>
-                <p>Time remaining: <span id="modalTimeRemaining">{{ gmdate('i:s', $timeRemaining ?? 1800) }}</span></p>
+                <p>Are you sure you want to complete your examination?</p>
+                <p>Once submitted, you will not be able to make any changes.</p>
+                <p>Time remaining: <strong><span id="modalTimeRemaining">{{ gmdate('i:s', $timeRemaining ?? 1800) }}</span></strong></p>
             </div>
             <div class="modal-footer">
                 <button onclick="closeFinalSubmitModal()" class="btn btn-secondary">Continue Exam</button>
@@ -476,94 +687,277 @@
         let currentSubmittingSection = null;
         let completedSections = @json($examSession['sections_completed'] ?? []);
         let sectionAnswers = @json($examSession['answers'] ?? []);
+        let fullscreenActive = false;
+        let examStarted = false;
 
+        // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
-            initializeTimer();
-            initializeViolationSystem();
-            setupViolationMonitoring();
-            initializeSectionAnswers();
-            updateSectionStates();
+            showFullscreenPrompt();
         });
 
+        function showFullscreenPrompt() {
+            // Create overlay prompt
+            const prompt = document.createElement('div');
+            prompt.id = 'fullscreenPrompt';
+            prompt.innerHTML = `
+                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+                            background: rgba(0, 0, 0, 0.95); display: flex; align-items: center; 
+                            justify-content: center; z-index: 99999;">
+                    <div style="background: white; padding: 48px; border-radius: 16px; text-align: center; max-width: 500px;">
+                        <h2 style="font-size: 24px; font-weight: 600; color: #1f2937; margin: 0 0 16px 0;">
+                            Fullscreen Mode Required
+                        </h2>
+                        <p style="font-size: 16px; color: #6b7280; line-height: 1.6; margin: 0 0 24px 0;">
+                            For exam security, you must complete the exam in fullscreen mode.
+                            Click the button below to enter fullscreen and begin.
+                        </p>
+                        <button onclick="enterFullscreenAndStart()" 
+                                style="padding: 14px 32px; background: #800020; color: white; border: none; 
+                                       border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;
+                                       transition: all 0.2s;">
+                            Enter Fullscreen & Start Exam
+                        </button>
+                        <p style="font-size: 13px; color: #9ca3af; margin: 24px 0 0 0;">
+                            Exiting fullscreen during the exam will be recorded as a violation.
+                        </p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(prompt);
+        }
+
+        function enterFullscreenAndStart() {
+            const elem = document.documentElement;
+            
+            // Try different fullscreen methods
+            const requestFullscreen = elem.requestFullscreen || 
+                                      elem.webkitRequestFullscreen || 
+                                      elem.mozRequestFullScreen || 
+                                      elem.msRequestFullscreen;
+            
+            if (requestFullscreen) {
+                requestFullscreen.call(elem).then(() => {
+                    fullscreenActive = true;
+                    removeFullscreenPrompt();
+                    startExam();
+                }).catch(err => {
+                    console.error('Fullscreen failed:', err);
+                    alert('Fullscreen is required to start the exam. Please allow fullscreen access.');
+                });
+            } else {
+                // Browser doesn't support fullscreen
+                alert('Your browser does not support fullscreen mode. Please use Chrome, Firefox, or Edge.');
+            }
+        }
+
+        function removeFullscreenPrompt() {
+            const prompt = document.getElementById('fullscreenPrompt');
+            if (prompt) {
+                prompt.remove();
+            }
+        }
+
+        function startExam() {
+            examStarted = true;
+            initializeTimer();
+            initializeViolationSystem();
+            initializeSectionAnswers();
+            updateSectionStates();
+            
+            // Setup violation monitoring after exam starts
+            setTimeout(() => {
+                setupViolationMonitoring();
+            }, 500);
+        }
+
+        // Monitor fullscreen changes
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+        function handleFullscreenChange() {
+            const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
+                                   document.mozFullScreenElement || document.msFullscreenElement);
+            
+            if (!isFullscreen && fullscreenActive && examStarted && timeRemaining > 0) {
+                recordViolation('FULLSCREEN_EXIT', 'You exited fullscreen mode.');
+                // Try to re-enter fullscreen
+                setTimeout(reEnterFullscreen, 1000);
+            }
+        }
+
+        function reEnterFullscreen() {
+            const elem = document.documentElement;
+            const requestFullscreen = elem.requestFullscreen || 
+                                      elem.webkitRequestFullscreen || 
+                                      elem.mozRequestFullScreen || 
+                                      elem.msRequestFullscreen;
+            
+            if (requestFullscreen) {
+                requestFullscreen.call(elem).catch(err => {
+                    console.log('Re-entering fullscreen failed:', err);
+                });
+            }
+        }
+
+        // Timer
         function initializeTimer() {
             function updateTimer() {
-                timeRemaining = Math.max(0, timeRemaining - 1);
+                if (timeRemaining <= 0) {
+                    autoSubmitExam('Time expired');
+                    return;
+                }
+                
+                timeRemaining--;
                 
                 const minutes = Math.floor(timeRemaining / 60);
                 const seconds = timeRemaining % 60;
                 const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
                 
                 document.getElementById('timeRemaining').textContent = timeString;
-                document.getElementById('modalTimeRemaining').textContent = timeString;
+                const modalTime = document.getElementById('modalTimeRemaining');
+                if (modalTime) modalTime.textContent = timeString;
                 
-                if (timeRemaining <= 0) {
-                    autoSubmitExam('Time expired');
-                    return;
-                }
-                
+                // Warning at 5 minutes
                 if (timeRemaining === 300) {
-                    alert('5 minutes remaining!');
-                    document.getElementById('examTimer').style.color = '#dc2626';
+                    document.getElementById('examTimer').classList.add('warning');
+                    showNotification('5 minutes remaining!', 'warning');
                 }
             }
             
             setInterval(updateTimer, 1000);
         }
 
+        // Violation system
         function initializeViolationSystem() {
             violationCount = 0;
-            updateViolationCounter();
+            updateViolationBadge();
         }
 
-        function updateViolationCounter() {
-            const counter = document.getElementById('violationCounter');
-            const countElement = document.getElementById('violationCount');
+        function updateViolationBadge() {
+            const badge = document.getElementById('violationBadge');
+            const count = document.getElementById('violationCount');
             
-            countElement.textContent = violationCount;
+            count.textContent = violationCount;
             
-            counter.classList.remove('warning', 'danger');
+            badge.classList.remove('warning', 'danger');
             if (violationCount >= 3 && violationCount < 5) {
-                counter.classList.add('warning');
+                badge.classList.add('warning');
             } else if (violationCount >= 4) {
-                counter.classList.add('danger');
+                badge.classList.add('danger');
             }
         }
 
         function setupViolationMonitoring() {
+            // Tab visibility
             document.addEventListener('visibilitychange', function() {
-                if (document.hidden) {
-                    recordViolation('TAB_SWITCH', 'You switched to another tab or minimized the browser window.');
+                if (document.hidden && examStarted && timeRemaining > 0) {
+                    recordViolation('TAB_SWITCH', 'You switched to another tab or minimized the browser.');
                 }
             });
 
+            // Window blur
+            window.addEventListener('blur', function() {
+                if (!document.hidden && examStarted && timeRemaining > 0) {
+                    recordViolation('WINDOW_BLUR', 'You clicked outside the exam window.');
+                }
+            });
+
+            // Keyboard shortcuts
             document.addEventListener('keydown', function(e) {
+                // Dev tools
                 if (e.key === 'F12' || 
-                    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+                    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
                     (e.ctrlKey && (e.key === 'u' || e.key === 'U'))) {
                     e.preventDefault();
-                    recordViolation('DEV_TOOLS', 'You attempted to access developer tools.');
+                    recordViolation('DEV_TOOLS', 'Developer tools access blocked.');
                     return false;
                 }
 
-                if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'a')) {
+                // Copy/Paste
+                if (e.ctrlKey && (e.key === 'c' || e.key === 'C' || e.key === 'v' || e.key === 'V' || 
+                                 e.key === 'x' || e.key === 'X' || e.key === 'a' || e.key === 'A')) {
                     e.preventDefault();
-                    recordViolation('COPY_PASTE', 'You attempted to copy, paste, or select content.');
+                    recordViolation('COPY_PASTE', 'Copy/paste is not allowed.');
                     return false;
                 }
+
+                // Print
+                if (e.ctrlKey && (e.key === 'p' || e.key === 'P')) {
+                    e.preventDefault();
+                    recordViolation('PRINT_ATTEMPT', 'Printing is not allowed.');
+                    return false;
+                }
+
+                // Refresh
+                if (e.key === 'F5' || (e.ctrlKey && (e.key === 'r' || e.key === 'R'))) {
+                    e.preventDefault();
+                    recordViolation('REFRESH_ATTEMPT', 'Page refresh is not allowed.');
+                    return false;
+                }
+
+                // Alt+Tab
+                if (e.altKey && e.key === 'Tab') {
+                    e.preventDefault();
+                    recordViolation('ALT_TAB', 'Application switching is not allowed.');
+                    return false;
+                }
+
+                // Windows key
+                if (e.key === 'Meta' || e.key === 'OS') {
+                    e.preventDefault();
+                    recordViolation('WINDOWS_KEY', 'System key pressed.');
+                    return false;
+                }
+            });
+
+            // Right-click
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                recordViolation('RIGHT_CLICK', 'Right-click is not allowed.');
+                return false;
             });
         }
 
         function recordViolation(type, message) {
             violationCount++;
-            updateViolationCounter();
+            updateViolationBadge();
+            
+            console.warn(`Violation ${violationCount}/5: ${type}`);
             
             if (violationCount >= 5) {
                 autoSubmitExam('Maximum violations reached');
             } else {
-                alert(`Warning: ${message}\nViolations: ${violationCount}/5`);
+                showNotification(`${message}\n\nViolations: ${violationCount}/5`, 'warning');
             }
         }
 
+        // Notification system
+        function showNotification(message, type = 'info') {
+            // Remove existing notifications
+            const existing = document.querySelectorAll('.notification');
+            existing.forEach(n => n.remove());
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <p>${message}</p>
+                    <button onclick="this.closest('.notification').remove()" class="notification-close">OK</button>
+                </div>
+            `;
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // Section management
         function initializeSectionAnswers() {
             Object.keys(sectionAnswers).forEach(questionId => {
                 const input = document.querySelector(`input[name="question_${questionId}"], textarea[name="question_${questionId}"]`);
@@ -592,8 +986,8 @@
                     section.classList.add('completed');
                     const statusElement = section.querySelector('.section-status');
                     if (statusElement) {
-                        statusElement.textContent = 'Completed';
-                        statusElement.style.color = '#10b981';
+                        const text = statusElement.textContent.split('|')[0].trim();
+                        statusElement.textContent = text + ' | Completed';
                     }
                 }
             });
@@ -659,12 +1053,22 @@
             });
 
             const progressBar = document.getElementById('progressBar');
-            if (progressBar) {
-                const percentage = totalQuestions > 0 ? (totalAnswered / totalQuestions) * 100 : 0;
+            if (progressBar && totalQuestions > 0) {
+                const percentage = (totalAnswered / totalQuestions) * 100;
                 progressBar.style.width = `${percentage}%`;
             }
         }
 
+        // Essay input tracking
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('essay-textarea')) {
+                const form = e.target.closest('.section-form');
+                const sectionIndex = parseInt(form.dataset.sectionIndex);
+                updateSectionProgress(sectionIndex);
+            }
+        });
+
+        // Section submission
         function submitSection(sectionIndex, isFinalSubmit = false) {
             currentSubmittingSection = sectionIndex;
             
@@ -697,22 +1101,20 @@
             });
 
             if (unanswered > 0) {
-                alert(`Please answer all questions in this section. ${unanswered} question(s) remaining.`);
+                showNotification(`Please answer all questions in this section.\n${unanswered} question(s) remaining.`, 'error');
                 return;
             }
 
-            const sectionType = form.closest('.exam-section').dataset.sectionType;
-            const summary = `${Object.keys(answers).length} question(s) answered in ${sectionType.replace('_', ' ')} section.`;
-            
-            document.getElementById('sectionSummary').innerHTML = `<p>${summary}</p>`;
+            window.tempSectionAnswers = answers;
             
             if (isFinalSubmit) {
                 document.getElementById('finalSubmitModal').style.display = 'flex';
             } else {
+                const sectionType = form.closest('.exam-section').dataset.sectionType;
+                const summary = `${Object.keys(answers).length} question(s) answered in ${sectionType.replace('_', ' ')} section.`;
+                document.getElementById('sectionSummary').innerHTML = `<p>${summary}</p>`;
                 document.getElementById('submitModal').style.display = 'flex';
             }
-
-            window.tempSectionAnswers = answers;
         }
 
         function closeSubmitModal() {
@@ -748,8 +1150,8 @@
                 if (data.success) {
                     sectionElement.classList.add('completed');
                     const statusElement = sectionElement.querySelector('.section-status');
-                    statusElement.textContent = 'Completed';
-                    statusElement.style.color = '#10b981';
+                    const text = statusElement.textContent.split('|')[0].trim();
+                    statusElement.textContent = text + ' | Completed';
 
                     completedSections.push(sectionType);
                     Object.assign(sectionAnswers, window.tempSectionAnswers);
@@ -761,16 +1163,19 @@
                         nextSection.scrollIntoView({ behavior: 'smooth' });
                     }
                 } else {
-                    alert('Failed to submit section: ' + data.message);
+                    showNotification('Failed to submit section: ' + data.message, 'error');
                 }
             })
             .catch(error => {
                 console.error('Error submitting section:', error);
-                alert('Failed to submit section. Please try again.');
+                showNotification('Failed to submit section. Please try again.', 'error');
             });
         }
 
+        let isSubmittingExam = false;
+
         function confirmFinalSubmit() {
+            isSubmittingExam = true; // Disable beforeunload warning
             Object.assign(sectionAnswers, window.tempSectionAnswers);
             
             fetch('{{ route('exam.complete') }}', {
@@ -790,18 +1195,23 @@
             .then(data => {
                 if (data.success) {
                     closeFinalSubmitModal();
-                    showExamCompletionModal(data);
+                    window.location.href = "{{ route('exam.results') }}";
                 } else {
-                    alert('Failed to submit exam: ' + data.message);
+                    showNotification('Failed to submit exam: ' + data.message, 'error');
+                    isSubmittingExam = false; // Re-enable warning if submission failed
                 }
             })
             .catch(error => {
                 console.error('Error submitting exam:', error);
-                alert('Failed to submit exam. Please try again.');
+                showNotification('Failed to submit exam. Please try again.', 'error');
+                isSubmittingExam = false; // Re-enable warning if submission failed
             });
         }
 
         function autoSubmitExam(reason) {
+            isSubmittingExam = true; // Disable beforeunload warning
+            showNotification(`${reason}! Automatically submitting your exam...`, 'error');
+            
             fetch('{{ route('exam.complete') }}', {
                 method: 'POST',
                 headers: {
@@ -819,90 +1229,29 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    showExamCompletionModal(data, true, reason);
-                } else {
-                    alert(`${reason}! Redirecting to results page...`);
-                    setTimeout(() => {
-                        window.location.href = "{{ route('exam.results') }}";
-                    }, 3000);
-                }
+                setTimeout(() => {
+                    window.location.href = "{{ route('exam.results') }}";
+                }, 2000);
             })
             .catch(error => {
                 console.error('Error auto-submitting exam:', error);
-                alert(`${reason}! Redirecting to results page...`);
                 setTimeout(() => {
                     window.location.href = "{{ route('exam.results') }}";
-                }, 3000);
+                }, 2000);
             });
         }
 
-        function showExamCompletionModal(data, isAutoSubmitted = false, reason = null) {
-            const modal = document.createElement('div');
-            modal.className = 'modal-overlay';
-            modal.style.display = 'flex';
-            modal.innerHTML = `
-                <div class="modal-content" style="max-width: 600px; text-align: center;">
-                    <div class="modal-header">
-                        <h3 style="color: ${isAutoSubmitted ? '#DC2626' : '#059669'}; margin-bottom: 16px;">
-                            ${isAutoSubmitted ? 'Exam Auto-Submitted' : 'Exam Completed Successfully!'}
-                        </h3>
-                    </div>
-                    <div class="modal-body">
-                        ${isAutoSubmitted ? `<p style="color: #DC2626; margin-bottom: 16px;"><strong>Reason:</strong> ${reason}</p>` : ''}
-                        <div style="background: #F3F4F6; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                            <h4 style="margin: 0 0 16px 0; color: #1F2937;">Your Results</h4>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; text-align: left;">
-                                <div><strong>Score:</strong> ${data.score}%</div>
-                                <div><strong>Grade:</strong> ${data.verbal_description}</div>
-                                <div><strong>Correct Answers:</strong> ${data.correct_answers}/${data.total_questions}</div>
-                                <div><strong>Points Earned:</strong> ${data.total_score}/${data.max_score}</div>
-                            </div>
-                        </div>
-                        <p style="color: #6B7280;">
-                            You will be redirected to the results page in <span id="countdown">5</span> seconds...
-                        </p>
-                    </div>
-                    <div class="modal-footer">
-                        <button onclick="goToResults()" class="btn btn-success">
-                            View Detailed Results
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(modal);
-            
-            let countdown = 5;
-            const countdownElement = modal.querySelector('#countdown');
-            const timer = setInterval(() => {
-                countdown--;
-                if (countdownElement) {
-                    countdownElement.textContent = countdown;
-                }
-                if (countdown <= 0) {
-                    clearInterval(timer);
-                    goToResults();
-                }
-            }, 1000);
-        }
-
-        function goToResults() {
-            window.location.href = "{{ route('exam.results') }}";
-        }
-
-        document.addEventListener('input', function(e) {
-            if (e.target.classList.contains('essay-textarea')) {
-                const form = e.target.closest('.section-form');
-                const sectionIndex = parseInt(form.dataset.sectionIndex);
-                updateSectionProgress(sectionIndex);
-            }
-        });
-
+        // Prevent page unload (but allow when legitimately submitting)
         window.addEventListener('beforeunload', function(e) {
-            e.preventDefault();
-            e.returnValue = 'Are you sure you want to leave? Your exam progress may be lost.';
-            return e.returnValue;
+            if (isSubmittingExam) {
+                return; // Allow navigation when submitting exam
+            }
+
+            if (timeRemaining > 0) {
+                e.preventDefault();
+                e.returnValue = 'Are you sure you want to leave? Your exam progress may be lost.';
+                return e.returnValue;
+            }
         });
     </script>
 </body>

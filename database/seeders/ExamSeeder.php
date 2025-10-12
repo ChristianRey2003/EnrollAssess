@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Exam;
-use App\Models\ExamSet;
 use App\Models\Question;
 use App\Models\QuestionOption;
 
@@ -15,25 +14,17 @@ class ExamSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create the main BSIT entrance exam
+        // Create the main BSIT entrance exam with question quotas
         $exam = Exam::updateOrCreate(
             ['title' => 'BSIT Entrance Examination'],
             [
                 'title' => 'BSIT Entrance Examination',
                 'duration_minutes' => 90,
-                'description' => 'Comprehensive entrance examination for BSIT program.',
+                'description' => 'Comprehensive entrance examination for BSIT program with randomized questions.',
                 'is_active' => true,
-            ]
-        );
-
-        // Create exam set
-        $examSet = ExamSet::updateOrCreate(
-            ['exam_id' => $exam->exam_id, 'set_name' => 'BSIT-2024-SET-A'],
-            [
-                'exam_id' => $exam->exam_id,
-                'set_name' => 'BSIT-2024-SET-A',
-                'description' => 'Main question set for BSIT entrance examination 2024',
-                'is_active' => true,
+                'total_items' => 20,
+                'mcq_quota' => 15,
+                'tf_quota' => 5,
             ]
         );
 
@@ -70,11 +61,11 @@ class ExamSeeder extends Seeder
             $options = $questionData['options'];
             unset($questionData['options']);
             
-            $questionData['exam_set_id'] = $examSet->exam_set_id;
+            $questionData['exam_id'] = $exam->exam_id;
             
             $question = Question::updateOrCreate(
                 [
-                    'exam_set_id' => $examSet->exam_set_id,
+                    'exam_id' => $exam->exam_id,
                     'order_number' => $questionData['order_number']
                 ],
                 $questionData

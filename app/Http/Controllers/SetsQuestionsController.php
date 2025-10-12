@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Exam;
-use App\Models\ExamSet;
 use App\Models\Question;
 use App\Models\QuestionOption;
 use Illuminate\Http\Request;
@@ -13,47 +12,35 @@ use Illuminate\Support\Facades\Validator;
 class SetsQuestionsController extends Controller
 {
     /**
-     * Display the Sets & Questions management interface.
+     * Display the Question Bank management interface.
      */
     public function index(Request $request)
     {
-        // Get the current active exam (assuming one exam system)
+        // Single-exam mode: pick active exam, or latest if none active
         $currentExam = Exam::where('is_active', true)->first() ?? Exam::latest()->first();
         
-        $examSets = collect();
+        $questions = collect();
+        $examSets = collect(); // Empty collection for backward compatibility with view
         $selectedSet = null;
         
         if ($currentExam) {
-            // Get all exam sets for the current exam
-            $examSets = ExamSet::where('exam_id', $currentExam->exam_id)
-                ->with(['questions' => function($q) {
-                    $q->with('options')->orderBy('order_number');
-                }])
-                ->orderBy('set_name')
+            // Get all questions for the current exam (Question Bank approach)
+            $questions = Question::where('exam_id', $currentExam->exam_id)
+                ->with('options')
+                ->orderBy('order_number')
                 ->get();
-            
-            // Get selected set from request or default to first set
-            $selectedSetId = $request->get('set');
-            if ($selectedSetId) {
-                $selectedSet = $examSets->where('exam_set_id', $selectedSetId)->first();
-            } else {
-                $selectedSet = $examSets->first();
-            }
         }
         
         // Calculate statistics
         $stats = [
-            'total_sets' => $examSets->count(),
-            'active_sets' => $examSets->where('is_active', true)->count(),
-            'total_questions' => $examSets->sum(function($set) {
-                return $set->questions->count();
-            }),
-            'draft_questions' => $examSets->sum(function($set) {
-                return $set->questions->where('is_active', false)->count();
-            }),
+            'total_questions' => $questions->count(),
+            'active_questions' => $questions->where('is_active', true)->count(),
+            'mcq_count' => $questions->where('question_type', 'multiple_choice')->count(),
+            'tf_count' => $questions->where('question_type', 'true_false')->count(),
+            'draft_questions' => $questions->where('is_active', false)->count(),
         ];
         
-        return view('admin.sets-questions', compact('currentExam', 'examSets', 'selectedSet', 'stats'));
+        return view('admin.sets-questions', compact('currentExam', 'questions', 'stats', 'examSets', 'selectedSet'));
     }
     
     /**
@@ -195,12 +182,11 @@ class SetsQuestionsController extends Controller
     public function consistencyCheck($id)
     {
         try {
-            $exam = Exam::with(['examSets.questions.options'])->findOrFail($id);
+            $exam = Exam::with(['questions.options'])->findOrFail($id);
             $issues = [];
             
             // Check for duplicate questions
-            $allQuestions = $exam->examSets->flatMap->questions;
-            $duplicateQuestions = $allQuestions->groupBy('question_text')
+            $duplicateQuestions = $exam->questions->groupBy('question_text')
                 ->filter(function($group) { return $group->count() > 1; })
                 ->keys();
             
@@ -213,7 +199,7 @@ class SetsQuestionsController extends Controller
             }
             
             // Check for questions without correct answers
-            $questionsWithoutAnswers = $allQuestions->filter(function($question) {
+            $questionsWithoutAnswers = $exam->questions->filter(function($question) {
                 if ($question->question_type === 'multiple_choice') {
                     return $question->options->where('is_correct', true)->count() === 0;
                 }
@@ -228,31 +214,14 @@ class SetsQuestionsController extends Controller
                 ];
             }
             
-            // Check for empty sets
-            $emptySets = $exam->examSets->filter(function($set) {
-                return $set->questions->count() === 0;
-            });
-            
-            if ($emptySets->count() > 0) {
+            // Check quota compliance
+            $validation = $exam->validateQuotas();
+            if (!empty($validation)) {
                 $issues[] = [
-                    'type' => 'empty_sets',
-                    'message' => 'Found ' . $emptySets->count() . ' empty sets',
-                    'details' => $emptySets->pluck('set_name')->toArray()
+                    'type' => 'quota_mismatch',
+                    'message' => 'Quota validation errors',
+                    'details' => $validation
                 ];
-            }
-            
-            // Check for unbalanced sets (significant difference in question count)
-            $setCounts = $exam->examSets->pluck('questions')->map->count();
-            if ($setCounts->count() > 1) {
-                $minCount = $setCounts->min();
-                $maxCount = $setCounts->max();
-                if ($maxCount - $minCount > 5) { // More than 5 questions difference
-                    $issues[] = [
-                        'type' => 'unbalanced_sets',
-                        'message' => 'Sets have unbalanced question counts (min: ' . $minCount . ', max: ' . $maxCount . ')',
-                        'details' => []
-                    ];
-                }
             }
             
             return response()->json([
@@ -274,34 +243,25 @@ class SetsQuestionsController extends Controller
      */
     private function duplicateExamContent($sourceExam, $targetExam)
     {
-        foreach ($sourceExam->examSets as $originalSet) {
-            $newSet = ExamSet::create([
+        foreach ($sourceExam->questions as $originalQuestion) {
+            $newQuestion = Question::create([
                 'exam_id' => $targetExam->exam_id,
-                'set_name' => $originalSet->set_name,
-                'description' => $originalSet->description,
+                'question_text' => $originalQuestion->question_text,
+                'question_type' => $originalQuestion->question_type,
+                'points' => $originalQuestion->points,
+                'order_number' => $originalQuestion->order_number,
+                'explanation' => $originalQuestion->explanation,
                 'is_active' => false, // Start as draft
             ]);
             
-            foreach ($originalSet->questions as $originalQuestion) {
-                $newQuestion = Question::create([
-                    'exam_set_id' => $newSet->exam_set_id,
-                    'question_text' => $originalQuestion->question_text,
-                    'question_type' => $originalQuestion->question_type,
-                    'points' => $originalQuestion->points,
-                    'order_number' => $originalQuestion->order_number,
-                    'explanation' => $originalQuestion->explanation,
-                    'is_active' => false, // Start as draft
+            // Duplicate question options
+            foreach ($originalQuestion->options as $originalOption) {
+                QuestionOption::create([
+                    'question_id' => $newQuestion->question_id,
+                    'option_text' => $originalOption->option_text,
+                    'is_correct' => $originalOption->is_correct,
+                    'order_number' => $originalOption->order_number,
                 ]);
-                
-                // Duplicate question options
-                foreach ($originalQuestion->options as $originalOption) {
-                    QuestionOption::create([
-                        'question_id' => $newQuestion->question_id,
-                        'option_text' => $originalOption->option_text,
-                        'is_correct' => $originalOption->is_correct,
-                        'order_number' => $originalOption->order_number,
-                    ]);
-                }
             }
         }
     }
@@ -313,27 +273,24 @@ class SetsQuestionsController extends Controller
     {
         $errors = [];
         
-        // Check if exam has sets
-        if ($exam->examSets->count() === 0) {
-            $errors[] = 'Exam must have at least one set';
+        // Check if exam has questions
+        if ($exam->questions->count() === 0) {
+            $errors[] = 'Exam must have at least one question in the question bank';
         }
         
-        // Check if each set has questions
-        foreach ($exam->examSets as $set) {
-            if ($set->questions->count() === 0) {
-                $errors[] = "Set '{$set->set_name}' has no questions";
-            }
-            
-            // Check if each multiple choice question has a correct answer
-            foreach ($set->questions as $question) {
-                if ($question->question_type === 'multiple_choice') {
-                    $correctAnswers = $question->options->where('is_correct', true)->count();
-                    if ($correctAnswers === 0) {
-                        $errors[] = "Question '{$question->question_text}' has no correct answer";
-                    }
-                    if ($correctAnswers > 1) {
-                        $errors[] = "Question '{$question->question_text}' has multiple correct answers";
-                    }
+        // Check quota validation
+        $quotaErrors = $exam->validateQuotas();
+        $errors = array_merge($errors, $quotaErrors);
+        
+        // Check if each multiple choice question has a correct answer
+        foreach ($exam->questions as $question) {
+            if ($question->question_type === 'multiple_choice') {
+                $correctAnswers = $question->options->where('is_correct', true)->count();
+                if ($correctAnswers === 0) {
+                    $errors[] = "Question '{$question->question_text}' has no correct answer";
+                }
+                if ($correctAnswers > 1) {
+                    $errors[] = "Question '{$question->question_text}' has multiple correct answers";
                 }
             }
         }

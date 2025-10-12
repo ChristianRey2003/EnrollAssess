@@ -12,9 +12,10 @@ class Question extends Model
     protected $primaryKey = 'question_id'; // As per ERD
 
     protected $fillable = [
-        'exam_set_id',
+        'exam_id',
         'question_text',
         'question_type',
+        'correct_answer',
         'points',
         'order_number',
         'explanation',
@@ -25,6 +26,7 @@ class Question extends Model
         'points' => 'integer',
         'order_number' => 'integer',
         'is_active' => 'boolean',
+        'correct_answer' => 'boolean',
     ];
 
     /**
@@ -32,15 +34,15 @@ class Question extends Model
      */
 
     /**
-     * Get the exam set that this question belongs to.
+     * Get the exam that this question belongs to.
      */
-    public function examSet()
+    public function exam()
     {
-        return $this->belongsTo(ExamSet::class, 'exam_set_id', 'exam_set_id');
+        return $this->belongsTo(Exam::class, 'exam_id', 'exam_id');
     }
 
     /**
-     * Get the options for this question.
+     * Get the options for this question (for MCQ).
      */
     public function options()
     {
@@ -72,6 +74,7 @@ class Question extends Model
     {
         return $this->hasMany(Result::class, 'question_id', 'question_id');
     }
+
 
     /**
      * Scope to get only active questions

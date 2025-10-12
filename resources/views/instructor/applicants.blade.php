@@ -216,6 +216,134 @@
         border-top: 1px solid #E5E7EB;
     }
 
+    .bulk-actions-bar {
+        background: var(--maroon-primary);
+        color: white;
+        padding: 16px 24px;
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .bulk-actions-bar.show {
+        display: flex;
+    }
+
+    .bulk-actions-info {
+        font-weight: 500;
+    }
+
+    .bulk-actions-buttons {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn-white {
+        background: white;
+        color: var(--maroon-primary);
+        border: none;
+    }
+
+    .btn-white:hover {
+        background: #f5f5f5;
+        color: var(--maroon-primary);
+    }
+
+    .btn-outline-white {
+        background: transparent;
+        color: white;
+        border: 2px solid white;
+    }
+
+    .btn-outline-white:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+
+    .schedule-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .schedule-modal.show {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 8px;
+        padding: 24px;
+        width: 90%;
+        max-width: 500px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .modal-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1F2937;
+        margin: 0;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6B7280;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .form-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .form-checkbox input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+
+    .form-textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #D1D5DB;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .btn-small {
+        padding: 6px 12px;
+        font-size: 0.813rem;
+    }
+
     @media (max-width: 768px) {
         .filters-form {
             flex-direction: column;
@@ -229,6 +357,16 @@
         .applicants-table th,
         .applicants-table td {
             padding: 12px 8px;
+        }
+
+        .bulk-actions-bar {
+            flex-direction: column;
+            gap: 12px;
+            align-items: stretch;
+        }
+
+        .bulk-actions-buttons {
+            flex-direction: column;
         }
     }
 </style>
@@ -264,6 +402,21 @@
 
     <!-- Applicants Table -->
     <div class="applicants-table-section">
+        <!-- Bulk Actions Bar -->
+        <div class="bulk-actions-bar" id="bulkActionsBar">
+            <div class="bulk-actions-info">
+                <span id="selectedCount">0</span> applicant(s) selected
+            </div>
+            <div class="bulk-actions-buttons">
+                <button type="button" class="btn btn-white" onclick="openBulkScheduleModal()">
+                    Schedule Selected
+                </button>
+                <button type="button" class="btn btn-outline-white" onclick="clearSelection()">
+                    Clear Selection
+                </button>
+            </div>
+        </div>
+
         <div class="table-header">
             <h2 class="table-title">Assigned Applicants ({{ $assignedApplicants->total() }})</h2>
         </div>
@@ -272,6 +425,9 @@
             <table class="applicants-table">
                 <thead>
                     <tr>
+                        <th style="width: 40px;">
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                        </th>
                         <th>Applicant</th>
                         <th>Application No.</th>
                         <th>Exam Score</th>
@@ -283,6 +439,18 @@
                 <tbody>
                     @foreach($assignedApplicants as $applicant)
                     <tr>
+                        <td>
+                            @php
+                                $interview = $applicant->latestInterview;
+                                $canSchedule = $interview && (!$interview->schedule_date || $interview->status === 'assigned');
+                            @endphp
+                            @if($canSchedule)
+                                <input type="checkbox" class="applicant-checkbox" 
+                                       data-interview-id="{{ $interview->interview_id }}"
+                                       data-applicant-name="{{ $applicant->first_name }} {{ $applicant->last_name }}"
+                                       onchange="updateBulkActions()">
+                            @endif
+                        </td>
                         <td>
                             <div class="applicant-cell">
                                 <div class="applicant-avatar">
@@ -310,21 +478,26 @@
                             </span>
                         </td>
                         <td>
-                            @if($applicant->interviews->first() && $applicant->interviews->first()->schedule_date)
-                                {{ $applicant->interviews->first()->schedule_date->format('M d, Y g:i A') }}
+                            @if($interview && $interview->schedule_date)
+                                {{ $interview->schedule_date->format('M d, Y g:i A') }}
                             @else
                                 <span style="color: #6B7280;">Not scheduled</span>
                             @endif
                         </td>
                         <td>
-                            @if($applicant->status === 'exam-completed')
+                            @if($interview && $canSchedule)
+                                <button type="button" class="btn btn-primary btn-small" 
+                                        onclick="openScheduleModal({{ $interview->interview_id }}, '{{ $applicant->first_name }} {{ $applicant->last_name }}')">
+                                    Schedule Interview
+                                </button>
+                            @elseif($applicant->status === 'exam-completed' || $applicant->status === 'interview-scheduled')
                                 <a href="{{ route('instructor.interview.show', $applicant->applicant_id) }}" 
-                                   class="btn btn-primary">
+                                   class="btn btn-primary btn-small">
                                     Start Interview
                                 </a>
                             @elseif($applicant->status === 'interview-completed')
                                 <a href="{{ route('instructor.interview.show', $applicant->applicant_id) }}" 
-                                   class="btn btn-secondary">
+                                   class="btn btn-secondary btn-small">
                                     View Interview
                                 </a>
                             @else
@@ -350,4 +523,273 @@
         @endif
     </div>
 </div>
+
+<!-- Individual Schedule Modal -->
+<div id="scheduleModal" class="schedule-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Schedule Interview</h3>
+            <button class="close-btn" onclick="closeScheduleModal()">&times;</button>
+        </div>
+        <form id="scheduleForm" onsubmit="submitSchedule(event)">
+            @csrf
+            <input type="hidden" id="interviewId" name="interview_id">
+            
+            <div class="form-group">
+                <label class="form-label">Applicant</label>
+                <input type="text" id="applicantName" class="form-input" readonly>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Interview Date & Time *</label>
+                <input type="datetime-local" id="scheduleDate" name="schedule_date" class="form-input" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Notes (Optional)</label>
+                <textarea id="scheduleNotes" name="notes" class="form-textarea" 
+                          placeholder="Any special instructions or notes for this interview..."></textarea>
+            </div>
+            
+            <div class="form-checkbox">
+                <input type="checkbox" id="notifyEmail" name="notify_email" value="1" checked>
+                <label for="notifyEmail">Send email notification to applicant</label>
+            </div>
+            
+            <div class="bulk-actions-buttons">
+                <button type="submit" class="btn btn-primary">Schedule Interview</button>
+                <button type="button" class="btn btn-secondary" onclick="closeScheduleModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bulk Schedule Modal -->
+<div id="bulkScheduleModal" class="schedule-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Bulk Schedule Interviews</h3>
+            <button class="close-btn" onclick="closeBulkScheduleModal()">&times;</button>
+        </div>
+        <form id="bulkScheduleForm" onsubmit="submitBulkSchedule(event)">
+            @csrf
+            
+            <div class="form-group">
+                <label class="form-label">Selected Applicants</label>
+                <div id="selectedApplicantsList" style="font-size: 0.875rem; color: #6B7280; margin-bottom: 12px;"></div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Start Date & Time *</label>
+                <input type="datetime-local" id="bulkScheduleDate" name="schedule_date_start" class="form-input" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Time Interval Between Interviews (minutes) *</label>
+                <select name="time_interval" class="form-select" required>
+                    <option value="30">30 minutes</option>
+                    <option value="45">45 minutes</option>
+                    <option value="60" selected>60 minutes</option>
+                    <option value="90">90 minutes</option>
+                    <option value="120">120 minutes</option>
+                </select>
+            </div>
+            
+            <div class="form-checkbox">
+                <input type="checkbox" id="bulkNotifyEmail" name="notify_email" value="1" checked>
+                <label for="bulkNotifyEmail">Send email notifications to all applicants</label>
+            </div>
+            
+            <div class="bulk-actions-buttons">
+                <button type="submit" class="btn btn-primary">Schedule All</button>
+                <button type="button" class="btn btn-secondary" onclick="closeBulkScheduleModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+    // Bulk selection management
+    function toggleSelectAll(checkbox) {
+        const checkboxes = document.querySelectorAll('.applicant-checkbox');
+        checkboxes.forEach(cb => cb.checked = checkbox.checked);
+        updateBulkActions();
+    }
+
+    function updateBulkActions() {
+        const checkboxes = document.querySelectorAll('.applicant-checkbox:checked');
+        const count = checkboxes.length;
+        const bulkBar = document.getElementById('bulkActionsBar');
+        const selectAll = document.getElementById('selectAll');
+        
+        document.getElementById('selectedCount').textContent = count;
+        
+        if (count > 0) {
+            bulkBar.classList.add('show');
+        } else {
+            bulkBar.classList.remove('show');
+        }
+        
+        // Update select all checkbox
+        const allCheckboxes = document.querySelectorAll('.applicant-checkbox');
+        selectAll.checked = allCheckboxes.length > 0 && count === allCheckboxes.length;
+    }
+
+    function clearSelection() {
+        const checkboxes = document.querySelectorAll('.applicant-checkbox');
+        checkboxes.forEach(cb => cb.checked = false);
+        document.getElementById('selectAll').checked = false;
+        updateBulkActions();
+    }
+
+    // Individual schedule modal
+    function openScheduleModal(interviewId, applicantName) {
+        document.getElementById('interviewId').value = interviewId;
+        document.getElementById('applicantName').value = applicantName;
+        document.getElementById('scheduleModal').classList.add('show');
+        
+        // Set minimum date to current time + 1 hour
+        const now = new Date();
+        now.setHours(now.getHours() + 1);
+        document.getElementById('scheduleDate').min = now.toISOString().slice(0, 16);
+    }
+
+    function closeScheduleModal() {
+        document.getElementById('scheduleModal').classList.remove('show');
+        document.getElementById('scheduleForm').reset();
+    }
+
+    function submitSchedule(event) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const formData = new FormData(form);
+        const interviewId = formData.get('interview_id');
+        
+        const data = {
+            schedule_date: formData.get('schedule_date'),
+            notes: formData.get('notes'),
+            notify_email: formData.get('notify_email') ? 1 : 0
+        };
+        
+        fetch(`/instructor/interviews/${interviewId}/schedule`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let message = data.message;
+                if (data.email_sent) {
+                    message += ' Email notification sent.';
+                }
+                alert(message);
+                closeScheduleModal();
+                location.reload();
+            } else {
+                alert(data.message || 'Failed to schedule interview');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+
+    // Bulk schedule modal
+    function openBulkScheduleModal() {
+        const checkboxes = document.querySelectorAll('.applicant-checkbox:checked');
+        
+        if (checkboxes.length === 0) {
+            alert('Please select at least one applicant to schedule.');
+            return;
+        }
+        
+        // Show selected applicants
+        const names = Array.from(checkboxes).map(cb => cb.dataset.applicantName);
+        document.getElementById('selectedApplicantsList').innerHTML = names.join(', ');
+        
+        document.getElementById('bulkScheduleModal').classList.add('show');
+        
+        // Set minimum date
+        const now = new Date();
+        now.setHours(now.getHours() + 1);
+        document.getElementById('bulkScheduleDate').min = now.toISOString().slice(0, 16);
+    }
+
+    function closeBulkScheduleModal() {
+        document.getElementById('bulkScheduleModal').classList.remove('show');
+        document.getElementById('bulkScheduleForm').reset();
+    }
+
+    function submitBulkSchedule(event) {
+        event.preventDefault();
+        
+        const checkboxes = document.querySelectorAll('.applicant-checkbox:checked');
+        const interviewIds = Array.from(checkboxes).map(cb => cb.dataset.interviewId);
+        
+        if (interviewIds.length === 0) {
+            alert('No applicants selected');
+            return;
+        }
+        
+        const form = event.target;
+        const formData = new FormData(form);
+        
+        const data = {
+            interview_ids: interviewIds,
+            schedule_date_start: formData.get('schedule_date_start'),
+            time_interval: parseInt(formData.get('time_interval')),
+            notify_email: formData.get('notify_email') ? 1 : 0
+        };
+        
+        fetch('/instructor/interviews/bulk-schedule', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let message = `Successfully scheduled ${data.scheduled} interview(s).`;
+                if (data.emails_sent > 0) {
+                    message += ` ${data.emails_sent} email notification(s) sent.`;
+                }
+                if (data.errors.length > 0) {
+                    message += '\n\nErrors:\n' + data.errors.join('\n');
+                }
+                alert(message);
+                closeBulkScheduleModal();
+                clearSelection();
+                location.reload();
+            } else {
+                alert(data.message || 'Failed to schedule interviews');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+
+    // Close modals when clicking outside
+    document.getElementById('scheduleModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeScheduleModal();
+    });
+
+    document.getElementById('bulkScheduleModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeBulkScheduleModal();
+    });
+</script>
+@endpush

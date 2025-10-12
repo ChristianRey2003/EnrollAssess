@@ -31,6 +31,29 @@
 <!-- Main Content -->
 <div class="content-section">
     <div class="form-container">
+        <!-- Success/Error Messages -->
+        @if(session('success'))
+            <div class="alert alert-success">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="alert alert-error">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        @if($errors->any())
+            <div class="alert alert-error">
+                <ul>
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <form id="applicantForm" method="POST" action="{{ isset($applicant) ? route('admin.applicants.update', $applicant->applicant_id) : route('admin.applicants.store') }}">
             @csrf
             @if(isset($applicant))
@@ -140,32 +163,15 @@
 
             </div>
 
-            <!-- Exam Assignment Section -->
+            <!-- Status Section -->
             <div class="form-section">
-                <h3 class="section-title">Exam Assignment</h3>
-                
-                <div class="form-group">
-                    <label for="exam_set_id" class="form-label">Exam Set *</label>
-                    <select id="exam_set_id" name="exam_set_id" class="form-control" required>
-                        <option value="">Select Exam Set</option>
-                        @foreach($examSets as $examSet)
-                            <option value="{{ $examSet->exam_set_id }}" 
-                                    {{ old('exam_set_id', $applicant->exam_set_id ?? '') == $examSet->exam_set_id ? 'selected' : '' }}>
-                                {{ $examSet->exam->title }} - {{ $examSet->set_name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('exam_set_id')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
-                </div>
+                <h3 class="section-title">Application Status</h3>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label for="status" class="form-label">Status</label>
                         <select id="status" name="status" class="form-control">
                             <option value="pending" {{ old('status', $applicant->status ?? 'pending') == 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="exam-assigned" {{ old('status', $applicant->status ?? '') == 'exam-assigned' ? 'selected' : '' }}>Exam Assigned</option>
                             <option value="exam-completed" {{ old('status', $applicant->status ?? '') == 'exam-completed' ? 'selected' : '' }}>Exam Completed</option>
                             <option value="interview-scheduled" {{ old('status', $applicant->status ?? '') == 'interview-scheduled' ? 'selected' : '' }}>Interview Scheduled</option>
                             <option value="interview-completed" {{ old('status', $applicant->status ?? '') == 'interview-completed' ? 'selected' : '' }}>Interview Completed</option>
@@ -177,6 +183,25 @@
                         @enderror
                     </div>
                     
+                    <div class="form-group">
+                        <label for="score" class="form-label">Weighted Exam % (60%)</label>
+                        <input type="number" 
+                               id="score" 
+                               name="score" 
+                               class="form-control" 
+                               value="{{ old('score', $applicant->score ?? '') }}"
+                               step="0.01"
+                               min="0"
+                               max="100"
+                               placeholder="e.g., 85.50">
+                        <small class="form-help">Enter the weighted exam percentage from university pre-entrance exam</small>
+                        @error('score')
+                            <span class="error-message">{{ $message }}</span>
+                        @enderror
+                    </div>
+                </div>
+
+                <div class="form-row">
                     <div class="form-group">
                         <label for="verbal_description" class="form-label">Verbal Description</label>
                         <select id="verbal_description" name="verbal_description" class="form-control">
@@ -192,6 +217,28 @@
                             <span class="error-message">{{ $message }}</span>
                         @enderror
                     </div>
+                    
+                    <div class="form-group">
+                        <!-- Empty space for grid alignment -->
+                    </div>
+                </div>
+
+                <!-- Access Code Generation Option -->
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" 
+                               id="generate_access_code" 
+                               name="generate_access_code" 
+                               value="1"
+                               {{ old('generate_access_code') ? 'checked' : '' }}>
+                        <label for="generate_access_code" class="checkbox-label">
+                            Generate access code for this applicant
+                        </label>
+                    </div>
+                    <small class="form-help">This will create an access code that allows the applicant to take the assigned exam.</small>
+                    @error('generate_access_code')
+                        <span class="error-message">{{ $message }}</span>
+                    @enderror
                 </div>
             </div>
 
@@ -262,15 +309,23 @@
             </div>
         `;
         
-        // Exam Assignment Preview
-        const examSetSelect = document.getElementById('exam_set_id');
-        const selectedOption = examSetSelect.options[examSetSelect.selectedIndex];
+        // Status Preview
+        const verbalDescSelect = document.getElementById('verbal_description');
+        const verbalDescOption = verbalDescSelect.options[verbalDescSelect.selectedIndex];
+        const generateAccessCode = document.getElementById('generate_access_code').checked;
+        
         const examInfo = `
             <div class="preview-item">
-                <strong>Exam Set:</strong> ${selectedOption.text || 'Not selected'}
+                <strong>Weighted Exam % (60%):</strong> ${formData.get('score') ? formData.get('score') + '%' : 'Not entered'}
             </div>
             <div class="preview-item">
                 <strong>Status:</strong> ${formData.get('status') || 'Pending'}
+            </div>
+            <div class="preview-item">
+                <strong>Verbal Description:</strong> ${verbalDescOption.text || 'Auto-compute from exam score'}
+            </div>
+            <div class="preview-item">
+                <strong>Access Code:</strong> ${generateAccessCode ? 'Will be generated' : 'Not requested'}
             </div>
         `;
         
@@ -291,7 +346,7 @@
     
     // Form validation
     document.getElementById('applicantForm').addEventListener('submit', function(e) {
-        const requiredFields = ['first_name', 'last_name', 'email_address', 'exam_set_id'];
+        const requiredFields = ['first_name', 'last_name', 'email_address'];
         let isValid = true;
         
         requiredFields.forEach(field => {

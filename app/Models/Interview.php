@@ -16,12 +16,6 @@ class Interview extends Model
         'interviewer_id',
         'schedule_date',
         'status',
-        'pool_status',
-        'claimed_by',
-        'claimed_at',
-        'priority_level',
-        'dh_override',
-        'assignment_notes',
         'rating_communication',
         'rating_technical',
         'rating_problem_solving',
@@ -36,8 +30,6 @@ class Interview extends Model
 
     protected $casts = [
         'schedule_date' => 'datetime',
-        'claimed_at' => 'datetime',
-        'dh_override' => 'boolean',
         'rating_communication' => 'integer',
         'rating_technical' => 'integer',
         'rating_problem_solving' => 'integer',
@@ -63,14 +55,6 @@ class Interview extends Model
     public function interviewer()
     {
         return $this->belongsTo(User::class, 'interviewer_id', 'user_id');
-    }
-
-    /**
-     * Get the user who claimed this interview.
-     */
-    public function claimedBy()
-    {
-        return $this->belongsTo(User::class, 'claimed_by', 'user_id');
     }
 
     /**
@@ -103,47 +87,6 @@ class Interview extends Model
     public function scopeByInterviewer($query, $interviewerId)
     {
         return $query->where('interviewer_id', $interviewerId);
-    }
-
-    /**
-     * Scope to get available interviews in the pool
-     */
-    public function scopeAvailableInPool($query)
-    {
-        return $query->where('status', 'available')
-                    ->where('dh_override', false);
-    }
-
-    /**
-     * Scope to get claimed interviews
-     */
-    public function scopeClaimed($query)
-    {
-        return $query->where('status', 'claimed');
-    }
-
-    /**
-     * Scope to get interviews by priority level
-     */
-    public function scopeByPriority($query, $priority)
-    {
-        return $query->where('priority_level', $priority);
-    }
-
-    /**
-     * Scope to get high priority interviews
-     */
-    public function scopeHighPriority($query)
-    {
-        return $query->where('priority_level', 'high');
-    }
-
-    /**
-     * Scope to get interviews claimed by a specific user
-     */
-    public function scopeClaimedBy($query, $userId)
-    {
-        return $query->where('claimed_by', $userId);
     }
 
     /**
@@ -231,135 +174,5 @@ class Interview extends Model
         
         // Calculate overall score if ratings are provided
         $this->calculateOverallScore();
-    }
-
-    /**
-     * Interview Pool Management Methods
-     */
-
-    /**
-     * Claim an interview for a specific user
-     */
-    public function claimForUser($userId)
-    {
-        if ($this->status !== 'available') {
-            throw new \Exception('Interview is not available for claiming');
-        }
-
-        $this->update([
-            'status' => 'claimed',
-            'claimed_by' => $userId,
-            'claimed_at' => now(),
-            'interviewer_id' => $userId // Set as interviewer when claimed
-        ]);
-
-        return $this;
-    }
-
-    /**
-     * Release a claimed interview back to the pool
-     */
-    public function releaseToPool()
-    {
-        $this->update([
-            'status' => 'available',
-            'claimed_by' => null,
-            'claimed_at' => null,
-            'interviewer_id' => null
-        ]);
-
-        return $this;
-    }
-
-    /**
-     * Assign interview to specific instructor (DH override)
-     */
-    public function assignToInstructor($instructorId, $notes = null)
-    {
-        $this->update([
-            'status' => 'assigned',
-            'interviewer_id' => $instructorId,
-            'claimed_by' => $instructorId,
-            'claimed_at' => now(),
-            'dh_override' => true,
-            'assignment_notes' => $notes
-        ]);
-
-        return $this;
-    }
-
-    /**
-     * Set priority level
-     */
-    public function setPriority($priority)
-    {
-        $this->update(['priority_level' => $priority]);
-        return $this;
-    }
-
-    /**
-     * Check if interview is available for claiming
-     */
-    public function isAvailableForClaiming()
-    {
-        return $this->status === 'available' && !$this->dh_override;
-    }
-
-    /**
-     * Check if interview is claimed by a specific user
-     */
-    public function isClaimedBy($userId)
-    {
-        return $this->claimed_by == $userId;
-    }
-
-    /**
-     * Get time since claimed
-     */
-    public function getTimeSinceClaimedAttribute()
-    {
-        if (!$this->claimed_at) {
-            return null;
-        }
-
-        return $this->claimed_at->diffForHumans();
-    }
-
-    /**
-     * Check if interview has been claimed too long (for timeout handling)
-     */
-    public function isClaimedTooLong($hours = 2)
-    {
-        if (!$this->claimed_at) {
-            return false;
-        }
-
-        return $this->claimed_at->diffInHours(now()) > $hours;
-    }
-
-    /**
-     * Get priority badge color
-     */
-    public function getPriorityBadgeColorAttribute()
-    {
-        return match($this->priority_level) {
-            'high' => 'bg-red-100 text-red-800',
-            'medium' => 'bg-yellow-100 text-yellow-800',
-            'low' => 'bg-green-100 text-green-800',
-            default => 'bg-gray-100 text-gray-800'
-        };
-    }
-
-    /**
-     * Static method to add interview to pool after exam completion
-     */
-    public static function addToPool($applicantId, $priority = 'medium')
-    {
-        return static::create([
-            'applicant_id' => $applicantId,
-            'status' => 'available',
-            'priority_level' => $priority,
-            'dh_override' => false
-        ]);
     }
 }

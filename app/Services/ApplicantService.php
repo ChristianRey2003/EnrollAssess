@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Applicant;
 use App\Models\AccessCode;
-use App\Models\ExamSet;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -40,7 +39,6 @@ class ApplicantService
         $filters = [
             'search' => $request->get('search'),
             'status' => $request->get('status'),
-            'exam_set_id' => $request->get('exam_set_id'),
             'page' => $request->get('page', 1),
             'per_page' => $perPage
         ];
@@ -187,34 +185,31 @@ class ApplicantService
     }
 
     /**
-     * Assign exam sets to applicants
+     * Assign instructor to applicants
      *
      * @param array $applicantIds
-     * @param int $examSetId
+     * @param int $instructorId
      * @return array
      */
-    public function assignExamSets(array $applicantIds, int $examSetId): array
+    public function assignInstructor(array $applicantIds, int $instructorId): array
     {
         $results = [
             'assigned' => 0,
             'errors' => []
         ];
 
-        // Validate exam set exists
-        $examSet = ExamSet::findOrFail($examSetId);
-
-        DB::transaction(function () use ($applicantIds, $examSetId, &$results) {
+        DB::transaction(function () use ($applicantIds, $instructorId, &$results) {
             foreach ($applicantIds as $applicantId) {
                 try {
                     $applicant = Applicant::findOrFail($applicantId);
-                    $applicant->update(['exam_set_id' => $examSetId]);
+                    $applicant->update(['assigned_instructor_id' => $instructorId]);
                     $results['assigned']++;
 
                 } catch (\Exception $e) {
                     $results['errors'][] = "Error for applicant ID {$applicantId}: " . $e->getMessage();
-                    Log::error('Exam set assignment error', [
+                    Log::error('Instructor assignment error', [
                         'applicant_id' => $applicantId,
-                        'exam_set_id' => $examSetId,
+                        'instructor_id' => $instructorId,
                         'error' => $e->getMessage()
                     ]);
                 }
@@ -235,7 +230,7 @@ class ApplicantService
             ->whereDoesntHave('interviews', function ($query) {
                 $query->whereIn('status', ['scheduled', 'completed']);
             })
-            ->with(['examSet.exam'])
+            ->with(['assignedInstructor'])
             ->get();
     }
 

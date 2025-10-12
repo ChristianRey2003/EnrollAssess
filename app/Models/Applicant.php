@@ -19,7 +19,7 @@ class Applicant extends Model
         'preferred_course',
         'email_address',
         'phone_number',
-        'exam_set_id',
+        'assigned_instructor_id',
         'score',
         'enrollassess_score',
         'interview_score',
@@ -40,11 +40,11 @@ class Applicant extends Model
      */
 
     /**
-     * Get the exam set assigned to this applicant.
+     * Get the assigned instructor for this applicant.
      */
-    public function examSet()
+    public function assignedInstructor()
     {
-        return $this->belongsTo(ExamSet::class, 'exam_set_id', 'exam_set_id');
+        return $this->belongsTo(User::class, 'assigned_instructor_id', 'user_id');
     }
 
     /**
@@ -78,6 +78,7 @@ class Applicant extends Model
     {
         return $this->hasMany(Result::class, 'applicant_id', 'applicant_id');
     }
+
 
     /**
      * Scope queries by status
@@ -118,12 +119,12 @@ class Applicant extends Model
      */
     public function getExamPercentageAttribute()
     {
-        if (!$this->score || !$this->examSet) {
+        if (!$this->enrollassess_score) {
             return 0;
         }
 
-        $totalPoints = $this->examSet->total_points;
-        return $totalPoints > 0 ? round(($this->score / $totalPoints) * 100, 2) : 0;
+        // EnrollAssess score is already a percentage (0-100)
+        return round($this->enrollassess_score, 2);
     }
 
     /**

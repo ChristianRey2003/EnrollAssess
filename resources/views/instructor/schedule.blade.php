@@ -508,6 +508,12 @@
                           placeholder="Any special instructions or notes for this interview..."></textarea>
             </div>
             
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px;">
+                <input type="checkbox" id="notifyEmail" name="notify_email" value="1" checked
+                       style="width: 18px; height: 18px; cursor: pointer;">
+                <label for="notifyEmail" style="margin: 0; cursor: pointer;">Send email notification to applicant</label>
+            </div>
+            
             <div class="interview-actions">
                 <button type="submit" class="btn btn-primary">Schedule Interview</button>
                 <button type="button" class="btn btn-secondary" onclick="closeScheduleModal()">Cancel</button>
@@ -557,25 +563,34 @@
         e.preventDefault();
         
         const formData = new FormData(this);
+        const interviewId = formData.get('interview_id');
         
-        fetch('{{ route("instructor.schedule.update", ":id") }}'.replace(':id', formData.get('interview_id')), {
+        const data = {
+            schedule_date: formData.get('schedule_date'),
+            notes: formData.get('notes'),
+            notify_email: formData.get('notify_email') ? 1 : 0
+        };
+        
+        fetch(`/instructor/interviews/${interviewId}/schedule`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
                 'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
-            body: JSON.stringify({
-                schedule_date: formData.get('schedule_date'),
-                notes: formData.get('notes')
-            })
+            body: JSON.stringify(data)
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('Interview scheduled successfully!');
+                let message = data.message;
+                if (data.email_sent) {
+                    message += ' Email notification sent.';
+                }
+                alert(message);
                 location.reload();
             } else {
-                alert('Failed to schedule interview. Please try again.');
+                alert(data.message || 'Failed to schedule interview');
             }
         })
         .catch(error => {

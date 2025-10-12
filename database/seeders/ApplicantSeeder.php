@@ -7,7 +7,7 @@ use App\Models\Applicant;
 use App\Models\AccessCode;
 use App\Models\Interview;
 use App\Models\Result;
-use App\Models\ExamSet;
+use App\Models\Exam;
 use App\Models\User;
 
 class ApplicantSeeder extends Seeder
@@ -17,8 +17,8 @@ class ApplicantSeeder extends Seeder
      */
     public function run(): void
     {
-        $examSet = ExamSet::first();
-        $interviewer = User::where('role', 'instructor')->first();
+        $exam = Exam::first();
+        $instructor = User::where('role', 'instructor')->first();
 
         $applicants = [
             [
@@ -28,7 +28,7 @@ class ApplicantSeeder extends Seeder
                 'phone_number' => '+63 912 345 6701',
                 'address' => '123 University Ave, Ormoc City, Leyte',
                 'education_background' => 'Ormoc City High School, Class of 2023',
-                'exam_set_id' => $examSet?->exam_set_id,
+                'assigned_instructor_id' => $instructor?->user_id,
                 'score' => 85.50,
                 'status' => 'interview-scheduled',
                 'exam_completed_at' => now()->subDays(3),
@@ -40,7 +40,7 @@ class ApplicantSeeder extends Seeder
                 'phone_number' => '+63 912 345 6702',
                 'address' => '456 Main St, Ormoc City, Leyte',
                 'education_background' => 'EVSU High School, Class of 2023',
-                'exam_set_id' => $examSet?->exam_set_id,
+                'assigned_instructor_id' => $instructor?->user_id,
                 'score' => 92.00,
                 'status' => 'exam-completed',
                 'exam_completed_at' => now()->subDays(2),
@@ -52,7 +52,7 @@ class ApplicantSeeder extends Seeder
                 'phone_number' => '+63 912 345 6703',
                 'address' => '789 School Rd, Ormoc City, Leyte',
                 'education_background' => 'Ormoc National High School, Class of 2023',
-                'exam_set_id' => $examSet?->exam_set_id,
+                'assigned_instructor_id' => null,
                 'score' => 78.25,
                 'status' => 'pending',
                 'exam_completed_at' => null,
@@ -65,24 +65,28 @@ class ApplicantSeeder extends Seeder
                 $applicantData
             );
 
-            // Create access code for each applicant
-            AccessCode::updateOrCreate(
-                ['applicant_id' => $applicant->applicant_id],
-                [
-                    'code' => 'BSIT-' . strtoupper(substr(md5($applicant->application_no), 0, 8)),
-                    'applicant_id' => $applicant->applicant_id,
-                    'is_used' => $applicant->status !== 'pending',
-                    'used_at' => $applicant->status !== 'pending' ? $applicant->exam_completed_at : null,
-                ]
-            );
+            // Create access code for each applicant linked to the exam
+            if ($exam) {
+                AccessCode::updateOrCreate(
+                    ['applicant_id' => $applicant->applicant_id],
+                    [
+                        'code' => 'BSIT-' . strtoupper(substr(md5($applicant->application_no), 0, 8)),
+                        'applicant_id' => $applicant->applicant_id,
+                        'exam_id' => $exam->exam_id,
+                        'is_used' => $applicant->status !== 'pending',
+                        'used_at' => $applicant->status !== 'pending' ? $applicant->exam_completed_at : null,
+                        'expires_at' => now()->addDays(30),
+                    ]
+                );
+            }
 
-            // Create interview for completed applicants
-            if ($applicant->status === 'interview-scheduled' && $interviewer) {
+            // Create interview for assigned applicants
+            if ($applicant->status === 'interview-scheduled' && $instructor) {
                 Interview::updateOrCreate(
                     ['applicant_id' => $applicant->applicant_id],
                     [
                         'applicant_id' => $applicant->applicant_id,
-                        'interviewer_id' => $interviewer->user_id,
+                        'interviewer_id' => $instructor->user_id,
                         'schedule_date' => now()->addDays(2),
                         'status' => 'scheduled',
                         'rating_communication' => null,

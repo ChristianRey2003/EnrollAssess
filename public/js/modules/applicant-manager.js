@@ -21,7 +21,7 @@ class ApplicantManager {
             bulkActions: document.getElementById('bulkActions'),
             searchInput: document.getElementById('searchInput'),
             statusFilter: document.getElementById('statusFilter'),
-            examSetFilter: document.getElementById('examSetFilter'),
+            instructorFilter: document.getElementById('instructorFilter'),
             checkboxes: () => document.querySelectorAll('.applicant-checkbox')
         };
     }
@@ -29,6 +29,9 @@ class ApplicantManager {
     init() {
         this.setupEventListeners();
         this.setupFormValidation();
+        
+        // Initialize global selectedApplicants for other components
+        window.selectedApplicants = [];
         
         // Load notifications if available
         if (window.notifications) {
@@ -57,7 +60,7 @@ class ApplicantManager {
 
         // Filter functionality
         this.elements.statusFilter?.addEventListener('change', this.applyFilter.bind(this));
-        this.elements.examSetFilter?.addEventListener('change', this.applyFilter.bind(this));
+        this.elements.instructorFilter?.addEventListener('change', this.applyFilter.bind(this));
 
         // Individual checkboxes (event delegation)
         document.addEventListener('change', (e) => {
@@ -77,13 +80,17 @@ class ApplicantManager {
     setupFormValidation() {
         // Initialize form validators for modals
         const generateCodesForm = document.getElementById('generateCodesForm');
-        const assignSetsForm = document.getElementById('assignSetsForm');
 
-        if (generateCodesForm && window.FormValidator) {
-            this.validator = new FormValidator(generateCodesForm, {
-                validateOnInput: true,
-                showSuccessMessages: false
-            });
+        if (generateCodesForm && typeof window.FormValidator === 'function') {
+            try {
+                this.validator = new window.FormValidator(generateCodesForm, {
+                    validateOnInput: true,
+                    showSuccessMessages: false
+                });
+            } catch (error) {
+                console.warn('FormValidator not available, using basic validation:', error);
+                this.validator = null;
+            }
         }
     }
 
@@ -110,6 +117,9 @@ class ApplicantManager {
         // Update selected applicants set
         this.selectedApplicants.clear();
         checkedBoxes.forEach(cb => this.selectedApplicants.add(cb.value));
+        
+        // Expose selected applicants to global scope for other components (like email notification modal)
+        window.selectedApplicants = Array.from(this.selectedApplicants);
         
         // Update UI
         if (this.elements.selectedCount) {
@@ -147,7 +157,7 @@ class ApplicantManager {
 
     applyFilter() {
         const status = this.elements.statusFilter?.value;
-        const examSetId = this.elements.examSetFilter?.value;
+        const instructorId = this.elements.instructorFilter?.value;
         const url = new URL(window.location);
         
         if (status) {
@@ -156,10 +166,10 @@ class ApplicantManager {
             url.searchParams.delete('status');
         }
         
-        if (examSetId) {
-            url.searchParams.set('exam_set_id', examSetId);
+        if (instructorId) {
+            url.searchParams.set('instructor_id', instructorId);
         } else {
-            url.searchParams.delete('exam_set_id');
+            url.searchParams.delete('instructor_id');
         }
         
         window.location = url;
@@ -176,19 +186,6 @@ class ApplicantManager {
             window.modalManager.open('generateCodesModal');
         } else {
             document.getElementById('generateCodesModal').style.display = 'flex';
-        }
-    }
-
-    showAssignExamSetsModal() {
-        if (this.selectedApplicants.size === 0) {
-            this.notifications.error('Please select applicants first.');
-            return;
-        }
-        
-        if (window.modalManager) {
-            window.modalManager.open('assignSetsModal');
-        } else {
-            document.getElementById('assignSetsModal').style.display = 'flex';
         }
     }
 
@@ -234,39 +231,6 @@ class ApplicantManager {
         } catch (error) {
             this.notifications.dismiss?.(loadingId);
             this.handleError(error, 'generating access codes');
-        }
-    }
-
-    async confirmAssignExamSets() {
-        const examSetId = document.getElementById('exam_set_id')?.value;
-        const strategy = document.getElementById('assignment_strategy')?.value;
-        
-        if (!examSetId) {
-            this.notifications.error('Please select an exam set.');
-            return;
-        }
-        
-        const loadingId = this.notifications.info('Assigning exam sets...', 0);
-        
-        try {
-            const response = await this.apiCall('/admin/applicants/assign-exam-sets', {
-                applicant_ids: Array.from(this.selectedApplicants),
-                exam_set_id: examSetId,
-                assignment_strategy: strategy
-            });
-
-            this.notifications.dismiss?.(loadingId);
-            
-            if (response.success) {
-                this.notifications.success(response.message);
-                this.closeAllModals();
-                setTimeout(() => location.reload(), 1000);
-            } else {
-                throw new Error(response.message || 'Operation failed');
-            }
-        } catch (error) {
-            this.notifications.dismiss?.(loadingId);
-            this.handleError(error, 'assigning exam sets');
         }
     }
 
@@ -409,9 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Global functions for backward compatibility
 window.showGenerateAccessCodesModal = () => window.applicantManager?.showGenerateAccessCodesModal();
-window.showAssignExamSetsModal = () => window.applicantManager?.showAssignExamSetsModal();
 window.confirmGenerateAccessCodes = () => window.applicantManager?.confirmGenerateAccessCodes();
-window.confirmAssignExamSets = () => window.applicantManager?.confirmAssignExamSets();
 window.generateSingleAccessCode = (id) => window.applicantManager?.generateSingleAccessCode(id);
 window.deleteApplicant = (id) => window.applicantManager?.deleteApplicant(id);
 window.bulkExport = () => window.applicantManager?.bulkExport();
@@ -421,4 +383,3 @@ window.updateBulkActions = () => window.applicantManager?.updateBulkActions();
 window.performSearch = () => window.applicantManager?.performSearch();
 window.applyFilter = () => window.applicantManager?.applyFilter();
 window.closeGenerateCodesModal = () => window.applicantManager?.closeAllModals();
-window.closeAssignSetsModal = () => window.applicantManager?.closeAllModals();

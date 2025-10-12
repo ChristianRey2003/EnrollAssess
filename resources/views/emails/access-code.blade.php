@@ -226,14 +226,14 @@
                     <span class="info-label">Application No:</span>
                     <span>{{ $applicant->application_no }}</span>
                 </div>
-                @if($applicant->examSet)
+                @if($applicant->accessCode && $applicant->accessCode->exam)
                 <div class="info-item">
-                    <span class="info-label">Exam Set:</span>
-                    <span>{{ $applicant->examSet->exam->title }} - {{ $applicant->examSet->set_name }}</span>
+                    <span class="info-label">Exam:</span>
+                    <span>{{ $applicant->accessCode->exam->title }}</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">Duration:</span>
-                    <span>{{ $applicant->examSet->exam->formatted_duration }}</span>
+                    <span>{{ $applicant->accessCode->exam->formatted_duration }}</span>
                 </div>
                 @endif
                 <div class="info-item">

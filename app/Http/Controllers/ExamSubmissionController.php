@@ -40,8 +40,8 @@ class ExamSubmissionController extends Controller
             
             $applicant = Applicant::findOrFail($applicantId);
             
-            // Calculate score
-            $scoreData = $this->calculateExamScore($answers, $applicant->exam_set_id);
+            // Calculate score (using question bank from session)
+            $scoreData = $this->calculateExamScore($answers);
             
             // Update applicant with exam results
             $applicant->update([
@@ -106,7 +106,7 @@ class ExamSubmissionController extends Controller
     /**
      * Calculate exam score from answers
      */
-    private function calculateExamScore($answers, $examSetId = null)
+    private function calculateExamScore($answers)
     {
         $totalScore = 0;
         $maxScore = 0;

@@ -11,324 +11,344 @@
 <style>
     .interview-layout {
         display: grid;
-        grid-template-columns: 1fr 2fr;
-        gap: 24px;
+        grid-template-columns: 360px 1fr;
+        gap: 20px;
         max-width: 1400px;
         margin: 0 auto;
     }
 
-    .applicant-panel {
+    .sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .info-card {
         background: white;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        border: 1px solid #E5E7EB;
+        border: 1px solid #E5E5E5;
+        border-radius: 6px;
         overflow: hidden;
     }
 
-    .panel-header {
-        background: #F9FAFB;
-        padding: 16px 20px;
-        border-bottom: 1px solid #E5E7EB;
+    .card-header {
+        background: #FAFAFA;
+        padding: 12px 16px;
+        border-bottom: 1px solid #E5E5E5;
     }
 
-    .panel-header h3 {
+    .card-header h3 {
         margin: 0;
-        font-size: 1.125rem;
+        font-size: 0.9rem;
         font-weight: 600;
-        color: #1F2937;
+        color: #333;
+        letter-spacing: -0.01em;
     }
 
-    .panel-content {
-        padding: 20px;
+    .card-content {
+        padding: 16px;
     }
 
-    .applicant-summary {
+    .applicant-header {
         display: flex;
         align-items: center;
-        gap: 16px;
-        margin-bottom: 24px;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #F5F5F5;
     }
 
-    .applicant-avatar-large {
-        width: 60px;
-        height: 60px;
+    .applicant-avatar {
+        width: 48px;
+        height: 48px;
         border-radius: 50%;
-        background: var(--maroon-primary);
+        background: var(--maroon-primary, #800020);
         color: white;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.25rem;
-        font-weight: 600;
-    }
-
-    .applicant-details h4 {
-        margin: 0 0 8px 0;
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #1F2937;
-    }
-
-    .applicant-details p {
-        margin: 4px 0;
-        font-size: 0.875rem;
-        color: #6B7280;
-    }
-
-    .exam-performance, .evaluation-guidelines {
-        margin-bottom: 24px;
-    }
-
-    .exam-performance h5, .evaluation-guidelines h5 {
-        margin: 0 0 12px 0;
         font-size: 1rem;
         font-weight: 600;
-        color: #1F2937;
+        flex-shrink: 0;
+    }
+
+    .applicant-name {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 2px;
+    }
+
+    .applicant-id {
+        font-size: 0.8rem;
+        color: #666;
+    }
+
+    .info-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        font-size: 0.85rem;
+    }
+
+    .info-label {
+        color: #666;
+        font-weight: 500;
+    }
+
+    .info-value {
+        color: #333;
+        font-weight: 500;
+        text-align: right;
+    }
+
+    .exam-score-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 50px;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .exam-score-badge.good {
+        background: #E8F5E9;
+        color: #2E7D32;
+    }
+
+    .exam-score-badge.warning {
+        background: #FFF3E0;
+        color: #E65100;
+    }
+
+    .exam-score-badge.poor {
+        background: #FFEBEE;
+        color: #C62828;
+    }
+
+    .evaluation-form {
+        background: white;
+        border: 1px solid #E5E5E5;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .form-header {
+        background: #FAFAFA;
+        padding: 16px 20px;
+        border-bottom: 1px solid #E5E5E5;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .form-header h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #333;
     }
 
     .score-display {
         display: flex;
         align-items: center;
         gap: 16px;
-    }
-
-    .score-circle {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        font-size: 0.875rem;
-    }
-
-    .score-circle.good {
-        background: #D1FAE5;
-        color: #059669;
-    }
-
-    .score-circle.needs-improvement {
-        background: #FEE2E2;
-        color: #DC2626;
-    }
-
-    .score-details p {
-        margin: 2px 0;
-        font-size: 0.75rem;
-        color: #6B7280;
-    }
-
-    .guidelines-content {
-        font-size: 0.875rem;
-        color: #6B7280;
-        line-height: 1.5;
-    }
-
-    .guideline-item {
-        margin-bottom: 8px;
-    }
-
-    .evaluation-form {
+        padding: 4px 12px;
         background: white;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        border: 1px solid #E5E7EB;
-        overflow: hidden;
+        border: 1px solid #E5E5E5;
+        border-radius: 4px;
     }
 
-    .form-header {
-        background: #F9FAFB;
-        padding: 20px 24px;
-        border-bottom: 1px solid #E5E7EB;
+    .score-label {
+        font-size: 0.8rem;
+        color: #666;
     }
 
-    .form-header h3 {
-        margin: 0;
+    .score-value {
         font-size: 1.25rem;
-        font-weight: 600;
-        color: #1F2937;
+        font-weight: 700;
+        color: var(--maroon-primary, #800020);
+    }
+
+    .score-breakdown {
+        font-size: 0.75rem;
+        color: #999;
     }
 
     .form-content {
-        padding: 24px;
+        padding: 20px;
     }
 
     .form-section {
-        margin-bottom: 32px;
+        margin-bottom: 28px;
     }
 
-    .form-section h4 {
-        margin: 0 0 16px 0;
-        font-size: 1.125rem;
+    .form-section:last-of-type {
+        margin-bottom: 0;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #E5E5E5;
+    }
+
+    .section-title {
+        margin: 0;
+        font-size: 0.95rem;
         font-weight: 600;
-        color: #1F2937;
-        padding-bottom: 8px;
-        border-bottom: 2px solid var(--maroon-primary);
+        color: #333;
+    }
+
+    .section-weight {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--maroon-primary, #800020);
+        background: #F5F5F5;
+        padding: 3px 10px;
+        border-radius: 3px;
     }
 
     .form-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
     }
 
     .form-group {
-        margin-bottom: 16px;
+        margin-bottom: 0;
     }
 
     .form-label {
         display: block;
         margin-bottom: 6px;
         font-weight: 500;
-        color: #374151;
-        font-size: 0.875rem;
+        color: #444;
+        font-size: 0.85rem;
     }
 
-    .form-input, .form-select, .form-textarea {
+    .form-select,
+    .form-textarea,
+    .form-input {
         width: 100%;
-        padding: 10px 12px;
-        border: 1px solid #D1D5DB;
-        border-radius: 6px;
-        font-size: 0.875rem;
-        transition: border-color 0.3s ease;
+        padding: 9px 12px;
+        border: 1px solid #D5D5D5;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+        background: white;
     }
 
-    .form-input:focus, .form-select:focus, .form-textarea:focus {
+    .form-select:focus,
+    .form-textarea:focus,
+    .form-input:focus {
         outline: none;
-        border-color: var(--maroon-primary);
-        box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1);
+        border-color: var(--maroon-primary, #800020);
+        box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.08);
     }
 
     .form-textarea {
         resize: vertical;
-        min-height: 100px;
+        min-height: 90px;
+        line-height: 1.5;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        padding-top: 20px;
+        border-top: 1px solid #E5E5E5;
+        margin-top: 24px;
     }
 
     .btn {
-        padding: 12px 24px;
-        border-radius: 6px;
-        font-size: 0.875rem;
+        padding: 10px 20px;
+        border-radius: 4px;
+        font-size: 0.85rem;
         font-weight: 500;
         border: none;
         cursor: pointer;
         text-decoration: none;
-        transition: all 0.3s ease;
+        transition: all 0.2s;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
     }
 
     .btn-primary {
-        background: var(--maroon-primary);
+        background: var(--maroon-primary, #800020);
         color: white;
     }
 
     .btn-primary:hover {
         background: #5C0016;
-        color: white;
     }
 
     .btn-secondary {
-        background: #6B7280;
+        background: #666;
         color: white;
     }
 
     .btn-secondary:hover {
-        background: #4B5563;
-        color: white;
+        background: #555;
     }
 
     .btn-outline {
-        background: transparent;
-        color: var(--maroon-primary);
-        border: 1px solid var(--maroon-primary);
+        background: white;
+        color: var(--maroon-primary, #800020);
+        border: 1px solid var(--maroon-primary, #800020);
     }
 
     .btn-outline:hover {
-        background: var(--maroon-primary);
+        background: var(--maroon-primary, #800020);
         color: white;
     }
 
-    .form-actions {
-        display: flex;
-        gap: 12px;
-        justify-content: flex-end;
-        padding-top: 24px;
-        border-top: 1px solid #E5E7EB;
-    }
-
-    .admin-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 8px;
-        background: #FEE2E2;
-        color: #DC2626;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        font-weight: 500;
-        margin-left: 8px;
-    }
-
     .claimed-banner {
-        background: #FEF3C7;
-        border: 1px solid #F59E0B;
-        color: #92400E;
+        background: #FFF3E0;
+        border: 1px solid #FFB74D;
+        color: #E65100;
         padding: 12px 16px;
-        border-radius: 6px;
-        margin-bottom: 24px;
-        font-size: 0.875rem;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        font-size: 0.85rem;
     }
 
-    .live-total {
-        position: sticky;
-        top: 20px;
-        background: #F9FAFB;
-        border: 1px solid #E5E7EB;
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 24px;
-    }
-
-    .live-total h5 {
-        margin: 0 0 12px 0;
-        font-size: 1rem;
-        font-weight: 600;
-        color: #1F2937;
-    }
-
-    .total-display {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-    }
-
-    .total-score {
-        font-size: 2rem;
-        font-weight: 700;
-        color: var(--maroon-primary);
-    }
-
-    .total-breakdown {
-        font-size: 0.875rem;
-        color: #6B7280;
-    }
-
-    @media (max-width: 768px) {
+    @media (max-width: 1024px) {
         .interview-layout {
             grid-template-columns: 1fr;
         }
         
-        .applicant-summary {
+        .sidebar {
+            order: 1;
+        }
+        
+        .evaluation-form {
+            order: 2;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .applicant-header {
             flex-direction: column;
             text-align: center;
         }
         
-        .form-grid {
-            grid-template-columns: 1fr;
-        }
-
         .form-actions {
             flex-direction: column;
         }
@@ -339,249 +359,212 @@
 @section('content')
 <div class="page-header">
     <div class="header-content">
-        <h1 class="page-title">
-            {{ $pageTitle }}
-            <span class="admin-badge">
-                <i class="fas fa-user-shield"></i>
-                Admin Evaluation
-            </span>
-        </h1>
+        <h1 class="page-title">{{ $pageTitle }}</h1>
         <p class="page-subtitle">{{ $pageSubtitle }}</p>
     </div>
 </div>
 
 @if($interview->claimed_by && $interview->claimed_by !== auth()->id())
     <div class="claimed-banner">
-        <i class="fas fa-info-circle"></i>
         This interview is currently being conducted by {{ \App\Models\User::find($interview->claimed_by)->full_name }}.
         Started {{ $interview->claimed_at->diffForHumans() }}.
     </div>
 @endif
 
 <div class="interview-layout">
-    <!-- Applicant Information Panel -->
-    <div class="applicant-panel">
-        <div class="panel-header">
-            <h3>Applicant Information</h3>
-        </div>
-        <div class="panel-content">
-            <div class="applicant-summary">
-                <div class="applicant-avatar-large">
-                    {{ substr($applicant->first_name, 0, 1) }}{{ substr($applicant->last_name, 0, 1) }}
-                </div>
-                <div class="applicant-details">
-                    <h4>{{ $applicant->first_name }} {{ $applicant->middle_name }} {{ $applicant->last_name }}</h4>
-                    <p><strong>Application No:</strong> {{ $applicant->application_no }}</p>
-                    <p><strong>Email:</strong> {{ $applicant->email_address }}</p>
-                    <p><strong>Phone:</strong> {{ $applicant->phone_number }}</p>
-                    <p><strong>Preferred Course:</strong> {{ $applicant->preferred_course }}</p>
-                </div>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <!-- Applicant Information -->
+        <div class="info-card">
+            <div class="card-header">
+                <h3>Applicant Information</h3>
             </div>
+            <div class="card-content">
+                <div class="applicant-header">
+                    <div class="applicant-avatar">
+                        {{ substr($applicant->first_name, 0, 1) }}{{ substr($applicant->last_name, 0, 1) }}
+                    </div>
+                    <div>
+                        <div class="applicant-name">{{ $applicant->first_name }} {{ $applicant->last_name }}</div>
+                        <div class="applicant-id">{{ $applicant->application_no }}</div>
+                    </div>
+                </div>
 
-            <div class="exam-performance">
-                <h5>Exam Performance</h5>
-                @if($applicant->score)
-                    <div class="score-display">
-                        <div class="score-circle {{ $applicant->score >= 70 ? 'good' : 'needs-improvement' }}">
-                            {{ number_format($applicant->score, 1) }}%
-                        </div>
-                        <div class="score-details">
-                            <p><strong>Exam Set:</strong> {{ $applicant->examSet->name ?? 'N/A' }}</p>
-                            <p><strong>Total Questions:</strong> {{ $applicant->examSet->total_questions ?? 'N/A' }}</p>
-                            <p><strong>Completed:</strong> {{ $applicant->exam_completed_at ? $applicant->exam_completed_at->format('M d, Y g:i A') : 'N/A' }}</p>
-                        </div>
+                <div class="info-grid">
+                    <div class="info-row">
+                        <span class="info-label">Email</span>
+                        <span class="info-value">{{ $applicant->email_address }}</span>
                     </div>
-                @else
-                    <p class="text-muted">Exam not completed yet</p>
-                @endif
-            </div>
-
-            <div class="evaluation-guidelines">
-                <h5>Evaluation Guidelines</h5>
-                <div class="guidelines-content">
-                    <div class="guideline-item">
-                        <strong>Technical Skills (40 points)</strong>
-                        <br>Programming, Problem Solving, Algorithms, System Design
+                    <div class="info-row">
+                        <span class="info-label">Phone</span>
+                        <span class="info-value">{{ $applicant->phone_number }}</span>
                     </div>
-                    <div class="guideline-item">
-                        <strong>Communication Skills (30 points)</strong>
-                        <br>Clarity, Listening, Confidence
+                    <div class="info-row">
+                        <span class="info-label">Course</span>
+                        <span class="info-value">{{ $applicant->preferred_course ?? 'N/A' }}</span>
                     </div>
-                    <div class="guideline-item">
-                        <strong>Analytical Thinking (30 points)</strong>
-                        <br>Critical Thinking, Creativity, Attention to Detail
+                    <div class="info-row">
+                        <span class="info-label">Exam Score</span>
+                        <span class="info-value">
+                            @if($applicant->score)
+                                @php
+                                    $scoreClass = $applicant->score >= 75 ? 'good' : ($applicant->score >= 60 ? 'warning' : 'poor');
+                                @endphp
+                                <span class="exam-score-badge {{ $scoreClass }}">{{ number_format($applicant->score, 1) }}%</span>
+                            @else
+                                <span class="exam-score-badge poor">N/A</span>
+                            @endif
+                        </span>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Grading Guide -->
+        @include('components.interview-grading-guide')
     </div>
 
     <!-- Evaluation Form -->
     <div class="evaluation-form">
         <div class="form-header">
             <h3>Interview Evaluation Form</h3>
+            <div class="score-display" id="liveScore">
+                <div>
+                    <div class="score-label">Total Score</div>
+                    <div class="score-breakdown" id="scoreBreakdown">T: 0 | C: 0 | A: 0</div>
+                </div>
+                <div class="score-value" id="totalScore">0</div>
+            </div>
         </div>
         <div class="form-content">
-            <!-- Live Total Display -->
-            <div class="live-total" id="liveTotalDisplay">
-                <h5>Current Score</h5>
-                <div class="total-display">
-                    <div class="total-score" id="totalScore">0</div>
-                    <div class="total-breakdown">
-                        <div>Technical: <span id="technicalTotal">0</span>/40</div>
-                        <div>Communication: <span id="communicationTotal">0</span>/30</div>
-                        <div>Analytical: <span id="analyticalTotal">0</span>/30</div>
-                    </div>
-                </div>
-            </div>
-
             <form method="POST" action="{{ route('admin.interviews.conduct.submit', $interview->interview_id) }}" id="evaluationForm">
                 @csrf
                 
                 <!-- Technical Skills Section -->
                 <div class="form-section">
-                    <h4>Technical Skills (40 points)</h4>
+                    <div class="section-header">
+                        <h4 class="section-title">Technical Skills</h4>
+                        <span class="section-weight">40 points</span>
+                    </div>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label">Programming Knowledge (0-10)</label>
-                            <select name="technical_programming" class="form-select score-input" data-section="technical" required>
-                                <option value="">Select Score</option>
+                            <label class="form-label">Programming Knowledge</label>
+                            <select name="technical_programming" class="form-select score-input" data-category="technical" required>
+                                <option value="">Select (0-10)</option>
                                 @for($i = 0; $i <= 10; $i++)
                                     <option value="{{ $i }}" {{ old('technical_programming') == $i ? 'selected' : '' }}>{{ $i }}</option>
                                 @endfor
                             </select>
-                            @error('technical_programming')
-                                <div class="error-message">{{ $message }}</div>
-                            @enderror
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Problem Solving (0-10)</label>
-                            <select name="technical_problem_solving" class="form-select score-input" data-section="technical" required>
-                                <option value="">Select Score</option>
+                            <label class="form-label">Problem Solving</label>
+                            <select name="technical_problem_solving" class="form-select score-input" data-category="technical" required>
+                                <option value="">Select (0-10)</option>
                                 @for($i = 0; $i <= 10; $i++)
                                     <option value="{{ $i }}" {{ old('technical_problem_solving') == $i ? 'selected' : '' }}>{{ $i }}</option>
                                 @endfor
                             </select>
-                            @error('technical_problem_solving')
-                                <div class="error-message">{{ $message }}</div>
-                            @enderror
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Algorithm Understanding (0-10)</label>
-                            <select name="technical_algorithms" class="form-select score-input" data-section="technical" required>
-                                <option value="">Select Score</option>
+                            <label class="form-label">Algorithm Understanding</label>
+                            <select name="technical_algorithms" class="form-select score-input" data-category="technical" required>
+                                <option value="">Select (0-10)</option>
                                 @for($i = 0; $i <= 10; $i++)
                                     <option value="{{ $i }}" {{ old('technical_algorithms') == $i ? 'selected' : '' }}>{{ $i }}</option>
                                 @endfor
                             </select>
-                            @error('technical_algorithms')
-                                <div class="error-message">{{ $message }}</div>
-                            @enderror
                         </div>
                         <div class="form-group">
-                            <label class="form-label">System Design (0-10)</label>
-                            <select name="technical_system_design" class="form-select score-input" data-section="technical" required>
-                                <option value="">Select Score</option>
+                            <label class="form-label">System Design</label>
+                            <select name="technical_system_design" class="form-select score-input" data-category="technical" required>
+                                <option value="">Select (0-10)</option>
                                 @for($i = 0; $i <= 10; $i++)
                                     <option value="{{ $i }}" {{ old('technical_system_design') == $i ? 'selected' : '' }}>{{ $i }}</option>
                                 @endfor
                             </select>
-                            @error('technical_system_design')
-                                <div class="error-message">{{ $message }}</div>
-                            @enderror
                         </div>
                     </div>
                 </div>
 
                 <!-- Communication Skills Section -->
                 <div class="form-section">
-                    <h4>Communication Skills (30 points)</h4>
+                    <div class="section-header">
+                        <h4 class="section-title">Communication Skills</h4>
+                        <span class="section-weight">30 points</span>
+                    </div>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label">Clarity of Expression (0-10)</label>
-                            <select name="communication_clarity" class="form-select score-input" data-section="communication" required>
-                                <option value="">Select Score</option>
+                            <label class="form-label">Clarity of Expression</label>
+                            <select name="communication_clarity" class="form-select score-input" data-category="communication" required>
+                                <option value="">Select (0-10)</option>
                                 @for($i = 0; $i <= 10; $i++)
                                     <option value="{{ $i }}" {{ old('communication_clarity') == $i ? 'selected' : '' }}>{{ $i }}</option>
                                 @endfor
                             </select>
-                            @error('communication_clarity')
-                                <div class="error-message">{{ $message }}</div>
-                            @enderror
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Active Listening (0-10)</label>
-                            <select name="communication_listening" class="form-select score-input" data-section="communication" required>
-                                <option value="">Select Score</option>
+                            <label class="form-label">Active Listening</label>
+                            <select name="communication_listening" class="form-select score-input" data-category="communication" required>
+                                <option value="">Select (0-10)</option>
                                 @for($i = 0; $i <= 10; $i++)
                                     <option value="{{ $i }}" {{ old('communication_listening') == $i ? 'selected' : '' }}>{{ $i }}</option>
                                 @endfor
                             </select>
-                            @error('communication_listening')
-                                <div class="error-message">{{ $message }}</div>
-                            @enderror
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Confidence (0-10)</label>
-                            <select name="communication_confidence" class="form-select score-input" data-section="communication" required>
-                                <option value="">Select Score</option>
+                            <label class="form-label">Confidence</label>
+                            <select name="communication_confidence" class="form-select score-input" data-category="communication" required>
+                                <option value="">Select (0-10)</option>
                                 @for($i = 0; $i <= 10; $i++)
                                     <option value="{{ $i }}" {{ old('communication_confidence') == $i ? 'selected' : '' }}>{{ $i }}</option>
                                 @endfor
                             </select>
-                            @error('communication_confidence')
-                                <div class="error-message">{{ $message }}</div>
-                            @enderror
                         </div>
                     </div>
                 </div>
 
                 <!-- Analytical Thinking Section -->
                 <div class="form-section">
-                    <h4>Analytical Thinking (30 points)</h4>
+                    <div class="section-header">
+                        <h4 class="section-title">Analytical Thinking</h4>
+                        <span class="section-weight">30 points</span>
+                    </div>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label">Critical Thinking (0-10)</label>
-                            <select name="analytical_critical_thinking" class="form-select score-input" data-section="analytical" required>
-                                <option value="">Select Score</option>
+                            <label class="form-label">Critical Thinking</label>
+                            <select name="analytical_critical_thinking" class="form-select score-input" data-category="analytical" required>
+                                <option value="">Select (0-10)</option>
                                 @for($i = 0; $i <= 10; $i++)
                                     <option value="{{ $i }}" {{ old('analytical_critical_thinking') == $i ? 'selected' : '' }}>{{ $i }}</option>
                                 @endfor
                             </select>
-                            @error('analytical_critical_thinking')
-                                <div class="error-message">{{ $message }}</div>
-                            @enderror
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Creativity (0-10)</label>
-                            <select name="analytical_creativity" class="form-select score-input" data-section="analytical" required>
-                                <option value="">Select Score</option>
+                            <label class="form-label">Creativity</label>
+                            <select name="analytical_creativity" class="form-select score-input" data-category="analytical" required>
+                                <option value="">Select (0-10)</option>
                                 @for($i = 0; $i <= 10; $i++)
                                     <option value="{{ $i }}" {{ old('analytical_creativity') == $i ? 'selected' : '' }}>{{ $i }}</option>
                                 @endfor
                             </select>
-                            @error('analytical_creativity')
-                                <div class="error-message">{{ $message }}</div>
-                            @enderror
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Attention to Detail (0-10)</label>
-                            <select name="analytical_attention_detail" class="form-select score-input" data-section="analytical" required>
-                                <option value="">Select Score</option>
+                            <label class="form-label">Attention to Detail</label>
+                            <select name="analytical_attention_detail" class="form-select score-input" data-category="analytical" required>
+                                <option value="">Select (0-10)</option>
                                 @for($i = 0; $i <= 10; $i++)
                                     <option value="{{ $i }}" {{ old('analytical_attention_detail') == $i ? 'selected' : '' }}>{{ $i }}</option>
                                 @endfor
                             </select>
-                            @error('analytical_attention_detail')
-                                <div class="error-message">{{ $message }}</div>
-                            @enderror
                         </div>
                     </div>
                 </div>
 
                 <!-- Overall Assessment Section -->
                 <div class="form-section">
-                    <h4>Overall Assessment</h4>
+                    <div class="section-header">
+                        <h4 class="section-title">Overall Assessment</h4>
+                    </div>
                     <div class="form-grid">
                         <div class="form-group">
                             <label class="form-label">Overall Rating</label>
@@ -593,9 +576,6 @@
                                 <option value="satisfactory" {{ old('overall_rating') == 'satisfactory' ? 'selected' : '' }}>Satisfactory</option>
                                 <option value="needs_improvement" {{ old('overall_rating') == 'needs_improvement' ? 'selected' : '' }}>Needs Improvement</option>
                             </select>
-                            @error('overall_rating')
-                                <div class="error-message">{{ $message }}</div>
-                            @enderror
                         </div>
                         <div class="form-group">
                             <label class="form-label">Recommendation</label>
@@ -606,55 +586,36 @@
                                 <option value="conditional" {{ old('recommendation') == 'conditional' ? 'selected' : '' }}>Conditional</option>
                                 <option value="not_recommended" {{ old('recommendation') == 'not_recommended' ? 'selected' : '' }}>Not Recommended</option>
                             </select>
-                            @error('recommendation')
-                                <div class="error-message">{{ $message }}</div>
-                            @enderror
                         </div>
                     </div>
                 </div>
 
                 <!-- Written Feedback Section -->
                 <div class="form-section">
-                    <h4>Written Feedback</h4>
+                    <div class="section-header">
+                        <h4 class="section-title">Written Feedback</h4>
+                    </div>
                     <div class="form-group">
                         <label class="form-label">Strengths</label>
                         <textarea name="strengths" class="form-textarea" required 
                                   placeholder="Describe the applicant's key strengths and positive attributes...">{{ old('strengths') }}</textarea>
-                        @error('strengths')
-                            <div class="error-message">{{ $message }}</div>
-                        @enderror
                     </div>
                     <div class="form-group">
                         <label class="form-label">Areas for Improvement</label>
                         <textarea name="areas_improvement" class="form-textarea" required 
                                   placeholder="Identify specific areas where the applicant can improve...">{{ old('areas_improvement') }}</textarea>
-                        @error('areas_improvement')
-                            <div class="error-message">{{ $message }}</div>
-                        @enderror
                     </div>
                     <div class="form-group">
                         <label class="form-label">Interview Notes (Optional)</label>
                         <textarea name="interview_notes" class="form-textarea" 
                                   placeholder="Additional observations, comments, or notes from the interview...">{{ old('interview_notes') }}</textarea>
-                        @error('interview_notes')
-                            <div class="error-message">{{ $message }}</div>
-                        @enderror
                     </div>
                 </div>
 
                 <div class="form-actions">
-                    <a href="{{ route('admin.interviews.index') }}" class="btn btn-secondary">
-                        <i class="fas fa-times"></i>
-                        Cancel
-                    </a>
-                    <button type="submit" name="action" value="save_draft" class="btn btn-outline">
-                        <i class="fas fa-save"></i>
-                        Save Draft
-                    </button>
-                    <button type="submit" name="action" value="submit_final" class="btn btn-primary">
-                        <i class="fas fa-check"></i>
-                        Submit Final Evaluation
-                    </button>
+                    <a href="{{ route('admin.interviews.index') }}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" name="action" value="save_draft" class="btn btn-outline">Save Draft</button>
+                    <button type="submit" name="action" value="submit_final" class="btn btn-primary">Submit Evaluation</button>
                 </div>
             </form>
         </div>
@@ -665,92 +626,50 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const scoreInputs = document.querySelectorAll('.score-input');
-    const totalScoreElement = document.getElementById('totalScore');
-    const technicalTotalElement = document.getElementById('technicalTotal');
-    const communicationTotalElement = document.getElementById('communicationTotal');
-    const analyticalTotalElement = document.getElementById('analyticalTotal');
+    const totalScoreEl = document.getElementById('totalScore');
+    const scoreBreakdownEl = document.getElementById('scoreBreakdown');
 
-    function calculateTotals() {
-        let technicalTotal = 0;
-        let communicationTotal = 0;
-        let analyticalTotal = 0;
+    function calculateScores() {
+        let technical = 0, communication = 0, analytical = 0;
 
         scoreInputs.forEach(input => {
             const value = parseInt(input.value) || 0;
-            const section = input.dataset.section;
-
-            switch(section) {
-                case 'technical':
-                    technicalTotal += value;
-                    break;
-                case 'communication':
-                    communicationTotal += value;
-                    break;
-                case 'analytical':
-                    analyticalTotal += value;
-                    break;
-            }
+            const category = input.dataset.category;
+            
+            if (category === 'technical') technical += value;
+            else if (category === 'communication') communication += value;
+            else if (category === 'analytical') analytical += value;
         });
 
-        const grandTotal = technicalTotal + communicationTotal + analyticalTotal;
-
-        // Update display
-        technicalTotalElement.textContent = technicalTotal;
-        communicationTotalElement.textContent = communicationTotal;
-        analyticalTotalElement.textContent = analyticalTotal;
-        totalScoreElement.textContent = grandTotal;
-
-        // Update color based on score
-        totalScoreElement.style.color = grandTotal >= 75 ? '#059669' : grandTotal >= 50 ? '#D97706' : '#DC2626';
+        const total = technical + communication + analytical;
+        totalScoreEl.textContent = total;
+        scoreBreakdownEl.textContent = `T: ${technical} | C: ${communication} | A: ${analytical}`;
+        
+        // Update color based on total
+        if (total >= 85) totalScoreEl.style.color = '#2E7D32';
+        else if (total >= 70) totalScoreEl.style.color = '#E65100';
+        else totalScoreEl.style.color = '#C62828';
     }
 
-    // Add event listeners to all score inputs
     scoreInputs.forEach(input => {
-        input.addEventListener('change', calculateTotals);
+        input.addEventListener('change', calculateScores);
     });
 
-    // Form submission confirmation
+    // Initialize scores if old values exist
+    calculateScores();
+
+    // Confirmation for final submission
     const form = document.getElementById('evaluationForm');
     form.addEventListener('submit', function(e) {
         const submitButton = e.submitter;
         
-        if (submitButton.value === 'submit_final') {
-            const totalScore = parseInt(totalScoreElement.textContent);
-            const confirmation = confirm(
-                `Are you sure you want to submit the final evaluation?\n\n` +
-                `Total Score: ${totalScore}/100 (${totalScore}%)\n\n` +
-                `This action cannot be undone.`
-            );
-            
-            if (!confirmation) {
+        if (submitButton && submitButton.value === 'submit_final') {
+            const total = parseInt(totalScoreEl.textContent);
+            if (!confirm(`Submit final evaluation with score of ${total}/100?\n\nThis action cannot be undone.`)) {
                 e.preventDefault();
             }
         }
     });
-
-    // Auto-save draft every 2 minutes (optional)
-    setInterval(function() {
-        const formData = new FormData(form);
-        formData.append('action', 'save_draft');
-        
-        // Only auto-save if there's some content
-        const hasContent = Array.from(formData.values()).some(value => value.trim() !== '');
-        
-        if (hasContent) {
-            fetch(form.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            }).catch(error => {
-                console.log('Auto-save failed:', error);
-            });
-        }
-    }, 120000); // 2 minutes
-
-    // Initial calculation
-    calculateTotals();
 });
 </script>
 @endpush

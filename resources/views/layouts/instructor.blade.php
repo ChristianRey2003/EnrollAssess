@@ -283,11 +283,7 @@
                 </a>
             </div>
             
-            <div class="nav-item">
-                <a href="{{ route('instructor.interview-pool.index') }}" class="nav-link {{ request()->routeIs('instructor.interview-pool.*') ? 'active' : '' }}">
-                    <span>Interview Pool</span>
-                </a>
-            </div>
+            <!-- Interview Pool retired -->
             
             <div class="nav-item">
                 <a href="{{ route('instructor.applicants') }}" class="nav-link {{ request()->routeIs('instructor.applicants') ? 'active' : '' }}">

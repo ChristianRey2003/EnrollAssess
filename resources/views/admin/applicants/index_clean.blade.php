@@ -176,11 +176,12 @@
                                 <option value="admitted" {{ request('status') == 'admitted' ? 'selected' : '' }}>Admitted</option>
                                 <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
                             </select>
-                            <select id="examSetFilter" class="form-control filter-select" onchange="applyFilter()" aria-label="Filter by exam set">
-                                <option value="">All Exam Sets</option>
-                                @foreach($examSets ?? [] as $examSet)
-                                    <option value="{{ $examSet->id }}" {{ request('exam_set_id') == $examSet->id ? 'selected' : '' }}>
-                                        {{ $examSet->title }}
+                            <select id="instructorFilter" class="form-control filter-select" onchange="applyFilter()" aria-label="Filter by instructor">
+                                <option value="">All Instructors</option>
+                                <option value="unassigned" {{ request('instructor_id') == 'unassigned' ? 'selected' : '' }}>Unassigned</option>
+                                @foreach($instructors ?? [] as $instructor)
+                                    <option value="{{ $instructor->user_id }}" {{ request('instructor_id') == $instructor->user_id ? 'selected' : '' }}>
+                                        {{ $instructor->full_name }}
                                     </option>
                                 @endforeach
                             </select>
@@ -202,9 +203,6 @@
                     <div class="bulk-buttons">
                         <button onclick="showGenerateAccessCodesModal()" class="bulk-btn bulk-btn-codes">
                             🔑 Generate Access Codes
-                        </button>
-                        <button onclick="showAssignExamSetsModal()" class="bulk-btn bulk-btn-assign">
-                            📋 Assign Exam Sets
                         </button>
                         <button onclick="bulkExport()" class="bulk-btn bulk-btn-export">
                             📊 Export Selected
@@ -316,7 +314,7 @@
                                             <div class="empty-icon">📋</div>
                                             <div class="empty-title">No applicants found</div>
                                             <div class="empty-message">
-                                                @if(request()->hasAny(['search', 'status', 'exam_set_id']))
+                                                @if(request()->hasAny(['search', 'status', 'instructor_id']))
                                                     Try adjusting your search criteria or filters.
                                                 @else
                                                     Start by importing applicants or adding them manually.
@@ -379,49 +377,6 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeGenerateCodesModal()">Cancel</button>
                 <button type="button" class="btn btn-primary" onclick="confirmGenerateAccessCodes()">Generate Codes</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Assign Exam Sets Modal -->
-    <div id="assignSetsModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Assign Exam Sets</h3>
-                <button type="button" class="modal-close" onclick="closeAssignSetsModal()" aria-label="Close modal">×</button>
-            </div>
-            <div class="modal-body">
-                <form id="assignSetsForm">
-                    <div class="form-group">
-                        <label for="exam_set_id" class="form-label required">Exam Set</label>
-                        <select id="exam_set_id" 
-                                name="exam_set_id" 
-                                class="form-control form-select" 
-                                required
-                                aria-describedby="exam-set-help">
-                            <option value="">Select an exam set</option>
-                            @foreach($examSets ?? [] as $examSet)
-                                <option value="{{ $examSet->id }}">{{ $examSet->title }}</option>
-                            @endforeach
-                        </select>
-                        <div id="exam-set-help" class="form-help">Choose which exam set to assign to selected applicants</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="assignment_strategy" class="form-label">Assignment Strategy</label>
-                        <select id="assignment_strategy" 
-                                name="assignment_strategy" 
-                                class="form-control form-select"
-                                aria-describedby="strategy-help">
-                            <option value="replace">Replace existing assignments</option>
-                            <option value="only_unassigned">Only assign to unassigned applicants</option>
-                        </select>
-                        <div id="strategy-help" class="form-help">How to handle applicants who already have exam assignments</div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeAssignSetsModal()">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="confirmAssignExamSets()">Assign Sets</button>
             </div>
         </div>
     </div>

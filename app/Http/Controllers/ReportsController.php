@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Applicant;
 use App\Models\Exam;
-use App\Models\ExamSet;
 use App\Models\Question;
 use App\Models\AccessCode;
 use Illuminate\Http\Request;

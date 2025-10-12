@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Exam;
-use App\Models\ExamSet;
 use App\Models\Question;
 use App\Models\Applicant;
+use App\Models\Result;
+use App\Services\QuestionSelectionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -17,7 +18,7 @@ class ExamController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Exam::with(['examSets' => function($q) {
+        $query = Exam::with(['questions' => function($q) {
             $q->where('is_active', true);
         }]);
 
@@ -39,8 +40,8 @@ class ExamController extends Controller
             'total' => Exam::count(),
             'active' => Exam::active()->count(),
             'inactive' => Exam::where('is_active', false)->count(),
-            'total_sets' => ExamSet::count(),
-            'active_sets' => ExamSet::active()->count(),
+            'total_questions' => Question::count(),
+            'active_questions' => Question::where('is_active', true)->count(),
         ];
 
         return view('admin.exams.index', compact('exams', 'examStats'));
@@ -117,20 +118,19 @@ class ExamController extends Controller
      */
     public function show($id)
     {
-        $exam = Exam::with(['examSets.questions' => function($q) {
+        $exam = Exam::with(['questions' => function($q) {
             $q->where('is_active', true)->orderBy('order_number');
         }])->findOrFail($id);
 
         // Calculate exam statistics
         $stats = [
-            'total_sets' => $exam->examSets()->count(),
-            'active_sets' => $exam->activeExamSets()->count(),
-            'total_questions' => $exam->examSets()->withCount('questions')->get()->sum('questions_count'),
-            'total_points' => DB::table('questions')
-                ->join('exam_sets', 'questions.exam_set_id', '=', 'exam_sets.exam_set_id')
-                ->where('exam_sets.exam_id', $exam->exam_id)
-                ->where('questions.is_active', true)
-                ->sum('questions.points'),
+            'total_questions' => $exam->questions()->count(),
+            'active_questions' => $exam->activeQuestions()->count(),
+            'mcq_count' => $exam->multipleChoiceQuestions()->count(),
+            'tf_count' => $exam->trueFalseQuestions()->count(),
+            'total_points' => $exam->questions()
+                ->where('is_active', true)
+                ->sum('points'),
         ];
 
         return view('admin.exams.show', compact('exam', 'stats'));
@@ -153,10 +153,15 @@ class ExamController extends Controller
         $exam = Exam::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255|unique:exams,title,' . $exam->exam_id . ',exam_id',
+            'title' => 'nullable|string|max:255|unique:exams,title,' . $exam->exam_id . ',exam_id',
             'description' => 'nullable|string|max:1000',
-            'duration_minutes' => 'required|integer|min:5|max:480',
+            'duration_minutes' => 'nullable|integer|min:1|max:600',
+            'total_items' => 'nullable|integer|min:1',
+            'mcq_quota' => 'nullable|integer|min:0',
+            'tf_quota' => 'nullable|integer|min:0',
             'is_active' => 'nullable|boolean',
+            'starts_at' => 'nullable|date',
+            'ends_at' => 'nullable|date|after_or_equal:starts_at',
         ]);
 
         if ($validator->fails()) {
@@ -173,12 +178,79 @@ class ExamController extends Controller
                 ->withInput();
         }
 
+        // Additional custom validation
+        $mcqQuota = $request->input('mcq_quota', $exam->mcq_quota) ?? 0;
+        $tfQuota = $request->input('tf_quota', $exam->tf_quota) ?? 0;
+        $totalItems = $request->input('total_items', $exam->total_items);
+
+        if ($totalItems && ($mcqQuota + $tfQuota) > $totalItems) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The sum of MCQ and True/False quotas cannot exceed total items.',
+                    'errors' => [
+                        'total_items' => ['The sum of MCQ and True/False quotas cannot exceed total items.']
+                    ],
+                ], 422);
+            }
+
+            return redirect()->back()
+                ->withErrors(['total_items' => 'The sum of MCQ and True/False quotas cannot exceed total items.'])
+                ->withInput();
+        }
+
+        // Check if enough questions exist for quotas
+        if ($mcqQuota > 0) {
+            $mcqAvailable = $exam->multipleChoiceQuestions()->count();
+            if ($mcqAvailable < $mcqQuota) {
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Not enough MCQ questions. Available: {$mcqAvailable}, Required: {$mcqQuota}",
+                        'errors' => [
+                            'mcq_quota' => ["Not enough MCQ questions. Available: {$mcqAvailable}, Required: {$mcqQuota}"]
+                        ],
+                    ], 422);
+                }
+
+                return redirect()->back()
+                    ->withErrors(['mcq_quota' => "Not enough MCQ questions. Available: {$mcqAvailable}, Required: {$mcqQuota}"])
+                    ->withInput();
+            }
+        }
+
+        if ($tfQuota > 0) {
+            $tfAvailable = $exam->trueFalseQuestions()->count();
+            if ($tfAvailable < $tfQuota) {
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Not enough True/False questions. Available: {$tfAvailable}, Required: {$tfQuota}",
+                        'errors' => [
+                            'tf_quota' => ["Not enough True/False questions. Available: {$tfAvailable}, Required: {$tfQuota}"]
+                        ],
+                    ], 422);
+                }
+
+                return redirect()->back()
+                    ->withErrors(['tf_quota' => "Not enough True/False questions. Available: {$tfAvailable}, Required: {$tfQuota}"])
+                    ->withInput();
+            }
+        }
+
         try {
-            $updateData = [
-                'title' => $request->title,
-                'description' => $request->description,
-                'duration_minutes' => $request->duration_minutes,
-            ];
+            $updateData = array_filter([
+                'title' => $request->input('title'),
+                'description' => $request->input('description'),
+                'duration_minutes' => $request->input('duration_minutes'),
+                'total_items' => $request->input('total_items'),
+                'mcq_quota' => $request->input('mcq_quota'),
+                'tf_quota' => $request->input('tf_quota'),
+                'starts_at' => $request->input('starts_at'),
+                'ends_at' => $request->input('ends_at'),
+            ], function ($value) {
+                return !is_null($value);
+            });
 
             // Only update is_active if provided
             if ($request->has('is_active')) {
@@ -190,7 +262,7 @@ class ExamController extends Controller
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Exam updated successfully!',
+                    'message' => 'Exam settings updated successfully!',
                     'exam' => $exam->fresh(),
                 ]);
             }
@@ -220,8 +292,8 @@ class ExamController extends Controller
         try {
             $exam = Exam::findOrFail($id);
 
-            // Check if exam has exam sets with questions
-            $hasQuestions = $exam->examSets()->whereHas('questions')->exists();
+            // Check if exam has questions in question bank
+            $hasQuestions = $exam->questions()->exists();
             if ($hasQuestions) {
                 return response()->json([
                     'success' => false,
@@ -268,12 +340,12 @@ class ExamController extends Controller
     }
 
     /**
-     * Duplicate an exam with all its sets and questions.
+     * Duplicate an exam with all its questions.
      */
     public function duplicate($id)
     {
         try {
-            $originalExam = Exam::with('examSets.questions.options')->findOrFail($id);
+            $originalExam = Exam::with('questions.options')->findOrFail($id);
 
             DB::transaction(function () use ($originalExam) {
                 // Create new exam
@@ -281,37 +353,30 @@ class ExamController extends Controller
                     'title' => $originalExam->title . ' (Copy)',
                     'description' => $originalExam->description,
                     'duration_minutes' => $originalExam->duration_minutes,
+                    'total_items' => $originalExam->total_items,
+                    'mcq_quota' => $originalExam->mcq_quota,
+                    'tf_quota' => $originalExam->tf_quota,
                     'is_active' => false, // Start as inactive
                 ]);
 
-                // Duplicate exam sets and questions
-                foreach ($originalExam->examSets as $originalSet) {
-                    $newSet = ExamSet::create([
-                        'exam_id' => $newExam->exam_id,
-                        'set_name' => $originalSet->set_name,
-                        'description' => $originalSet->description,
-                        'is_active' => $originalSet->is_active,
+                // Duplicate questions
+                foreach ($originalExam->questions as $originalQuestion) {
+                    $newQuestion = $newExam->questions()->create([
+                        'question_text' => $originalQuestion->question_text,
+                        'question_type' => $originalQuestion->question_type,
+                        'points' => $originalQuestion->points,
+                        'order_number' => $originalQuestion->order_number,
+                        'explanation' => $originalQuestion->explanation,
+                        'is_active' => $originalQuestion->is_active,
                     ]);
 
-                    // Duplicate questions
-                    foreach ($originalSet->questions as $originalQuestion) {
-                        $newQuestion = $newSet->questions()->create([
-                            'question_text' => $originalQuestion->question_text,
-                            'question_type' => $originalQuestion->question_type,
-                            'points' => $originalQuestion->points,
-                            'order_number' => $originalQuestion->order_number,
-                            'explanation' => $originalQuestion->explanation,
-                            'is_active' => $originalQuestion->is_active,
+                    // Duplicate question options
+                    foreach ($originalQuestion->options as $originalOption) {
+                        $newQuestion->options()->create([
+                            'option_text' => $originalOption->option_text,
+                            'is_correct' => $originalOption->is_correct,
+                            'order_number' => $originalOption->order_number,
                         ]);
-
-                        // Duplicate question options
-                        foreach ($originalQuestion->options as $originalOption) {
-                            $newQuestion->options()->create([
-                                'option_text' => $originalOption->option_text,
-                                'is_correct' => $originalOption->is_correct,
-                                'order_number' => $originalOption->order_number,
-                            ]);
-                        }
                     }
                 }
 
@@ -332,7 +397,7 @@ class ExamController extends Controller
     }
 
     /**
-     * Start sectioned exam interface
+     * Start exam interface using Question Bank with per-examinee randomization
      */
     public function startExam(Request $request)
     {
@@ -347,47 +412,55 @@ class ExamController extends Controller
         }
         
         try {
-            $applicant = Applicant::with('examSet.exam')->findOrFail($applicantId);
+            $applicant = Applicant::findOrFail($applicantId);
             
-            if (!$applicant->examSet) {
+            // Get exam from access code
+            $accessCode = $applicant->accessCode;
+            if (!$accessCode || !$accessCode->exam) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No exam set assigned to this applicant.'
+                    'message' => 'No exam assigned to this applicant.'
                 ], 400);
             }
-
-            // Get all questions grouped by type
-            $questions = $applicant->examSet->activeQuestions()
-                ->with('options')
-                ->get()
-                ->groupBy('question_type');
-
-            // Check if there are any questions
-            if ($questions->isEmpty()) {
+            
+            $exam = $accessCode->exam;
+            $selectionService = new QuestionSelectionService();
+            
+            // Validate exam configuration
+            $validation = $selectionService->validateExamConfiguration($exam);
+            if (!$validation['valid']) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No active questions found in your assigned exam set. Please contact the administrator.'
+                    'message' => implode(' ', $validation['errors'])
                 ], 400);
             }
-
+            
+            // Select random questions for this applicant (per-examinee randomization)
+            $selectedQuestions = $selectionService->selectQuestionsForApplicant(
+                $exam, 
+                $applicant->applicant_id
+            );
+            
+            // Store selected question IDs in session for consistency
+            $questionIds = $selectedQuestions->pluck('question_id')->toArray();
+            
             // Initialize exam session
             $examSession = [
                 'applicant_id' => $applicant->applicant_id,
-                'exam_set_id' => $applicant->exam_set_id,
-                'started_at' => now(),
-                'duration_minutes' => $applicant->examSet->exam->duration_minutes ?? 30,
+                'exam_id' => $exam->exam_id,
+                'question_ids' => $questionIds, // Store for reload consistency
+                'started_at' => now()->toDateTimeString(),
+                'duration_minutes' => $exam->duration_minutes ?? 30,
                 'current_section' => 0,
                 'sections_completed' => [],
                 'answers' => []
             ];
-
+            
             session(['exam_session' => $examSession]);
-
+            
             return response()->json([
                 'success' => true,
                 'exam_session' => $examSession,
-                'questions_by_type' => $questions,
-                'applicant' => $applicant,
                 'redirect_url' => route('exam.interface')
             ]);
 
@@ -400,7 +473,7 @@ class ExamController extends Controller
     }
 
     /**
-     * Get sectioned exam interface
+     * Get sectioned exam interface using Question Bank
      */
     public function getExamInterface(Request $request)
     {
@@ -419,20 +492,37 @@ class ExamController extends Controller
         }
 
         try {
-            $applicant = Applicant::with('examSet.exam')->findOrFail($examSession['applicant_id']);
+            $applicant = Applicant::findOrFail($examSession['applicant_id']);
+            $exam = Exam::findOrFail($examSession['exam_id']);
+            $selectionService = new QuestionSelectionService();
             
-            // Get all questions grouped by type
-            $questions = $applicant->examSet->activeQuestions()
-                ->with('options')
-                ->get()
-                ->groupBy('question_type');
-
-            // Check if there are any questions
-            if ($questions->isEmpty()) {
-                return redirect()->route('exam.pre-requirements')
-                    ->with('error', 'No active questions found in your assigned exam set. Please contact the administrator.');
+            // Retrieve same questions as when exam started (using stored question_ids)
+            if (isset($examSession['question_ids'])) {
+                $questions = Question::with('options')
+                    ->whereIn('question_id', $examSession['question_ids'])
+                    ->get()
+                    ->sortBy(function($question) use ($examSession) {
+                        return array_search($question->question_id, $examSession['question_ids']);
+                    });
+            } else {
+                // Fallback: regenerate questions (should not happen in normal flow)
+                $questions = $selectionService->selectQuestionsForApplicant($exam, $applicant->applicant_id);
             }
-
+            
+            // Group questions by type and shuffle options for MCQs
+            $questionsByType = collect();
+            foreach ($questions as $question) {
+                if ($question->isMultipleChoice()) {
+                    $question->shuffled_options = $selectionService->getShuffledOptions($question, $applicant->applicant_id);
+                }
+                
+                $type = $question->question_type;
+                if (!$questionsByType->has($type)) {
+                    $questionsByType->put($type, collect());
+                }
+                $questionsByType->get($type)->push($question);
+            }
+            
             // Define section order and labels
             $sectionConfig = [
                 'multiple_choice' => ['label' => 'Multiple Choice', 'icon' => 'MC'],
@@ -442,19 +532,19 @@ class ExamController extends Controller
 
             // Filter out empty sections and prepare section data
             $sections = collect($sectionConfig)
-                ->filter(function ($config, $type) use ($questions) {
-                    return $questions->has($type) && $questions[$type]->count() > 0;
+                ->filter(function ($config, $type) use ($questionsByType) {
+                    return $questionsByType->has($type) && $questionsByType[$type]->count() > 0;
                 })
-                ->map(function ($config, $type) use ($questions) {
+                ->map(function ($config, $type) use ($questionsByType) {
                     return array_merge($config, [
                         'type' => $type,
-                        'questions' => $questions[$type],
-                        'count' => $questions[$type]->count()
+                        'questions' => $questionsByType[$type],
+                        'count' => $questionsByType[$type]->count()
                     ]);
                 })
                 ->values();
 
-            $totalQuestions = $questions->flatten()->count();
+            $totalQuestions = $questions->count();
             $timeRemaining = $this->calculateTimeRemaining($examSession);
 
             return view('exam.sectioned-interface', compact(

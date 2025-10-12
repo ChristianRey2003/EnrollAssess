@@ -3,7 +3,6 @@
 use App\Http\Controllers\ApplicantController;
 use App\Http\Controllers\DepartmentHeadController;
 use App\Http\Controllers\ExamController;
-use App\Http\Controllers\ExamSetController;
 use App\Http\Controllers\InterviewController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\ReportsController;
@@ -31,7 +30,7 @@ Route::get('/dashboard', function () {
         'pending_reviews' => \App\Models\Applicant::where('status', 'exam-completed')->count(),
     ];
     
-    $recent_applicants = \App\Models\Applicant::with(['examSet', 'accessCode'])
+    $recent_applicants = \App\Models\Applicant::with(['assignedInstructor', 'accessCode'])
         ->latest()
         ->take(5)
         ->get();
@@ -54,12 +53,16 @@ Route::prefix('applicants')->name('applicants.')->middleware('role:department-he
     // Direct template download route for backward compatibility  
     Route::get('/download-template', [ApplicantController::class, 'downloadTemplate'])->name('download-template');
     
+    // Dedicated Assignment Page
+    Route::get('/assign', [ApplicantController::class, 'assignPage'])->name('assign');
+    
     // Bulk Operations
     Route::prefix('bulk')->name('bulk.')->group(function () {
         Route::get('/import', [ApplicantController::class, 'import'])->name('import');
         Route::post('/import', [ApplicantController::class, 'processImport'])->name('process-import');
         Route::post('/generate-access-codes', [ApplicantController::class, 'generateAccessCodes'])->name('generate-access-codes');
-        Route::post('/assign-exam-sets', [ApplicantController::class, 'assignExamSets'])->name('assign-exam-sets');
+        Route::post('/assign-instructors', [ApplicantController::class, 'bulkAssignInstructors'])->name('assign-instructors');
+        Route::post('/send-exam-notifications', [ApplicantController::class, 'sendExamNotifications'])->name('send-exam-notifications');
     });
     
     // Export Operations
@@ -67,11 +70,6 @@ Route::prefix('applicants')->name('applicants.')->middleware('role:department-he
         Route::get('/template', [ApplicantController::class, 'downloadTemplate'])->name('template');
         Route::get('/with-access-codes', [ApplicantController::class, 'exportWithAccessCodes'])->name('with-access-codes');
     });
-    
-    // Exam Set Assignment Routes
-    Route::get('/assign-exam-sets', [ApplicantController::class, 'showExamSetAssignment'])->name('assign-exam-sets');
-    Route::post('/assign-exam-sets', [ApplicantController::class, 'processExamSetAssignment'])->name('process-exam-sets');
-    Route::get('/assignment-stats', [ApplicantController::class, 'getAssignmentStats'])->name('assignment-stats');
 
     // API Endpoints
     Route::prefix('api')->name('api.')->group(function () {
@@ -121,25 +119,12 @@ Route::prefix('exams')->name('exams.')->middleware('role:department-head,adminis
     Route::post('/{id}/toggle-status', [ExamController::class, 'toggleStatus'])->name('toggle-status');
 });
 
-// Exam Set Management Routes (for AJAX calls)
-Route::prefix('exam-sets')->name('exam-sets.')->middleware('role:department-head,administrator')->group(function () {
-    Route::post('/', [ExamSetController::class, 'store'])->name('store');
-    Route::get('/{setId}', [ExamSetController::class, 'show'])->name('show');
-    Route::put('/{setId}', [ExamSetController::class, 'update'])->name('update');
-    Route::delete('/{setId}', [ExamSetController::class, 'destroy'])->name('destroy');
-    Route::post('/{setId}/toggle-status', [ExamSetController::class, 'toggleStatus'])->name('toggle-status');
-    Route::post('/{setId}/duplicate', [ExamSetController::class, 'duplicate'])->name('duplicate');
-    Route::post('/{setId}/reorder-questions', [ExamSetController::class, 'reorderQuestions'])->name('reorder-questions');
-    Route::post('/{setId}/shuffle-questions', [ExamSetController::class, 'shuffleQuestions'])->name('shuffle-questions');
-});
 
 // Interview Management Routes
 Route::prefix('interviews')->name('interviews.')->middleware('role:department-head,administrator')->group(function () {
     Route::get('/', [InterviewController::class, 'index'])->name('index');
     Route::get('/analytics', [InterviewController::class, 'analytics'])->name('analytics');
     Route::post('/schedule', [InterviewController::class, 'schedule'])->name('schedule');
-    Route::post('/bulk-schedule', [InterviewController::class, 'bulkSchedule'])->name('bulk-schedule');
-    Route::post('/bulk-assign-instructors', [InterviewController::class, 'bulkAssignToInstructors'])->name('bulk-assign-instructors');
     Route::put('/{interview}', [InterviewController::class, 'update'])->name('update');
     Route::post('/{interview}/cancel', [InterviewController::class, 'cancel'])->name('cancel');
     Route::get('/export', [InterviewController::class, 'export'])->name('export');
@@ -147,19 +132,6 @@ Route::prefix('interviews')->name('interviews.')->middleware('role:department-he
     // Admin Conduct Interview Routes
     Route::get('/{interview}/conduct', [InterviewController::class, 'adminConductForm'])->name('conduct');
     Route::post('/{interview}/conduct', [InterviewController::class, 'adminConductSubmit'])->name('conduct.submit');
-    Route::post('/{interview}/claim', [InterviewController::class, 'adminClaimInterview'])->name('claim');
-    Route::post('/{interview}/release', [InterviewController::class, 'adminReleaseInterview'])->name('release');
-    
-    // Department Head Pool Override Routes
-    Route::prefix('pool')->name('pool.')->middleware('role:department-head')->group(function () {
-        Route::get('/', [InterviewController::class, 'poolOverview'])->name('overview');
-        Route::post('/{interview}/dh-claim', [InterviewController::class, 'dhClaimInterview'])->name('dh-claim');
-        Route::post('/{interview}/dh-release', [InterviewController::class, 'dhReleaseInterview'])->name('dh-release');
-        Route::post('/assign-to-instructor', [InterviewController::class, 'assignToInstructor'])->name('assign-to-instructor');
-        Route::post('/set-priority', [InterviewController::class, 'setPriority'])->name('set-priority');
-        Route::post('/bulk-assign', [InterviewController::class, 'bulkAssignToPool'])->name('bulk-assign');
-        Route::get('/data', [InterviewController::class, 'getPoolData'])->name('data');
-    });
 });
 
 // Reports

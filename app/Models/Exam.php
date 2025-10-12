@@ -14,12 +14,19 @@ class Exam extends Model
     protected $fillable = [
         'title',
         'duration_minutes',
+        'total_items',
+        'mcq_quota',
+        'tf_quota',
         'description',
         'is_active',
+        'starts_at',
+        'ends_at',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'starts_at' => 'datetime',
+        'ends_at' => 'datetime',
     ];
 
     /**
@@ -27,19 +34,50 @@ class Exam extends Model
      */
 
     /**
-     * Get the exam sets for this exam.
+     * Get all questions in the question bank for this exam.
      */
-    public function examSets()
+    public function questions()
     {
-        return $this->hasMany(ExamSet::class, 'exam_id', 'exam_id');
+        return $this->hasMany(Question::class, 'exam_id', 'exam_id');
     }
 
     /**
-     * Get active exam sets for this exam.
+     * Get active questions for this exam.
      */
-    public function activeExamSets()
+    public function activeQuestions()
     {
-        return $this->examSets()->where('is_active', true);
+        return $this->questions()->where('is_active', true);
+    }
+
+    /**
+     * Get multiple choice questions.
+     */
+    public function multipleChoiceQuestions()
+    {
+        return $this->activeQuestions()->where('question_type', 'multiple_choice');
+    }
+
+    /**
+     * Get true/false questions.
+     */
+    public function trueFalseQuestions()
+    {
+        return $this->activeQuestions()->where('question_type', 'true_false');
+    }
+
+    /**
+     * Get applicants assigned to this exam.
+     */
+    public function applicants()
+    {
+        return $this->hasManyThrough(
+            Applicant::class,
+            Result::class,
+            'exam_id', // Foreign key on results table
+            'applicant_id', // Foreign key on applicants table
+            'exam_id', // Local key on exams table
+            'applicant_id' // Local key on results table
+        )->distinct();
     }
 
     /**
@@ -63,5 +101,64 @@ class Exam extends Model
         }
         
         return $minutes . ' minutes';
+    }
+
+    /**
+     * Get total questions count in question bank
+     */
+    public function getTotalQuestionsAttribute()
+    {
+        return $this->activeQuestions()->count();
+    }
+
+    /**
+     * Get MCQ count
+     */
+    public function getMcqCountAttribute()
+    {
+        return $this->multipleChoiceQuestions()->count();
+    }
+
+    /**
+     * Get T/F count
+     */
+    public function getTfCountAttribute()
+    {
+        return $this->trueFalseQuestions()->count();
+    }
+
+    /**
+     * Check if exam has enough questions for quotas
+     */
+    public function hasEnoughQuestions()
+    {
+        $mcqAvailable = $this->mcq_count;
+        $tfAvailable = $this->tf_count;
+
+        return $mcqAvailable >= ($this->mcq_quota ?? 0) && 
+               $tfAvailable >= ($this->tf_quota ?? 0);
+    }
+
+    /**
+     * Validate quotas against available questions
+     */
+    public function validateQuotas()
+    {
+        $errors = [];
+
+        if ($this->mcq_quota && $this->mcq_count < $this->mcq_quota) {
+            $errors[] = "Not enough MCQ questions. Available: {$this->mcq_count}, Required: {$this->mcq_quota}";
+        }
+
+        if ($this->tf_quota && $this->tf_count < $this->tf_quota) {
+            $errors[] = "Not enough T/F questions. Available: {$this->tf_count}, Required: {$this->tf_quota}";
+        }
+
+        $totalQuota = ($this->mcq_quota ?? 0) + ($this->tf_quota ?? 0);
+        if ($totalQuota != $this->total_items) {
+            $errors[] = "Total quotas ({$totalQuota}) must equal total items ({$this->total_items})";
+        }
+
+        return $errors;
     }
 }

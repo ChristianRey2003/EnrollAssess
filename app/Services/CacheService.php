@@ -185,15 +185,15 @@ class CacheService
     }
 
     /**
-     * Cache exam set data
+     * Cache exam data
      *
-     * @param int $examSetId
+     * @param int $examId
      * @param callable $callback
      * @return mixed
      */
-    public function cacheExamSet(int $examSetId, callable $callback)
+    public function cacheExam(int $examId, callable $callback)
     {
-        $key = $this->generateKey(self::PREFIX_EXAM, ['set', $examSetId]);
+        $key = $this->generateKey(self::PREFIX_EXAM, [$examId]);
         return $this->remember($key, $callback, self::LONG_TTL);
     }
 
@@ -278,7 +278,7 @@ class CacheService
     {
         $results = [
             'stats' => false,
-            'active_exam_sets' => false,
+            'active_exams' => false,
             'user_counts' => false
         ];
         
@@ -294,9 +294,9 @@ class CacheService
             });
             
             // Warm up active exam sets
-            $examSetsKey = $this->generateKey(self::PREFIX_EXAM, ['active']);
-            $results['active_exam_sets'] = $this->remember($examSetsKey, function() {
-                return \App\Models\ExamSet::with('exam')->where('is_active', true)->get();
+            $examsKey = $this->generateKey(self::PREFIX_EXAM, ['active']);
+            $results['active_exams'] = $this->remember($examsKey, function() {
+                return \App\Models\Exam::where('is_active', true)->get();
             }, self::LONG_TTL);
             
             // Warm up user statistics

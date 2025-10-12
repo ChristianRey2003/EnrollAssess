@@ -6,9 +6,12 @@ use App\Models\Applicant;
 use App\Models\Interview;
 use App\Models\User;
 use App\Services\InterviewPoolService;
+use App\Mail\InterviewScheduleMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
 
 class InstructorController extends Controller
 {
@@ -25,12 +28,10 @@ class InstructorController extends Controller
     {
         $instructor = Auth::user();
         
-        // Get assigned applicants for interviews
-        $assignedApplicants = Applicant::whereHas('interviews', function($query) use ($instructor) {
-            $query->where('interviewer_id', $instructor->user_id);
-        })->with(['examSet.exam', 'interviews' => function($query) use ($instructor) {
-            $query->where('interviewer_id', $instructor->user_id);
-        }])->get();
+        // Get assigned applicants (using assigned_instructor_id)
+        $assignedApplicants = Applicant::where('assigned_instructor_id', $instructor->user_id)
+            ->with(['latestInterview'])
+            ->get();
 
         // Get statistics
         $stats = [
@@ -63,11 +64,11 @@ class InstructorController extends Controller
     {
         $instructor = Auth::user();
         
-        $assignedApplicants = Applicant::whereHas('interviews', function($query) use ($instructor) {
-            $query->where('interviewer_id', $instructor->user_id);
-        })->with(['examSet.exam', 'interviews' => function($query) use ($instructor) {
-            $query->where('interviewer_id', $instructor->user_id);
-        }])->orderBy('created_at', 'desc')->paginate(15);
+        // Filter applicants by assigned_instructor_id for direct assignment
+        $assignedApplicants = Applicant::where('assigned_instructor_id', $instructor->user_id)
+            ->with(['latestInterview', 'interviews'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
 
         return view('instructor.applicants', compact('assignedApplicants'));
     }
@@ -79,16 +80,23 @@ class InstructorController extends Controller
     {
         $instructor = Auth::user();
         
-        $applicant = Applicant::with(['examSet.exam'])->findOrFail($applicantId);
+        $applicant = Applicant::findOrFail($applicantId);
         
-        // Check if instructor is assigned to this applicant
-        $interview = Interview::where('applicant_id', $applicantId)
-                             ->where('interviewer_id', $instructor->user_id)
-                             ->first();
-        
-        if (!$interview) {
+        // Check if instructor is assigned to this applicant via assigned_instructor_id
+        if ($applicant->assigned_instructor_id !== $instructor->user_id) {
             abort(403, 'You are not assigned to interview this applicant.');
         }
+        
+        // Get or create interview record
+        $interview = Interview::firstOrCreate(
+            [
+                'applicant_id' => $applicantId,
+                'interviewer_id' => $instructor->user_id
+            ],
+            [
+                'status' => 'scheduled'
+            ]
+        );
 
         return view('instructor.interview-form', compact('applicant', 'interview'));
     }
@@ -253,7 +261,7 @@ class InstructorController extends Controller
         
         $completedInterviews = Interview::where('interviewer_id', $instructor->user_id)
                                      ->where('status', 'completed')
-                                     ->with(['applicant', 'applicant.examSet'])
+                                     ->with(['applicant'])
                                      ->orderBy('schedule_date', 'desc')
                                      ->paginate(15);
 
@@ -289,31 +297,24 @@ class InstructorController extends Controller
     {
         $instructor = Auth::user();
 
-        // Verify instructor is assigned to this applicant
-        $assignedInterview = Interview::where('applicant_id', $applicantId)
-            ->where('interviewer_id', $instructor->user_id)
-            ->first();
-
-        if (!$assignedInterview) {
-            abort(403, 'You are not assigned to this applicant.');
-        }
-
+        // Verify instructor is assigned to this applicant via assigned_instructor_id
         $applicant = Applicant::with([
-            'examSet.exam',
             'accessCode',
             'results.question',
-            'interviews' => function ($q) use ($instructor) {
-                $q->where('interviewer_id', $instructor->user_id)->orderBy('created_at', 'desc');
-            },
+            'latestInterview'
         ])->findOrFail($applicantId);
+        
+        if ($applicant->assigned_instructor_id !== $instructor->user_id) {
+            abort(403, 'You are not assigned to this applicant.');
+        }
 
         // Compute basic exam stats
         $totalQuestions = $applicant->results->count();
         $correctAnswers = $applicant->results->where('is_correct', true)->count();
         $examPercentage = $totalQuestions > 0 ? round(($correctAnswers / $totalQuestions) * 100, 2) : ($applicant->exam_percentage ?? 0);
 
-        // Latest interview (for this instructor)
-        $latestInterview = $applicant->interviews->first();
+        // Latest interview
+        $latestInterview = $applicant->latestInterview;
 
         return view('instructor.applicant-portfolio', [
             'applicant' => $applicant,
@@ -416,5 +417,202 @@ class InstructorController extends Controller
             'interviews' => $claimedInterviews,
             'count' => $claimedInterviews->count()
         ]);
+    }
+
+    /**
+     * Schedule an individual interview
+     */
+    public function scheduleInterview(Request $request, $interviewId)
+    {
+        $instructor = Auth::user();
+        
+        $request->validate([
+            'schedule_date' => 'required|date|after:now',
+            'notes' => 'nullable|string|max:1000',
+            'notify_email' => 'nullable|boolean',
+        ]);
+
+        $interview = Interview::findOrFail($interviewId);
+        
+        // Verify instructor owns this interview
+        if ($interview->interviewer_id !== $instructor->user_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not assigned to this interview.'
+            ], 403);
+        }
+
+        // Check for scheduling conflicts
+        $conflict = Interview::where('interviewer_id', $instructor->user_id)
+            ->where('interview_id', '!=', $interviewId)
+            ->where('status', 'scheduled')
+            ->whereNotNull('schedule_date')
+            ->where(function($q) use ($request) {
+                $scheduleDate = \Carbon\Carbon::parse($request->schedule_date);
+                $q->whereBetween('schedule_date', [
+                    $scheduleDate->copy()->subMinutes(30),
+                    $scheduleDate->copy()->addMinutes(30)
+                ]);
+            })
+            ->exists();
+
+        if ($conflict) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You have another interview scheduled within 30 minutes of this time.'
+            ], 400);
+        }
+
+        // Update interview
+        $interview->update([
+            'schedule_date' => $request->schedule_date,
+            'status' => 'scheduled',
+            'notes' => $request->notes,
+        ]);
+
+        // Update applicant status
+        $interview->applicant->update(['status' => 'interview-scheduled']);
+
+        // Send email notification if requested
+        $emailSent = false;
+        if ($request->notify_email) {
+            try {
+                Mail::to($interview->applicant->email_address)->send(
+                    new InterviewScheduleMail($interview->applicant, $interview)
+                );
+                $emailSent = true;
+            } catch (\Exception $e) {
+                \Log::error('Failed to send interview schedule email: ' . $e->getMessage());
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Interview scheduled successfully!',
+            'email_sent' => $emailSent,
+            'interview' => $interview->load('applicant')
+        ]);
+    }
+
+    /**
+     * Bulk schedule multiple interviews
+     */
+    public function bulkScheduleInterviews(Request $request)
+    {
+        $instructor = Auth::user();
+        
+        $request->validate([
+            'interview_ids' => 'required|array|min:1',
+            'interview_ids.*' => 'exists:interviews,interview_id',
+            'schedule_date_start' => 'required|date|after:now',
+            'time_interval' => 'required|integer|min:15|max:180',
+            'notify_email' => 'nullable|boolean',
+        ]);
+
+        $scheduled = 0;
+        $errors = [];
+        $emailsSent = 0;
+
+        DB::transaction(function () use ($request, $instructor, &$scheduled, &$errors, &$emailsSent) {
+            $currentDateTime = \Carbon\Carbon::parse($request->schedule_date_start);
+            
+            foreach ($request->interview_ids as $interviewId) {
+                try {
+                    $interview = Interview::findOrFail($interviewId);
+                    
+                    // Verify ownership
+                    if ($interview->interviewer_id !== $instructor->user_id) {
+                        $errors[] = "Interview #{$interviewId}: Not assigned to you";
+                        continue;
+                    }
+
+                    // Check if already scheduled
+                    if ($interview->status === 'scheduled' && $interview->schedule_date) {
+                        $errors[] = "Interview #{$interviewId}: Already scheduled";
+                        continue;
+                    }
+
+                    // Update interview
+                    $interview->update([
+                        'schedule_date' => $currentDateTime->format('Y-m-d H:i:s'),
+                        'status' => 'scheduled',
+                    ]);
+
+                    // Update applicant status
+                    $interview->applicant->update(['status' => 'interview-scheduled']);
+
+                    // Send email if requested
+                    if ($request->notify_email) {
+                        try {
+                            Mail::to($interview->applicant->email_address)->send(
+                                new InterviewScheduleMail($interview->applicant, $interview)
+                            );
+                            $emailsSent++;
+                        } catch (\Exception $e) {
+                            \Log::error('Failed to send bulk schedule email: ' . $e->getMessage());
+                        }
+                    }
+
+                    $scheduled++;
+                    
+                    // Increment time for next interview
+                    $currentDateTime->addMinutes($request->time_interval);
+                    
+                } catch (\Exception $e) {
+                    $errors[] = "Interview #{$interviewId}: " . $e->getMessage();
+                }
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'scheduled' => $scheduled,
+            'errors' => $errors,
+            'emails_sent' => $emailsSent,
+            'message' => "Successfully scheduled {$scheduled} interview(s)."
+        ]);
+    }
+
+    /**
+     * Send interview notification email
+     */
+    public function sendScheduleNotification($interviewId)
+    {
+        $instructor = Auth::user();
+        $interview = Interview::findOrFail($interviewId);
+        
+        // Verify ownership
+        if ($interview->interviewer_id !== $instructor->user_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not assigned to this interview.'
+            ], 403);
+        }
+
+        // Verify interview is scheduled
+        if (!$interview->schedule_date) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Interview must be scheduled before sending notification.'
+            ], 400);
+        }
+
+        try {
+            Mail::to($interview->applicant->email_address)->send(
+                new InterviewScheduleMail($interview->applicant, $interview)
+            );
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Notification email sent successfully!'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to send interview notification: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send email. Please try again.'
+            ], 500);
+        }
     }
 }

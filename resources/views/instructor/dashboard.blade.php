@@ -407,13 +407,7 @@
                 </div>
                 <div class="section-content">
                     <div class="quick-actions">
-                        <a href="{{ route('instructor.interview-pool.index') }}" class="action-card featured">
-                            <div class="action-icon">IP</div>
-                            <div class="action-content">
-                                <h3>Interview Pool</h3>
-                                <p>Claim available interviews from the pool</p>
-                            </div>
-                        </a>
+                        <!-- Interview Pool retired -->
                         
                         <a href="{{ route('instructor.applicants') }}" class="action-card">
                             <div class="action-icon">MA</div>

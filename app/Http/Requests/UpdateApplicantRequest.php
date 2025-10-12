@@ -42,7 +42,7 @@ class UpdateApplicantRequest extends FormRequest
                 Rule::unique('applicants', 'email_address')->ignore($applicantId, 'applicant_id')
             ],
             'phone_number' => 'nullable|string|max:20|regex:/^[\d\s\-\+\(\)]+$/',
-            'exam_set_id' => 'nullable|exists:exam_sets,exam_set_id',
+            'assigned_instructor_id' => 'nullable|exists:users,user_id',
             'status' => 'required|in:pending,exam-completed,interview-scheduled,interview-completed,admitted,rejected',
             'score' => 'nullable|numeric|min:0|max:100',
             'verbal_description' => 'nullable|string|max:255',
@@ -69,7 +69,7 @@ class UpdateApplicantRequest extends FormRequest
             'status.in' => 'Invalid status selected.',
             'score.numeric' => 'Score must be a number.',
             'score.max' => 'Score cannot exceed 100.',
-            'exam_set_id.exists' => 'The selected exam set is invalid.',
+            'assigned_instructor_id.exists' => 'The selected instructor is invalid.',
         ];
     }
 
@@ -87,7 +87,7 @@ class UpdateApplicantRequest extends FormRequest
             'preferred_course' => 'preferred course',
             'email_address' => 'email address',
             'phone_number' => 'phone number',
-            'exam_set_id' => 'exam set',
+            'assigned_instructor_id' => 'assigned instructor',
             'verbal_description' => 'verbal description',
         ];
     }

@@ -98,14 +98,14 @@
                                 <div id="fileInfo" class="file-info" style="display: none;"></div>
                             </div>
 
-                            <!-- Exam Set Assignment -->
+                            <!-- Instructor Assignment -->
                             <div class="form-group">
-                                <label for="exam_set_id" class="form-label">Default Exam Set (Optional)</label>
-                                <select id="exam_set_id" name="exam_set_id" class="form-control">
-                                    <option value="">Assign exam sets later</option>
-                                    @foreach($examSets as $examSet)
-                                        <option value="{{ $examSet->exam_set_id }}">
-                                            {{ $examSet->exam->title }} - {{ $examSet->set_name }}
+                                <label for="assigned_instructor_id" class="form-label">Assign Instructor (Optional)</label>
+                                <select id="assigned_instructor_id" name="assigned_instructor_id" class="form-control">
+                                    <option value="">Assign instructor later</option>
+                                    @foreach($instructors as $instructor)
+                                        <option value="{{ $instructor->user_id }}">
+                                            {{ $instructor->full_name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -437,7 +437,7 @@
             // Prepare form data
             const formData = new FormData();
             formData.append('csv_file', fileInput.files[0]);
-            formData.append('exam_set_id', document.getElementById('exam_set_id').value);
+            formData.append('assigned_instructor_id', document.getElementById('assigned_instructor_id').value);
             // Send as 1/0 to satisfy strict boolean validation on backend
             formData.append('generate_access_codes', document.getElementById('generate_access_codes').checked ? '1' : '0');
             

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('questions', function (Blueprint $table) {
             $table->id('question_id'); // Primary key as per ERD
-            $table->foreignId('exam_set_id')->constrained('exam_sets', 'exam_set_id')->onDelete('cascade');
+            // exam_id added by refactoring migration (2025_10_08_200000)
             $table->text('question_text'); // as per ERD
             $table->enum('question_type', ['multiple_choice', 'true_false', 'essay'])->default('multiple_choice'); // as per ERD
             $table->integer('points')->default(1);

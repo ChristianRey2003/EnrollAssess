@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Question;
 use App\Models\QuestionOption;
-use App\Models\ExamSet;
+use App\Models\Exam;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -16,7 +16,7 @@ class QuestionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Question::with(['examSet.exam', 'options'])
+        $query = Question::with(['exam', 'options'])
             ->active()
             ->ordered();
 
@@ -30,13 +30,13 @@ class QuestionController extends Controller
             $query->byType($request->type);
         }
 
-        // Filter by exam set
-        if ($request->filled('exam_set_id')) {
-            $query->where('exam_set_id', $request->exam_set_id);
+        // Filter by exam
+        if ($request->filled('exam_id')) {
+            $query->where('exam_id', $request->exam_id);
         }
 
         $questions = $query->paginate(10);
-        $examSets = ExamSet::with('exam')->where('is_active', true)->get();
+        $exams = Exam::where('is_active', true)->get();
 
         // Get question counts by type for dashboard
         $questionStats = [
@@ -47,7 +47,7 @@ class QuestionController extends Controller
             'essay' => Question::active()->byType('essay')->count(),
         ];
 
-        return view('admin.questions', compact('questions', 'examSets', 'questionStats'));
+        return view('admin.questions', compact('questions', 'exams', 'questionStats'));
     }
 
     /**
@@ -55,8 +55,8 @@ class QuestionController extends Controller
      */
     public function create()
     {
-        $examSets = ExamSet::with('exam')->where('is_active', true)->get();
-        return view('admin.questions.create', compact('examSets'));
+        $exams = Exam::where('is_active', true)->get();
+        return view('admin.questions.create', compact('exams'));
     }
 
     /**
@@ -83,11 +83,11 @@ class QuestionController extends Controller
             DB::transaction(function () use ($request, &$question) {
                 // Create the question
                 $question = Question::create([
-                    'exam_set_id' => $request->exam_set_id,
+                    'exam_id' => $request->exam_id,
                     'question_text' => $request->question_text,
                     'question_type' => $request->question_type,
                     'points' => $request->points ?? 1,
-                    'order_number' => $this->getNextOrderNumber($request->exam_set_id),
+                    'order_number' => $request->order_number ?? $this->getNextOrderNumber($request->exam_id),
                     'explanation' => $request->explanation,
                     'is_active' => $request->boolean('is_active', true),
                 ]);
@@ -123,10 +123,29 @@ class QuestionController extends Controller
     /**
      * Display the specified question.
      */
-    public function show(Question $question)
+    public function show($id)
     {
-        $question->load(['examSet.exam', 'options', 'results']);
-        return view('admin.questions.show', compact('question'));
+        try {
+            $question = Question::with(['exam', 'options'])->findOrFail($id);
+            
+            // If AJAX request, return JSON
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'question' => $question
+                ]);
+            }
+            
+            return view('admin.questions.show', compact('question'));
+        } catch (\Exception $e) {
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Question not found'
+                ], 404);
+            }
+            abort(404);
+        }
     }
 
     /**
@@ -134,10 +153,10 @@ class QuestionController extends Controller
      */
     public function edit($id)
     {
-        $question = Question::with(['examSet', 'options'])->findOrFail($id);
-        $examSets = ExamSet::with('exam')->where('is_active', true)->get();
+        $question = Question::with(['exam', 'options'])->findOrFail($id);
+        $exams = Exam::where('is_active', true)->get();
         
-        return view('admin.questions.create', compact('question', 'examSets'));
+        return view('admin.questions.create', compact('question', 'exams'));
     }
 
     /**
@@ -149,6 +168,12 @@ class QuestionController extends Controller
         $validator = $this->validateQuestionData($request, $question);
 
         if ($validator->fails()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed: ' . $validator->errors()->first()
+                ]);
+            }
             return redirect()->back()
                 ->withErrors($validator)
                 ->withInput();
@@ -158,10 +183,11 @@ class QuestionController extends Controller
             DB::transaction(function () use ($request, $question) {
                 // Update the question
                 $question->update([
-                    'exam_set_id' => $request->exam_set_id,
+                    'exam_id' => $request->exam_id,
                     'question_text' => $request->question_text,
                     'question_type' => $request->question_type,
                     'points' => $request->points ?? 1,
+                    'order_number' => $request->order_number ?? $question->order_number,
                     'explanation' => $request->explanation,
                 ]);
 
@@ -170,10 +196,24 @@ class QuestionController extends Controller
                 $this->createQuestionOptions($question, $request);
             });
 
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Question updated successfully!',
+                    'data' => $question
+                ]);
+            }
+
             return redirect()->route('admin.questions')
                 ->with('success', 'Question updated successfully!');
 
         } catch (\Exception $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to update question: ' . $e->getMessage()
+                ]);
+            }
             return redirect()->back()
                 ->with('error', 'Failed to update question. Please try again.')
                 ->withInput();
@@ -240,7 +280,7 @@ class QuestionController extends Controller
     private function validateQuestionData(Request $request, Question $question = null)
     {
         $rules = [
-            'exam_set_id' => 'required|exists:exam_sets,exam_set_id',
+            'exam_id' => 'required|exists:exams,exam_id',
             'question_text' => 'required|string|min:10|max:2000',
             'question_type' => 'required|in:multiple_choice,true_false,short_answer,essay',
             'points' => 'nullable|integer|min:1|max:100',
@@ -250,13 +290,19 @@ class QuestionController extends Controller
         // Add type-specific validation rules
         switch ($request->question_type) {
             case 'multiple_choice':
-                $rules['options'] = 'required|array|min:2|max:6';
-                $rules['options.*'] = 'required|string|max:500';
-                $rules['correct_option'] = 'required|integer|min:0|max:5';
+                // Handle both JSON string (AJAX) and array (form) formats
+                if (is_string($request->options)) {
+                    $rules['options'] = 'required|string';
+                } else {
+                    $rules['options'] = 'required|array|min:2|max:6';
+                    $rules['options.*'] = 'required|string|max:500';
+                }
+                $rules['correct_option'] = 'nullable|integer|min:0|max:5';
                 break;
 
             case 'true_false':
-                $rules['tf_answer'] = 'required|in:true,false';
+                $rules['tf_answer'] = 'nullable|in:true,false';
+                $rules['correct_option'] = 'nullable|integer|in:0,1';
                 break;
 
             case 'short_answer':
@@ -277,6 +323,22 @@ class QuestionController extends Controller
      */
     private function createQuestionOptions(Question $question, Request $request)
     {
+        // Handle JSON-encoded options from AJAX
+        if ($request->has('options') && is_string($request->options)) {
+            $options = json_decode($request->options, true);
+            if (is_array($options)) {
+                foreach ($options as $index => $option) {
+                    QuestionOption::create([
+                        'question_id' => $question->question_id,
+                        'option_text' => $option['option_text'],
+                        'is_correct' => $option['is_correct'] ?? false,
+                        'order_number' => $index + 1,
+                    ]);
+                }
+                return;
+            }
+        }
+        
         switch ($request->question_type) {
             case 'multiple_choice':
                 if ($request->has('options')) {
@@ -294,18 +356,24 @@ class QuestionController extends Controller
                 break;
 
             case 'true_false':
+                // Check if TF answer is in correct_option (from AJAX)
+                $tfAnswer = $request->tf_answer ?? null;
+                if ($request->has('correct_option')) {
+                    $tfAnswer = $request->correct_option == 0 ? 'true' : 'false';
+                }
+                
                 // Create True and False options
                 QuestionOption::create([
                     'question_id' => $question->question_id,
                     'option_text' => 'True',
-                    'is_correct' => $request->tf_answer === 'true',
+                    'is_correct' => $tfAnswer === 'true' || $tfAnswer === '0',
                     'order_number' => 1,
                 ]);
 
                 QuestionOption::create([
                     'question_id' => $question->question_id,
                     'option_text' => 'False',
-                    'is_correct' => $request->tf_answer === 'false',
+                    'is_correct' => $tfAnswer === 'false' || $tfAnswer === '1',
                     'order_number' => 2,
                 ]);
                 break;
@@ -326,11 +394,11 @@ class QuestionController extends Controller
     }
 
     /**
-     * Get the next order number for a question in an exam set.
+     * Get the next order number for a question in an exam.
      */
-    private function getNextOrderNumber($examSetId)
+    private function getNextOrderNumber($examId)
     {
-        $maxOrder = Question::where('exam_set_id', $examSetId)->max('order_number');
+        $maxOrder = Question::where('exam_id', $examId)->max('order_number');
         return ($maxOrder ?? 0) + 1;
     }
 
@@ -377,11 +445,11 @@ class QuestionController extends Controller
             DB::transaction(function () use ($originalQuestion) {
                 // Create new question
                 $newQuestion = Question::create([
-                    'exam_set_id' => $originalQuestion->exam_set_id,
+                    'exam_id' => $originalQuestion->exam_id,
                     'question_text' => $originalQuestion->question_text . ' (Copy)',
                     'question_type' => $originalQuestion->question_type,
                     'points' => $originalQuestion->points,
-                    'order_number' => $this->getNextOrderNumber($originalQuestion->exam_set_id),
+                    'order_number' => $this->getNextOrderNumber($originalQuestion->exam_id),
                     'explanation' => $originalQuestion->explanation,
                     'is_active' => false, // Start as inactive
                 ]);

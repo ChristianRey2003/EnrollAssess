@@ -69,11 +69,10 @@ Route::get('/guidelines', [InstructorController::class, 'guidelines'])
     ->middleware('role:instructor')
     ->name('guidelines');
 
-// Interview Pool Routes
-Route::prefix('interview-pool')->name('interview-pool.')->middleware('role:instructor,department-head')->group(function () {
-    Route::get('/', [InstructorController::class, 'interviewPool'])->name('index');
-    Route::post('/{interview}/claim', [InstructorController::class, 'claimInterview'])->name('claim');
-    Route::post('/{interview}/release', [InstructorController::class, 'releaseInterview'])->name('release');
-    Route::get('/available', [InstructorController::class, 'getAvailableInterviews'])->name('available');
-    Route::get('/my-claimed', [InstructorController::class, 'getMyClaimedInterviews'])->name('my-claimed');
+// Interview Scheduling Routes
+Route::prefix('interviews')->name('interviews.')->middleware('role:instructor')->group(function () {
+    Route::post('/{interview}/schedule', [InstructorController::class, 'scheduleInterview'])->name('schedule');
+    Route::post('/bulk-schedule', [InstructorController::class, 'bulkScheduleInterviews'])->name('bulk-schedule');
+    Route::post('/{interview}/send-notification', [InstructorController::class, 'sendScheduleNotification'])->name('send-notification');
+    Route::post('/{interview}/reschedule', [InstructorController::class, 'rescheduleInterview'])->name('reschedule');
 });

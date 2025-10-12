@@ -4,7 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Applicant;
 use App\Models\AccessCode;
-use App\Models\ExamSet;
+use App\Models\User;
+use App\Models\Interview;
 use App\Services\ApplicantService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -45,7 +46,7 @@ class ApplicantController extends BaseController
     public function index(Request $request)
     {
         try {
-            $query = Applicant::with(['examSet.exam', 'accessCode']);
+            $query = Applicant::with(['assignedInstructor', 'accessCode']);
 
             // Search functionality
             if ($request->filled('search')) {
@@ -65,9 +66,13 @@ class ApplicantController extends BaseController
                 $query->where('status', $request->get('status'));
             }
 
-            // Exam set filter
-            if ($request->filled('exam_set_id')) {
-                $query->where('exam_set_id', $request->get('exam_set_id'));
+            // Instructor filter
+            if ($request->filled('instructor_id')) {
+                if ($request->instructor_id === 'unassigned') {
+                    $query->whereNull('assigned_instructor_id');
+                } else {
+                    $query->where('assigned_instructor_id', $request->get('instructor_id'));
+                }
             }
 
             $applicants = $query->orderBy('created_at', 'desc')->paginate(20);
@@ -79,13 +84,20 @@ class ApplicantController extends BaseController
                 'exam_completed' => Applicant::where('status', '!=', 'pending')->count(),
                 'with_access_codes' => Applicant::whereHas('accessCode')->count(),
                 'without_access_codes' => Applicant::whereDoesntHave('accessCode')->count(),
+                'assigned_to_instructor' => Applicant::whereNotNull('assigned_instructor_id')->count(),
+                'unassigned_instructor' => Applicant::whereNull('assigned_instructor_id')->count(),
             ];
 
-            $examSets = ExamSet::with('exam')->where('is_active', true)->get();
+            $instructors = User::where('role', 'instructor')->get();
 
-            return view('admin.applicants.index', compact('applicants', 'stats', 'examSets'));
+            return view('admin.applicants.index', compact('applicants', 'stats', 'instructors'));
         } catch (Exception $e) {
-            return back()->with('error', 'Failed to load applicants. Please try again.');
+            \Log::error('Applicants index failed: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return back()->with('error', 'Failed to load applicants. Please try again. Error: ' . $e->getMessage());
         }
     }
 
@@ -94,8 +106,8 @@ class ApplicantController extends BaseController
      */
     public function create()
     {
-        $examSets = ExamSet::with('exam')->where('is_active', true)->get();
-        return view('admin.applicants.create', compact('examSets'));
+        $instructors = User::where('role', 'instructor')->get();
+        return view('admin.applicants.create', compact('instructors'));
     }
 
 
@@ -111,30 +123,49 @@ class ApplicantController extends BaseController
             'preferred_course' => 'nullable|string|max:255',
             'email_address' => 'required|email|unique:applicants,email_address',
             'phone_number' => 'nullable|string|max:20',
-            'exam_set_id' => 'nullable|exists:exam_sets,exam_set_id',
+            'assigned_instructor_id' => 'nullable|exists:users,user_id',
+            'score' => 'nullable|numeric|min:0|max:100',
+            'status' => 'nullable|in:pending,exam-completed,interview-scheduled,interview-completed,admitted,rejected',
+            'verbal_description' => 'nullable|string|max:255',
             'generate_access_code' => 'boolean',
         ]);
 
-        DB::transaction(function () use ($validated, $request) {
-            // Generate application number
-            $validated['application_no'] = Applicant::generateApplicationNumber();
+        try {
+            DB::transaction(function () use ($validated, $request) {
+                // Generate application number
+                $validated['application_no'] = Applicant::generateApplicationNumber();
 
-            // Create applicant
-            $applicant = Applicant::create($validated);
+                // Create applicant
+                $applicant = Applicant::create($validated);
 
-            // Generate access code if requested
-            if ($request->boolean('generate_access_code')) {
-                AccessCode::createForApplicant(
-                    $applicant->applicant_id,
-                    'BSIT',
-                    8,
-                    72 // 72 hours expiration
-                );
-            }
-        });
+                // Generate access code if requested
+                if ($request->boolean('generate_access_code')) {
+                    AccessCode::createForApplicant(
+                        $applicant->applicant_id,
+                        'BSIT',
+                        8,
+                        72 // 72 hours expiration
+                    );
+                }
 
-        return redirect()->route('admin.applicants.index')
-                        ->with('success', 'Applicant created successfully!');
+                // Create interview record if instructor assigned
+                if ($request->filled('assigned_instructor_id')) {
+                    Interview::create([
+                        'applicant_id' => $applicant->applicant_id,
+                        'interviewer_id' => $request->assigned_instructor_id,
+                        'status' => 'scheduled',
+                    ]);
+                }
+            });
+
+            return redirect()->route('admin.applicants.index')
+                            ->with('success', 'Applicant created successfully!');
+        } catch (\Exception $e) {
+            \Log::error('Applicant creation failed: ' . $e->getMessage());
+            return redirect()->back()
+                            ->withInput()
+                            ->with('error', 'Failed to create applicant: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -143,7 +174,7 @@ class ApplicantController extends BaseController
     public function show($id)
     {
         try {
-            $applicant = Applicant::with(['examSet.exam', 'accessCode', 'latestInterview.interviewer', 'results.question'])
+            $applicant = Applicant::with(['assignedInstructor', 'accessCode', 'latestInterview.interviewer', 'results.question'])
                 ->findOrFail($id);
             
             // Calculate additional data for the view (simplified from route logic)
@@ -214,10 +245,10 @@ class ApplicantController extends BaseController
      */
     public function edit($id)
     {
-        $applicant = Applicant::with(['examSet', 'accessCode'])->findOrFail($id);
-        $examSets = ExamSet::with('exam')->where('is_active', true)->get();
+        $applicant = Applicant::with(['assignedInstructor', 'accessCode'])->findOrFail($id);
+        $instructors = User::where('role', 'instructor')->get();
         
-        return view('admin.applicants.create', compact('applicant', 'examSets'));
+        return view('admin.applicants.create', compact('applicant', 'instructors'));
     }
 
     /**
@@ -234,13 +265,28 @@ class ApplicantController extends BaseController
             'preferred_course' => 'nullable|string|max:255',
             'email_address' => 'required|email|unique:applicants,email_address,' . $id . ',applicant_id',
             'phone_number' => 'nullable|string|max:20',
-            'exam_set_id' => 'nullable|exists:exam_sets,exam_set_id',
+            'assigned_instructor_id' => 'nullable|exists:users,user_id',
             'status' => 'required|in:pending,exam-completed,interview-scheduled,interview-completed,admitted,rejected',
             'score' => 'nullable|numeric|min:0|max:9999.99',
             'verbal_description' => 'nullable|string|max:255',
         ]);
 
+        $oldInstructorId = $applicant->assigned_instructor_id;
         $applicant->update($validated);
+
+        // If instructor assignment changed, update or create interview record
+        if ($request->filled('assigned_instructor_id') && $oldInstructorId != $request->assigned_instructor_id) {
+            $interview = $applicant->latestInterview;
+            if ($interview) {
+                $interview->update(['interviewer_id' => $request->assigned_instructor_id]);
+            } else {
+                Interview::create([
+                    'applicant_id' => $applicant->applicant_id,
+                    'interviewer_id' => $request->assigned_instructor_id,
+                    'status' => 'scheduled',
+                ]);
+            }
+        }
 
         return redirect()->route('admin.applicants.index')
                         ->with('success', 'Applicant updated successfully!');
@@ -265,8 +311,8 @@ class ApplicantController extends BaseController
      */
     public function import()
     {
-        $examSets = ExamSet::with('exam')->where('is_active', true)->get();
-        return view('admin.applicants.import', compact('examSets'));
+        $instructors = User::where('role', 'instructor')->get();
+        return view('admin.applicants.import', compact('instructors'));
     }
 
     /**
@@ -277,7 +323,7 @@ class ApplicantController extends BaseController
         // Manual validation to ensure JSON response for AJAX
         $validator = Validator::make($request->all(), [
             'csv_file' => 'required|file|mimes:csv,txt|max:2048',
-            'exam_set_id' => 'nullable|exists:exam_sets,exam_set_id',
+            'assigned_instructor_id' => 'nullable|exists:users,user_id',
             // accept '1'/'0', 'true'/'false', true/false
             'generate_access_codes' => 'nullable|in:1,0,true,false,TRUE,FALSE',
             'access_code_expiry_hours' => 'nullable|integer|min:1|max:8760', // Max 365 days
@@ -389,9 +435,18 @@ class ApplicantController extends BaseController
                             $applicantData['application_no'] = Applicant::generateApplicationNumber();
                         }
                         
-                        $applicantData['exam_set_id'] = $request->exam_set_id;
+                        $applicantData['assigned_instructor_id'] = $request->assigned_instructor_id;
 
                         $applicant = Applicant::create($applicantData);
+
+                        // Create interview record if instructor assigned
+                        if ($request->filled('assigned_instructor_id')) {
+                            Interview::create([
+                                'applicant_id' => $applicant->applicant_id,
+                                'interviewer_id' => $request->assigned_instructor_id,
+                                'status' => 'scheduled',
+                            ]);
+                        }
 
                         // Generate access code if requested
                         if (filter_var($request->input('generate_access_codes'), FILTER_VALIDATE_BOOLEAN)) {
@@ -464,7 +519,7 @@ class ApplicantController extends BaseController
         DB::transaction(function () use ($request, &$generated, &$emailsSent, &$errors, $sendEmail) {
             foreach ($request->applicant_ids as $applicantId) {
                 try {
-                    $applicant = Applicant::with('examSet.exam')->find($applicantId);
+                    $applicant = Applicant::with('assignedInstructor')->find($applicantId);
                     
                     // Check if applicant already has an access code
                     if ($applicant->accessCode) {
@@ -485,7 +540,7 @@ class ApplicantController extends BaseController
                     // Send email if requested
                     if ($sendEmail && $applicant->email_address) {
                         try {
-                            Mail::to($applicant->email_address)->send(new AccessCodeMail($applicant, $accessCode));
+                            Mail::to($applicant->email_address)->send(new \App\Mail\AccessCodeMail($applicant, $accessCode));
                             $emailsSent++;
                         } catch (Exception $e) {
                             $errors[] = "Code generated for {$applicant->full_name} but email failed: " . $e->getMessage();
@@ -513,48 +568,120 @@ class ApplicantController extends BaseController
     }
 
     /**
-     * Assign exam sets to applicants
+     * Show dedicated assignment page
      */
-    public function assignExamSets(Request $request)
+    public function assignPage(Request $request)
+    {
+        // Get all instructors
+        $instructors = User::where('role', 'instructor')
+            ->orderBy('full_name')
+            ->get();
+
+        // Build applicants query with filters
+        $query = Applicant::with(['assignedInstructor', 'accessCode']);
+
+        // Search filter
+        if ($request->filled('q')) {
+            $search = $request->q;
+            $query->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('email_address', 'like', "%{$search}%")
+                  ->orWhere('application_no', 'like', "%{$search}%");
+            });
+        }
+
+        // Status filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Assignment filter
+        if ($request->filled('assigned')) {
+            if ($request->assigned === 'unassigned') {
+                $query->whereNull('assigned_instructor_id');
+            } elseif ($request->assigned === 'assigned') {
+                $query->whereNotNull('assigned_instructor_id');
+            }
+        }
+
+        // Course filter
+        if ($request->filled('course')) {
+            $query->where('preferred_course', $request->course);
+        }
+
+        // Paginate results
+        $applicants = $query->orderBy('created_at', 'desc')->paginate(20);
+
+        return view('admin.applicants.assign', compact('applicants', 'instructors'));
+    }
+
+    /**
+     * Bulk assign instructors to applicants
+     */
+    public function bulkAssignInstructors(Request $request)
     {
         $request->validate([
             'applicant_ids' => 'required|array',
             'applicant_ids.*' => 'exists:applicants,applicant_id',
-            'exam_set_id' => 'required|exists:exam_sets,exam_set_id',
-            'assignment_strategy' => 'required|in:same,random',
+            'instructor_id' => 'required|exists:users,user_id',
+            'notify_email' => 'nullable|boolean',
+            'note' => 'nullable|string|max:500',
         ]);
 
         $updated = 0;
-        $examSets = [];
+        $interviewsCreated = 0;
+        $emailsSent = 0;
 
-        if ($request->assignment_strategy === 'random') {
-            // Get all active exam sets from the same exam
-            $examSet = ExamSet::find($request->exam_set_id);
-            $examSets = ExamSet::where('exam_id', $examSet->exam_id)
-                              ->where('is_active', true)
-                              ->pluck('exam_set_id')
-                              ->toArray();
-        }
-
-        DB::transaction(function () use ($request, &$updated, $examSets) {
+        DB::transaction(function () use ($request, &$updated, &$interviewsCreated, &$emailsSent) {
+            $instructor = User::findOrFail($request->instructor_id);
+            
             foreach ($request->applicant_ids as $applicantId) {
-                $examSetId = $request->exam_set_id;
+                $applicant = Applicant::findOrFail($applicantId);
                 
-                if ($request->assignment_strategy === 'random' && !empty($examSets)) {
-                    $examSetId = $examSets[array_rand($examSets)];
+                // Update instructor assignment
+                $applicant->update(['assigned_instructor_id' => $request->instructor_id]);
+                $updated++;
+
+                // Create or update interview record
+                $interview = $applicant->latestInterview;
+                if ($interview) {
+                    $interview->update(['interviewer_id' => $request->instructor_id]);
+                } else {
+                    Interview::create([
+                        'applicant_id' => $applicantId,
+                        'interviewer_id' => $request->instructor_id,
+                        'status' => 'scheduled',
+                    ]);
+                    $interviewsCreated++;
                 }
 
-                Applicant::where('applicant_id', $applicantId)
-                         ->update(['exam_set_id' => $examSetId]);
-                
-                $updated++;
+                // Send email notification if requested
+                if ($request->notify_email) {
+                    try {
+                        Mail::to($applicant->email_address)->send(
+                            new \App\Mail\InterviewInvitationMail($applicant, $instructor, $request->note)
+                        );
+                        $emailsSent++;
+                    } catch (\Exception $e) {
+                        // Log error but continue processing
+                        \Log::error("Failed to send email to {$applicant->email_address}: " . $e->getMessage());
+                    }
+                }
             }
         });
 
+        $message = "Assigned {$updated} applicants to instructor successfully.";
+        if ($request->notify_email) {
+            $message .= " Sent {$emailsSent} email notifications.";
+        }
+
         return response()->json([
             'success' => true,
-            'message' => "Updated {$updated} applicants successfully.",
-            'updated' => $updated
+            'message' => $message,
+            'updated' => $updated,
+            'interviews_created' => $interviewsCreated,
+            'emails_sent' => $emailsSent
         ]);
     }
 
@@ -565,7 +692,7 @@ class ApplicantController extends BaseController
     {
         $applicants = Applicant::where('status', 'exam-completed')
                               ->whereDoesntHave('interviews')
-                              ->with(['examSet.exam'])
+                              ->with(['assignedInstructor'])
                               ->get();
 
         return response()->json([
@@ -579,11 +706,15 @@ class ApplicantController extends BaseController
      */
     public function exportWithAccessCodes(Request $request)
     {
-        $query = Applicant::with(['examSet.exam', 'accessCode']);
+        $query = Applicant::with(['assignedInstructor', 'accessCode']);
 
         // Apply filters if provided
-        if ($request->has('exam_set_id') && $request->exam_set_id) {
-            $query->where('exam_set_id', $request->exam_set_id);
+        if ($request->has('instructor_id') && $request->instructor_id) {
+            if ($request->instructor_id === 'unassigned') {
+                $query->whereNull('assigned_instructor_id');
+            } else {
+                $query->where('assigned_instructor_id', $request->instructor_id);
+            }
         }
 
         if ($request->has('status') && $request->status) {
@@ -592,20 +723,18 @@ class ApplicantController extends BaseController
 
         $applicants = $query->get();
 
-        $csv = "Application No,Full Name,Email,Phone,Exam Set,Exam Title,Access Code,Status,Created At\n";
+        $csv = "Application No,Full Name,Email,Phone,Assigned Instructor,Access Code,Status,Created At\n";
 
         foreach ($applicants as $applicant) {
-            $examSet = $applicant->examSet ? $applicant->examSet->set_name : 'Not Assigned';
-            $examTitle = $applicant->examSet && $applicant->examSet->exam ? $applicant->examSet->exam->title : 'Not Assigned';
+            $instructor = $applicant->assignedInstructor ? $applicant->assignedInstructor->full_name : 'Not Assigned';
             $accessCode = $applicant->accessCode ? $applicant->accessCode->code : 'Not Generated';
             
-            $csv .= sprintf('"%s","%s","%s","%s","%s","%s","%s","%s","%s"' . "\n",
+            $csv .= sprintf('"%s","%s","%s","%s","%s","%s","%s","%s"' . "\n",
                 $applicant->application_no,
                 $applicant->full_name,
                 $applicant->email_address,
                 $applicant->phone_number,
-                $examSet,
-                $examTitle,
+                $instructor,
                 $accessCode,
                 ucfirst($applicant->status),
                 $applicant->created_at->format('Y-m-d H:i:s')
@@ -619,339 +748,6 @@ class ApplicantController extends BaseController
                 ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
     }
 
-    /**
-     * Show exam set assignment interface
-     */
-    public function showExamSetAssignment(Request $request)
-    {
-        try {
-            $query = Applicant::with(['examSet.exam', 'accessCode']);
-
-            // Apply filters if provided
-            if ($request->filled('search')) {
-                $search = $request->get('search');
-                $query->where(function($q) use ($search) {
-                    $q->where('first_name', 'like', "%{$search}%")
-                      ->orWhere('middle_name', 'like', "%{$search}%")
-                      ->orWhere('last_name', 'like', "%{$search}%")
-                      ->orWhere('email_address', 'like', "%{$search}%")
-                      ->orWhere('application_no', 'like', "%{$search}%")
-                      ->orWhere('preferred_course', 'like', "%{$search}%");
-                });
-            }
-
-            if ($request->filled('status')) {
-                $query->where('status', $request->get('status'));
-            }
-
-            if ($request->filled('exam_set_filter')) {
-                if ($request->get('exam_set_filter') === 'unassigned') {
-                    $query->whereNull('exam_set_id');
-                } elseif ($request->get('exam_set_filter') === 'assigned') {
-                    $query->whereNotNull('exam_set_id');
-                } else {
-                    $query->where('exam_set_id', $request->get('exam_set_filter'));
-                }
-            }
-
-            $applicants = $query->orderBy('created_at', 'desc')->paginate(50);
-            $examSets = ExamSet::with('exam')->where('is_active', true)->get();
-
-            // Statistics for assignment overview
-            $stats = [
-                'total' => Applicant::count(),
-                'assigned' => Applicant::whereNotNull('exam_set_id')->count(),
-                'unassigned' => Applicant::whereNull('exam_set_id')->count(),
-            ];
-
-            // Distribution statistics by exam set
-            $distribution = [];
-            foreach ($examSets as $examSet) {
-                $count = Applicant::where('exam_set_id', $examSet->exam_set_id)->count();
-                $distribution[] = [
-                    'exam_set' => $examSet,
-                    'count' => $count,
-                    'percentage' => $stats['total'] > 0 ? round(($count / $stats['total']) * 100, 1) : 0
-                ];
-            }
-
-            // Add warning message if no exam sets exist
-            if ($examSets->isEmpty()) {
-                session()->flash('warning', 'No active exam sets found. Please create exam sets first before assigning them to applicants.');
-            }
-
-            return view('admin.applicants.assign-exam-sets', compact(
-                'applicants', 'examSets', 'stats', 'distribution'
-            ));
-        } catch (Exception $e) {
-            return back()->with('error', 'Failed to load assignment interface: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Process smart exam set assignment
-     */
-    public function processExamSetAssignment(Request $request)
-    {
-        $request->validate([
-            'applicant_ids' => 'required|array|min:1',
-            'applicant_ids.*' => 'exists:applicants,applicant_id',
-            'assignment_mode' => 'required|in:auto_distribute,manual_assign',
-            'exam_set_id' => 'required_if:assignment_mode,manual_assign|nullable|exists:exam_sets,exam_set_id',
-            'send_notifications' => 'boolean',
-        ]);
-
-        try {
-            $applicantIds = $request->applicant_ids;
-            $assignmentMode = $request->assignment_mode;
-            $sendNotifications = $request->boolean('send_notifications', false);
-            
-            $assignments = [];
-            $errors = [];
-            $notificationsSent = 0;
-
-            // Check if exam sets exist before starting transaction
-            if ($assignmentMode === 'auto_distribute') {
-                $examSets = ExamSet::where('is_active', true)->get();
-                if ($examSets->isEmpty()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'No active exam sets available for assignment. Please create exam sets first.'
-                    ], 422);
-                }
-            } elseif ($assignmentMode === 'manual_assign') {
-                $examSetId = $request->exam_set_id;
-                if (!$examSetId) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Please select an exam set for assignment.'
-                    ], 422);
-                }
-                
-                $examSet = ExamSet::find($examSetId);
-                if (!$examSet || !$examSet->is_active) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Selected exam set is not available or inactive.'
-                    ], 422);
-                }
-            }
-
-            DB::transaction(function () use (
-                $applicantIds, $assignmentMode, $request, 
-                &$assignments, &$errors, &$notificationsSent, $sendNotifications
-            ) {
-                if ($assignmentMode === 'auto_distribute') {
-                    // Smart distribution algorithm
-                    $examSets = ExamSet::where('is_active', true)
-                                      ->orderBy('exam_set_id')
-                                      ->get();
-
-                    $totalApplicants = count($applicantIds);
-                    $totalSets = $examSets->count();
-                    $baseCount = intval($totalApplicants / $totalSets);
-                    $remainder = $totalApplicants % $totalSets;
-
-                    // Shuffle applicant IDs for random distribution
-                    $shuffledIds = $applicantIds;
-                    shuffle($shuffledIds);
-
-                    $currentIndex = 0;
-                    foreach ($examSets as $setIndex => $examSet) {
-                        // Calculate how many students this set should get
-                        $countForThisSet = $baseCount + ($setIndex < $remainder ? 1 : 0);
-                        
-                        for ($i = 0; $i < $countForThisSet && $currentIndex < $totalApplicants; $i++) {
-                            $applicantId = $shuffledIds[$currentIndex];
-                            
-                            try {
-                                $applicant = Applicant::with('examSet')->find($applicantId);
-                                if ($applicant) {
-                                    $applicant->update(['exam_set_id' => $examSet->exam_set_id]);
-                                    $assignments[] = [
-                                        'applicant' => $applicant,
-                                        'exam_set' => $examSet,
-                                        'previous_set' => $applicant->examSet ? $applicant->examSet->set_name : null
-                                    ];
-                                }
-                            } catch (Exception $e) {
-                                $errors[] = "Failed to assign applicant ID {$applicantId}: " . $e->getMessage();
-                            }
-                            
-                            $currentIndex++;
-                        }
-                    }
-                } else {
-                    // Manual assignment to specific exam set
-                    $examSet = ExamSet::find($request->exam_set_id);
-                    
-                    foreach ($applicantIds as $applicantId) {
-                        try {
-                            $applicant = Applicant::with('examSet')->find($applicantId);
-                            if ($applicant) {
-                                $previousSet = $applicant->examSet ? $applicant->examSet->set_name : null;
-                                $applicant->update(['exam_set_id' => $examSet->exam_set_id]);
-                                $assignments[] = [
-                                    'applicant' => $applicant,
-                                    'exam_set' => $examSet,
-                                    'previous_set' => $previousSet
-                                ];
-                            }
-                        } catch (Exception $e) {
-                            $errors[] = "Failed to assign applicant ID {$applicantId}: " . $e->getMessage();
-                        }
-                    }
-                }
-
-                // Send email notifications if requested
-                if ($sendNotifications) {
-                    foreach ($assignments as $assignment) {
-                        try {
-                            $this->sendExamAssignmentNotification(
-                                $assignment['applicant'], 
-                                $assignment['exam_set']
-                            );
-                            $notificationsSent++;
-                        } catch (Exception $e) {
-                            $errors[] = "Assignment successful for {$assignment['applicant']->full_name} but email failed: " . $e->getMessage();
-                        }
-                    }
-                }
-            });
-
-            $successCount = count($assignments);
-            $message = "Successfully assigned {$successCount} applicant(s) to exam sets.";
-            
-            if ($sendNotifications && $notificationsSent > 0) {
-                $message .= " Sent {$notificationsSent} email notifications.";
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => $message,
-                'assignments' => $successCount,
-                'notifications_sent' => $notificationsSent,
-                'errors' => $errors
-            ]);
-
-        } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Assignment failed: ' . $e->getMessage()
-            ], 422);
-        }
-    }
-
-    /**
-     * Send exam assignment notification email
-     */
-    private function sendExamAssignmentNotification(Applicant $applicant, ExamSet $examSet)
-    {
-        if (!$applicant->email_address) {
-            throw new Exception('No email address available for applicant.');
-        }
-
-        $emailData = [
-            'applicant_name' => $applicant->full_name,
-            'application_no' => $applicant->application_no,
-            'exam_set_name' => $examSet->set_name,
-            'exam_title' => $examSet->exam->title ?? 'BSIT Entrance Examination',
-            'exam_date' => 'To be announced', // This should come from exam schedule
-            'exam_time' => 'To be announced',
-            'access_code' => $applicant->accessCode ? $applicant->accessCode->code : null,
-            'instructions' => $this->getSeatingInstructions($examSet->set_name)
-        ];
-
-        // Send email using the professional template
-        Mail::send('emails.exam-assignment', $emailData, function ($message) use ($applicant) {
-            $message->to($applicant->email_address)
-                    ->subject('BSIT Entrance Exam - Set Assignment Confirmation');
-        });
-    }
-
-    /**
-     * Build email content for exam assignment
-     */
-    private function buildExamAssignmentEmailContent(array $data): string
-    {
-        return "
-        Dear {$data['applicant_name']},
-
-        We are pleased to inform you that your exam set assignment has been confirmed for the BSIT Entrance Examination.
-
-        EXAM DETAILS:
-        - Application Number: {$data['application_no']}
-        - Assigned Exam Set: {$data['exam_set_name']}
-        - Exam Title: {$data['exam_title']}
-        - Date: {$data['exam_date']}
-        - Time: {$data['exam_time']}
-        " . ($data['access_code'] ? "- Access Code: {$data['access_code']}" : '') . "
-
-        SEATING INSTRUCTIONS:
-        {$data['instructions']}
-
-        IMPORTANT REMINDERS:
-        - Arrive at the examination venue 30 minutes before the scheduled time
-        - Bring a valid ID and your application form
-        - Bring necessary writing materials (pen, pencil, eraser)
-        - Mobile phones and electronic devices are not allowed during the exam
-        - Follow all examination protocols and guidelines
-
-        If you have any questions or concerns, please contact the admissions office.
-
-        Good luck with your examination!
-
-        Best regards,
-        BSIT Admissions Office
-        ";
-    }
-
-    /**
-     * Get seating instructions based on exam set
-     */
-    private function getSeatingInstructions(string $setName): string
-    {
-        $instructions = [
-            'A' => 'Please sit in the LEFT section of the examination room (Columns 1-3).',
-            'B' => 'Please sit in the MIDDLE section of the examination room (Columns 4-6).',
-            'C' => 'Please sit in the RIGHT section of the examination room (Columns 7-9).'
-        ];
-
-        return $instructions[$setName] ?? "Please follow the seating arrangement as directed by the examination proctor.";
-    }
-
-    /**
-     * Get assignment statistics for dashboard
-     */
-    public function getAssignmentStats()
-    {
-        $stats = [
-            'total_applicants' => Applicant::count(),
-            'assigned' => Applicant::whereNotNull('exam_set_id')->count(),
-            'unassigned' => Applicant::whereNull('exam_set_id')->count(),
-        ];
-
-        $examSets = ExamSet::with('exam')->where('is_active', true)->get();
-        $distribution = [];
-        
-        foreach ($examSets as $examSet) {
-            $count = Applicant::where('exam_set_id', $examSet->exam_set_id)->count();
-            $distribution[] = [
-                'set_name' => $examSet->set_name,
-                'exam_title' => $examSet->exam->title ?? 'Unknown',
-                'count' => $count,
-                'percentage' => $stats['total_applicants'] > 0 
-                    ? round(($count / $stats['total_applicants']) * 100, 1) 
-                    : 0
-            ];
-        }
-
-        return response()->json([
-            'success' => true,
-            'stats' => $stats,
-            'distribution' => $distribution
-        ]);
-    }
 
     /**
      * Display exam results page with EnrollAssess and interview scores
@@ -962,7 +758,7 @@ class ApplicantController extends BaseController
     public function examResults(Request $request)
     {
         try {
-            $query = Applicant::with(['examSet.exam', 'accessCode', 'latestInterview'])
+            $query = Applicant::with(['assignedInstructor', 'accessCode', 'latestInterview'])
                 ->whereNotNull('enrollassess_score'); // Only show applicants who completed EnrollAssess exam
 
             // Search functionality
@@ -1048,6 +844,106 @@ class ApplicantController extends BaseController
         } catch (Exception $e) {
             return redirect()->route('admin.applicants.index')
                 ->with('error', 'Failed to load exam results: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Send exam notifications to selected applicants
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function sendExamNotifications(Request $request): JsonResponse
+    {
+        try {
+            // Validate request
+            $validator = Validator::make($request->all(), [
+                'applicant_ids' => 'required|array|min:1',
+                'applicant_ids.*' => 'exists:applicants,applicant_id',
+                'exam_date' => 'nullable|string|max:255',
+                'exam_time' => 'nullable|string|max:255',
+                'exam_venue' => 'nullable|string|max:500',
+                'special_instructions' => 'nullable|string|max:2000',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed: ' . $validator->errors()->first()
+                ], 422);
+            }
+
+            $applicantIds = $request->applicant_ids;
+            $examDate = $request->exam_date ?? 'To Be Announced';
+            $examTime = $request->exam_time ?? 'To Be Announced';
+            $examVenue = $request->exam_venue ?? 'To Be Announced';
+            $specialInstructions = $request->special_instructions;
+
+            $successCount = 0;
+            $failedCount = 0;
+            $errors = [];
+
+            // Get applicants with their access codes
+            $applicants = Applicant::with(['accessCode'])
+                ->whereIn('applicant_id', $applicantIds)
+                ->get();
+
+            foreach ($applicants as $applicant) {
+                try {
+                    // Check if applicant has an access code
+                    if (!$applicant->accessCode || !$applicant->accessCode->code) {
+                        $errors[] = "Applicant {$applicant->full_name} does not have an access code.";
+                        $failedCount++;
+                        continue;
+                    }
+
+                    // Check if applicant has an email address
+                    if (!$applicant->email_address) {
+                        $errors[] = "Applicant {$applicant->full_name} does not have an email address.";
+                        $failedCount++;
+                        continue;
+                    }
+
+                    // Send email notification
+                    Mail::to($applicant->email_address)
+                        ->send(new \App\Mail\ExamNotificationMail(
+                            $applicant,
+                            $applicant->accessCode->code,
+                            $examDate,
+                            $examTime,
+                            $examVenue,
+                            $specialInstructions
+                        ));
+
+                    $successCount++;
+                } catch (Exception $e) {
+                    $errors[] = "Failed to send email to {$applicant->full_name}: {$e->getMessage()}";
+                    $failedCount++;
+                }
+            }
+
+            // Prepare response message
+            $message = "Email notifications sent successfully to {$successCount} applicant(s).";
+            
+            if ($failedCount > 0) {
+                $message .= " {$failedCount} failed.";
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'data' => [
+                    'success_count' => $successCount,
+                    'failed_count' => $failedCount,
+                    'errors' => $errors
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send email notifications: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

@@ -464,3 +464,197 @@ body.exam-page {
         border-width: 4px;
     }
 }
+
+/* ===== VIOLATION TRACKING STYLES ===== */
+.violation-counter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #f3f4f6;
+    border-radius: 20px;
+    border: 2px solid #d1d5db;
+    transition: all 0.3s ease;
+}
+
+.violation-counter.warning {
+    background: #fef3c7;
+    border-color: #F59E0B;
+    animation: pulse-warning 2s infinite;
+}
+
+.violation-counter.danger {
+    background: #fee2e2;
+    border-color: #DC2626;
+    animation: pulse-danger 1s infinite;
+}
+
+@keyframes pulse-warning {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes pulse-danger {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+}
+
+.violation-icon {
+    font-size: 16px;
+}
+
+.violation-text {
+    color: #374151;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.violation-counter.warning .violation-text {
+    color: #92400e;
+}
+
+.violation-counter.danger .violation-text {
+    color: #991b1b;
+}
+
+/* Violation Warning Modal */
+.violation-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    backdrop-filter: blur(5px);
+}
+
+.violation-modal-content {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+    animation: slideInScale 0.3s ease-out;
+}
+
+@keyframes slideInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.violation-modal-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.violation-modal h3 {
+    color: #DC2626;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 16px 0;
+}
+
+.violation-modal p {
+    color: #374151;
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0 0 16px 0;
+}
+
+.violation-count-display {
+    background: #FEE2E2;
+    color: #DC2626;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 16px 0;
+    border: 2px solid #DC2626;
+}
+
+.violation-modal-actions {
+    margin-top: 24px;
+}
+
+.violation-modal-btn {
+    background: #DC2626;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.violation-modal-btn:hover {
+    background: #B91C1C;
+    transform: translateY(-1px);
+}
+
+/* Full screen overlay for violations */
+.violation-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(220, 38, 38, 0.95);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20000;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.violation-overlay h1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+
+.violation-overlay p {
+    font-size: 18px;
+    margin-bottom: 10px;
+    opacity: 0.9;
+}
+
+/* Responsive adjustments for violation elements */
+@media (max-width: 768px) {
+    .violation-counter {
+        padding: 6px 12px;
+    }
+
+    .violation-text {
+        font-size: 12px;
+    }
+    
+    .violation-modal-content {
+        padding: 20px;
+        max-width: 90%;
+    }
+    
+    .violation-overlay h1 {
+        font-size: 32px;
+    }
+    
+    .violation-overlay p {
+        font-size: 14px;
+    }
+}

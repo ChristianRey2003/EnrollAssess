@@ -56,6 +56,7 @@
                     <span class="nav-text">Sets & Questions</span>
                 </a>
             </div>
+            
             <div class="nav-item">
                 <a href="{{ route('admin.interviews.index') }}" 
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.interviews') && !str_contains($currentRoute, 'pool') ? 'active' : '' }}">
@@ -63,13 +64,7 @@
                     <span class="nav-text">Interviews</span>
                 </a>
             </div>
-            <div class="nav-item">
-                <a href="{{ route('admin.interviews.pool.overview') }}" 
-                   class="nav-link {{ str_contains($currentRoute, 'interviews.pool') ? 'active' : '' }}">
-                    <span class="nav-icon"></span>
-                    <span class="nav-text">Interview Pool</span>
-                </a>
-            </div>
+            
             <div class="nav-item">
                 <a href="{{ route('admin.users.index') }}" 
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.users') ? 'active' : '' }}">
@@ -94,13 +89,7 @@
                     <span class="nav-text">Dashboard</span>
                 </a>
             </div>
-            <div class="nav-item">
-                <a href="{{ route('instructor.interview-pool.index') }}" 
-                   class="nav-link {{ str_starts_with($currentRoute, 'instructor.interview-pool') ? 'active' : '' }}">
-                    <span class="nav-icon"></span>
-                    <span class="nav-text">Interview Pool</span>
-                </a>
-            </div>
+            
             <div class="nav-item">
                 <a href="{{ route('instructor.applicants') }}" 
                    class="nav-link {{ str_starts_with($currentRoute, 'instructor.applicants') ? 'active' : '' }}">

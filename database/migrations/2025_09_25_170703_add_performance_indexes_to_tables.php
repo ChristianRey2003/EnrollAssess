@@ -13,21 +13,36 @@ return new class extends Migration
     {
         // Applicants table indexes for better query performance
         if (Schema::hasTable('applicants')) {
-            Schema::table('applicants', function (Blueprint $table) {
+            // Check which indexes don't exist and create them
+            $connection = Schema::getConnection();
+            $doctrineSchemaManager = $connection->getDoctrineSchemaManager();
+            $indexesNames = array_keys($doctrineSchemaManager->listTableIndexes('applicants'));
+            
+            Schema::table('applicants', function (Blueprint $table) use ($indexesNames) {
                 // Composite index for status-based filtering with pagination
-                $table->index(['status', 'created_at'], 'idx_applicants_status_created');
+                if (!in_array('idx_applicants_status_created', $indexesNames)) {
+                    $table->index(['status', 'created_at'], 'idx_applicants_status_created');
+                }
                 
-                // Index for exam set filtering
-                $table->index(['exam_set_id', 'status'], 'idx_applicants_exam_set_status');
+                // Index for exam set filtering (only if column exists)
+                if (Schema::hasColumn('applicants', 'exam_set_id') && !in_array('idx_applicants_exam_set_status', $indexesNames)) {
+                    $table->index(['exam_set_id', 'status'], 'idx_applicants_exam_set_status');
+                }
                 
                 // Index for email lookups
-                $table->index('email_address', 'idx_applicants_email');
+                if (!in_array('idx_applicants_email', $indexesNames)) {
+                    $table->index('email_address', 'idx_applicants_email');
+                }
                 
                 // Index for application number lookups
-                $table->index('application_no', 'idx_applicants_app_no');
+                if (!in_array('idx_applicants_app_no', $indexesNames)) {
+                    $table->index('application_no', 'idx_applicants_app_no');
+                }
                 
                 // Index for score-based queries
-                $table->index(['score', 'status'], 'idx_applicants_score_status');
+                if (!in_array('idx_applicants_score_status', $indexesNames)) {
+                    $table->index(['score', 'status'], 'idx_applicants_score_status');
+                }
             });
         }
 
@@ -115,7 +130,9 @@ return new class extends Migration
         if (Schema::hasTable('applicants')) {
             Schema::table('applicants', function (Blueprint $table) {
                 $table->dropIndex('idx_applicants_status_created');
-                $table->dropIndex('idx_applicants_exam_set_status');
+                if (Schema::hasColumn('applicants', 'exam_set_id')) {
+                    $table->dropIndex('idx_applicants_exam_set_status');
+                }
                 $table->dropIndex('idx_applicants_email');
                 $table->dropIndex('idx_applicants_app_no');
                 $table->dropIndex('idx_applicants_score_status');

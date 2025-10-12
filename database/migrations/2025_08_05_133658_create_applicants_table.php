@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('phone_number')->nullable();
             $table->text('address')->nullable();
             $table->string('education_background')->nullable();
-            $table->foreignId('exam_set_id')->nullable()->constrained('exam_sets', 'exam_set_id')->onDelete('set null');
+            // exam_set_id removed - now using direct instructor assignment
             $table->decimal('score', 5, 2)->nullable(); // Exam score
             $table->enum('status', ['pending', 'exam-completed', 'interview-scheduled', 'interview-completed', 'admitted', 'rejected'])->default('pending');
             $table->timestamp('exam_completed_at')->nullable();

@@ -495,10 +495,6 @@
         <div class="content-header">
             <h2 class="section-title">Interview Schedule</h2>
             <div class="section-actions">
-                <a href="{{ route('admin.interviews.pool.overview') }}" class="btn-outline">
-                    Interview Pool
-                </a>
-                <button onclick="showBulkScheduleModal()" class="btn-primary">Bulk Schedule</button>
                 <a href="{{ route('admin.interviews.analytics') }}" class="btn-outline">
                     Analytics
                 </a>
@@ -653,9 +649,9 @@
                 <div class="empty-state">
                     <h3>No Interviews Found</h3>
                     <p>No interviews match your current search criteria.</p>
-                    <button onclick="showBulkScheduleModal()" class="btn-primary">
-                        Schedule First Interview
-                    </button>
+                    <a href="{{ route('admin.applicants.assign') }}" class="btn-primary">
+                        Assign Applicants to Instructors
+                    </a>
                 </div>
             @endif
         </div>
@@ -664,41 +660,6 @@
 @endsection
 
 @push('modals')
-    <!-- Bulk Schedule Modal -->
-    <div id="bulkScheduleModal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Bulk Assign Interviews</h3>
-                <button onclick="closeBulkScheduleModal()" class="modal-close">×</button>
-            </div>
-            <div class="modal-body">
-                <form id="bulkScheduleForm">
-                    <div class="form-group">
-                        <label class="form-label">Select Applicants (Exam Completed)</label>
-                        <div class="applicant-list" id="applicantList">
-                            <!-- Will be populated via AJAX -->
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Assign to Instructor</label>
-                        <select id="interviewer_id" name="interviewer_id" class="form-control" required>
-                            <option value="">Choose Instructor</option>
-                            @foreach($instructors as $instructor)
-                                <option value="{{ $instructor->user_id }}">{{ $instructor->full_name }}</option>
-                            @endforeach
-                        </select>
-                        <small class="form-text">Selected applicants will be assigned to this instructor for interview scheduling.</small>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button onclick="closeBulkScheduleModal()" class="btn-secondary">Cancel</button>
-                <button onclick="confirmBulkSchedule()" class="btn-primary">Assign Interviews</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Export Modal -->
     <div id="exportModal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
@@ -740,205 +701,12 @@
 
 @push('scripts')
 <script>
-    // Load eligible applicants when modal opens
-    function showBulkScheduleModal() {
-        console.log('[BulkSchedule] Opening modal...');
-        let modal = document.getElementById('bulkScheduleModal');
-        if (!modal) {
-            console.error('[BulkSchedule] Modal element not found!');
-            return;
-        }
-        
-        // Move modal to body to avoid stacking context issues
-        document.body.appendChild(modal);
-        
-        // Force modal to be visible with inline styles
-        modal.style.cssText = `
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            background: rgba(0, 0, 0, 0.5) !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            z-index: 9999 !important;
-            visibility: visible !important;
-            pointer-events: auto !important;
-            opacity: 1 !important;
-        `;
-        
-        // Also force modal content to be visible
-        const modalContent = modal.querySelector('.modal-content');
-        if (modalContent) {
-            modalContent.style.cssText = `
-                background: white !important;
-                width: 600px !important;
-                max-width: 95% !important;
-                border-radius: 12px !important;
-                overflow: hidden !important;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2) !important;
-                display: block !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-                position: relative !important;
-            `;
-        }
-        
-        // Prevent body scroll
-        document.body.style.overflow = 'hidden';
-        
-        console.log('[BulkSchedule] Modal moved to body and styles applied');
-        console.log('[BulkSchedule] Modal position:', modal.getBoundingClientRect());
-        
-        // Modal is now working properly
-        
-        // Test if modal is visible
-        setTimeout(() => {
-            const rect = modal.getBoundingClientRect();
-            const computedStyle = window.getComputedStyle(modal);
-            console.log('[BulkSchedule] Modal visibility test:', {
-                width: rect.width,
-                height: rect.height,
-                top: rect.top,
-                left: rect.left,
-                visible: rect.width > 0 && rect.height > 0,
-                display: computedStyle.display,
-                visibility: computedStyle.visibility,
-                opacity: computedStyle.opacity,
-                zIndex: computedStyle.zIndex,
-                position: computedStyle.position
-            });
-            
-            // Check if modal content is visible
-            const modalContent = modal.querySelector('.modal-content');
-            if (modalContent) {
-                const contentRect = modalContent.getBoundingClientRect();
-                const contentStyle = window.getComputedStyle(modalContent);
-                console.log('[BulkSchedule] Modal content test:', {
-                    width: contentRect.width,
-                    height: contentRect.height,
-                    backgroundColor: contentStyle.backgroundColor,
-                    display: contentStyle.display,
-                    visibility: contentStyle.visibility
-                });
-            }
-        }, 100);
-        
-        loadEligibleApplicants();
-    }
-
-    function closeBulkScheduleModal() {
-        const modal = document.getElementById('bulkScheduleModal');
-        if (modal) {
-            modal.style.display = 'none';
-            modal.style.visibility = 'hidden';
-            modal.style.pointerEvents = 'none';
-            
-            // Restore body scroll
-            document.body.style.overflow = '';
-        }
-    }
-
     function showExportModal() {
         document.getElementById('exportModal').style.display = 'flex';
     }
 
     function closeExportModal() {
         document.getElementById('exportModal').style.display = 'none';
-    }
-
-    function loadEligibleApplicants() {
-        console.log('[BulkSchedule] Loading eligible applicants...');
-        fetch('/admin/applicants/api/eligible-for-interview')
-            .then(response => {
-                console.log('[BulkSchedule] Response status:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                console.log('[BulkSchedule] Received data:', data);
-                const listContainer = document.getElementById('applicantList');
-                if (!listContainer) {
-                    console.error('[BulkSchedule] Applicant list container not found!');
-                    return;
-                }
-                
-                if (!data.applicants || data.applicants.length === 0) {
-                    listContainer.innerHTML = '<p class="text-muted">No eligible applicants found.</p>';
-                    return;
-                }
-                
-                listContainer.innerHTML = data.applicants.map(applicant => `
-                    <label class="applicant-item">
-                        <input type="checkbox" name="applicant_ids[]" value="${applicant.applicant_id}" checked>
-                        <div class="applicant-details">
-                            <div class="applicant-name">${applicant.full_name}</div>
-                            <div class="applicant-email">${applicant.email_address}</div>
-                            <div class="applicant-exam">${applicant.exam_set?.exam?.title || 'N/A'} - ${applicant.exam_set?.set_name || 'N/A'}</div>
-                        </div>
-                    </label>
-                `).join('');
-            })
-            .catch(error => {
-                console.error('[BulkSchedule] Error loading applicants:', error);
-                const listContainer = document.getElementById('applicantList');
-                if (listContainer) {
-                    listContainer.innerHTML = '<p class="text-error">Error loading applicants. Please try again.</p>';
-                }
-            });
-    }
-
-    // No longer needed - removed assignment strategy
-
-    function confirmBulkSchedule() {
-        const form = document.getElementById('bulkScheduleForm');
-        const formData = new FormData(form);
-        
-        // Get selected applicants
-        const selectedApplicants = Array.from(document.querySelectorAll('input[name="applicant_ids[]"]:checked'))
-            .map(input => input.value);
-        
-        if (selectedApplicants.length === 0) {
-            alert('Please select at least one applicant.');
-            return;
-        }
-        
-        // Get selected instructor
-        const interviewerId = formData.get('interviewer_id');
-        if (!interviewerId) {
-            alert('Please select an instructor.');
-            return;
-        }
-        
-        const requestData = {
-            applicant_ids: selectedApplicants,
-            interviewer_id: interviewerId
-        };
-        
-        fetch('/admin/interviews/bulk-assign-instructors', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify(requestData)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                location.reload();
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            alert('An error occurred while assigning interviews');
-            console.error('Error:', error);
-        });
-        
-        closeBulkScheduleModal();
     }
 
     function confirmExport() {
@@ -988,7 +756,6 @@
     // Close modals when clicking outside
     window.addEventListener('click', function(e) {
         if (e.target.classList.contains('modal-overlay')) {
-            closeBulkScheduleModal();
             closeExportModal();
         }
     });
