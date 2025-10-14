@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Applicant;
 use App\Models\AccessCode;
+use App\Models\Exam;
 use App\Models\User;
 use App\Models\Interview;
 use App\Services\ApplicantService;
@@ -46,7 +47,7 @@ class ApplicantController extends BaseController
     public function index(Request $request)
     {
         try {
-            $query = Applicant::with(['assignedInstructor', 'accessCode']);
+            $query = Applicant::with(['assignedInstructor', 'accessCode', 'accessCode.exam']);
 
             // Search functionality
             if ($request->filled('search')) {
@@ -90,7 +91,9 @@ class ApplicantController extends BaseController
 
             $instructors = User::where('role', 'instructor')->get();
 
-            return view('admin.applicants.index', compact('applicants', 'stats', 'instructors'));
+            $exams = Exam::where('is_active', true)->get();
+            
+            return view('admin.applicants.index', compact('applicants', 'stats', 'instructors', 'exams'));
         } catch (Exception $e) {
             \Log::error('Applicants index failed: ' . $e->getMessage(), [
                 'file' => $e->getFile(),
@@ -706,7 +709,7 @@ class ApplicantController extends BaseController
      */
     public function exportWithAccessCodes(Request $request)
     {
-        $query = Applicant::with(['assignedInstructor', 'accessCode']);
+        $query = Applicant::with(['assignedInstructor', 'accessCode', 'accessCode.exam']);
 
         // Apply filters if provided
         if ($request->has('instructor_id') && $request->instructor_id) {
@@ -723,19 +726,30 @@ class ApplicantController extends BaseController
 
         $applicants = $query->get();
 
-        $csv = "Application No,Full Name,Email,Phone,Assigned Instructor,Access Code,Status,Created At\n";
+        $csv = "Application No,Full Name,Email,Phone,Assigned Instructor,Access Code,Assigned Exam,Status,Created At\n";
 
         foreach ($applicants as $applicant) {
             $instructor = $applicant->assignedInstructor ? $applicant->assignedInstructor->full_name : 'Not Assigned';
-            $accessCode = $applicant->accessCode ? $applicant->accessCode->code : 'Not Generated';
+            $accessCode = $applicant->accessCode ? $applicant->accessCode->code : 'No Access Code';
             
-            $csv .= sprintf('"%s","%s","%s","%s","%s","%s","%s","%s"' . "\n",
+            // Determine assigned exam
+            $assignedExam = 'No Access Code';
+            if ($applicant->accessCode) {
+                if ($applicant->accessCode->exam_id && $applicant->accessCode->exam) {
+                    $assignedExam = $applicant->accessCode->exam->title;
+                } else {
+                    $assignedExam = 'No Exam Assigned';
+                }
+            }
+            
+            $csv .= sprintf('"%s","%s","%s","%s","%s","%s","%s","%s","%s"' . "\n",
                 $applicant->application_no,
                 $applicant->full_name,
                 $applicant->email_address,
                 $applicant->phone_number,
                 $instructor,
                 $accessCode,
+                $assignedExam,
                 ucfirst($applicant->status),
                 $applicant->created_at->format('Y-m-d H:i:s')
             );
@@ -943,6 +957,104 @@ class ApplicantController extends BaseController
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to send email notifications: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Bulk assign exam to applicants (via access codes)
+     */
+    public function assignExamToApplicants(Request $request)
+    {
+        $request->validate([
+            'applicant_ids' => 'required|array|min:1',
+            'applicant_ids.*' => 'exists:applicants,applicant_id',
+            'exam_id' => 'required|exists:exams,exam_id',
+        ]);
+
+        $assigned = 0;
+        $skipped = 0;
+        $errors = [];
+
+        DB::transaction(function () use ($request, &$assigned, &$skipped, &$errors) {
+            $exam = Exam::findOrFail($request->exam_id);
+
+            foreach ($request->applicant_ids as $applicantId) {
+                try {
+                    $applicant = Applicant::with('accessCode')->find($applicantId);
+                    
+                    // Check if applicant has an access code
+                    if (!$applicant->accessCode) {
+                        $errors[] = "Applicant {$applicant->full_name} has no access code";
+                        $skipped++;
+                        continue;
+                    }
+
+                    // Update access code with exam_id
+                    $applicant->accessCode->update([
+                        'exam_id' => $request->exam_id
+                    ]);
+
+                    $assigned++;
+
+                } catch (Exception $e) {
+                    $errors[] = "Failed for applicant ID {$applicantId}: " . $e->getMessage();
+                    $skipped++;
+                }
+            }
+        });
+
+        $message = "Exam assigned to {$assigned} applicant(s) successfully.";
+        if ($skipped > 0) {
+            $message .= " {$skipped} applicant(s) skipped (no access code or error).";
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'assigned' => $assigned,
+            'skipped' => $skipped,
+            'errors' => $errors
+        ]);
+    }
+
+    /**
+     * Assign exam to a single applicant (via access code)
+     */
+    public function assignExamToApplicant(Request $request, $applicantId)
+    {
+        $request->validate([
+            'exam_id' => 'required|exists:exams,exam_id',
+        ]);
+
+        try {
+            $applicant = Applicant::with('accessCode')->findOrFail($applicantId);
+            
+            // Check if applicant has an access code
+            if (!$applicant->accessCode) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This applicant does not have an access code. Please generate one first.'
+                ], 400);
+            }
+
+            $exam = Exam::findOrFail($request->exam_id);
+
+            // Update access code with exam_id
+            $applicant->accessCode->update([
+                'exam_id' => $request->exam_id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Exam '{$exam->title}' assigned to {$applicant->full_name} successfully.",
+                'exam' => $exam
+            ]);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to assign exam: ' . $e->getMessage()
             ], 500);
         }
     }

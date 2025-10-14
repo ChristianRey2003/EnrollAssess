@@ -43,18 +43,39 @@ Route::get('/exam/pre-requirements', function (Illuminate\Http\Request $request)
     }
 
     try {
-        $applicant = \App\Models\Applicant::with('examSet.exam')->findOrFail($applicantId);
+        // Load applicant with access code and exam relationship
+        $applicant = \App\Models\Applicant::with('accessCode.exam')->findOrFail($applicantId);
         
-        if (!$applicant->examSet || !$applicant->examSet->exam) {
+        // Check if applicant has an access code
+        if (!$applicant->accessCode) {
+            return redirect()->route('applicant.login')
+                ->with('error', 'No access code found. Please contact the administrator.');
+        }
+
+        // Check if exam is assigned to the access code
+        if (!$applicant->accessCode->exam_id || !$applicant->accessCode->exam) {
             return redirect()->route('applicant.login')
                 ->with('error', 'No exam assigned. Please contact the administrator.');
         }
 
-        $examSet = $applicant->examSet;
-        $totalQuestions = $examSet->activeQuestions()->count();
-        $duration = $examSet->exam->duration_minutes ?? 30;
+        $exam = $applicant->accessCode->exam;
 
-        return view('exam.pre-requirements', compact('examSet', 'totalQuestions', 'duration'));
+        // Check if access code has already been used
+        if ($applicant->accessCode->is_used) {
+            return redirect()->route('applicant.login')
+                ->with('error', 'This access code has already been used. You cannot retake the exam.');
+        }
+
+        // Check exam availability (timing window)
+        if (!$exam->isAvailable()) {
+            return redirect()->route('applicant.login')
+                ->with('error', $exam->getAvailabilityMessage());
+        }
+
+        $totalQuestions = $exam->activeQuestions()->count();
+        $duration = $exam->duration_minutes ?? 30;
+
+        return view('exam.pre-requirements', compact('exam', 'totalQuestions', 'duration'));
     } catch (\Exception $e) {
         return redirect()->route('applicant.login')
             ->with('error', 'An error occurred. Please try again.');

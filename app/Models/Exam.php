@@ -161,4 +161,69 @@ class Exam extends Model
 
         return $errors;
     }
+
+    /**
+     * Check if exam is currently available based on availability window
+     */
+    public function isAvailable()
+    {
+        $now = now();
+        
+        // If no availability window is set, exam is always available (if active)
+        if (!$this->starts_at && !$this->ends_at) {
+            return $this->is_active;
+        }
+        
+        // Check if current time is within availability window
+        $afterStart = !$this->starts_at || $now->greaterThanOrEqualTo($this->starts_at);
+        $beforeEnd = !$this->ends_at || $now->lessThanOrEqualTo($this->ends_at);
+        
+        return $this->is_active && $afterStart && $beforeEnd;
+    }
+
+    /**
+     * Check if exam has not started yet
+     */
+    public function hasNotStarted()
+    {
+        if (!$this->starts_at) {
+            return false;
+        }
+        
+        return now()->lessThan($this->starts_at);
+    }
+
+    /**
+     * Check if exam has ended
+     */
+    public function hasEnded()
+    {
+        if (!$this->ends_at) {
+            return false;
+        }
+        
+        return now()->greaterThan($this->ends_at);
+    }
+
+    /**
+     * Get availability status message
+     */
+    public function getAvailabilityMessage()
+    {
+        if (!$this->is_active) {
+            return 'This exam is currently inactive.';
+        }
+        
+        if ($this->hasNotStarted()) {
+            return 'This exam has not started yet. It will be available on ' . 
+                   $this->starts_at->setTimezone('Asia/Manila')->format('F j, Y \a\t g:i A') . ' (Philippine time).';
+        }
+        
+        if ($this->hasEnded()) {
+            return 'This exam has ended. It was available until ' . 
+                   $this->ends_at->setTimezone('Asia/Manila')->format('F j, Y \a\t g:i A') . ' (Philippine time).';
+        }
+        
+        return 'Exam is available.';
+    }
 }

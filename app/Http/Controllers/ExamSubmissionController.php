@@ -54,6 +54,13 @@ class ExamSubmissionController extends Controller
             // Store detailed results
             $this->storeExamResults($applicantId, $answers, $scoreData);
 
+            // **MARK ACCESS CODE AS USED**
+            $accessCode = $applicant->accessCode;
+            if ($accessCode && !$accessCode->is_used) {
+                $accessCode->markAsUsed();
+                Log::info("Access code {$accessCode->code} marked as used for applicant {$applicantId}");
+            }
+
             // **AUTO-ADD TO INTERVIEW POOL**
             $this->addToInterviewPool($applicantId, $scoreData['percentage']);
 

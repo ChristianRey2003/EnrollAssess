@@ -246,8 +246,8 @@ class ExamController extends Controller
                 'total_items' => $request->input('total_items'),
                 'mcq_quota' => $request->input('mcq_quota'),
                 'tf_quota' => $request->input('tf_quota'),
-                'starts_at' => $request->input('starts_at'),
-                'ends_at' => $request->input('ends_at'),
+                'starts_at' => $request->input('starts_at') ? \Carbon\Carbon::parse($request->input('starts_at'), 'Asia/Manila')->utc() : null,
+                'ends_at' => $request->input('ends_at') ? \Carbon\Carbon::parse($request->input('ends_at'), 'Asia/Manila')->utc() : null,
             ], function ($value) {
                 return !is_null($value);
             });
@@ -414,16 +414,49 @@ class ExamController extends Controller
         try {
             $applicant = Applicant::findOrFail($applicantId);
             
-            // Get exam from access code
+            // Get access code
             $accessCode = $applicant->accessCode;
-            if (!$accessCode || !$accessCode->exam) {
+            if (!$accessCode) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No exam assigned to this applicant.'
+                    'message' => 'No access code found for this applicant.'
+                ], 400);
+            }
+
+            // Check if exam is assigned to access code
+            if (!$accessCode->exam_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No exam has been assigned to your access code yet. Please contact the administration office.'
                 ], 400);
             }
             
             $exam = $accessCode->exam;
+            
+            // Additional check if exam relationship loaded properly
+            if (!$exam) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The assigned exam could not be found. Please contact the administration office.'
+                ], 400);
+            }
+
+            // Check if access code has already been used
+            if ($accessCode->is_used) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This access code has already been used. You cannot retake the exam.'
+                ], 403);
+            }
+
+            // Check exam availability (timing window)
+            if (!$exam->isAvailable()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $exam->getAvailabilityMessage()
+                ], 403);
+            }
+            
             $selectionService = new QuestionSelectionService();
             
             // Validate exam configuration

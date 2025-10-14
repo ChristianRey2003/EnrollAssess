@@ -17,6 +17,7 @@ class AccessCode extends Model
     protected $fillable = [
         'code',
         'applicant_id',
+        'exam_id',
         'is_used',
         'used_at',
         'expires_at',
@@ -38,6 +39,14 @@ class AccessCode extends Model
     public function applicant()
     {
         return $this->belongsTo(Applicant::class, 'applicant_id', 'applicant_id');
+    }
+
+    /**
+     * Get the exam assigned to this access code.
+     */
+    public function exam()
+    {
+        return $this->belongsTo(Exam::class, 'exam_id', 'exam_id');
     }
 
     /**
@@ -125,5 +134,25 @@ class AccessCode extends Model
             'applicant_id' => $applicantId,
             'expires_at' => $expiresInHours ? now()->addHours($expiresInHours) : null,
         ]);
+    }
+
+    /**
+     * Check if exam is assigned to this access code
+     */
+    public function hasExamAssigned()
+    {
+        return !is_null($this->exam_id);
+    }
+
+    /**
+     * Get exam status text for display
+     */
+    public function getExamStatusText()
+    {
+        if ($this->hasExamAssigned() && $this->exam) {
+            return $this->exam->title;
+        }
+        
+        return 'No exam assigned';
     }
 }

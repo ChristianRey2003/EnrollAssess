@@ -179,6 +179,11 @@
                                     style="height: 28px; padding: 4px 8px; font-size: 12px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
                                 Generate Codes
                             </button>
+                            <button onclick="showAssignExamModal()" 
+                                    class="bulk-btn" 
+                                    style="height: 28px; padding: 4px 8px; font-size: 12px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                Assign Exam
+                            </button>
                             <button onclick="openEmailNotificationDrawer()" 
                                     class="bulk-btn" 
                                     style="height: 28px; padding: 4px 8px; font-size: 12px; background: #059669; color: white; border: none; border-radius: 4px; cursor: pointer;">
@@ -246,28 +251,52 @@
                                                     No Instructor
                                                 </div>
                                             @endif
+                                            @if($applicant->accessCode)
+                                                <div style="font-size: 11px; margin-top: 2px;">
+                                                    <strong>{{ $applicant->accessCode->code }}</strong>
+                                                    @if($applicant->accessCode->exam_id)
+                                                        <div style="color: #059669; margin-top: 1px;">
+                                                            <span style="display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: #059669; margin-right: 4px;"></span>
+                                                            {{ $applicant->accessCode->exam->title }}
+                                                        </div>
+                                                    @else
+                                                        <div style="color: #f59e0b; margin-top: 1px;">
+                                                            <span style="display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: #f59e0b; margin-right: 4px;"></span>
+                                                            No exam assigned
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            @endif
                                         </div>
                                         <!-- Floating Actions -->
                                         <div id="actions-{{ $applicant->applicant_id }}" class="floating-actions" style="display: none;">
                                             <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}" 
                                                class="action-btn action-btn-view" 
                                                title="View details">
-                                                👁️
+                                                View
                                             </a>
                                             <a href="{{ route('admin.applicants.edit', $applicant->applicant_id) }}" 
                                                class="action-btn action-btn-edit" 
                                                title="Edit applicant">
-                                                ✏️
+                                                Edit
                                             </a>
+                                            @if($applicant->accessCode)
+                                                <button onclick="showSingleAssignExamModal({{ $applicant->applicant_id }})" 
+                                                        class="action-btn action-btn-assign" 
+                                                        title="Assign exam{{ $applicant->accessCode && $applicant->accessCode->exam_id ? ' (' . $applicant->accessCode->exam->title . ')' : '' }}"
+                                                        style="background: #8b5cf6;">
+                                                    Assign Exam
+                                                </button>
+                                            @endif
                                             <button onclick="sendIndividualNotification({{ $applicant->applicant_id }})" 
                                                     class="action-btn action-btn-notify" 
                                                     title="Send exam notification">
-                                                📧
+                                                Email
                                             </button>
                                             <button onclick="deleteApplicant({{ $applicant->applicant_id }})" 
                                                     class="action-btn action-btn-delete" 
                                                     title="Delete applicant">
-                                                🗑️
+                                                Delete
                                             </button>
                                         </div>
                                     </td>
@@ -386,6 +415,9 @@
 <!-- Include Exam Notification Modal -->
 @include('components.exam-notification-modal')
 
+<!-- Include Assign Exam Modal -->
+@include('admin.applicants.partials.assign-exam-modal')
+
 @push('scripts')
     <script src="{{ asset('js/modules/applicant-manager.js') }}" defer></script>
     <script>
@@ -412,6 +444,218 @@
             
             // Open the email notification drawer
             openEmailNotificationDrawer();
+        }
+
+        // Show bulk assign exam drawer
+        function showAssignExamModal() {
+            const selected = document.querySelectorAll('.applicant-checkbox:checked');
+            if (selected.length === 0) {
+                alert('Please select at least one applicant');
+                return;
+            }
+
+            const overlay = document.getElementById('assignExamDrawerOverlay');
+            const drawer = document.getElementById('assignExamDrawer');
+            
+            if (!overlay || !drawer) {
+                console.error('Bulk assign exam drawer elements not found');
+                return;
+            }
+            
+            overlay.classList.add('active');
+            drawer.classList.add('active');
+            
+            document.getElementById('bulk_selected_count').textContent = selected.length;
+            
+            // Show exam details when exam is selected
+            const examSelect = document.getElementById('bulk_exam_id');
+            if (examSelect) {
+                // Remove any existing event listeners by cloning
+                const newExamSelect = examSelect.cloneNode(true);
+                examSelect.parentNode.replaceChild(newExamSelect, examSelect);
+                
+                newExamSelect.addEventListener('change', function() {
+                    const option = this.options[this.selectedIndex];
+                    if (this.value) {
+                        document.getElementById('examDuration').textContent = option.dataset.duration || 'N/A';
+                        document.getElementById('examQuestions').textContent = option.dataset.total || 'N/A';
+                        document.getElementById('examDetails').style.display = 'block';
+                    } else {
+                        document.getElementById('examDetails').style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        function closeAssignExamDrawer() {
+            const overlay = document.getElementById('assignExamDrawerOverlay');
+            const drawer = document.getElementById('assignExamDrawer');
+            
+            if (overlay && drawer) {
+                overlay.classList.remove('active');
+                drawer.classList.remove('active');
+                
+                // Reset form
+                document.getElementById('bulk_exam_id').value = '';
+                document.getElementById('examDetails').style.display = 'none';
+            }
+        }
+
+        async function submitBulkExamAssignment() {
+            const examId = document.getElementById('bulk_exam_id').value;
+            if (!examId) {
+                alert('Please select an exam');
+                return;
+            }
+
+            const selectedCheckboxes = document.querySelectorAll('.applicant-checkbox:checked');
+            const applicantIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
+
+            if (applicantIds.length === 0) {
+                alert('No applicants selected');
+                return;
+            }
+
+            const btn = document.getElementById('bulkAssignBtn');
+            btn.disabled = true;
+            btn.textContent = 'Assigning...';
+
+            try {
+                const response = await fetch('/admin/applicants/assign-exam', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        applicant_ids: applicantIds,
+                        exam_id: examId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(data.message);
+                    closeAssignExamDrawer();
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                    btn.disabled = false;
+                    btn.textContent = 'Assign Exam';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while assigning exam');
+                btn.disabled = false;
+                btn.textContent = 'Assign Exam';
+            }
+        }
+
+        // Show single assign exam drawer
+        function showSingleAssignExamModal(applicantId) {
+            const overlay = document.getElementById('singleAssignExamDrawerOverlay');
+            const drawer = document.getElementById('singleAssignExamDrawer');
+            
+            if (!overlay || !drawer) {
+                console.error('Single assign exam drawer elements not found');
+                return;
+            }
+            
+            overlay.classList.add('active');
+            drawer.classList.add('active');
+            
+            document.getElementById('single_applicant_id').value = applicantId;
+            
+            // Find applicant name from the table
+            try {
+                const row = document.querySelector(`input.applicant-checkbox[value="${applicantId}"]`).closest('tr');
+                const nameElement = row.querySelector('.applicant-name .font-medium');
+                const name = nameElement ? nameElement.textContent.trim() : 'Applicant #' + applicantId;
+                document.getElementById('single_applicant_name').textContent = name;
+            } catch (error) {
+                console.error('Error finding applicant name:', error);
+                document.getElementById('single_applicant_name').textContent = 'Applicant #' + applicantId;
+            }
+            
+            // Show exam details when exam is selected
+            const examSelect = document.getElementById('single_exam_id');
+            if (examSelect) {
+                // Remove any existing event listeners by cloning
+                const newExamSelect = examSelect.cloneNode(true);
+                examSelect.parentNode.replaceChild(newExamSelect, examSelect);
+                
+                newExamSelect.addEventListener('change', function() {
+                    const option = this.options[this.selectedIndex];
+                    if (this.value) {
+                        document.getElementById('singleExamDuration').textContent = option.dataset.duration || 'N/A';
+                        document.getElementById('singleExamQuestions').textContent = option.dataset.total || 'N/A';
+                        document.getElementById('singleExamDetails').style.display = 'block';
+                    } else {
+                        document.getElementById('singleExamDetails').style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        function closeSingleAssignExamDrawer() {
+            const overlay = document.getElementById('singleAssignExamDrawerOverlay');
+            const drawer = document.getElementById('singleAssignExamDrawer');
+            
+            if (overlay && drawer) {
+                overlay.classList.remove('active');
+                drawer.classList.remove('active');
+                
+                // Reset form
+                document.getElementById('single_exam_id').value = '';
+                document.getElementById('singleExamDetails').style.display = 'none';
+            }
+        }
+
+        async function submitSingleExamAssignment() {
+            const applicantId = document.getElementById('single_applicant_id').value;
+            const examId = document.getElementById('single_exam_id').value;
+            
+            if (!examId) {
+                alert('Please select an exam');
+                return;
+            }
+
+            const btn = document.getElementById('singleAssignBtn');
+            btn.disabled = true;
+            btn.textContent = 'Assigning...';
+
+            try {
+                const response = await fetch(`/admin/applicants/${applicantId}/assign-exam`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        exam_id: examId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(data.message);
+                    closeSingleAssignExamDrawer();
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                    btn.disabled = false;
+                    btn.textContent = 'Assign Exam';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while assigning exam');
+                btn.disabled = false;
+                btn.textContent = 'Assign Exam';
+            }
         }
     </script>
 @endpush

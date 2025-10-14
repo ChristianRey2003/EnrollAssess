@@ -508,7 +508,10 @@
     <div class="section-header">
         <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
             <h2 class="section-title">Question Bank</h2>
-            
+            @if($currentExam)
+                <span style="font-size: 16px; color: #6b7280;">–</span>
+                <span style="font-size: 18px; font-weight: 600; color: #991b1b;">{{ $currentExam->title }}</span>
+            @endif
         </div>
         <div class="section-actions">
             @if($currentExam)
@@ -917,13 +920,13 @@
                 // Auto-populate True/False options
                 document.getElementById('optionsList').innerHTML = `
                     <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                        <input type="text" class="form-control" value="True" readonly>
+                        <input type="text" class="form-control" name="options[]" value="True" readonly>
                         <label style="display: flex; align-items: center; gap: 4px;">
                             <input type="radio" name="correct_option" value="0" required> Correct
                         </label>
                     </div>
                     <div style="display: flex; gap: 8px;">
-                        <input type="text" class="form-control" value="False" readonly>
+                        <input type="text" class="form-control" name="options[]" value="False" readonly>
                         <label style="display: flex; align-items: center; gap: 4px;">
                             <input type="radio" name="correct_option" value="1" required> Correct
                         </label>

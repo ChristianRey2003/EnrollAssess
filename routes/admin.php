@@ -65,6 +65,10 @@ Route::prefix('applicants')->name('applicants.')->middleware('role:department-he
         Route::post('/send-exam-notifications', [ApplicantController::class, 'sendExamNotifications'])->name('send-exam-notifications');
     });
     
+    // Exam Assignment Routes
+    Route::post('/assign-exam', [ApplicantController::class, 'assignExamToApplicants'])->name('assign-exam');
+    Route::post('/{applicant}/assign-exam', [ApplicantController::class, 'assignExamToApplicant'])->name('assign-exam-single');
+    
     // Export Operations
     Route::prefix('export')->name('export.')->group(function () {
         Route::get('/template', [ApplicantController::class, 'downloadTemplate'])->name('template');
