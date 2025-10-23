@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Entrance Examination - {{ config('app.name', 'EnrollAssess') }}</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
@@ -371,6 +374,19 @@
             transform: none;
         }
 
+        .btn-large {
+            padding: 16px 48px;
+            font-size: 18px;
+        }
+
+        .submit-exam-container {
+            text-align: center;
+            padding: 40px 24px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
         /* Modal styles */
         .modal-overlay {
             position: fixed;
@@ -592,7 +608,7 @@
                                                 
                                                 @if($question->question_type === 'multiple_choice' || $question->question_type === 'true_false')
                                                     <div class="question-options">
-                                                        @foreach($question->options as $optionIndex => $option)
+                                                        @foreach(($question->shuffled_options ?? $question->options) as $optionIndex => $option)
                                                             <div class="option-group" onclick="selectOption(this)">
                                                                 <input type="radio" 
                                                                        name="question_{{ $question->question_id }}" 
@@ -620,17 +636,6 @@
 
                             <div class="section-footer">
                                 <div class="section-progress" id="progress-{{ $index }}">0/{{ $section['count'] }} answered</div>
-                                <div>
-                                    @if($index === $sections->count() - 1)
-                                        <button type="button" class="btn btn-success" onclick="submitSection({{ $index }}, true)">
-                                            Complete Exam
-                                        </button>
-                                    @else
-                                        <button type="button" class="btn btn-primary" onclick="submitSection({{ $index }})">
-                                            Submit Section
-                                        </button>
-                                    @endif
-                                </div>
                             </div>
                         </div>
                     @endforeach
@@ -641,26 +646,17 @@
                         </div>
                     </div>
                 @endif
+                
+                <!-- Single Submit Button -->
+                @if(isset($sections) && $sections->count() > 0)
+                    <div class="submit-exam-container">
+                        <button type="button" class="btn btn-success btn-large" onclick="submitAllSections()">
+                            Submit Exam
+                        </button>
+                    </div>
+                @endif
             </div>
         </main>
-    </div>
-
-    <!-- Submit Section Modal -->
-    <div id="submitModal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Submit Section</h3>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to submit this section?</p>
-                <p>Once submitted, you cannot return to modify your answers.</p>
-                <div id="sectionSummary"></div>
-            </div>
-            <div class="modal-footer">
-                <button onclick="closeSubmitModal()" class="btn btn-secondary">Review Answers</button>
-                <button onclick="confirmSubmitSection()" class="btn btn-primary">Submit Section</button>
-            </div>
-        </div>
     </div>
 
     <!-- Final Submit Modal -->
@@ -682,6 +678,12 @@
     </div>
 
     <script>
+        // Prevent back button navigation
+        history.pushState(null, '', location.href);
+        window.addEventListener('popstate', function() {
+            history.pushState(null, '', location.href);
+        });
+
         let timeRemaining = {{ $timeRemaining ?? 1800 }};
         let violationCount = 0;
         let currentSubmittingSection = null;
@@ -1068,115 +1070,59 @@
             }
         });
 
-        // Section submission
-        function submitSection(sectionIndex, isFinalSubmit = false) {
-            currentSubmittingSection = sectionIndex;
-            
-            const form = document.querySelector(`.section-form[data-section-index="${sectionIndex}"]`);
-            const questions = form.querySelectorAll('.question-item');
-            const answers = {};
+        // Single submit for all sections
+        function submitAllSections() {
+            // Collect all answers from all sections
+            const allAnswers = {};
+            let totalQuestions = 0;
             let unanswered = 0;
 
-            questions.forEach(question => {
-                const radioInputs = question.querySelectorAll('input[type="radio"]');
-                const textareas = question.querySelectorAll('textarea');
-                
-                if (radioInputs.length > 0) {
-                    const checkedRadio = question.querySelector('input[type="radio"]:checked');
-                    if (checkedRadio) {
-                        const questionId = checkedRadio.name.replace('question_', '');
-                        answers[questionId] = checkedRadio.value;
-                    } else {
-                        unanswered++;
+            document.querySelectorAll('.section-form').forEach(form => {
+                const questions = form.querySelectorAll('.question-item');
+                totalQuestions += questions.length;
+
+                questions.forEach(question => {
+                    const radioInputs = question.querySelectorAll('input[type="radio"]');
+                    const textareas = question.querySelectorAll('textarea');
+                    
+                    if (radioInputs.length > 0) {
+                        const checkedRadio = question.querySelector('input[type="radio"]:checked');
+                        if (checkedRadio) {
+                            const questionId = checkedRadio.name.replace('question_', '');
+                            allAnswers[questionId] = checkedRadio.value;
+                        } else {
+                            unanswered++;
+                        }
+                    } else if (textareas.length > 0) {
+                        const textarea = textareas[0];
+                        const questionId = textarea.dataset.questionId;
+                        if (textarea.value.trim()) {
+                            allAnswers[questionId] = textarea.value.trim();
+                        } else {
+                            unanswered++;
+                        }
                     }
-                } else if (textareas.length > 0) {
-                    const textarea = textareas[0];
-                    const questionId = textarea.dataset.questionId;
-                    if (textarea.value.trim()) {
-                        answers[questionId] = textarea.value.trim();
-                    } else {
-                        unanswered++;
-                    }
-                }
+                });
             });
 
             if (unanswered > 0) {
-                showNotification(`Please answer all questions in this section.\n${unanswered} question(s) remaining.`, 'error');
+                showNotification(`Please answer all questions before submitting.\n${unanswered} question(s) remaining.`, 'error');
                 return;
             }
 
-            window.tempSectionAnswers = answers;
-            
-            if (isFinalSubmit) {
-                document.getElementById('finalSubmitModal').style.display = 'flex';
-            } else {
-                const sectionType = form.closest('.exam-section').dataset.sectionType;
-                const summary = `${Object.keys(answers).length} question(s) answered in ${sectionType.replace('_', ' ')} section.`;
-                document.getElementById('sectionSummary').innerHTML = `<p>${summary}</p>`;
-                document.getElementById('submitModal').style.display = 'flex';
-            }
-        }
-
-        function closeSubmitModal() {
-            document.getElementById('submitModal').style.display = 'none';
-            currentSubmittingSection = null;
+            // Store answers globally and show confirmation modal
+            window.allExamAnswers = allAnswers;
+            document.getElementById('finalSubmitModal').style.display = 'flex';
         }
 
         function closeFinalSubmitModal() {
             document.getElementById('finalSubmitModal').style.display = 'none';
-            currentSubmittingSection = null;
-        }
-
-        function confirmSubmitSection() {
-            if (currentSubmittingSection === null) return;
-
-            const sectionElement = document.querySelector(`#section-${currentSubmittingSection}`);
-            const sectionType = sectionElement.dataset.sectionType;
-
-            fetch('{{ route('exam.submit-section') }}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    section_type: sectionType,
-                    answers: window.tempSectionAnswers
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    sectionElement.classList.add('completed');
-                    const statusElement = sectionElement.querySelector('.section-status');
-                    const text = statusElement.textContent.split('|')[0].trim();
-                    statusElement.textContent = text + ' | Completed';
-
-                    completedSections.push(sectionType);
-                    Object.assign(sectionAnswers, window.tempSectionAnswers);
-
-                    closeSubmitModal();
-                    
-                    const nextSection = document.querySelector(`#section-${currentSubmittingSection + 1}`);
-                    if (nextSection) {
-                        nextSection.scrollIntoView({ behavior: 'smooth' });
-                    }
-                } else {
-                    showNotification('Failed to submit section: ' + data.message, 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error submitting section:', error);
-                showNotification('Failed to submit section. Please try again.', 'error');
-            });
         }
 
         let isSubmittingExam = false;
 
         function confirmFinalSubmit() {
             isSubmittingExam = true; // Disable beforeunload warning
-            Object.assign(sectionAnswers, window.tempSectionAnswers);
             
             fetch('{{ route('exam.complete') }}', {
                 method: 'POST',
@@ -1187,7 +1133,7 @@
                 },
                 body: JSON.stringify({
                     applicant_id: {{ $examSession['applicant_id'] ?? ($applicant->applicant_id ?? 1) }},
-                    answers: sectionAnswers,
+                    answers: window.allExamAnswers || {},
                     exam_session_id: 'session_' + Date.now()
                 })
             })
@@ -1212,6 +1158,29 @@
             isSubmittingExam = true; // Disable beforeunload warning
             showNotification(`${reason}! Automatically submitting your exam...`, 'error');
             
+            // Collect all current answers
+            const allAnswers = {};
+            document.querySelectorAll('.section-form').forEach(form => {
+                form.querySelectorAll('.question-item').forEach(question => {
+                    const radioInputs = question.querySelectorAll('input[type="radio"]');
+                    const textareas = question.querySelectorAll('textarea');
+                    
+                    if (radioInputs.length > 0) {
+                        const checkedRadio = question.querySelector('input[type="radio"]:checked');
+                        if (checkedRadio) {
+                            const questionId = checkedRadio.name.replace('question_', '');
+                            allAnswers[questionId] = checkedRadio.value;
+                        }
+                    } else if (textareas.length > 0) {
+                        const textarea = textareas[0];
+                        const questionId = textarea.dataset.questionId;
+                        if (textarea.value.trim()) {
+                            allAnswers[questionId] = textarea.value.trim();
+                        }
+                    }
+                });
+            });
+            
             fetch('{{ route('exam.complete') }}', {
                 method: 'POST',
                 headers: {
@@ -1221,7 +1190,7 @@
                 },
                 body: JSON.stringify({
                     applicant_id: {{ $examSession['applicant_id'] ?? ($applicant->applicant_id ?? 1) }},
-                    answers: sectionAnswers,
+                    answers: allAnswers,
                     exam_session_id: 'session_' + Date.now(),
                     auto_submitted: true,
                     auto_submit_reason: reason

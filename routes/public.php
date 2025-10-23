@@ -17,11 +17,11 @@ Route::get('/', function () {
     return redirect()->route('applicant.login');
 });
 
-// Exam Interface - Sectioned Exam
-Route::post('/exam/start', [App\Http\Controllers\ExamController::class, 'startExam'])->name('exam.start');
-Route::get('/exam', [App\Http\Controllers\ExamController::class, 'getExamInterface'])->name('exam.interface');
-Route::post('/exam/submit-section', [App\Http\Controllers\ExamController::class, 'submitSection'])->name('exam.submit-section');
-Route::post('/exam/complete', [App\Http\Controllers\ExamSubmissionController::class, 'completeExam'])->name('exam.complete');
+// Exam Interface - Sectioned Exam (with no-cache middleware)
+Route::post('/exam/start', [App\Http\Controllers\ExamController::class, 'startExam'])->name('exam.start')->middleware('no.cache');
+Route::get('/exam', [App\Http\Controllers\ExamController::class, 'getExamInterface'])->name('exam.interface')->middleware('no.cache');
+Route::post('/exam/submit-section', [App\Http\Controllers\ExamController::class, 'submitSection'])->name('exam.submit-section')->middleware('no.cache');
+Route::post('/exam/complete', [App\Http\Controllers\ExamSubmissionController::class, 'completeExam'])->name('exam.complete')->middleware('no.cache');
 
 // Legacy routes for backward compatibility
 Route::post('/exam/submit-answer', function () {
@@ -29,9 +29,7 @@ Route::post('/exam/submit-answer', function () {
 })->name('exam.submit-answer');
 
 // Exam Results
-Route::get('/exam/results', function () {
-    return view('exam.results');
-})->name('exam.results');
+Route::get('/exam/results', [App\Http\Controllers\ExamResultsController::class, 'show'])->name('exam.results');
 
 // Pre-Exam Requirements (replaces old privacy consent)
 Route::get('/exam/pre-requirements', function (Illuminate\Http\Request $request) {

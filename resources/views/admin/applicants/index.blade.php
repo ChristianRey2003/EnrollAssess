@@ -270,31 +270,26 @@
                                         </div>
                                         <!-- Floating Actions -->
                                         <div id="actions-{{ $applicant->applicant_id }}" class="floating-actions" style="display: none;">
-                                            <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}" 
-                                               class="action-btn action-btn-view" 
-                                               title="View details">
-                                                View
-                                            </a>
-                                            <a href="{{ route('admin.applicants.edit', $applicant->applicant_id) }}" 
-                                               class="action-btn action-btn-edit" 
+                                            <a href="{{ route('admin.applicants.edit', $applicant->applicant_id) }}"
+                                               class="action-btn action-btn-edit"
                                                title="Edit applicant">
                                                 Edit
                                             </a>
                                             @if($applicant->accessCode)
-                                                <button onclick="showSingleAssignExamModal({{ $applicant->applicant_id }})" 
-                                                        class="action-btn action-btn-assign" 
+                                                <button onclick="showSingleAssignExamModal({{ $applicant->applicant_id }})"
+                                                        class="action-btn action-btn-assign"
                                                         title="Assign exam{{ $applicant->accessCode && $applicant->accessCode->exam_id ? ' (' . $applicant->accessCode->exam->title . ')' : '' }}"
                                                         style="background: #8b5cf6;">
                                                     Assign Exam
                                                 </button>
                                             @endif
-                                            <button onclick="sendIndividualNotification({{ $applicant->applicant_id }})" 
-                                                    class="action-btn action-btn-notify" 
+                                            <button onclick="sendIndividualNotification({{ $applicant->applicant_id }})"
+                                                    class="action-btn action-btn-notify"
                                                     title="Send exam notification">
                                                 Email
                                             </button>
-                                            <button onclick="deleteApplicant({{ $applicant->applicant_id }})" 
-                                                    class="action-btn action-btn-delete" 
+                                            <button onclick="deleteApplicant({{ $applicant->applicant_id }})"
+                                                    class="action-btn action-btn-delete"
                                                     title="Delete applicant">
                                                 Delete
                                             </button>

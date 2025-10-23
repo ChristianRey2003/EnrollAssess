@@ -136,6 +136,9 @@ Route::prefix('interviews')->name('interviews.')->middleware('role:department-he
     // Admin Conduct Interview Routes
     Route::get('/{interview}/conduct', [InterviewController::class, 'adminConductForm'])->name('conduct');
     Route::post('/{interview}/conduct', [InterviewController::class, 'adminConductSubmit'])->name('conduct.submit');
+    
+    // Interview Detail Page
+    Route::get('/{interview_id}', [InterviewController::class, 'show'])->name('show');
 });
 
 // Reports
@@ -164,9 +167,12 @@ Route::get('/department-head-dashboard', [DepartmentHeadController::class, 'dash
 Route::get('/interview-results', [DepartmentHeadController::class, 'interviewResults'])
     ->middleware('role:department-head,administrator')
     ->name('interview-results');
-Route::get('/interview-detail/{interview}', [DepartmentHeadController::class, 'viewInterviewDetail'])
-    ->middleware('role:department-head,administrator')
-    ->name('interview-detail');
+
+// Legacy interview detail route - 301 redirect to new route
+Route::get('/interview-detail/{interview}', function ($interviewId) {
+    return redirect()->route('admin.interviews.show', $interviewId, 301);
+})->middleware('role:department-head,administrator')->name('interview-detail');
+
 Route::post('/bulk-admission-decision', [DepartmentHeadController::class, 'bulkAdmissionDecision'])
     ->middleware('role:department-head,administrator')
     ->name('bulk-admission-decision');

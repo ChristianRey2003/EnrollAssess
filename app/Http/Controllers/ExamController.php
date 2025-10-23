@@ -516,12 +516,27 @@ class ExamController extends Controller
             // Check if applicant is in session, if so redirect to start exam
             $applicantId = $request->session()->get('applicant_id');
             if ($applicantId) {
+                // Check if applicant has already completed the exam
+                $applicant = Applicant::find($applicantId);
+                if ($applicant && $applicant->exam_completed_at) {
+                    return redirect()->route('exam.results')
+                        ->with('info', 'You have already completed the exam.');
+                }
+                
                 return redirect()->route('exam.pre-requirements')
                     ->with('info', 'Please complete the pre-requirements to start your exam.');
             }
             
             return redirect()->route('applicant.login')
                 ->with('error', 'Please verify your access code first.');
+        }
+        
+        // Additional check: if exam session exists but applicant has completed exam
+        $applicant = Applicant::find($examSession['applicant_id']);
+        if ($applicant && $applicant->exam_completed_at) {
+            Session::forget('exam_session');
+            return redirect()->route('exam.results')
+                ->with('info', 'You have already completed the exam.');
         }
 
         try {
@@ -542,11 +557,28 @@ class ExamController extends Controller
                 $questions = $selectionService->selectQuestionsForApplicant($exam, $applicant->applicant_id);
             }
             
-            // Group questions by type and shuffle options for MCQs
+            // Group questions by type and shuffle options for MCQs and T/F
             $questionsByType = collect();
             foreach ($questions as $question) {
                 if ($question->isMultipleChoice()) {
                     $question->shuffled_options = $selectionService->getShuffledOptions($question, $applicant->applicant_id);
+                } elseif ($question->isTrueFalse()) {
+                    // Generate True/False options dynamically
+                    $trueOption = (object)[
+                        'option_id' => 'true_' . $question->question_id,
+                        'option_text' => 'True',
+                        'is_correct' => $question->correct_answer === true
+                    ];
+                    $falseOption = (object)[
+                        'option_id' => 'false_' . $question->question_id,
+                        'option_text' => 'False',
+                        'is_correct' => $question->correct_answer === false
+                    ];
+                    
+                    // Shuffle True/False order based on applicant ID
+                    $seed = crc32($applicant->applicant_id . '_' . $question->question_id);
+                    $options = ($seed % 2 === 0) ? [$trueOption, $falseOption] : [$falseOption, $trueOption];
+                    $question->shuffled_options = collect($options);
                 }
                 
                 $type = $question->question_type;

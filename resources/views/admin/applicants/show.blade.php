@@ -800,9 +800,15 @@
                         <button onclick="emailApplicant()" class="btn-modern btn-primary-modern">
                             Send Email
                         </button>
-                        <button onclick="scheduleInterview()" class="btn-modern btn-secondary-modern" style="color: var(--maroon-primary); background: var(--light-gray); border: 1px solid var(--border-gray);">
-                            Schedule Interview
-                        </button>
+                        @if($applicant->latestInterview)
+                            <a href="{{ route('admin.interviews.show', $applicant->latestInterview->interview_id) }}" class="btn-modern btn-primary-modern" style="text-align: center; text-decoration: none;">
+                                View Interview
+                            </a>
+                        @else
+                            <button onclick="scheduleInterview()" class="btn-modern btn-secondary-modern" style="color: var(--maroon-primary); background: var(--light-gray); border: 1px solid var(--border-gray);">
+                                Schedule Interview
+                            </button>
+                        @endif
                         <button onclick="printProfile()" class="btn-modern btn-secondary-modern" style="color: var(--maroon-primary); background: var(--light-gray); border: 1px solid var(--border-gray);">
                             Print Profile
                         </button>

@@ -80,7 +80,7 @@ class InstructorController extends Controller
     {
         $instructor = Auth::user();
         
-        $applicant = Applicant::findOrFail($applicantId);
+        $applicant = Applicant::with(['latestInterview'])->findOrFail($applicantId);
         
         // Check if instructor is assigned to this applicant via assigned_instructor_id
         if ($applicant->assigned_instructor_id !== $instructor->user_id) {
@@ -98,130 +98,102 @@ class InstructorController extends Controller
             ]
         );
 
-        return view('instructor.interview-form', compact('applicant', 'interview'));
+        // If interview is completed, we're in edit mode
+        $isEditMode = $interview->status === 'completed';
+
+        return view('instructor.interview-form', compact('applicant', 'interview', 'isEditMode'));
     }
 
     /**
-     * Submit interview evaluation with enhanced rubrics
+     * Submit interview evaluation with BSIT rubric
      */
     public function submitInterview(Request $request, $applicantId)
     {
         $instructor = Auth::user();
         
         $request->validate([
-            // Technical Skills (40 points max)
-            'technical_programming' => 'required|numeric|min:0|max:10',
-            'technical_problem_solving' => 'required|numeric|min:0|max:10',
-            'technical_algorithms' => 'required|numeric|min:0|max:10',
-            'technical_system_design' => 'required|numeric|min:0|max:10',
-            
-            // Communication Skills (30 points max)
-            'communication_clarity' => 'required|numeric|min:0|max:10',
-            'communication_listening' => 'required|numeric|min:0|max:10',
-            'communication_confidence' => 'required|numeric|min:0|max:10',
-            
-            // Analytical Thinking (30 points max)
-            'analytical_critical_thinking' => 'required|numeric|min:0|max:10',
-            'analytical_creativity' => 'required|numeric|min:0|max:10',
-            'analytical_attention_detail' => 'required|numeric|min:0|max:10',
+            // BSIT Rubric Criteria (8 criteria, 10 points each)
+            'communication_skills' => 'required|integer|min:0|max:10',
+            'motivation_interest' => 'required|integer|min:0|max:10',
+            'problem_solving_attitude' => 'required|integer|min:0|max:10',
+            'program_understanding' => 'required|integer|min:0|max:10',
+            'personality_attitude' => 'required|integer|min:0|max:10',
+            'it_background' => 'required|integer|min:0|max:10',
+            'willingness_to_learn' => 'required|integer|min:0|max:10',
+            'overall_impression' => 'required|integer|min:0|max:10',
             
             // Overall Assessment
-            'overall_rating' => 'required|in:excellent,very_good,good,satisfactory,needs_improvement',
             'recommendation' => 'required|in:highly_recommended,recommended,conditional,not_recommended',
-            'strengths' => 'required|string|max:1000',
-            'areas_improvement' => 'required|string|max:1000',
-            'interview_notes' => 'nullable|string|max:2000',
+            'final_comments' => 'required|string|max:5000',
         ]);
 
         $interview = Interview::where('applicant_id', $applicantId)
                              ->where('interviewer_id', $instructor->user_id)
                              ->firstOrFail();
 
-        // Calculate scores
-        $technicalScore = $request->technical_programming + 
-                         $request->technical_problem_solving + 
-                         $request->technical_algorithms + 
-                         $request->technical_system_design;
+        // Calculate overall score (sum of 8 criteria = 80 points + recommendation score = 100 total)
+        $criteriaScore = $request->communication_skills + 
+                        $request->motivation_interest + 
+                        $request->problem_solving_attitude + 
+                        $request->program_understanding + 
+                        $request->personality_attitude + 
+                        $request->it_background + 
+                        $request->willingness_to_learn + 
+                        $request->overall_impression;
         
-        $communicationScore = $request->communication_clarity + 
-                             $request->communication_listening + 
-                             $request->communication_confidence;
+        // Add recommendation score
+        $recommendationScore = match($request->recommendation) {
+            'highly_recommended' => 20,
+            'recommended' => 10,
+            'conditional' => 5,
+            'not_recommended' => 0,
+            default => 0
+        };
         
-        $analyticalScore = $request->analytical_critical_thinking + 
-                          $request->analytical_creativity + 
-                          $request->analytical_attention_detail;
-        
-        $totalScore = $technicalScore + $communicationScore + $analyticalScore;
-        $percentage = round(($totalScore / 100) * 100, 2);
+        $totalScore = $criteriaScore + $recommendationScore;
 
-        // Build update payload with only existing columns to avoid SQL errors
-        $updateData = [
-            // Individual rubric scores
-            'rating_technical' => $technicalScore,
-            'rating_communication' => $communicationScore,
-            'rating_problem_solving' => $analyticalScore,
-            'overall_score' => $percentage,
+        // Update interview record with BSIT rubric scores
+        $interview->update([
+            // BSIT Rubric Criteria
+            'communication_skills' => $request->communication_skills,
+            'motivation_interest' => $request->motivation_interest,
+            'problem_solving_attitude' => $request->problem_solving_attitude,
+            'program_understanding' => $request->program_understanding,
+            'personality_attitude' => $request->personality_attitude,
+            'it_background' => $request->it_background,
+            'willingness_to_learn' => $request->willingness_to_learn,
+            'overall_impression' => $request->overall_impression,
+            
+            // Overall Assessment
+            'overall_score' => $totalScore,
             'recommendation' => $request->recommendation,
-            'notes' => $request->interview_notes,
-            'schedule_date' => now(),
+            
+            // Written Feedback
+            'final_comments' => $request->final_comments,
+            
+            // Interview Metadata
+            'schedule_date' => $interview->schedule_date ?? now(),
             'status' => 'completed',
-        ];
+        ]);
 
-        // Conditionally include optional columns if they exist
-        if (Schema::hasColumn('interviews', 'rubric_scores')) {
-            $updateData['rubric_scores'] = [
-                'technical' => [
-                    'programming' => $request->technical_programming,
-                    'problem_solving' => $request->technical_problem_solving,
-                    'algorithms' => $request->technical_algorithms,
-                    'system_design' => $request->technical_system_design,
-                ],
-                'communication' => [
-                    'clarity' => $request->communication_clarity,
-                    'listening' => $request->communication_listening,
-                    'confidence' => $request->communication_confidence,
-                ],
-                'analytical' => [
-                    'critical_thinking' => $request->analytical_critical_thinking,
-                    'creativity' => $request->analytical_creativity,
-                    'attention_detail' => $request->analytical_attention_detail,
-                ],
-            ];
-        }
-
-        if (Schema::hasColumn('interviews', 'overall_rating')) {
-            $updateData['overall_rating'] = $request->overall_rating;
-        }
-
-        if (Schema::hasColumn('interviews', 'strengths')) {
-            $updateData['strengths'] = $request->strengths;
-        }
-
-        if (Schema::hasColumn('interviews', 'areas_improvement')) {
-            $updateData['areas_improvement'] = $request->areas_improvement;
-        }
-
-        $interview->update($updateData);
-
-        // Update applicant status and determine admission
+        // Update applicant status and interview score
         $applicant = Applicant::findOrFail($applicantId);
         $newStatus = 'interview-completed';
         
         // Auto-determine admission based on score and recommendation
-        if ($percentage >= 75 && in_array($request->recommendation, ['highly_recommended', 'recommended'])) {
+        if ($totalScore >= 75 && in_array($request->recommendation, ['highly_recommended', 'recommended'])) {
             $newStatus = 'admitted';
-        } elseif ($percentage < 50 || $request->recommendation === 'not_recommended') {
+        } elseif ($totalScore < 50 || $request->recommendation === 'not_recommended') {
             $newStatus = 'rejected';
         }
         
         $applicant->update([
             'status' => $newStatus,
-            'final_score' => $percentage,
-            'admission_decision_date' => now(),
+            'interview_score' => $totalScore,
         ]);
 
         return redirect()->route('instructor.applicants')
-                        ->with('success', 'Interview evaluation submitted successfully! Score: ' . $percentage . '%');
+                        ->with('success', 'Interview evaluation submitted successfully! Total Score: ' . $totalScore . '/100 points');
     }
 
     /**

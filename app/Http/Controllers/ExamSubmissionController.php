@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
 
 class ExamSubmissionController extends Controller
 {
@@ -40,8 +41,20 @@ class ExamSubmissionController extends Controller
             
             $applicant = Applicant::findOrFail($applicantId);
             
-            // Calculate score (using question bank from session)
-            $scoreData = $this->calculateExamScore($answers);
+            // Get exam session to retrieve assigned question IDs
+            $examSession = Session::get('exam_session');
+            if (!$examSession || empty($examSession['question_ids'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Exam session expired or invalid. Please contact the administrator.'
+                ], 400);
+            }
+            
+            // Generate unique attempt token for this exam submission
+            $attemptToken = Str::uuid()->toString();
+            
+            // Calculate score (using only assigned questions from session)
+            $scoreData = $this->calculateExamScore($answers, $examSession['question_ids']);
             
             // Update applicant with exam results
             $applicant->update([
@@ -51,8 +64,11 @@ class ExamSubmissionController extends Controller
                 'verbal_description' => $scoreData['verbal_description']
             ]);
 
-            // Store detailed results
-            $this->storeExamResults($applicantId, $answers, $scoreData);
+            // Store detailed results (only for assigned questions) with attempt token
+            $this->storeExamResults($applicantId, $answers, $scoreData, $examSession['question_ids'], false, null, $attemptToken);
+            
+            // Store attempt token in session for results page
+            session(['exam_attempt_token' => $attemptToken]);
 
             // **MARK ACCESS CODE AS USED**
             $accessCode = $applicant->accessCode;
@@ -63,6 +79,9 @@ class ExamSubmissionController extends Controller
 
             // **AUTO-ADD TO INTERVIEW POOL**
             $this->addToInterviewPool($applicantId, $scoreData['percentage']);
+
+            // Clear exam session after successful submission
+            Session::forget('exam_session');
 
             DB::commit();
 
@@ -111,16 +130,23 @@ class ExamSubmissionController extends Controller
     }
 
     /**
-     * Calculate exam score from answers
+     * Calculate exam score from answers (only for assigned questions)
      */
-    private function calculateExamScore($answers)
+    private function calculateExamScore($answers, $assignedQuestionIds)
     {
         $totalScore = 0;
         $maxScore = 0;
         $correctAnswers = 0;
-        $totalQuestions = count($answers);
+        
+        // Filter answers to only include assigned questions
+        $assignedQuestionIds = collect($assignedQuestionIds);
+        $filteredAnswers = array_filter($answers, function($answer, $questionId) use ($assignedQuestionIds) {
+            return $assignedQuestionIds->contains($questionId);
+        }, ARRAY_FILTER_USE_BOTH);
+        
+        $totalQuestions = $assignedQuestionIds->count();
 
-        foreach ($answers as $questionId => $selectedAnswer) {
+        foreach ($filteredAnswers as $questionId => $selectedAnswer) {
             $question = Question::with('options')->find($questionId);
             
             if (!$question) {
@@ -136,8 +162,37 @@ class ExamSubmissionController extends Controller
                     $totalScore += ($question->points ?? 1) * 0.5; // 50% for answering
                     $correctAnswers++; // Count as answered
                 }
+            } elseif ($question->question_type === 'true_false') {
+                // True/False questions: accept either option IDs or synthetic values (true_*/false_*)
+                $isCorrect = false;
+
+                // Prefer option-based evaluation if option ID provided
+                $selectedOption = null;
+                if (is_scalar($selectedAnswer)) {
+                    $selectedOption = QuestionOption::where('question_id', $question->question_id)
+                        ->where('option_id', $selectedAnswer)
+                        ->first();
+                }
+
+                if ($selectedOption) {
+                    $isCorrect = (bool) $selectedOption->is_correct;
+                } else {
+                    // Fallback to synthetic value handling
+                    if (is_string($selectedAnswer)) {
+                        if (strpos($selectedAnswer, 'true_') === 0) {
+                            $isCorrect = ($question->correct_answer === true);
+                        } elseif (strpos($selectedAnswer, 'false_') === 0) {
+                            $isCorrect = ($question->correct_answer === false);
+                        }
+                    }
+                }
+
+                if ($isCorrect) {
+                    $totalScore += $question->points ?? 1;
+                    $correctAnswers++;
+                }
             } else {
-                // Multiple choice and true/false questions
+                // Multiple choice questions
                 $correctOption = $question->options->where('is_correct', true)->first();
                 
                 // Handle both option_id and old format for backward compatibility
@@ -170,11 +225,19 @@ class ExamSubmissionController extends Controller
     }
 
     /**
-     * Store detailed exam results
+     * Store detailed exam results (only for assigned questions)
      */
-    private function storeExamResults($applicantId, $answers, $scoreData, $autoSubmitted = false, $autoSubmitReason = null)
+    private function storeExamResults($applicantId, $answers, $scoreData, $assignedQuestionIds, $autoSubmitted = false, $autoSubmitReason = null, $attemptToken = null)
     {
+        // Filter answers to only include assigned questions
+        $assignedQuestionIds = collect($assignedQuestionIds);
+        
         foreach ($answers as $questionId => $selectedAnswer) {
+            // Skip if question is not in assigned list
+            if (!$assignedQuestionIds->contains($questionId)) {
+                continue;
+            }
+            
             $question = Question::with('options')->find($questionId);
             
             if (!$question) {
@@ -193,9 +256,51 @@ class ExamSubmissionController extends Controller
                     'is_correct' => $isCorrect,
                     'points_earned' => $pointsEarned,
                     'answered_at' => now(),
+                    'attempt_token' => $attemptToken,
+                ]);
+            } elseif ($question->question_type === 'true_false') {
+                // Handle true/false questions: accept both option IDs and synthetic values
+                $isCorrect = false;
+                $answerText = 'No answer';
+                $selectedOptionId = null;
+
+                // Try option-based selection first
+                $selectedOption = null;
+                if (is_scalar($selectedAnswer)) {
+                    $selectedOption = QuestionOption::where('question_id', $question->question_id)
+                        ->where('option_id', $selectedAnswer)
+                        ->first();
+                }
+
+                if ($selectedOption) {
+                    $selectedOptionId = $selectedOption->option_id;
+                    $answerText = in_array(strtolower($selectedOption->option_text), ['true', 't', 'yes']) ? 'True' : 'False';
+                    $isCorrect = (bool) $selectedOption->is_correct;
+                } else {
+                    // Fallback to synthetic pattern
+                    if (is_string($selectedAnswer)) {
+                        if (strpos($selectedAnswer, 'true_') === 0) {
+                            $answerText = 'True';
+                            $isCorrect = ($question->correct_answer === true);
+                        } elseif (strpos($selectedAnswer, 'false_') === 0) {
+                            $answerText = 'False';
+                            $isCorrect = ($question->correct_answer === false);
+                        }
+                    }
+                }
+
+                Result::create([
+                    'applicant_id' => $applicantId,
+                    'question_id' => $questionId,
+                    'selected_option_id' => $selectedOptionId, // store option if provided
+                    'answer_text' => $answerText,
+                    'is_correct' => $isCorrect,
+                    'points_earned' => $isCorrect ? ($question->points ?? 1) : 0,
+                    'answered_at' => now(),
+                    'attempt_token' => $attemptToken,
                 ]);
             } else {
-                // Handle multiple choice and true/false questions
+                // Handle multiple choice questions
                 $correctOption = $question->options->where('is_correct', true)->first();
                 $selectedOption = QuestionOption::find($selectedAnswer);
                 
@@ -214,6 +319,7 @@ class ExamSubmissionController extends Controller
                     'is_correct' => $isCorrect,
                     'points_earned' => $isCorrect ? ($question->points ?? 1) : 0,
                     'answered_at' => now(),
+                    'attempt_token' => $attemptToken,
                 ]);
             }
         }

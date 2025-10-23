@@ -16,25 +16,44 @@ class Interview extends Model
         'interviewer_id',
         'schedule_date',
         'status',
-        'rating_communication',
-        'rating_technical',
-        'rating_problem_solving',
-        'notes',
+        // BSIT Rubric Criteria (8 criteria, 10 points each)
+        'communication_skills',
+        'motivation_interest',
+        'problem_solving_attitude',
+        'program_understanding',
+        'personality_attitude',
+        'it_background',
+        'willingness_to_learn',
+        'overall_impression',
+        // Scores and Assessment
         'overall_score',
+        'overall_rating',
         'recommendation',
-        'rubric_scores',
+        // Written Feedback
         'strengths',
         'areas_improvement',
-        'overall_rating',
+        'interview_notes',
+        'evaluator_notes',
+        'final_comments',
+        // Pool Management
+        'claimed_by',
+        'claimed_at',
     ];
 
     protected $casts = [
         'schedule_date' => 'datetime',
-        'rating_communication' => 'integer',
-        'rating_technical' => 'integer',
-        'rating_problem_solving' => 'integer',
+        'claimed_at' => 'datetime',
+        // BSIT Rubric Criteria
+        'communication_skills' => 'integer',
+        'motivation_interest' => 'integer',
+        'problem_solving_attitude' => 'integer',
+        'program_understanding' => 'integer',
+        'personality_attitude' => 'integer',
+        'it_background' => 'integer',
+        'willingness_to_learn' => 'integer',
+        'overall_impression' => 'integer',
+        // Overall Score
         'overall_score' => 'decimal:2',
-        'rubric_scores' => 'array',
     ];
 
     /**
@@ -55,6 +74,14 @@ class Interview extends Model
     public function interviewer()
     {
         return $this->belongsTo(User::class, 'interviewer_id', 'user_id');
+    }
+
+    /**
+     * Get the user who claimed this interview.
+     */
+    public function claimedBy()
+    {
+        return $this->belongsTo(User::class, 'claimed_by', 'user_id');
     }
 
     /**
@@ -90,34 +117,89 @@ class Interview extends Model
     }
 
     /**
-     * Calculate overall score from individual ratings
+     * Scope to get claimed interviews
+     */
+    public function scopeClaimed($query)
+    {
+        return $query->whereNotNull('claimed_by');
+    }
+
+    /**
+     * Scope to get available interviews
+     */
+    public function scopeAvailable($query)
+    {
+        return $query->whereNull('claimed_by');
+    }
+
+    /**
+     * Calculate overall score from BSIT rubric criteria (sum of 8 criteria = 80 points)
+     * Plus recommendation score (0-20 points) = Total 100 points
      */
     public function calculateOverallScore()
     {
-        $ratings = [
-            $this->rating_communication,
-            $this->rating_technical,
-            $this->rating_problem_solving
+        $criteria = [
+            $this->communication_skills,
+            $this->motivation_interest,
+            $this->problem_solving_attitude,
+            $this->program_understanding,
+            $this->personality_attitude,
+            $this->it_background,
+            $this->willingness_to_learn,
+            $this->overall_impression
         ];
 
-        // Filter out null ratings
-        $validRatings = array_filter($ratings, function($rating) {
-            return $rating !== null;
+        // Filter out null values
+        $validCriteria = array_filter($criteria, function($score) {
+            return $score !== null;
         });
 
-        if (empty($validRatings)) {
+        if (empty($validCriteria)) {
             return null;
         }
 
-        $average = array_sum($validRatings) / count($validRatings);
+        // Sum of all 8 criteria (max 80 points)
+        $criteriaScore = array_sum($validCriteria);
         
-        $this->update(['overall_score' => round($average, 2)]);
+        // Add recommendation score
+        $recommendationScore = $this->getRecommendationScore();
+        
+        $totalScore = $criteriaScore + $recommendationScore;
+        
+        $this->update(['overall_score' => $totalScore]);
         
         return $this->overall_score;
     }
 
     /**
-     * Auto-generate recommendation based on overall score
+     * Get recommendation score based on recommendation level
+     */
+    public function getRecommendationScore()
+    {
+        switch ($this->recommendation) {
+            case 'highly_recommended':
+                return 20;
+            case 'recommended':
+                return 10;
+            case 'conditional':
+                return 5;
+            case 'not_recommended':
+                return 0;
+            default:
+                return 0;
+        }
+    }
+
+    /**
+     * Check if interview score is passing (>= 50 out of 100)
+     */
+    public function isPassing()
+    {
+        return $this->overall_score !== null && $this->overall_score >= 50;
+    }
+
+    /**
+     * Auto-generate recommendation based on overall score (100 point scale)
      */
     public function generateRecommendation()
     {
@@ -125,12 +207,14 @@ class Interview extends Model
             return null;
         }
 
-        if ($this->overall_score >= 80) {
-            return 'recommended';
+        if ($this->overall_score >= 85) {
+            return 'highly_recommended';
         } elseif ($this->overall_score >= 70) {
-            return 'waitlisted';
+            return 'recommended';
+        } elseif ($this->overall_score >= 50) {
+            return 'conditional';
         } else {
-            return 'not-recommended';
+            return 'not_recommended';
         }
     }
 
@@ -160,6 +244,18 @@ class Interview extends Model
         return $this->status === 'scheduled' && 
                $this->schedule_date && 
                $this->schedule_date->isPast();
+    }
+
+    /**
+     * Check if interview has been claimed for too long
+     */
+    public function isClaimedTooLong($hours = 1)
+    {
+        if (!$this->claimed_at) {
+            return false;
+        }
+        
+        return $this->claimed_at->lt(now()->subHours($hours));
     }
 
     /**

@@ -17,7 +17,7 @@
         margin: 0 auto;
     }
 
-    .sidebar {
+    .applicant-sidebar {
         display: flex;
         flex-direction: column;
         gap: 16px;
@@ -172,13 +172,13 @@
     }
 
     .score-value {
-        font-size: 1.25rem;
+        font-size: 1.4rem;
         font-weight: 700;
         color: var(--maroon-primary, #800020);
     }
 
-    .score-breakdown {
-        font-size: 0.75rem;
+    .score-max {
+        font-size: 0.9rem;
         color: #999;
     }
 
@@ -195,9 +195,6 @@
     }
 
     .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
         margin-bottom: 14px;
         padding-bottom: 10px;
         border-bottom: 1px solid #E5E5E5;
@@ -210,36 +207,33 @@
         color: #333;
     }
 
-    .section-weight {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: var(--maroon-primary, #800020);
-        background: #F5F5F5;
-        padding: 3px 10px;
-        border-radius: 3px;
-    }
-
-    .form-grid {
+    .criteria-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 14px;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
     }
 
-    .form-group {
-        margin-bottom: 0;
+    .criteria-item {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
     }
 
-    .form-label {
+    .criteria-label {
         display: block;
-        margin-bottom: 6px;
         font-weight: 500;
         color: #444;
         font-size: 0.85rem;
     }
 
+    .criteria-description {
+        font-size: 0.75rem;
+        color: #666;
+        margin-bottom: 4px;
+    }
+
     .form-select,
-    .form-textarea,
-    .form-input {
+    .form-textarea {
         width: 100%;
         padding: 9px 12px;
         border: 1px solid #D5D5D5;
@@ -250,8 +244,7 @@
     }
 
     .form-select:focus,
-    .form-textarea:focus,
-    .form-input:focus {
+    .form-textarea:focus {
         outline: none;
         border-color: var(--maroon-primary, #800020);
         box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.08);
@@ -259,7 +252,7 @@
 
     .form-textarea {
         resize: vertical;
-        min-height: 90px;
+        min-height: 100px;
         line-height: 1.5;
     }
 
@@ -273,9 +266,9 @@
     }
 
     .btn {
-        padding: 10px 20px;
+        padding: 11px 22px;
         border-radius: 4px;
-        font-size: 0.85rem;
+        font-size: 0.9rem;
         font-weight: 500;
         border: none;
         cursor: pointer;
@@ -309,7 +302,7 @@
             grid-template-columns: 1fr;
         }
         
-        .sidebar {
+        .applicant-sidebar {
             order: 1;
         }
         
@@ -319,7 +312,7 @@
     }
 
     @media (max-width: 768px) {
-        .form-grid {
+        .criteria-grid {
             grid-template-columns: 1fr;
         }
         
@@ -337,8 +330,8 @@
 
 @section('content')
 <div class="interview-layout">
-    <!-- Sidebar -->
-    <div class="sidebar">
+    <!-- Applicant Sidebar -->
+    <div class="applicant-sidebar">
         <!-- Applicant Information -->
         <div class="info-card">
             <div class="card-header">
@@ -371,14 +364,11 @@
                     <div class="info-row">
                         <span class="info-label">Exam Score</span>
                         <span class="info-value">
-                            @if($applicant->score)
-                                @php
-                                    $scoreClass = $applicant->score >= 75 ? 'good' : ($applicant->score >= 60 ? 'warning' : 'poor');
-                                @endphp
-                                <span class="exam-score-badge {{ $scoreClass }}">{{ number_format($applicant->score, 1) }}%</span>
-                            @else
-                                <span class="exam-score-badge poor">N/A</span>
-                            @endif
+                            @php
+                                $examScore = $applicant->enrollassess_score ?? $applicant->score ?? 0;
+                                $scoreClass = $examScore >= 75 ? 'good' : ($examScore >= 60 ? 'warning' : 'poor');
+                            @endphp
+                            <span class="exam-score-badge {{ $scoreClass }}">{{ number_format($examScore, 1) }}%</span>
                         </span>
                     </div>
                 </div>
@@ -386,194 +376,147 @@
         </div>
 
         <!-- Grading Guide -->
-        @include('components.interview-grading-guide')
+        @include('components.interview-grading-guide-bsit')
     </div>
 
     <!-- Evaluation Form -->
     <div class="evaluation-form">
         <div class="form-header">
-            <h3>Interview Evaluation Form</h3>
+            <h3>BSIT Admission Interview Evaluation</h3>
             <div class="score-display" id="liveScore">
                 <div>
                     <div class="score-label">Total Score</div>
-                    <div class="score-breakdown" id="scoreBreakdown">T: 0 | C: 0 | A: 0</div>
                 </div>
-                <div class="score-value" id="totalScore">0</div>
+                <div class="score-value" id="totalScore">{{ old('_total_score', $interview->overall_score ?? 0) }}</div>
+                <span class="score-max">/100</span>
             </div>
         </div>
         <div class="form-content">
             <form method="POST" action="{{ route('instructor.interview.submit', $applicant->applicant_id) }}" id="evaluationForm">
                 @csrf
                 
-                <!-- Technical Skills Section -->
+                <!-- BSIT Rubric Criteria -->
                 <div class="form-section">
                     <div class="section-header">
-                        <h4 class="section-title">Technical Skills</h4>
-                        <span class="section-weight">40 points</span>
+                        <h4 class="section-title">Interview Evaluation Criteria (10 points each)</h4>
                     </div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Programming Knowledge</label>
-                            <select name="technical_programming" class="form-select score-input" data-category="technical" required>
-                                <option value="">Select (0-10)</option>
+                    <div class="criteria-grid">
+                        <div class="criteria-item">
+                            <label class="criteria-label">Communication Skills</label>
+                            <p class="criteria-description">Clarity, confidence, and fluency with proper grammar</p>
+                            <select name="communication_skills" class="form-select score-input" required>
+                                <option value="">Select Score (0-10)</option>
                                 @for($i = 0; $i <= 10; $i++)
-                                    <option value="{{ $i }}">{{ $i }}</option>
+                                    <option value="{{ $i }}" {{ old('communication_skills', $interview->communication_skills) == $i ? 'selected' : '' }}>{{ $i }} - {{ $i >= 9 ? 'Excellent' : ($i >= 7 ? 'Good' : ($i >= 5 ? 'Fair' : ($i >= 3 ? 'Needs Improvement' : 'Insufficient'))) }}</option>
                                 @endfor
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Problem Solving</label>
-                            <select name="technical_problem_solving" class="form-select score-input" data-category="technical" required>
-                                <option value="">Select (0-10)</option>
+
+                        <div class="criteria-item">
+                            <label class="criteria-label">Motivation and Interest</label>
+                            <p class="criteria-description">Clear and relevant goals in pursuing IT</p>
+                            <select name="motivation_interest" class="form-select score-input" required>
+                                <option value="">Select Score (0-10)</option>
                                 @for($i = 0; $i <= 10; $i++)
-                                    <option value="{{ $i }}">{{ $i }}</option>
+                                    <option value="{{ $i }}" {{ old('motivation_interest', $interview->motivation_interest) == $i ? 'selected' : '' }}>{{ $i }} - {{ $i >= 9 ? 'Excellent' : ($i >= 7 ? 'Good' : ($i >= 5 ? 'Fair' : ($i >= 3 ? 'Needs Improvement' : 'Insufficient'))) }}</option>
                                 @endfor
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Algorithm Understanding</label>
-                            <select name="technical_algorithms" class="form-select score-input" data-category="technical" required>
-                                <option value="">Select (0-10)</option>
+
+                        <div class="criteria-item">
+                            <label class="criteria-label">Problem-solving and Critical Thinking</label>
+                            <p class="criteria-description">Demonstrates critical thinking and problem-solving attitude</p>
+                            <select name="problem_solving_attitude" class="form-select score-input" required>
+                                <option value="">Select Score (0-10)</option>
                                 @for($i = 0; $i <= 10; $i++)
-                                    <option value="{{ $i }}">{{ $i }}</option>
+                                    <option value="{{ $i }}" {{ old('problem_solving_attitude', $interview->problem_solving_attitude) == $i ? 'selected' : '' }}>{{ $i }} - {{ $i >= 9 ? 'Excellent' : ($i >= 7 ? 'Good' : ($i >= 5 ? 'Fair' : ($i >= 3 ? 'Needs Improvement' : 'Insufficient'))) }}</option>
                                 @endfor
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">System Design</label>
-                            <select name="technical_system_design" class="form-select score-input" data-category="technical" required>
-                                <option value="">Select (0-10)</option>
+
+                        <div class="criteria-item">
+                            <label class="criteria-label">Understanding of the Program</label>
+                            <p class="criteria-description">Knowledge of BSIT curriculum and program content</p>
+                            <select name="program_understanding" class="form-select score-input" required>
+                                <option value="">Select Score (0-10)</option>
                                 @for($i = 0; $i <= 10; $i++)
-                                    <option value="{{ $i }}">{{ $i }}</option>
+                                    <option value="{{ $i }}" {{ old('program_understanding', $interview->program_understanding) == $i ? 'selected' : '' }}>{{ $i }} - {{ $i >= 9 ? 'Excellent' : ($i >= 7 ? 'Good' : ($i >= 5 ? 'Fair' : ($i >= 3 ? 'Needs Improvement' : 'Insufficient'))) }}</option>
+                                @endfor
+                            </select>
+                        </div>
+
+                        <div class="criteria-item">
+                            <label class="criteria-label">Personality and Attitude</label>
+                            <p class="criteria-description">Positive attitude, confidence, and potential</p>
+                            <select name="personality_attitude" class="form-select score-input" required>
+                                <option value="">Select Score (0-10)</option>
+                                @for($i = 0; $i <= 10; $i++)
+                                    <option value="{{ $i }}" {{ old('personality_attitude', $interview->personality_attitude) == $i ? 'selected' : '' }}>{{ $i }} - {{ $i >= 9 ? 'Excellent' : ($i >= 7 ? 'Good' : ($i >= 5 ? 'Fair' : ($i >= 3 ? 'Needs Improvement' : 'Insufficient'))) }}</option>
+                                @endfor
+                            </select>
+                        </div>
+
+                        <div class="criteria-item">
+                            <label class="criteria-label">IT Exposure / Background</label>
+                            <p class="criteria-description">Experience or exposure to IT tools and concepts</p>
+                            <select name="it_background" class="form-select score-input" required>
+                                <option value="">Select Score (0-10)</option>
+                                @for($i = 0; $i <= 10; $i++)
+                                    <option value="{{ $i }}" {{ old('it_background', $interview->it_background) == $i ? 'selected' : '' }}>{{ $i }} - {{ $i >= 9 ? 'Excellent' : ($i >= 7 ? 'Good' : ($i >= 5 ? 'Fair' : ($i >= 3 ? 'Needs Improvement' : 'Insufficient'))) }}</option>
+                                @endfor
+                            </select>
+                        </div>
+
+                        <div class="criteria-item">
+                            <label class="criteria-label">Willingness to Learn</label>
+                            <p class="criteria-description">Eagerness and commitment to learning new skills</p>
+                            <select name="willingness_to_learn" class="form-select score-input" required>
+                                <option value="">Select Score (0-10)</option>
+                                @for($i = 0; $i <= 10; $i++)
+                                    <option value="{{ $i }}" {{ old('willingness_to_learn', $interview->willingness_to_learn) == $i ? 'selected' : '' }}>{{ $i }} - {{ $i >= 9 ? 'Excellent' : ($i >= 7 ? 'Good' : ($i >= 5 ? 'Fair' : ($i >= 3 ? 'Needs Improvement' : 'Insufficient'))) }}</option>
+                                @endfor
+                            </select>
+                        </div>
+
+                        <div class="criteria-item">
+                            <label class="criteria-label">Overall Impression</label>
+                            <p class="criteria-description">Overall candidate assessment and recommendation level</p>
+                            <select name="overall_impression" class="form-select score-input" required>
+                                <option value="">Select Score (0-10)</option>
+                                @for($i = 0; $i <= 10; $i++)
+                                    <option value="{{ $i }}" {{ old('overall_impression', $interview->overall_impression) == $i ? 'selected' : '' }}>{{ $i }} - {{ $i >= 9 ? 'Excellent' : ($i >= 7 ? 'Good' : ($i >= 5 ? 'Fair' : ($i >= 3 ? 'Needs Improvement' : 'Insufficient'))) }}</option>
                                 @endfor
                             </select>
                         </div>
                     </div>
                 </div>
 
-                <!-- Communication Skills Section -->
+                <!-- Recommendation -->
                 <div class="form-section">
                     <div class="section-header">
-                        <h4 class="section-title">Communication Skills</h4>
-                        <span class="section-weight">30 points</span>
+                        <h4 class="section-title">Final Recommendation</h4>
                     </div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Clarity of Expression</label>
-                            <select name="communication_clarity" class="form-select score-input" data-category="communication" required>
-                                <option value="">Select (0-10)</option>
-                                @for($i = 0; $i <= 10; $i++)
-                                    <option value="{{ $i }}">{{ $i }}</option>
-                                @endfor
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Active Listening</label>
-                            <select name="communication_listening" class="form-select score-input" data-category="communication" required>
-                                <option value="">Select (0-10)</option>
-                                @for($i = 0; $i <= 10; $i++)
-                                    <option value="{{ $i }}">{{ $i }}</option>
-                                @endfor
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Confidence</label>
-                            <select name="communication_confidence" class="form-select score-input" data-category="communication" required>
-                                <option value="">Select (0-10)</option>
-                                @for($i = 0; $i <= 10; $i++)
-                                    <option value="{{ $i }}">{{ $i }}</option>
-                                @endfor
-                            </select>
-                        </div>
+                    <div class="criteria-item">
+                        <label class="criteria-label">Recommendation</label>
+                        <select name="recommendation" class="form-select" required>
+                            <option value="">Select Recommendation</option>
+                            <option value="highly_recommended" {{ old('recommendation', $interview->recommendation) == 'highly_recommended' ? 'selected' : '' }}>Highly Recommended (20 pts)</option>
+                            <option value="recommended" {{ old('recommendation', $interview->recommendation) == 'recommended' ? 'selected' : '' }}>Recommended (10 pts)</option>
+                            <option value="conditional" {{ old('recommendation', $interview->recommendation) == 'conditional' ? 'selected' : '' }}>Conditional (5 pts)</option>
+                            <option value="not_recommended" {{ old('recommendation', $interview->recommendation) == 'not_recommended' ? 'selected' : '' }}>Not Recommended (0 pts)</option>
+                        </select>
                     </div>
                 </div>
 
-                <!-- Analytical Thinking Section -->
+                <!-- Written Feedback -->
                 <div class="form-section">
                     <div class="section-header">
-                        <h4 class="section-title">Analytical Thinking</h4>
-                        <span class="section-weight">30 points</span>
+                        <h4 class="section-title">Final Comments</h4>
                     </div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Critical Thinking</label>
-                            <select name="analytical_critical_thinking" class="form-select score-input" data-category="analytical" required>
-                                <option value="">Select (0-10)</option>
-                                @for($i = 0; $i <= 10; $i++)
-                                    <option value="{{ $i }}">{{ $i }}</option>
-                                @endfor
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Creativity</label>
-                            <select name="analytical_creativity" class="form-select score-input" data-category="analytical" required>
-                                <option value="">Select (0-10)</option>
-                                @for($i = 0; $i <= 10; $i++)
-                                    <option value="{{ $i }}">{{ $i }}</option>
-                                @endfor
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Attention to Detail</label>
-                            <select name="analytical_attention_detail" class="form-select score-input" data-category="analytical" required>
-                                <option value="">Select (0-10)</option>
-                                @for($i = 0; $i <= 10; $i++)
-                                    <option value="{{ $i }}">{{ $i }}</option>
-                                @endfor
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Overall Assessment Section -->
-                <div class="form-section">
-                    <div class="section-header">
-                        <h4 class="section-title">Overall Assessment</h4>
-                    </div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Overall Rating</label>
-                            <select name="overall_rating" class="form-select" required>
-                                <option value="">Select Rating</option>
-                                <option value="excellent">Excellent</option>
-                                <option value="very_good">Very Good</option>
-                                <option value="good">Good</option>
-                                <option value="satisfactory">Satisfactory</option>
-                                <option value="needs_improvement">Needs Improvement</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Recommendation</label>
-                            <select name="recommendation" class="form-select" required>
-                                <option value="">Select Recommendation</option>
-                                <option value="highly_recommended">Highly Recommended</option>
-                                <option value="recommended">Recommended</option>
-                                <option value="conditional">Conditional</option>
-                                <option value="not_recommended">Not Recommended</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Written Feedback Section -->
-                <div class="form-section">
-                    <div class="section-header">
-                        <h4 class="section-title">Written Feedback</h4>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Strengths</label>
-                        <textarea name="strengths" class="form-textarea" required 
-                                  placeholder="Describe the applicant's key strengths and positive attributes..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Areas for Improvement</label>
-                        <textarea name="areas_improvement" class="form-textarea" required 
-                                  placeholder="Identify specific areas where the applicant can improve..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Interview Notes (Optional)</label>
-                        <textarea name="interview_notes" class="form-textarea" 
-                                  placeholder="Additional observations, comments, or notes from the interview..."></textarea>
+                    <div class="criteria-item">
+                        <label class="criteria-label">Final Comments</label>
+                        <textarea name="final_comments" class="form-textarea" required 
+                                  placeholder="Provide your overall assessment, key observations, strengths, areas for improvement, and any additional notes about the applicant...">{{ old('final_comments', $interview->final_comments) }}</textarea>
                     </div>
                 </div>
 
@@ -591,32 +534,48 @@
 document.addEventListener('DOMContentLoaded', function() {
     const scoreInputs = document.querySelectorAll('.score-input');
     const totalScoreEl = document.getElementById('totalScore');
-    const scoreBreakdownEl = document.getElementById('scoreBreakdown');
 
-    function calculateScores() {
-        let technical = 0, communication = 0, analytical = 0;
+    function calculateScore() {
+        let total = 0;
 
         scoreInputs.forEach(input => {
             const value = parseInt(input.value) || 0;
-            const category = input.dataset.category;
-            
-            if (category === 'technical') technical += value;
-            else if (category === 'communication') communication += value;
-            else if (category === 'analytical') analytical += value;
+            total += value;
         });
 
-        const total = technical + communication + analytical;
         totalScoreEl.textContent = total;
-        scoreBreakdownEl.textContent = `T: ${technical} | C: ${communication} | A: ${analytical}`;
         
-        // Update color based on total
-        if (total >= 85) totalScoreEl.style.color = '#2E7D32';
-        else if (total >= 70) totalScoreEl.style.color = '#E65100';
-        else totalScoreEl.style.color = '#C62828';
+        // Update color based on total score (100 point scale)
+        if (total >= 85) { // 85% of 100
+            totalScoreEl.style.color = '#2E7D32'; // Green
+        } else if (total >= 70) { // 70% of 100
+            totalScoreEl.style.color = '#E65100'; // Orange
+        } else if (total >= 50) { // 50% of 100
+            totalScoreEl.style.color = '#F57C00'; // Yellow-orange
+        } else {
+            totalScoreEl.style.color = '#C62828'; // Red
+        }
     }
 
     scoreInputs.forEach(input => {
-        input.addEventListener('change', calculateScores);
+        input.addEventListener('change', calculateScore);
+    });
+
+    // Initialize score on page load
+    calculateScore();
+
+    // Confirmation for submission
+    const form = document.getElementById('evaluationForm');
+    form.addEventListener('submit', function(e) {
+        const total = parseInt(totalScoreEl.textContent);
+        const passing = total >= 70;
+        const message = passing 
+            ? `Submit interview evaluation with a score of ${total}/100 points?\n\nThis score meets the passing requirement (70 points).`
+            : `Submit interview evaluation with a score of ${total}/100 points?\n\nWarning: This score is below the passing requirement (70 points).`;
+        
+        if (!confirm(message)) {
+            e.preventDefault();
+        }
     });
 });
 </script>

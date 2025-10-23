@@ -95,7 +95,11 @@ class AdminAuthController extends Controller
             'access_code' => 'required|string',
         ]);
 
-        $accessCode = \App\Models\AccessCode::where('code', $request->access_code)
+        // Normalize access code: ensure BSIT- prefix
+        $rawCode = $request->access_code;
+        $normalizedCode = preg_match('/^BSIT-/i', $rawCode) ? $rawCode : ('BSIT-' . $rawCode);
+
+        $accessCode = \App\Models\AccessCode::where('code', $normalizedCode)
             ->with('applicant')
             ->first();
 

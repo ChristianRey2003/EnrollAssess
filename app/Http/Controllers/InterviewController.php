@@ -521,15 +521,17 @@ class InterviewController extends Controller
         $applicant = $interview->applicant;
 
         // Check if interview is already completed by someone else
-        if ($interview->status === 'completed' && $interview->claimed_by !== $user->user_id) {
-            return redirect()->route('admin.interviews.index')
-                    ->with('error', 'This interview has already been completed by another evaluator.');
+        if ($interview->status === 'completed' && $interview->interviewer_id !== $user->user_id) {
+            // Allow viewing completed interviews
+            $isEditMode = false;
+            return view('admin.interviews.conduct', compact('interview', 'applicant', 'isEditMode'));
         }
 
         // Check soft lock - if claimed by someone else within timeout period
         if ($interview->claimed_by && 
             $interview->claimed_by !== $user->user_id && 
-            !$interview->isClaimedTooLong(1)) { // 1 hour timeout
+            $interview->claimed_at && 
+            $interview->claimed_at->gt(now()->subHour())) { // 1 hour timeout
             
             $claimedBy = User::find($interview->claimed_by);
             return redirect()->route('admin.interviews.index')
@@ -541,11 +543,13 @@ class InterviewController extends Controller
             $interview->update([
                 'claimed_by' => $user->user_id,
                 'claimed_at' => now(),
-                'status' => $interview->status === 'available' ? 'claimed' : $interview->status
             ]);
         }
 
-        return view('admin.interviews.conduct', compact('interview', 'applicant'));
+        // Allow editing if current user is the interviewer and interview is completed
+        $isEditMode = ($interview->status === 'completed' && $interview->interviewer_id === $user->user_id);
+
+        return view('admin.interviews.conduct', compact('interview', 'applicant', 'isEditMode'));
     }
 
     /**
@@ -566,91 +570,71 @@ class InterviewController extends Controller
                     ->with('error', 'You cannot submit an evaluation for an interview you do not have claimed.');
         }
 
-        // Validation - reuse same rules as instructor
+        // Validation - BSIT rubric criteria
         $request->validate([
-            // Technical Skills (40 points max)
-            'technical_programming' => 'required|numeric|min:0|max:10',
-            'technical_problem_solving' => 'required|numeric|min:0|max:10',
-            'technical_algorithms' => 'required|numeric|min:0|max:10',
-            'technical_system_design' => 'required|numeric|min:0|max:10',
-            
-            // Communication Skills (30 points max)
-            'communication_clarity' => 'required|numeric|min:0|max:10',
-            'communication_listening' => 'required|numeric|min:0|max:10',
-            'communication_confidence' => 'required|numeric|min:0|max:10',
-            
-            // Analytical Thinking (30 points max)
-            'analytical_critical_thinking' => 'required|numeric|min:0|max:10',
-            'analytical_creativity' => 'required|numeric|min:0|max:10',
-            'analytical_attention_detail' => 'required|numeric|min:0|max:10',
+            // BSIT Rubric Criteria (8 criteria, 10 points each)
+            'communication_skills' => 'required|integer|min:0|max:10',
+            'motivation_interest' => 'required|integer|min:0|max:10',
+            'problem_solving_attitude' => 'required|integer|min:0|max:10',
+            'program_understanding' => 'required|integer|min:0|max:10',
+            'personality_attitude' => 'required|integer|min:0|max:10',
+            'it_background' => 'required|integer|min:0|max:10',
+            'willingness_to_learn' => 'required|integer|min:0|max:10',
+            'overall_impression' => 'required|integer|min:0|max:10',
             
             // Overall Assessment
-            'overall_rating' => 'required|in:excellent,very_good,good,satisfactory,needs_improvement',
             'recommendation' => 'required|in:highly_recommended,recommended,conditional,not_recommended',
-            'strengths' => 'required|string|max:1000',
-            'areas_improvement' => 'required|string|max:1000',
-            'interview_notes' => 'nullable|string|max:2000',
+            'final_comments' => 'required|string|max:5000',
             'action' => 'required|in:save_draft,submit_final'
         ]);
 
-        // Calculate scores using same logic as instructor
-        $technicalScore = $request->technical_programming + 
-                         $request->technical_problem_solving + 
-                         $request->technical_algorithms + 
-                         $request->technical_system_design;
+        // Calculate overall score (sum of 8 criteria = 80 points + recommendation score = 100 total)
+        $criteriaScore = $request->communication_skills + 
+                        $request->motivation_interest + 
+                        $request->problem_solving_attitude + 
+                        $request->program_understanding + 
+                        $request->personality_attitude + 
+                        $request->it_background + 
+                        $request->willingness_to_learn + 
+                        $request->overall_impression;
         
-        $communicationScore = $request->communication_clarity + 
-                             $request->communication_listening + 
-                             $request->communication_confidence;
+        // Add recommendation score
+        $recommendationScore = match($request->recommendation) {
+            'highly_recommended' => 20,
+            'recommended' => 10,
+            'conditional' => 5,
+            'not_recommended' => 0,
+            default => 0
+        };
         
-        $analyticalScore = $request->analytical_critical_thinking + 
-                          $request->analytical_creativity + 
-                          $request->analytical_attention_detail;
-        
-        $totalScore = $technicalScore + $communicationScore + $analyticalScore;
-        $percentage = round(($totalScore / 100) * 100, 2);
+        $totalScore = $criteriaScore + $recommendationScore;
 
-        DB::transaction(function () use ($request, $interview, $user, $technicalScore, $communicationScore, $analyticalScore, $totalScore, $percentage) {
+        DB::transaction(function () use ($request, $interview, $user, $totalScore) {
             
-            // Update interview record with detailed rubrics
+            // Update interview record with BSIT rubric scores
             $interview->update([
-                // Individual rubric scores
-                'rating_technical' => $technicalScore,
-                'rating_communication' => $communicationScore,
-                'rating_problem_solving' => $analyticalScore,
-                'overall_score' => $percentage,
+                // BSIT Rubric Criteria
+                'communication_skills' => $request->communication_skills,
+                'motivation_interest' => $request->motivation_interest,
+                'problem_solving_attitude' => $request->problem_solving_attitude,
+                'program_understanding' => $request->program_understanding,
+                'personality_attitude' => $request->personality_attitude,
+                'it_background' => $request->it_background,
+                'willingness_to_learn' => $request->willingness_to_learn,
+                'overall_impression' => $request->overall_impression,
                 
-                // Detailed breakdown (store as JSON)
-                'rubric_scores' => json_encode([
-                    'technical' => [
-                        'programming' => $request->technical_programming,
-                        'problem_solving' => $request->technical_problem_solving,
-                        'algorithms' => $request->technical_algorithms,
-                        'system_design' => $request->technical_system_design,
-                    ],
-                    'communication' => [
-                        'clarity' => $request->communication_clarity,
-                        'listening' => $request->communication_listening,
-                        'confidence' => $request->communication_confidence,
-                    ],
-                    'analytical' => [
-                        'critical_thinking' => $request->analytical_critical_thinking,
-                        'creativity' => $request->analytical_creativity,
-                        'attention_detail' => $request->analytical_attention_detail,
-                    ]
-                ]),
-                
-                'overall_rating' => $request->overall_rating,
+                // Overall Assessment
+                'overall_score' => $totalScore,
                 'recommendation' => $request->recommendation,
-                'strengths' => $request->strengths,
-                'areas_improvement' => $request->areas_improvement,
-                'notes' => $request->interview_notes,
-                'schedule_date' => $interview->schedule_date ?? now(),
                 
-                // Track evaluator details
+                // Written Feedback
+                'final_comments' => $request->final_comments,
+                
+                // Interview Metadata
+                'schedule_date' => $interview->schedule_date ?? now(),
                 'interviewer_id' => $user->user_id, // Admin becomes the interviewer
                 'claimed_by' => $user->user_id,
-                'status' => $request->action === 'submit_final' ? 'completed' : 'in-progress',
+                'status' => $request->action === 'submit_final' ? 'completed' : 'scheduled',
             ]);
 
             // Only update applicant status if submitting final (not draft)
@@ -658,24 +642,23 @@ class InterviewController extends Controller
                 $applicant = $interview->applicant;
                 $newStatus = 'interview-completed';
                 
-                // Auto-determine admission based on score and recommendation (same logic as instructor)
-                if ($percentage >= 75 && in_array($request->recommendation, ['highly_recommended', 'recommended'])) {
+                // Auto-determine admission based on score and recommendation
+                if ($totalScore >= 75 && in_array($request->recommendation, ['highly_recommended', 'recommended'])) {
                     $newStatus = 'admitted';
-                } elseif ($percentage < 50 || $request->recommendation === 'not_recommended') {
+                } elseif ($totalScore < 50 || $request->recommendation === 'not_recommended') {
                     $newStatus = 'rejected';
                 }
                 
                 $applicant->update([
                     'status' => $newStatus,
-                    'final_score' => $percentage,
-                    'admission_decision_date' => now(),
+                    'interview_score' => $totalScore,
                 ]);
             }
         });
 
         $message = $request->action === 'submit_final' 
-            ? "Interview evaluation submitted successfully! Score: {$percentage}%"
-            : "Interview draft saved successfully! Score: {$percentage}%";
+            ? "Interview evaluation submitted successfully! Total Score: {$totalScore}/100 points"
+            : "Interview draft saved successfully! Total Score: {$totalScore}/100 points";
 
         return redirect()->route('admin.interviews.index')
                         ->with('success', $message);
@@ -767,5 +750,38 @@ class InterviewController extends Controller
                 'message' => $e->getMessage()
             ], 400);
         }
+    }
+
+    /**
+     * Show detailed interview information
+     */
+    public function show($interviewId)
+    {
+        // Find interview with all necessary relationships
+        $interview = Interview::with([
+            'applicant.assignedInstructor',
+            'interviewer',
+            'claimedBy'
+        ])->find($interviewId);
+
+        // Graceful 404 handling
+        if (!$interview) {
+            return redirect()->route('admin.interviews.index')
+                ->with('error', 'Interview not found. It may have been deleted or the ID is invalid.');
+        }
+
+        // Check if applicant exists
+        if (!$interview->applicant) {
+            return redirect()->route('admin.interviews.index')
+                ->with('error', 'Applicant not found for this interview.');
+        }
+
+        $applicant = $interview->applicant;
+
+        // Calculate exam context (correct/total)
+        $totalQuestions = $applicant->results()->count();
+        $correctAnswers = $applicant->results()->where('is_correct', true)->count();
+
+        return view('admin.interviews.show', compact('interview', 'applicant', 'totalQuestions', 'correctAnswers'));
     }
 }

@@ -48,16 +48,20 @@
                     <!-- Access Code -->
                     <div class="form-group">
                         <label for="access_code" class="form-label">{{ __('Enter Your Access Code') }}</label>
-                        <input id="access_code" 
-                               class="form-control @error('access_code') is-invalid @enderror" 
-                               type="text" 
-                               name="access_code" 
-                               value="{{ old('access_code') }}" 
-                               required 
-                               autofocus 
-                               autocomplete="off"
-                               maxlength="20"
-                               placeholder="Enter the code">
+                        <div style="position: relative; display: flex; align-items: center;">
+                            <span style="position: absolute; left: 12px; font-weight: 600; color: #800020; z-index: 1; pointer-events: none;">BSIT-</span>
+                            <input id="access_code" 
+                                   class="form-control @error('access_code') is-invalid @enderror" 
+                                   type="text" 
+                                   name="access_code" 
+                                   value="{{ old('access_code') }}" 
+                                   required 
+                                   autofocus 
+                                   autocomplete="off"
+                                   maxlength="20"
+                                   placeholder="Enter the code"
+                                   style="padding-left: 60px;">
+                        </div>
                         @error('access_code')
                             <div class="invalid-feedback">
                                 {{ $message }}
@@ -90,9 +94,15 @@
         document.getElementById('accessForm').addEventListener('submit', function(e) {
             const submitBtn = document.getElementById('submitBtn');
             const buttonText = document.getElementById('buttonText');
-            const accessCode = document.getElementById('access_code').value;
+            const input = document.getElementById('access_code');
+            const accessCode = input.value.trim();
             
-            if (accessCode.length < 3) {
+            // Ensure BSIT- prefix is added
+            if (!/^BSIT-/i.test(accessCode)) {
+                input.value = 'BSIT-' + accessCode.replace(/^BSIT-/i, '');
+            }
+            
+            if (input.value.length < 8) { // BSIT- (5 chars) + at least 3 chars
                 e.preventDefault();
                 alert('Please enter a valid access code.');
                 return;
@@ -111,7 +121,7 @@
         // Remove error state on input
         document.getElementById('access_code').addEventListener('input', function(e) {
             e.target.classList.remove('is-invalid');
-            const errorMsg = e.target.parentElement.querySelector('.invalid-feedback');
+            const errorMsg = e.target.parentElement.parentElement.querySelector('.invalid-feedback');
             if (errorMsg) {
                 errorMsg.remove();
             }

@@ -202,7 +202,7 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <a href="{{ route('admin.interview-detail', $interview->interview_id) }}" 
+                                            <a href="{{ route('admin.interviews.show', $interview->interview_id) }}" 
                                                class="btn-sm btn-primary">View Details</a>
                                         </td>
                                     </tr>

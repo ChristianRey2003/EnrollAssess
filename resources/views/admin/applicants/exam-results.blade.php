@@ -206,28 +206,6 @@
                     </option>
                 @endforeach
             </select>
-            <select id="courseFilter" class="form-control" onchange="applyFilter()" style="width: 140px;">
-                <option value="">All Courses</option>
-                @foreach($courses as $course)
-                    <option value="{{ $course }}" {{ request('course') == $course ? 'selected' : '' }}>
-                        {{ $course }}
-                    </option>
-                @endforeach
-            </select>
-            <input type="number" 
-                   id="scoreMinFilter" 
-                   class="form-control" 
-                   placeholder="Min Score" 
-                   value="{{ request('score_min') }}"
-                   style="width: 100px;"
-                   min="0" max="100">
-            <input type="number" 
-                   id="scoreMaxFilter" 
-                   class="form-control" 
-                   placeholder="Max Score" 
-                   value="{{ request('score_max') }}"
-                   style="width: 100px;"
-                   min="0" max="100">
             <button onclick="applyFilter()" class="btn btn-primary">Filter</button>
             <a href="{{ route('admin.applicants.index') }}" class="btn btn-secondary">Back to Applicants</a>
         </div>
@@ -349,7 +327,7 @@
                                     View
                                 </a>
                                 @if($applicant->latestInterview)
-                                    <a href="{{ route('admin.interview-detail', $applicant->latestInterview->interview_id) }}" 
+                                    <a href="{{ route('admin.interviews.show', $applicant->latestInterview->interview_id) }}" 
                                        class="btn btn-primary" 
                                        style="padding: 2px 6px; font-size: 11px;"
                                        title="View Interview">
@@ -387,15 +365,9 @@ function performSearch() {
 
 function applyFilter() {
     const status = document.getElementById('statusFilter').value;
-    const course = document.getElementById('courseFilter').value;
-    const scoreMin = document.getElementById('scoreMinFilter').value;
-    const scoreMax = document.getElementById('scoreMaxFilter').value;
     
     updateUrl({
         status: status,
-        course: course,
-        score_min: scoreMin,
-        score_max: scoreMax,
         page: 1
     });
 }
@@ -421,17 +393,6 @@ document.getElementById('searchInput').addEventListener('keypress', function(e) 
     }
 });
 
-// Handle Enter key in score filters
-document.getElementById('scoreMinFilter').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        applyFilter();
-    }
-});
-
-document.getElementById('scoreMaxFilter').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        applyFilter();
-    }
-});
+// Removed score filter Enter handlers as score filters were removed
 </script>
 @endpush

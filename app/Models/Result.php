@@ -19,6 +19,7 @@ class Result extends Model
         'is_correct',
         'points_earned',
         'answered_at',
+        'attempt_token',
     ];
 
     protected $casts = [
@@ -162,22 +163,59 @@ class Result extends Model
     }
 
     /**
-     * Get exam statistics for an applicant
+     * Get exam statistics for an applicant's latest attempt
      */
-    public static function getExamStats($applicantId)
+    public static function getExamStats($applicantId, $attemptToken = null)
     {
-        $results = self::where('applicant_id', $applicantId)->get();
+        // If attempt token provided, use it; otherwise get latest attempt
+        if ($attemptToken) {
+            $results = self::where('applicant_id', $applicantId)
+                ->where('attempt_token', $attemptToken)
+                ->with('question')
+                ->get();
+        } else {
+            // Get latest attempt by finding most recent answered_at
+            $latestAttempt = self::where('applicant_id', $applicantId)
+                ->orderBy('answered_at', 'desc')
+                ->first();
+            
+            if (!$latestAttempt) {
+                // No results found
+                return [
+                    'total_questions' => 0,
+                    'correct_answers' => 0,
+                    'incorrect_answers' => 0,
+                    'unanswered' => 0,
+                    'total_points' => 0,
+                    'earned_points' => 0,
+                    'percentage' => 0,
+                    'passing_grade' => 75,
+                    'passed' => false,
+                ];
+            }
+            
+            // Get all results from the same attempt (within 5 seconds of first answer)
+            $attemptStart = $latestAttempt->answered_at;
+            $results = self::where('applicant_id', $applicantId)
+                ->where('answered_at', '>=', $attemptStart->subSeconds(5))
+                ->with('question')
+                ->get();
+        }
         
         $totalQuestions = $results->count();
         $correctAnswers = $results->where('is_correct', true)->count();
         $incorrectAnswers = $results->where('is_correct', false)->count();
         $unanswered = $results->where('is_correct', null)->count();
 
+        // Calculate total possible points from questions
         $totalPoints = $results->sum(function ($result) {
-            return $result->question->points ?? 0;
+            return $result->question ? ($result->question->points ?? 1) : 1;
         });
 
+        // Sum earned points from results
         $earnedPoints = $results->sum('points_earned');
+        
+        // Calculate percentage
         $percentage = $totalPoints > 0 ? round(($earnedPoints / $totalPoints) * 100, 2) : 0;
 
         return [

@@ -168,17 +168,40 @@ class Question extends Model
      */
     public function checkAnswer($selectedOptionId = null, $answerText = null)
     {
-        if ($this->isMultipleChoice() || $this->isTrueFalse()) {
+        if ($this->isMultipleChoice()) {
             if (!$selectedOptionId) {
                 return false;
             }
-            
+
             $selectedOption = $this->options()->find($selectedOptionId);
             return $selectedOption && $selectedOption->is_correct;
         }
 
+        if ($this->isTrueFalse()) {
+            // Prefer option-based checking if option id present
+            if ($selectedOptionId) {
+                $selectedOption = $this->options()->find($selectedOptionId);
+                if ($selectedOption) {
+                    return (bool) $selectedOption->is_correct;
+                }
+            }
+
+            // Fallback to answer_text against boolean correct_answer
+            if ($answerText !== null) {
+                $normalized = strtolower(trim($answerText));
+                if (in_array($normalized, ['true', 't', 'yes'])) {
+                    return $this->correct_answer === true;
+                }
+                if (in_array($normalized, ['false', 'f', 'no'])) {
+                    return $this->correct_answer === false;
+                }
+            }
+
+            // If nothing to evaluate, mark as incorrect
+            return false;
+        }
+
         // For essay questions, manual grading is required
-        // This would need to be implemented based on specific requirements
         return null;
     }
 }
