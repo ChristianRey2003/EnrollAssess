@@ -436,9 +436,9 @@
 <body>
     <!-- Print Controls (visible only on screen) -->
     <div class="print-controls no-print">
-        <button onclick="window.print()">🖨️ Print Report</button>
-        <button onclick="downloadPDF()" class="secondary">📄 Download PDF</button>
-        <button onclick="window.close()" class="secondary">✖️ Close</button>
+        <button onclick="window.print()">️ Print Report</button>
+        <button onclick="downloadPDF()" class="secondary"> Download PDF</button>
+        <button onclick="window.close()" class="secondary">️ Close</button>
     </div>
 
     <div class="report-container">
@@ -475,7 +475,7 @@
 
         <!-- Summary Statistics -->
         <section class="summary-section">
-            <h3 class="summary-title">📊 Screening Summary</h3>
+            <h3 class="summary-title"> Screening Summary</h3>
             <div class="summary-stats">
                 <div class="stat-item">
                     <span class="stat-value">45</span>
@@ -498,7 +498,7 @@
 
         <!-- Final Rankings Table -->
         <section class="rankings-section">
-            <h3 class="section-title">🏆 Final Applicant Rankings</h3>
+            <h3 class="section-title"> Final Applicant Rankings</h3>
             
             <table class="rankings-table">
                 <thead>
@@ -683,7 +683,7 @@
 
         <!-- Legend -->
         <div class="legend-section">
-            <h4 class="legend-title">📝 Scoring Legend</h4>
+            <h4 class="legend-title"> Scoring Legend</h4>
             <div class="legend-items">
                 <div class="legend-item">
                     <span class="status-badge status-recommended">Recommended</span>

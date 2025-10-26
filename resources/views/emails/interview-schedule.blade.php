@@ -80,7 +80,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🗓️ Interview Scheduled</h1>
+            <h1>️ Interview Scheduled</h1>
         </div>
 
         <p>Dear <strong>{{ $applicant->full_name }}</strong>,</p>

@@ -135,7 +135,8 @@ class ApplicantController extends BaseController
         ]);
 
         try {
-            DB::transaction(function () use ($validated, $request) {
+            $applicant = null;
+            DB::transaction(function () use ($validated, $request, &$applicant) {
                 // Generate application number
                 $validated['application_no'] = Applicant::generateApplicationNumber();
 
@@ -154,13 +155,22 @@ class ApplicantController extends BaseController
 
                 // Create interview record if instructor assigned
                 if ($request->filled('assigned_instructor_id')) {
-                    Interview::create([
+                    $interview = Interview::create([
                         'applicant_id' => $applicant->applicant_id,
                         'interviewer_id' => $request->assigned_instructor_id,
                         'status' => 'scheduled',
                     ]);
+                    
+                    // Dispatch interview scheduled event
+                    \App\Events\InterviewScheduled::dispatch($interview->load(['applicant', 'instructor']));
                 }
             });
+
+            // Dispatch applicant created event
+            \App\Events\ApplicantCreated::dispatch($applicant);
+            
+            // Dispatch statistics updated event
+            $this->dispatchStatisticsUpdate();
 
             return redirect()->route('admin.applicants.index')
                             ->with('success', 'Applicant created successfully!');
@@ -476,6 +486,14 @@ class ApplicantController extends BaseController
                     }
                 }
             });
+
+            // Dispatch events for imported applicants
+            foreach ($importResults['imported_applicants'] as $applicant) {
+                \App\Events\ApplicantCreated::dispatch($applicant);
+            }
+            
+            // Dispatch statistics update event
+            $this->dispatchStatisticsUpdate();
 
             return response()->json([
                 'success' => true,
@@ -1045,5 +1063,25 @@ class ApplicantController extends BaseController
                 'message' => 'Failed to assign exam: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Dispatch statistics update event
+     */
+    protected function dispatchStatisticsUpdate()
+    {
+        $stats = [
+            'total' => Applicant::count(),
+            'pending' => Applicant::where('status', 'pending')->count(),
+            'exam_completed' => Applicant::where('status', 'exam-completed')->count(),
+            'interview_scheduled' => Applicant::where('status', 'interview-scheduled')->count(),
+            'interview_completed' => Applicant::where('status', 'interview-completed')->count(),
+            'admitted' => Applicant::where('status', 'admitted')->count(),
+            'rejected' => Applicant::where('status', 'rejected')->count(),
+            'with_access_codes' => Applicant::whereHas('accessCode')->count(),
+            'without_access_codes' => Applicant::whereDoesntHave('accessCode')->count(),
+        ];
+
+        \App\Events\StatisticsUpdated::dispatch($stats);
     }
 }

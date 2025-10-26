@@ -102,6 +102,12 @@ class InterviewController extends Controller
         Applicant::where('applicant_id', $request->applicant_id)
                  ->update(['status' => 'interview-scheduled']);
 
+        // Dispatch interview scheduled event
+        \App\Events\InterviewScheduled::dispatch($interview->load(['applicant', 'instructor']));
+        
+        // Dispatch statistics update event
+        $this->dispatchStatisticsUpdate();
+
         return response()->json([
             'success' => true,
             'message' => 'Interview scheduled successfully!',
@@ -178,6 +184,11 @@ class InterviewController extends Controller
                 }
             }
         });
+
+        // Dispatch statistics update event after bulk operation
+        if ($scheduled > 0) {
+            $this->dispatchStatisticsUpdate();
+        }
 
         return response()->json([
             'success' => true,
@@ -783,5 +794,25 @@ class InterviewController extends Controller
         $correctAnswers = $applicant->results()->where('is_correct', true)->count();
 
         return view('admin.interviews.show', compact('interview', 'applicant', 'totalQuestions', 'correctAnswers'));
+    }
+
+    /**
+     * Dispatch statistics update event
+     */
+    protected function dispatchStatisticsUpdate()
+    {
+        $stats = [
+            'total' => \App\Models\Applicant::count(),
+            'pending' => \App\Models\Applicant::where('status', 'pending')->count(),
+            'exam_completed' => \App\Models\Applicant::where('status', 'exam-completed')->count(),
+            'interview_scheduled' => \App\Models\Applicant::where('status', 'interview-scheduled')->count(),
+            'interview_completed' => \App\Models\Applicant::where('status', 'interview-completed')->count(),
+            'admitted' => \App\Models\Applicant::where('status', 'admitted')->count(),
+            'rejected' => \App\Models\Applicant::where('status', 'rejected')->count(),
+            'with_access_codes' => \App\Models\Applicant::whereHas('accessCode')->count(),
+            'without_access_codes' => \App\Models\Applicant::whereDoesntHave('accessCode')->count(),
+        ];
+
+        \App\Events\StatisticsUpdated::dispatch($stats);
     }
 }

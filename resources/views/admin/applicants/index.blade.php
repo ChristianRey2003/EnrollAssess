@@ -179,9 +179,10 @@
                                     style="height: 28px; padding: 4px 8px; font-size: 12px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
                                 Generate Codes
                             </button>
+                            <!-- Hidden: Assign Exam (Legacy - kept for potential future use) -->
                             <button onclick="showAssignExamModal()" 
                                     class="bulk-btn" 
-                                    style="height: 28px; padding: 4px 8px; font-size: 12px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                    style="display: none; height: 28px; padding: 4px 8px; font-size: 12px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer;">
                                 Assign Exam
                             </button>
                             <button onclick="openEmailNotificationDrawer()" 
@@ -257,12 +258,12 @@
                                                     @if($applicant->accessCode->exam_id)
                                                         <div style="color: #059669; margin-top: 1px;">
                                                             <span style="display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: #059669; margin-right: 4px;"></span>
-                                                            {{ $applicant->accessCode->exam->title }}
+                                                            {{ $applicant->accessCode->exam->title }} <span style="color: #6b7280; font-size: 10px;">(Legacy)</span>
                                                         </div>
                                                     @else
-                                                        <div style="color: #f59e0b; margin-top: 1px;">
-                                                            <span style="display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: #f59e0b; margin-right: 4px;"></span>
-                                                            No exam assigned
+                                                        <div style="color: #3b82f6; margin-top: 1px;">
+                                                            <span style="display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: #3b82f6; margin-right: 4px;"></span>
+                                                            Uses active exam
                                                         </div>
                                                     @endif
                                                 </div>
@@ -275,11 +276,12 @@
                                                title="Edit applicant">
                                                 Edit
                                             </a>
+                                            <!-- Hidden: Assign Exam (Legacy - kept for potential future use) -->
                                             @if($applicant->accessCode)
                                                 <button onclick="showSingleAssignExamModal({{ $applicant->applicant_id }})"
                                                         class="action-btn action-btn-assign"
                                                         title="Assign exam{{ $applicant->accessCode && $applicant->accessCode->exam_id ? ' (' . $applicant->accessCode->exam->title . ')' : '' }}"
-                                                        style="background: #8b5cf6;">
+                                                        style="display: none; background: #8b5cf6;">
                                                     Assign Exam
                                                 </button>
                                             @endif

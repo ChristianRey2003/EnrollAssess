@@ -1,0 +1,63 @@
+/**
+ * Global Modal Fix for EnrollAssess
+ * Fixes z-index and visibility issues across all modals
+ */
+
+/* Base modal overlay - highest z-index to ensure visibility */
+.modal-overlay,
+[class*="modal-overlay"],
+div[id*="Modal"],
+div[id*="modal"] {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 999999 !important;
+    pointer-events: auto !important;
+}
+
+/* Active/visible modals */
+.modal-overlay.active,
+.modal-overlay.show,
+.modal.show,
+.modal.active {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Modal content */
+.modal-content,
+.modal-dialog,
+[class*="modal-content"] {
+    position: relative !important;
+    z-index: 1000000 !important;
+    background: white !important;
+}
+
+/* Ensure backdrop is visible but below content */
+.modal-backdrop,
+.modal-overlay::before {
+    background: rgba(0, 0, 0, 0.5) !important;
+    z-index: 999998 !important;
+}
+
+/* Fix for modals inside fixed/relative containers */
+body.modal-open {
+    overflow: hidden;
+}
+
+/* Prevent parent containers from hiding modals */
+.admin-layout,
+.admin-main,
+.main-content {
+    isolation: auto !important;
+}
+
+/* Debug helper - add this class to modal to see if it's rendering */
+.modal-debug {
+    outline: 5px solid red !important;
+    background: rgba(255, 0, 0, 0.3) !important;
+}
+

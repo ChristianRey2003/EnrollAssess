@@ -5,7 +5,7 @@
         <div class="modal-header delete-modal-header">
             <div class="warning-icon">
                 <div class="warning-circle">
-                    <span class="warning-symbol">⚠️</span>
+                    <span class="warning-symbol">️</span>
                 </div>
             </div>
             <h3 class="modal-title">Are you sure?</h3>
@@ -35,11 +35,11 @@
             <!-- Warning Messages -->
             <div class="warning-messages">
                 <div class="warning-item">
-                    <span class="warning-icon-small">🔒</span>
+                    <span class="warning-icon-small"></span>
                     <span class="warning-text">This action is permanent and irreversible</span>
                 </div>
                 <div class="warning-item" id="additionalWarning" style="display: none;">
-                    <span class="warning-icon-small">📊</span>
+                    <span class="warning-icon-small"></span>
                     <span class="warning-text" id="additionalWarningText">Additional warning message</span>
                 </div>
             </div>
@@ -51,7 +51,7 @@
                 Cancel
             </button>
             <button type="button" onclick="confirmDelete()" class="btn-delete" id="confirmDeleteBtn">
-                <span class="btn-icon">🗑️</span>
+                <span class="btn-icon">️</span>
                 <span class="btn-text">Delete</span>
             </button>
         </div>

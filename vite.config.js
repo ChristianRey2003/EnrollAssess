@@ -23,6 +23,13 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+    
+    // Define environment variables for frontend
+    define: {
+        'import.meta.env.VITE_BROADCAST_DRIVER': JSON.stringify(process.env.BROADCAST_DRIVER || 'pusher'),
+        'import.meta.env.VITE_PUSHER_APP_KEY': JSON.stringify(process.env.PUSHER_APP_KEY || ''),
+        'import.meta.env.VITE_PUSHER_APP_CLUSTER': JSON.stringify(process.env.PUSHER_APP_CLUSTER || ''),
+    },
     build: {
         rollupOptions: {
             output: {

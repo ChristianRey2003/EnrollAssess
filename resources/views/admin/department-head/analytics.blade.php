@@ -25,25 +25,25 @@
             <div class="sidebar-nav">
                 <div class="nav-item">
                     <a href="{{ route('admin.dashboard') }}" class="nav-link">
-                        <span class="nav-icon">📊</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Dashboard</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.interview-results') }}" class="nav-link">
-                        <span class="nav-icon">📝</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Interview Results</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.analytics') }}" class="nav-link active">
-                        <span class="nav-icon">📈</span>
+                    <a href="{{ route('admin.interview-analytics') }}" class="nav-link active">
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Analytics</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.dashboard') }}" class="nav-link">
-                        <span class="nav-icon">⚙️</span>
+                        <span class="nav-icon">️</span>
                         <span class="nav-text">Admin Portal</span>
                     </a>
                 </div>
@@ -60,7 +60,7 @@
                 <form method="POST" action="{{ route('admin.logout') }}">
                     @csrf
                     <button type="submit" class="logout-link">
-                        <span class="nav-icon">🚪</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Logout</span>
                     </button>
                 </form>
@@ -74,7 +74,7 @@
                     <p class="header-subtitle">Comprehensive insights into the admission process performance</p>
                 </div>
                 <div class="header-right">
-                    <a href="{{ route('admin.export-interview-results') }}" class="btn-secondary">📊 Export Data</a>
+                    <a href="{{ route('admin.export-interview-results') }}" class="btn-secondary"> Export Data</a>
                 </div>
             </div>
 
@@ -82,12 +82,12 @@
                 <!-- Overview Stats -->
                 <div class="stats-grid analytics-stats">
                     <div class="stat-card">
-                        <div class="stat-icon">📋</div>
+                        <div class="stat-icon"></div>
                         <div class="stat-value">{{ $analytics['completion_stats']['total_interviews'] }}</div>
                         <div class="stat-label">Total Interviews</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">✅</div>
+                        <div class="stat-icon"></div>
                         <div class="stat-value">{{ $analytics['completion_stats']['completed'] }}</div>
                         <div class="stat-label">Completed</div>
                     </div>
@@ -97,7 +97,7 @@
                         <div class="stat-label">Pending</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">📈</div>
+                        <div class="stat-icon"></div>
                         <div class="stat-value">{{ number_format($analytics['score_averages']['overall'] ?? 0, 1) }}%</div>
                         <div class="stat-label">Average Score</div>
                     </div>
@@ -113,7 +113,7 @@
                             <div class="category-chart">
                                 <div class="category-item">
                                     <div class="category-info">
-                                        <span class="category-name">💻 Technical Skills</span>
+                                        <span class="category-name"> Technical Skills</span>
                                         <span class="category-score">{{ number_format($analytics['score_averages']['technical'] ?? 0, 1) }}/40</span>
                                     </div>
                                     <div class="category-bar">
@@ -123,7 +123,7 @@
                                 
                                 <div class="category-item">
                                     <div class="category-info">
-                                        <span class="category-name">💬 Communication</span>
+                                        <span class="category-name"> Communication</span>
                                         <span class="category-score">{{ number_format($analytics['score_averages']['communication'] ?? 0, 1) }}/30</span>
                                     </div>
                                     <div class="category-bar">
@@ -150,7 +150,7 @@
                     <!-- Recommendations Distribution -->
                     <div class="analytics-card">
                         <div class="card-header">
-                            <h3>📝 Interview Recommendations</h3>
+                            <h3> Interview Recommendations</h3>
                         </div>
                         <div class="card-body">
                             <div class="recommendation-chart">
@@ -174,13 +174,13 @@
                     <!-- Admission Outcomes -->
                     <div class="analytics-card">
                         <div class="card-header">
-                            <h3>🎓 Admission Outcomes</h3>
+                            <h3> Admission Outcomes</h3>
                         </div>
                         <div class="card-body">
                             <div class="outcome-chart">
                                 <div class="outcome-item">
                                     <div class="outcome-info">
-                                        <span class="outcome-label">✅ Admitted</span>
+                                        <span class="outcome-label"> Admitted</span>
                                         <span class="outcome-count">{{ $analytics['admission_outcomes']['admitted'] }}</span>
                                     </div>
                                     <div class="outcome-percentage">
@@ -194,7 +194,7 @@
                                 
                                 <div class="outcome-item">
                                     <div class="outcome-info">
-                                        <span class="outcome-label">❌ Rejected</span>
+                                        <span class="outcome-label"> Rejected</span>
                                         <span class="outcome-count">{{ $analytics['admission_outcomes']['rejected'] }}</span>
                                     </div>
                                     <div class="outcome-percentage">
@@ -226,7 +226,7 @@
                 @if($analytics['monthly_trends']->count() > 0)
                 <div class="content-section">
                     <div class="section-header">
-                        <h2 class="section-title">📈 Monthly Interview Trends</h2>
+                        <h2 class="section-title"> Monthly Interview Trends</h2>
                     </div>
                     <div class="section-content">
                         <div class="trends-table">
@@ -279,7 +279,7 @@
                 @if($analytics['instructor_comparison']->count() > 0)
                 <div class="content-section">
                     <div class="section-header">
-                        <h2 class="section-title">👨‍🏫 Instructor Performance Comparison</h2>
+                        <h2 class="section-title">‍ Instructor Performance Comparison</h2>
                     </div>
                     <div class="section-content">
                         <div class="instructor-performance">

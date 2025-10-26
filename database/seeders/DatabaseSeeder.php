@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             ExamSeeder::class,
             QuestionBankSeeder::class,
             ApplicantSeeder::class,
+            SystemSettingsSeeder::class,
         ]);
     }
 }

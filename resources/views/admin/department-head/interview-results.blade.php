@@ -26,25 +26,25 @@
             <div class="sidebar-nav">
                 <div class="nav-item">
                     <a href="{{ route('admin.dashboard') }}" class="nav-link">
-                        <span class="nav-icon">📊</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Dashboard</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.interview-results') }}" class="nav-link active">
-                        <span class="nav-icon">📝</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Interview Results</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.analytics') }}" class="nav-link">
-                        <span class="nav-icon">📈</span>
+                    <a href="{{ route('admin.interview-analytics') }}" class="nav-link">
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Analytics</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.dashboard') }}" class="nav-link">
-                        <span class="nav-icon">⚙️</span>
+                        <span class="nav-icon">️</span>
                         <span class="nav-text">Admin Portal</span>
                     </a>
                 </div>
@@ -61,7 +61,7 @@
                 <form method="POST" action="{{ route('admin.logout') }}">
                     @csrf
                     <button type="submit" class="logout-link">
-                        <span class="nav-icon">🚪</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Logout</span>
                     </button>
                 </form>
@@ -75,7 +75,7 @@
                     <p class="header-subtitle">Review completed interviews and make admission decisions</p>
                 </div>
                 <div class="header-right">
-                    <a href="{{ route('admin.export-interview-results') }}" class="btn-secondary">📊 Export Results</a>
+                    <a href="{{ route('admin.export-interview-results') }}" class="btn-secondary"> Export Results</a>
                 </div>
             </div>
 
@@ -86,10 +86,10 @@
                         <h2 class="section-title">Filter Results</h2>
                         <div class="bulk-actions">
                             <button id="bulkAdmitBtn" class="btn-success" onclick="bulkAdmissionDecision('admit')" disabled>
-                                ✅ Admit Selected
+                                 Admit Selected
                             </button>
                             <button id="bulkRejectBtn" class="btn-danger" onclick="bulkAdmissionDecision('reject')" disabled>
-                                ❌ Reject Selected
+                                 Reject Selected
                             </button>
                         </div>
                     </div>
@@ -217,7 +217,7 @@
                         </div>
                         @else
                         <div class="empty-state">
-                            <div class="empty-icon">📝</div>
+                            <div class="empty-icon"></div>
                             <h3>No Interview Results Found</h3>
                             <p>No completed interviews match your current filters. Try adjusting your search criteria.</p>
                         </div>

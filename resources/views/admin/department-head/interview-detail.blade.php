@@ -25,25 +25,25 @@
             <div class="sidebar-nav">
                 <div class="nav-item">
                     <a href="{{ route('admin.dashboard') }}" class="nav-link">
-                        <span class="nav-icon">📊</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Dashboard</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.interview-results') }}" class="nav-link">
-                        <span class="nav-icon">📝</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Interview Results</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.analytics') }}" class="nav-link">
-                        <span class="nav-icon">📈</span>
+                    <a href="{{ route('admin.interview-analytics') }}" class="nav-link">
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Analytics</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.dashboard') }}" class="nav-link">
-                        <span class="nav-icon">⚙️</span>
+                        <span class="nav-icon">️</span>
                         <span class="nav-text">Admin Portal</span>
                     </a>
                 </div>
@@ -60,7 +60,7 @@
                 <form method="POST" action="{{ route('admin.logout') }}">
                     @csrf
                     <button type="submit" class="logout-link">
-                        <span class="nav-icon">🚪</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Logout</span>
                     </button>
                 </form>
@@ -83,7 +83,7 @@
                     <!-- Applicant Overview -->
                     <div class="detail-card">
                         <div class="card-header">
-                            <h3>👤 Applicant Information</h3>
+                            <h3> Applicant Information</h3>
                             <div class="status-indicator">
                                 <span class="status-badge status-{{ str_replace(' ', '-', strtolower($interview->applicant->status)) }}">
                                     {{ ucfirst(str_replace('-', ' ', $interview->applicant->status)) }}
@@ -129,7 +129,7 @@
                     <!-- Interview Summary -->
                     <div class="detail-card">
                         <div class="card-header">
-                            <h3>📋 Interview Summary</h3>
+                            <h3> Interview Summary</h3>
                         </div>
                         <div class="card-body">
                             <div class="summary-grid">
@@ -166,7 +166,7 @@
                     <!-- Score Breakdown -->
                     <div class="detail-card span-2">
                         <div class="card-header">
-                            <h3>📊 Score Breakdown</h3>
+                            <h3> Score Breakdown</h3>
                             <div class="overall-score">
                                 <span class="score-value">{{ number_format($interview->overall_score ?? 0, 1) }}%</span>
                                 <span class="score-label">Overall Score</span>
@@ -176,7 +176,7 @@
                             <div class="scores-grid">
                                 <div class="score-category">
                                     <div class="category-header">
-                                        <h5>💻 Technical Skills</h5>
+                                        <h5> Technical Skills</h5>
                                         <span class="category-score">{{ $interview->rating_technical ?? 0 }}/40</span>
                                     </div>
                                     @if(isset($rubricScores['technical']))
@@ -203,7 +203,7 @@
 
                                 <div class="score-category">
                                     <div class="category-header">
-                                        <h5>💬 Communication</h5>
+                                        <h5> Communication</h5>
                                         <span class="category-score">{{ $interview->rating_communication ?? 0 }}/30</span>
                                     </div>
                                     @if(isset($rubricScores['communication']))
@@ -253,18 +253,18 @@
                     <!-- Interview Notes -->
                     <div class="detail-card span-2">
                         <div class="card-header">
-                            <h3>📝 Interview Assessment</h3>
+                            <h3> Interview Assessment</h3>
                         </div>
                         <div class="card-body">
                             <div class="assessment-section">
-                                <h5>💪 Key Strengths</h5>
+                                <h5> Key Strengths</h5>
                                 <div class="assessment-content">
                                     {{ $interview->strengths ?? 'No strengths noted.' }}
                                 </div>
                             </div>
 
                             <div class="assessment-section">
-                                <h5>📈 Areas for Improvement</h5>
+                                <h5> Areas for Improvement</h5>
                                 <div class="assessment-content">
                                     {{ $interview->areas_improvement ?? 'No areas for improvement noted.' }}
                                 </div>
@@ -272,7 +272,7 @@
 
                             @if($interview->notes)
                             <div class="assessment-section">
-                                <h5>📓 Additional Notes</h5>
+                                <h5> Additional Notes</h5>
                                 <div class="assessment-content">
                                     {{ $interview->notes }}
                                 </div>
@@ -285,15 +285,15 @@
                     @if($interview->applicant->status === 'interview-completed')
                     <div class="detail-card span-2">
                         <div class="card-header">
-                            <h3>⚖️ Admission Decision</h3>
+                            <h3>️ Admission Decision</h3>
                         </div>
                         <div class="card-body">
                             <div class="decision-actions">
                                 <button class="btn-success" onclick="makeDecision('admit')">
-                                    ✅ Admit Applicant
+                                     Admit Applicant
                                 </button>
                                 <button class="btn-danger" onclick="makeDecision('reject')">
-                                    ❌ Reject Applicant
+                                     Reject Applicant
                                 </button>
                             </div>
                         </div>

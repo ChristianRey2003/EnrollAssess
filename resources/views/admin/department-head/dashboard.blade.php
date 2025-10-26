@@ -25,25 +25,25 @@
             <div class="sidebar-nav">
                 <div class="nav-item">
                     <a href="{{ route('admin.dashboard') }}" class="nav-link active">
-                        <span class="nav-icon">📊</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Dashboard</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.interview-results') }}" class="nav-link">
-                        <span class="nav-icon">📝</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Interview Results</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.analytics') }}" class="nav-link">
-                        <span class="nav-icon">📈</span>
+                    <a href="{{ route('admin.interview-analytics') }}" class="nav-link">
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Analytics</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.dashboard') }}" class="nav-link">
-                        <span class="nav-icon">⚙️</span>
+                        <span class="nav-icon">️</span>
                         <span class="nav-text">Admin Portal</span>
                     </a>
                 </div>
@@ -60,7 +60,7 @@
                 <form method="POST" action="{{ route('admin.logout') }}">
                     @csrf
                     <button type="submit" class="logout-link">
-                        <span class="nav-icon">🚪</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Logout</span>
                     </button>
                 </form>
@@ -74,7 +74,7 @@
                     <p class="header-subtitle">Strategic overview of admission processes and interview results</p>
                 </div>
                 <div class="header-right">
-                    <div class="header-time">🕐 {{ now()->format('M d, Y g:i A') }}</div>
+                    <div class="header-time"> {{ now()->format('M d, Y g:i A') }}</div>
                 </div>
             </div>
 
@@ -82,17 +82,17 @@
                 <!-- Key Statistics -->
                 <div class="stats-grid department-head-stats">
                     <div class="stat-card">
-                        <div class="stat-icon">👥</div>
+                        <div class="stat-icon"></div>
                         <div class="stat-value">{{ $stats['total_applicants'] }}</div>
                         <div class="stat-label">Total Applicants</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">✅</div>
+                        <div class="stat-icon"></div>
                         <div class="stat-value">{{ $stats['interview_completed'] }}</div>
                         <div class="stat-label">Interviews Completed</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">🎓</div>
+                        <div class="stat-icon"></div>
                         <div class="stat-value">{{ $stats['admitted'] }}</div>
                         <div class="stat-label">Admitted</div>
                     </div>
@@ -111,7 +111,7 @@
                     <div class="section-content">
                         <div class="quick-actions-grid">
                             <a href="{{ route('admin.interview-results') }}" class="quick-action-card">
-                                <div class="action-icon">📝</div>
+                                <div class="action-icon"></div>
                                 <div class="action-content">
                                     <h3>Review Interview Results</h3>
                                     <p>Make admission decisions based on interview evaluations</p>
@@ -119,8 +119,8 @@
                                 <div class="action-arrow">→</div>
                             </a>
                             
-                            <a href="{{ route('admin.analytics') }}" class="quick-action-card">
-                                <div class="action-icon">📈</div>
+                            <a href="{{ route('admin.interview-analytics') }}" class="quick-action-card">
+                                <div class="action-icon"></div>
                                 <div class="action-content">
                                     <h3>View Analytics</h3>
                                     <p>Comprehensive insights into the admission process</p>
@@ -129,7 +129,7 @@
                             </a>
                             
                             <a href="{{ route('admin.export-interview-results') }}" class="quick-action-card">
-                                <div class="action-icon">📊</div>
+                                <div class="action-icon"></div>
                                 <div class="action-content">
                                     <h3>Export Results</h3>
                                     <p>Download interview data for reporting</p>

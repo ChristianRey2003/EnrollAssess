@@ -66,7 +66,7 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.reports') }}" class="nav-link">
+                    <a href="{{ route('admin.reports.index') }}" class="nav-link">
                         <span class="nav-icon"></span>
                         <span class="nav-text">Reports</span>
                     </a>
@@ -104,7 +104,7 @@
                                     <span class="dropdown-icon"></span>
                                     <span class="dropdown-text">Interview Results</span>
                                 </a>
-                                <a href="{{ route('admin.analytics') }}" class="dropdown-item">
+                                <a href="{{ route('admin.analytics.index') }}" class="dropdown-item">
                                     <span class="dropdown-icon"></span>
                                     <span class="dropdown-text">Analytics</span>
                                 </a>

@@ -447,7 +447,7 @@
                 <div class="section-content">
                     @foreach($recentInterviews as $interview)
                     <div class="activity-item">
-                        <div class="activity-icon">✓</div>
+                        <div class="activity-icon"></div>
                         <div class="activity-content">
                             <h4>Interview Completed</h4>
                             <p>{{ $interview->applicant->first_name }} {{ $interview->applicant->last_name }} • {{ $interview->created_at->diffForHumans() }}</p>

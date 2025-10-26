@@ -192,7 +192,7 @@
         <!-- Header -->
         <div class="header">
             <div class="university-logo">
-                🏛️
+                ️
             </div>
             <h1 class="university-name">Eastern Visayas State University</h1>
             <p class="department-name">Computer Studies Department</p>
@@ -221,7 +221,7 @@
 
             <!-- Exam Information -->
             <div class="exam-info">
-                <h3>📋 Exam Information</h3>
+                <h3> Exam Information</h3>
                 <div class="info-item">
                     <span class="info-label">Application No:</span>
                     <span>{{ $applicant->application_no }}</span>
@@ -245,13 +245,13 @@
             <!-- Take Exam Button -->
             <div style="text-align: center;">
                 <a href="{{ $examUrl }}" class="exam-button">
-                    🖥️ Start Your Exam
+                    ️ Start Your Exam
                 </a>
             </div>
 
             <!-- Instructions -->
             <div class="instructions">
-                <h3>📝 Important Instructions</h3>
+                <h3> Important Instructions</h3>
                 <ul>
                     <li><strong>Use a reliable computer</strong> with stable internet connection</li>
                     <li><strong>Find a quiet environment</strong> free from distractions</li>
@@ -264,7 +264,7 @@
 
             <!-- Warning -->
             <div class="warning">
-                <strong>⚠️ Important:</strong> This access code is unique to you and can only be used once. Do not share it with anyone. If you encounter any technical issues during the exam, immediately contact the Computer Studies Department.
+                <strong>️ Important:</strong> This access code is unique to you and can only be used once. Do not share it with anyone. If you encounter any technical issues during the exam, immediately contact the Computer Studies Department.
             </div>
 
             <p>We wish you the best of luck with your examination. This is an important step toward joining our Computer Studies program.</p>
@@ -283,9 +283,9 @@
             <p>Tacloban City, Philippines</p>
             
             <div class="contact-info">
-                <p>📧 Email: cs.department@evsu.edu.ph</p>
-                <p>📞 Phone: (053) 123-4567</p>
-                <p>🌐 Website: www.evsu.edu.ph</p>
+                <p> Email: cs.department@evsu.edu.ph</p>
+                <p> Phone: (053) 123-4567</p>
+                <p> Website: www.evsu.edu.ph</p>
             </div>
 
             <div class="social-links">

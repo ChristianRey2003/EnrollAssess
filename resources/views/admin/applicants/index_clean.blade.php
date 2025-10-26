@@ -26,7 +26,7 @@
         <nav class="admin-sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
-                    <span class="logo-icon">📚</span>
+                    <span class="logo-icon"></span>
                     <span class="logo-text">EnrollAssess</span>
                 </div>
                 <div class="sidebar-subtitle">Admin Portal</div>
@@ -35,37 +35,37 @@
             <div class="nav-menu">
                 <div class="nav-item">
                     <a href="{{ route('admin.dashboard') }}" class="nav-link">
-                        <span class="nav-icon">📊</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Dashboard</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.applicants.index') }}" class="nav-link active">
-                        <span class="nav-icon">👥</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Applicants</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.sets-questions.index') }}" class="nav-link">
-                        <span class="nav-icon">📝</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Exams</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.questions.index') }}" class="nav-link">
-                        <span class="nav-icon">❓</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Questions</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.users.index') }}" class="nav-link">
-                        <span class="nav-icon">👨‍💼</span>
+                        <span class="nav-icon">‍</span>
                         <span class="nav-text">User Management</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.reports') }}" class="nav-link">
-                        <span class="nav-icon">📈</span>
+                    <a href="{{ route('admin.reports.index') }}" class="nav-link">
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Reports</span>
                     </a>
                 </div>
@@ -76,13 +76,13 @@
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.interview-results') }}" class="nav-link">
-                        <span class="nav-icon">🎤</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Interview Results</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.analytics') }}" class="nav-link">
-                        <span class="nav-icon">📊</span>
+                    <a href="{{ route('admin.interview-analytics') }}" class="nav-link">
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Analytics</span>
                     </a>
                 </div>
@@ -92,7 +92,7 @@
                 <form method="POST" action="{{ route('admin.logout') }}">
                     @csrf
                     <button type="submit" class="logout-link">
-                        <span class="nav-icon">🚪</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Logout</span>
                     </button>
                 </form>
@@ -129,17 +129,17 @@
                 <!-- Statistics Section -->
                 <section class="stats-section">
                     <div class="stat-card">
-                        <div class="stat-icon">👥</div>
+                        <div class="stat-icon"></div>
                         <div class="stat-value">{{ $stats['total_applicants'] ?? 0 }}</div>
                         <div class="stat-label">Total Applicants</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">✅</div>
+                        <div class="stat-icon"></div>
                         <div class="stat-value">{{ $stats['with_access_codes'] ?? 0 }}</div>
                         <div class="stat-label">With Access Codes</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">📝</div>
+                        <div class="stat-icon"></div>
                         <div class="stat-value">{{ $stats['exam_completed'] ?? 0 }}</div>
                         <div class="stat-label">Exam Completed</div>
                     </div>
@@ -162,7 +162,7 @@
                                    aria-label="Search applicants">
                         </div>
                         <button onclick="performSearch()" class="btn btn-secondary">
-                            🔍 Search
+                             Search
                         </button>
                     </div>
                     <div class="toolbar-right">
@@ -187,10 +187,10 @@
                             </select>
                         </div>
                         <a href="{{ route('admin.applicants.create') }}" class="btn btn-primary">
-                            ➕ Add Applicant
+                             Add Applicant
                         </a>
                         <a href="{{ route('admin.applicants.import') }}" class="btn btn-secondary">
-                            📁 Import
+                             Import
                         </a>
                     </div>
                 </div>
@@ -202,10 +202,10 @@
                     </div>
                     <div class="bulk-buttons">
                         <button onclick="showGenerateAccessCodesModal()" class="bulk-btn bulk-btn-codes">
-                            🔑 Generate Access Codes
+                             Generate Access Codes
                         </button>
                         <button onclick="bulkExport()" class="bulk-btn bulk-btn-export">
-                            📊 Export Selected
+                             Export Selected
                         </button>
                     </div>
                 </div>
@@ -281,27 +281,27 @@
                                             <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}" 
                                                class="action-btn action-btn-view" 
                                                aria-label="View details for {{ $applicant->full_name }}">
-                                                <span aria-hidden="true">👁️</span>
+                                                <span aria-hidden="true">️</span>
                                                 <span class="sr-only">View Details</span>
                                             </a>
                                             <a href="{{ route('admin.applicants.edit', $applicant->applicant_id) }}" 
                                                class="action-btn action-btn-edit" 
                                                aria-label="Edit {{ $applicant->full_name }}">
-                                                <span aria-hidden="true">✏️</span>
+                                                <span aria-hidden="true">️</span>
                                                 <span class="sr-only">Edit</span>
                                             </a>
                                             @if(!$applicant->accessCode)
                                             <button onclick="generateSingleAccessCode({{ $applicant->applicant_id }})" 
                                                     class="action-btn action-btn-code" 
                                                     aria-label="Generate access code for {{ $applicant->full_name }}">
-                                                <span aria-hidden="true">🔑</span>
+                                                <span aria-hidden="true"></span>
                                                 <span class="sr-only">Generate Access Code</span>
                                             </button>
                                             @endif
                                             <button onclick="deleteApplicant({{ $applicant->applicant_id }})" 
                                                     class="action-btn action-btn-delete" 
                                                     aria-label="Delete {{ $applicant->full_name }}">
-                                                <span aria-hidden="true">🗑️</span>
+                                                <span aria-hidden="true">️</span>
                                                 <span class="sr-only">Delete</span>
                                             </button>
                                         </div>
@@ -311,7 +311,7 @@
                                 <tr>
                                     <td colspan="7" class="text-center py-8">
                                         <div class="empty-state">
-                                            <div class="empty-icon">📋</div>
+                                            <div class="empty-icon"></div>
                                             <div class="empty-title">No applicants found</div>
                                             <div class="empty-message">
                                                 @if(request()->hasAny(['search', 'status', 'instructor_id']))

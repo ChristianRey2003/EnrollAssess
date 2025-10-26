@@ -73,10 +73,18 @@
                 </a>
             </div>
             <div class="nav-item">
-                <a href="{{ route('admin.reports') }}" 
+                <a href="{{ route('admin.reports.index') }}" 
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.reports') ? 'active' : '' }}">
                     <span class="nav-icon"></span>
                     <span class="nav-text">Reports</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{{ route('admin.analytics.index') }}" 
+                   class="nav-link {{ str_starts_with($currentRoute, 'admin.analytics') ? 'active' : '' }}">
+                    <span class="nav-icon"></span>
+                    <span class="nav-text">Analytics</span>
                 </a>
             </div>
 

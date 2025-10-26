@@ -85,6 +85,12 @@ class ExamSubmissionController extends Controller
 
             DB::commit();
 
+            // Dispatch exam completed event
+            \App\Events\ExamCompleted::dispatch($applicant->fresh(), $scoreData['percentage']);
+            
+            // Dispatch statistics update event
+            $this->dispatchStatisticsUpdate();
+
             Log::info("Exam completed for applicant {$applicantId} with score {$scoreData['percentage']}%");
 
             return response()->json([
@@ -336,5 +342,25 @@ class ExamSubmissionController extends Controller
         if ($percentage >= 65) return 'Satisfactory';
         if ($percentage >= 50) return 'Fair';
         return 'Needs Improvement';
+    }
+
+    /**
+     * Dispatch statistics update event
+     */
+    protected function dispatchStatisticsUpdate()
+    {
+        $stats = [
+            'total' => Applicant::count(),
+            'pending' => Applicant::where('status', 'pending')->count(),
+            'exam_completed' => Applicant::where('status', 'exam-completed')->count(),
+            'interview_scheduled' => Applicant::where('status', 'interview-scheduled')->count(),
+            'interview_completed' => Applicant::where('status', 'interview-completed')->count(),
+            'admitted' => Applicant::where('status', 'admitted')->count(),
+            'rejected' => Applicant::where('status', 'rejected')->count(),
+            'with_access_codes' => Applicant::whereHas('accessCode')->count(),
+            'without_access_codes' => Applicant::whereDoesntHave('accessCode')->count(),
+        ];
+
+        \App\Events\StatisticsUpdated::dispatch($stats);
     }
 }

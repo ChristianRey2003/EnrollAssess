@@ -5,7 +5,7 @@
         <div class="modal-header access-codes-header">
             <div class="header-icon">
                 <div class="icon-circle">
-                    <span class="icon-symbol">🔑</span>
+                    <span class="icon-symbol"></span>
                 </div>
             </div>
             <h3 class="modal-title">Generate New Access Codes</h3>
@@ -68,7 +68,7 @@
                         Cancel
                     </button>
                     <button type="button" onclick="generateCodes()" class="btn-generate" id="generateBtn">
-                        <span class="btn-icon">🔑</span>
+                        <span class="btn-icon"></span>
                         <span class="btn-text">Generate Codes</span>
                     </button>
                 </div>
@@ -77,7 +77,7 @@
             <!-- Results Section -->
             <div class="codes-results" id="codesResults" style="display: none;">
                 <div class="results-header">
-                    <div class="success-icon">✅</div>
+                    <div class="success-icon"></div>
                     <h4 class="results-title">Access Codes Generated Successfully!</h4>
                     <p class="results-subtitle"><span id="generatedCount">10</span> unique access codes have been created</p>
                 </div>
@@ -86,9 +86,9 @@
                     <div class="codes-header">
                         <div class="codes-title">Generated Access Codes</div>
                         <div class="codes-actions">
-                            <button onclick="selectAllCodes()" class="action-btn">📋 Select All</button>
-                            <button onclick="copyCodes()" class="action-btn">📄 Copy All</button>
-                            <button onclick="exportCodes()" class="action-btn">📊 Export CSV</button>
+                            <button onclick="selectAllCodes()" class="action-btn"> Select All</button>
+                            <button onclick="copyCodes()" class="action-btn"> Copy All</button>
+                            <button onclick="exportCodes()" class="action-btn"> Export CSV</button>
                         </div>
                     </div>
                     
@@ -101,23 +101,23 @@
                     <h5 class="distribution-title">Distribution Options</h5>
                     <div class="distribution-actions">
                         <button onclick="emailCodes()" class="btn-primary">
-                            📧 Email to Applicants
+                             Email to Applicants
                         </button>
                         <button onclick="printCodes()" class="btn-secondary">
-                            🖨️ Print Codes
+                            ️ Print Codes
                         </button>
                         <button onclick="downloadPDF()" class="btn-secondary">
-                            📄 Download PDF
+                             Download PDF
                         </button>
                     </div>
                 </div>
 
                 <div class="results-actions">
                     <button type="button" onclick="generateMoreCodes()" class="btn-secondary">
-                        ➕ Generate More Codes
+                         Generate More Codes
                     </button>
                     <button type="button" onclick="closeCodesModal()" class="btn-primary">
-                        ✅ Done
+                         Done
                     </button>
                 </div>
             </div>
@@ -802,7 +802,7 @@ function displayGeneratedCodes() {
     codesList.innerHTML = generatedCodes.map((code, index) => `
         <div class="code-item">
             <span class="code-value">${code}</span>
-            <button onclick="copyCode('${code}')" class="code-copy-btn">📋 Copy</button>
+            <button onclick="copyCode('${code}')" class="code-copy-btn"> Copy</button>
         </div>
     `).join('');
 }
@@ -815,7 +815,7 @@ function copyCode(code) {
         // Show temporary success message
         const btn = event.target;
         const originalText = btn.textContent;
-        btn.textContent = '✅ Copied';
+        btn.textContent = ' Copied';
         btn.style.background = '#dcfce7';
         
         setTimeout(() => {

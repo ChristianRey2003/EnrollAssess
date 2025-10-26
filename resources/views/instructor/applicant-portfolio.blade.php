@@ -404,7 +404,7 @@
 <div class="portfolio-layout">
     <!-- Left: Applicant summary -->
     <section class="portfolio-card">
-        <div class="card-header"><h3>👤 Applicant Summary</h3></div>
+        <div class="card-header"><h3> Applicant Summary</h3></div>
         <div class="card-body">
             <div class="summary-header">
                 <div class="avatar-lg">{{ $applicant->initials }}</div>
@@ -435,7 +435,7 @@
             </div>
 
             <div class="exam-performance">
-                <h4>📊 Exam Performance</h4>
+                <h4> Exam Performance</h4>
                 @if($examStats['total_questions'] > 0)
                     <div class="score-display">
                         <div class="score-circle {{ $examStats['percentage'] >= 70 ? 'good' : 'needs-improvement' }}">
@@ -453,7 +453,7 @@
             </div>
 
             <div class="interview-history">
-                <h4>📝 Interview History</h4>
+                <h4> Interview History</h4>
                 @if($latestInterview)
                     <div class="interview-item">
                         <div class="interview-date">
@@ -473,7 +473,7 @@
     <!-- Right: Detailed analysis -->
     <section class="main-content-section">
         <div class="section-header">
-            <h3>📋 Detailed Analysis</h3>
+            <h3> Detailed Analysis</h3>
         </div>
         <div class="section-content">
             <!-- Exam Details -->
@@ -510,7 +510,7 @@
                             </div>
                             <div class="question-meta">
                                 <span class="{{ $result->is_correct ? 'correct-answer' : 'incorrect-answer' }}">
-                                    {{ $result->is_correct ? '✓ Correct' : '✗ Incorrect' }}
+                                    {{ $result->is_correct ? ' Correct' : ' Incorrect' }}
                                 </span>
                                 <span>Question {{ $loop->iteration }}</span>
                             </div>

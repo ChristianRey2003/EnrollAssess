@@ -317,7 +317,7 @@
         <header class="top-header">
             <div class="flex items-center gap-4">
                 <button class="mobile-menu-btn" onclick="toggleSidebar()">
-                    ☰
+                    
                 </button>
                 <h1 class="page-title">
                     @if(isset($pageTitle))

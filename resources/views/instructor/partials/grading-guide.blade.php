@@ -2,7 +2,7 @@
 <div class="grading-guide">
     <div class="guide-header">
         <h3 class="guide-title">
-            <span class="guide-icon">📋</span>
+            <span class="guide-icon"></span>
             Grading Guide
         </h3>
         <button type="button" class="guide-toggle" onclick="toggleGradingGuide()">

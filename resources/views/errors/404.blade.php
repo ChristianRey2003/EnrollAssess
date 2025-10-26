@@ -31,20 +31,20 @@
                 @auth
                     @if(Auth::user()->role === 'department-head')
                         <a href="{{ route('admin.dashboard') }}" class="btn-primary">
-                            🏠 Admin Dashboard
+                             Admin Dashboard
                         </a>
                     @elseif(Auth::user()->role === 'instructor')
                         <a href="{{ route('instructor.dashboard') }}" class="btn-primary">
-                            🏠 Instructor Dashboard
+                             Instructor Dashboard
                         </a>
                     @else
                         <a href="{{ route('admin.dashboard') }}" class="btn-primary">
-                            🏠 Dashboard
+                             Dashboard
                         </a>
                     @endif
                 @else
                     <a href="{{ route('admin.login') }}" class="btn-primary">
-                        🔐 Login
+                         Login
                     </a>
                 @endauth
                 

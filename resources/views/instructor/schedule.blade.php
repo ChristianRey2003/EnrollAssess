@@ -324,6 +324,72 @@
         min-height: 80px;
     }
 
+    /* Bulk Scheduling Styles */
+    .bulk-schedule-section {
+        background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%);
+        border: 2px solid #bae6fd;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 32px;
+    }
+
+    .bulk-schedule-header {
+        margin-bottom: 20px;
+    }
+
+    .bulk-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--maroon-primary);
+        margin: 0 0 4px 0;
+    }
+
+    .bulk-subtitle {
+        color: #6B7280;
+        font-size: 0.875rem;
+        margin: 0;
+    }
+
+    .bulk-form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        align-items: end;
+    }
+
+    .bulk-form-item {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .bulk-form-item.bulk-action-item {
+        justify-content: flex-end;
+    }
+
+    .bulk-label {
+        font-weight: 500;
+        color: #374151;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .bulk-input {
+        padding: 10px 12px;
+        border: 1px solid #D1D5DB;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        background: white;
+    }
+
+    .bulk-input:focus {
+        outline: none;
+        border-color: var(--maroon-primary);
+        box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1);
+    }
+
     @media (max-width: 768px) {
         .schedule-sections {
             grid-template-columns: 1fr;
@@ -346,6 +412,10 @@
         }
         
         .interview-meta {
+            grid-template-columns: 1fr;
+        }
+
+        .bulk-form-grid {
             grid-template-columns: 1fr;
         }
     }
@@ -373,6 +443,50 @@
             <div class="stat-label">Total Active</div>
         </div>
     </div>
+
+    <!-- Bulk Scheduling Section -->
+    @if($pendingScheduling->count() > 0)
+    <div class="bulk-schedule-section">
+        <div class="bulk-schedule-header">
+            <h3 class="bulk-title"> Bulk Scheduling</h3>
+            <p class="bulk-subtitle">Schedule multiple interviews with automatic time distribution</p>
+        </div>
+        <div class="bulk-schedule-form">
+            <div class="bulk-form-grid">
+                <div class="bulk-form-item">
+                    <label class="bulk-label">
+                        <input type="checkbox" id="selectAllPending" onchange="toggleAllPending()">
+                        Select All (<span id="selectedCount">0</span> selected)
+                    </label>
+                </div>
+                <div class="bulk-form-item">
+                    <label class="bulk-label">Start Date & Time *</label>
+                    <input type="datetime-local" id="bulkStartTime" class="bulk-input" required>
+                </div>
+                <div class="bulk-form-item">
+                    <label class="bulk-label">Time Interval *</label>
+                    <select id="bulkInterval" class="bulk-input">
+                        <option value="15">15 minutes</option>
+                        <option value="30" selected>30 minutes</option>
+                        <option value="45">45 minutes</option>
+                        <option value="60">60 minutes</option>
+                    </select>
+                </div>
+                <div class="bulk-form-item">
+                    <label class="bulk-label">
+                        <input type="checkbox" id="bulkNotifyEmail" checked>
+                        Send email notifications
+                    </label>
+                </div>
+                <div class="bulk-form-item bulk-action-item">
+                    <button type="button" onclick="submitBulkSchedule()" class="btn btn-primary" id="bulkScheduleBtn" disabled>
+                         Bulk Schedule
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 
     <!-- Schedule Sections -->
     <div class="schedule-sections">
@@ -442,9 +556,15 @@
                 @forelse($pendingScheduling as $interview)
                     <div class="interview-card">
                         <div class="interview-header">
-                            <div class="applicant-info">
-                                <h4>{{ $interview->applicant->first_name }} {{ $interview->applicant->last_name }}</h4>
-                                <p>{{ $interview->applicant->email_address }}</p>
+                            <div style="display: flex; align-items: start; gap: 12px; flex: 1;">
+                                <input type="checkbox" class="interview-checkbox" 
+                                       data-interview-id="{{ $interview->interview_id }}"
+                                       onchange="updateBulkSelection()"
+                                       style="width: 20px; height: 20px; cursor: pointer; margin-top: 2px;">
+                                <div class="applicant-info">
+                                    <h4>{{ $interview->applicant->first_name }} {{ $interview->applicant->last_name }}</h4>
+                                    <p>{{ $interview->applicant->email_address }}</p>
+                                </div>
                             </div>
                             <span class="status-badge status-pending">Pending</span>
                         </div>
@@ -525,6 +645,108 @@
 
 @push('scripts')
 <script>
+    // Initialize minimum date for bulk scheduling
+    document.addEventListener('DOMContentLoaded', function() {
+        const now = new Date();
+        now.setHours(now.getHours() + 1);
+        const bulkStartTime = document.getElementById('bulkStartTime');
+        if (bulkStartTime) {
+            bulkStartTime.min = now.toISOString().slice(0, 16);
+        }
+    });
+
+    // Toggle all pending interview checkboxes
+    function toggleAllPending() {
+        const selectAll = document.getElementById('selectAllPending');
+        const checkboxes = document.querySelectorAll('.interview-checkbox');
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        updateBulkSelection();
+    }
+
+    // Update bulk selection count and button state
+    function updateBulkSelection() {
+        const checkedBoxes = document.querySelectorAll('.interview-checkbox:checked');
+        const count = checkedBoxes.length;
+        document.getElementById('selectedCount').textContent = count;
+        document.getElementById('bulkScheduleBtn').disabled = count === 0;
+        
+        // Update "Select All" checkbox state
+        const allCheckboxes = document.querySelectorAll('.interview-checkbox');
+        const selectAllCheckbox = document.getElementById('selectAllPending');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = allCheckboxes.length > 0 && count === allCheckboxes.length;
+        }
+    }
+
+    // Submit bulk schedule
+    function submitBulkSchedule() {
+        const checkedBoxes = document.querySelectorAll('.interview-checkbox:checked');
+        const interviewIds = Array.from(checkedBoxes).map(cb => cb.dataset.interviewId);
+        
+        if (interviewIds.length === 0) {
+            alert('Please select at least one interview to schedule.');
+            return;
+        }
+
+        const startTime = document.getElementById('bulkStartTime').value;
+        const interval = document.getElementById('bulkInterval').value;
+        const notifyEmail = document.getElementById('bulkNotifyEmail').checked;
+
+        if (!startTime) {
+            alert('Please select a start date and time.');
+            return;
+        }
+
+        // Confirm bulk scheduling
+        const message = `Schedule ${interviewIds.length} interview(s) starting at ${new Date(startTime).toLocaleString()} with ${interval}-minute intervals?`;
+        if (!confirm(message)) {
+            return;
+        }
+
+        const bulkBtn = document.getElementById('bulkScheduleBtn');
+        bulkBtn.disabled = true;
+        bulkBtn.textContent = '⏳ Scheduling...';
+
+        fetch('/instructor/interviews/bulk-schedule', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                interview_ids: interviewIds,
+                schedule_date_start: startTime,
+                time_interval: parseInt(interval),
+                notify_email: notifyEmail ? 1 : 0
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let message = data.message;
+                if (data.emails_sent) {
+                    message += ` ${data.emails_sent} email(s) sent.`;
+                }
+                if (data.errors && data.errors.length > 0) {
+                    message += '\n\nErrors:\n' + data.errors.join('\n');
+                }
+                alert(message);
+                location.reload();
+            } else {
+                alert(data.message || 'Failed to schedule interviews');
+                bulkBtn.disabled = false;
+                bulkBtn.textContent = ' Bulk Schedule';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+            bulkBtn.disabled = false;
+            bulkBtn.textContent = ' Bulk Schedule';
+        });
+    }
+
     function scheduleInterview(interviewId) {
         document.getElementById('interviewId').value = interviewId;
         document.getElementById('scheduleModal').classList.add('show');
@@ -536,10 +758,6 @@
     }
 
     function rescheduleInterview(interviewId) {
-        // Find the interview data to pre-populate the form
-        const interviewCard = document.querySelector(`button[onclick="rescheduleInterview(${interviewId})"]`).closest('.interview-card');
-        const scheduleDate = interviewCard.querySelector('.meta-item span').textContent; // This would need to be improved
-        
         document.getElementById('interviewId').value = interviewId;
         document.getElementById('scheduleModal').classList.add('show');
         
@@ -550,11 +768,15 @@
         
         // Update modal title for rescheduling
         document.querySelector('.modal-title').textContent = 'Reschedule Interview';
+        
+        // Mark as reschedule mode
+        document.getElementById('scheduleForm').dataset.mode = 'reschedule';
     }
 
     function closeScheduleModal() {
         document.getElementById('scheduleModal').classList.remove('show');
         document.getElementById('scheduleForm').reset();
+        document.getElementById('scheduleForm').dataset.mode = '';
         document.querySelector('.modal-title').textContent = 'Schedule Interview';
     }
 
@@ -564,6 +786,7 @@
         
         const formData = new FormData(this);
         const interviewId = formData.get('interview_id');
+        const mode = this.dataset.mode || 'schedule';
         
         const data = {
             schedule_date: formData.get('schedule_date'),
@@ -571,7 +794,12 @@
             notify_email: formData.get('notify_email') ? 1 : 0
         };
         
-        fetch(`/instructor/interviews/${interviewId}/schedule`, {
+        // Determine endpoint based on mode
+        const endpoint = mode === 'reschedule' 
+            ? `/instructor/interviews/${interviewId}/reschedule`
+            : `/instructor/interviews/${interviewId}/schedule`;
+        
+        fetch(endpoint, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -590,7 +818,7 @@
                 alert(message);
                 location.reload();
             } else {
-                alert(data.message || 'Failed to schedule interview');
+                alert(data.message || 'Failed to ' + mode + ' interview');
             }
         })
         .catch(error => {

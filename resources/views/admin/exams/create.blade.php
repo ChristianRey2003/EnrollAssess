@@ -31,43 +31,43 @@
             <div class="sidebar-nav">
                 <div class="nav-item">
                     <a href="{{ route('admin.dashboard') }}" class="nav-link">
-                        <span class="nav-icon">📊</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Dashboard</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.applicants.index') }}" class="nav-link">
-                        <span class="nav-icon">👥</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Applicants</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.sets-questions.index') }}" class="nav-link active">
-                        <span class="nav-icon">📝</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Exams</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.questions.index') }}" class="nav-link">
-                        <span class="nav-icon">❓</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Questions</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.interviews.index') }}" class="nav-link">
-                        <span class="nav-icon">📅</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Interviews</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.users.index') }}" class="nav-link">
-                        <span class="nav-icon">👤</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Users</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.reports') }}" class="nav-link">
-                        <span class="nav-icon">📈</span>
+                    <a href="{{ route('admin.reports.index') }}" class="nav-link">
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Reports</span>
                     </a>
                 </div>
@@ -166,10 +166,10 @@
                             <!-- Form Actions -->
                             <div class="form-actions">
                                 <button type="button" onclick="previewExam()" class="btn-secondary">
-                                    👁️ Preview Exam
+                                    ️ Preview Exam
                                 </button>
                                 <button type="submit" class="btn-primary" id="saveButton">
-                                    💾 {{ isset($exam) ? 'Update Exam' : 'Create Exam' }}
+                                     {{ isset($exam) ? 'Update Exam' : 'Create Exam' }}
                                 </button>
                             </div>
                         </form>
@@ -284,7 +284,7 @@
             form.addEventListener('submit', function(e) {
                 const saveButton = document.getElementById('saveButton');
                 saveButton.disabled = true;
-                saveButton.innerHTML = '💾 {{ isset($exam) ? "Updating..." : "Creating..." }}';
+                saveButton.innerHTML = ' {{ isset($exam) ? "Updating..." : "Creating..." }}';
             });
         });
 

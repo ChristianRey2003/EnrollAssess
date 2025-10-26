@@ -1,9 +1,12 @@
 <?php
 
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\ApplicantController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentHeadController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\InterviewController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\SetsQuestionsController;
@@ -142,9 +145,14 @@ Route::prefix('interviews')->name('interviews.')->middleware('role:department-he
 });
 
 // Reports
-Route::get('/reports', [ReportsController::class, 'index'])
-    ->middleware('role:department-head,administrator')
-    ->name('reports');
+Route::prefix('reports')->name('reports.')->middleware('role:department-head,administrator')->group(function () {
+    Route::get('/', [ReportsController::class, 'index'])->name('index');
+    Route::post('/generate', [ReportsController::class, 'generate'])->name('generate');
+    Route::get('/{id}/download', [ReportsController::class, 'download'])->name('download');
+    Route::post('/preview', [ReportsController::class, 'preview'])->name('preview');
+    Route::get('/history', [ReportsController::class, 'history'])->name('history');
+    Route::delete('/{id}', [ReportsController::class, 'destroy'])->name('destroy');
+});
 
 // User Management (Department Head only)
 Route::middleware(['role:department-head'])->prefix('users')->name('users.')->group(function () {
@@ -176,14 +184,47 @@ Route::get('/interview-detail/{interview}', function ($interviewId) {
 Route::post('/bulk-admission-decision', [DepartmentHeadController::class, 'bulkAdmissionDecision'])
     ->middleware('role:department-head,administrator')
     ->name('bulk-admission-decision');
-Route::get('/analytics', [DepartmentHeadController::class, 'analytics'])
+Route::get('/interview-analytics', [DepartmentHeadController::class, 'analytics'])
     ->middleware('role:department-head,administrator')
-    ->name('analytics');
+    ->name('interview-analytics');
 Route::get('/export-interview-results', [DepartmentHeadController::class, 'exportInterviewResults'])
     ->middleware('role:department-head,administrator')
     ->name('export-interview-results');
 
-// Settings (placeholder)
-Route::get('/settings', function () {
-    return redirect('/admin/dashboard')->with('info', 'Settings page (demo)');
-})->middleware('role:department-head,administrator')->name('settings');
+// Settings
+Route::middleware(['role:department-head,administrator'])->prefix('settings')->name('settings')->group(function () {
+    Route::get('/', [\App\Http\Controllers\SettingsController::class, 'index']);
+    Route::put('/', [\App\Http\Controllers\SettingsController::class, 'update'])->name('.update');
+    Route::post('/test-email', [\App\Http\Controllers\SettingsController::class, 'testEmail'])->name('.test-email');
+    Route::post('/reset', [\App\Http\Controllers\SettingsController::class, 'reset'])->name('.reset');
+});
+
+// Dashboard API Routes (Real-time)
+Route::prefix('api/dashboard')->name('api.dashboard.')->middleware('role:department-head,administrator')->group(function () {
+    Route::get('/stats', [DashboardController::class, 'getLiveStats'])->name('stats');
+    Route::get('/activity', [DashboardController::class, 'getRecentActivity'])->name('activity');
+    Route::get('/charts/{type}', [DashboardController::class, 'getChartData'])->name('charts');
+    Route::get('/health', [DashboardController::class, 'getSystemHealth'])->name('health');
+});
+
+// Analytics Dashboard Routes (New Phase 2 Feature)
+Route::prefix('analytics-dashboard')->name('analytics.')->middleware('role:department-head,administrator')->group(function () {
+    Route::get('/', [AnalyticsController::class, 'index'])->name('index');
+    Route::get('/score-distribution', [AnalyticsController::class, 'getScoreDistribution'])->name('score-distribution');
+    Route::get('/performance-trends', [AnalyticsController::class, 'getPerformanceTrends'])->name('performance-trends');
+    Route::get('/conversion-funnel', [AnalyticsController::class, 'getConversionFunnel'])->name('conversion-funnel');
+    Route::get('/instructor-workload', [AnalyticsController::class, 'getInstructorWorkload'])->name('instructor-workload');
+    Route::get('/time-to-completion', [AnalyticsController::class, 'getTimeToCompletion'])->name('time-to-completion');
+    Route::get('/category-performance', [AnalyticsController::class, 'getCategoryPerformance'])->name('category-performance');
+    Route::get('/export', [AnalyticsController::class, 'export'])->name('export');
+});
+
+// Notifications Routes
+Route::prefix('notifications')->name('notifications.')->middleware('role:department-head,administrator,instructor')->group(function () {
+    Route::get('/', [NotificationController::class, 'index'])->name('index');
+    Route::get('/unread-count', [NotificationController::class, 'unreadCount'])->name('unread-count');
+    Route::post('/{id}/read', [NotificationController::class, 'markAsRead'])->name('mark-as-read');
+    Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
+    Route::delete('/{id}', [NotificationController::class, 'destroy'])->name('destroy');
+    Route::delete('/', [NotificationController::class, 'clearAll'])->name('clear-all');
+});

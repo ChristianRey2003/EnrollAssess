@@ -687,21 +687,21 @@
                             </div>
                         </div>
                         <div class="info-item">
-                            <div class="info-icon">📱</div>
+                            <div class="info-icon"></div>
                             <div class="info-details">
                                 <div class="info-label">Phone Number</div>
                                 <div class="info-value">{{ $applicant->phone ?? '+1 (555) 123-4567' }}</div>
                             </div>
                         </div>
                         <div class="info-item">
-                            <div class="info-icon">📍</div>
+                            <div class="info-icon"></div>
                             <div class="info-details">
                                 <div class="info-label">Address</div>
                                 <div class="info-value">{{ $applicant->address ?? '123 Main St, City, State 12345' }}</div>
                             </div>
                         </div>
                         <div class="info-item">
-                            <div class="info-icon">🎓</div>
+                            <div class="info-icon"></div>
                             <div class="info-details">
                                 <div class="info-label">Previous Education</div>
                                 <div class="info-value">{{ $applicant->education ?? 'City High School, 2023' }}</div>
@@ -723,7 +723,7 @@
                     @if($applicant->exam_completed ?? true)
                         <div class="info-grid">
                             <div class="info-item">
-                                <div class="info-icon">✓</div>
+                                <div class="info-icon"></div>
                                 <div class="info-details">
                                     <div class="info-label">Questions Correct</div>
                                     <div class="info-value">{{ $applicant->correct_answers ?? 17 }}/{{ $applicant->total_questions ?? 20 }}</div>
@@ -737,14 +737,14 @@
                                 </div>
                             </div>
                             <div class="info-item">
-                                <div class="info-icon">📅</div>
+                                <div class="info-icon"></div>
                                 <div class="info-details">
                                     <div class="info-label">Completion Date</div>
                                     <div class="info-value">{{ $applicant->exam_completed_at ?? now()->format('M d, Y - g:i A') }}</div>
                                 </div>
                             </div>
                             <div class="info-item">
-                                <div class="info-icon">🏆</div>
+                                <div class="info-icon"></div>
                                 <div class="info-details">
                                     <div class="info-label">Result Status</div>
                                     <div class="info-value">
@@ -757,7 +757,7 @@
                         </div>
                     @else
                         <div style="text-align: center; padding: var(--space-8);">
-                            <div style="font-size: var(--text-4xl); margin-bottom: var(--space-4);">📝</div>
+                            <div style="font-size: var(--text-4xl); margin-bottom: var(--space-4);"></div>
                             <h3 style="color: var(--maroon-primary); margin-bottom: var(--space-2);">Exam Not Completed</h3>
                             <p style="color: var(--text-gray); margin-bottom: var(--space-4);">This applicant has not yet completed the entrance examination.</p>
                             <button onclick="sendExamReminder()" class="btn-modern btn-primary-modern">Send Exam Reminder</button>
@@ -862,7 +862,7 @@
         notification.className = `notification notification-${type}`;
         notification.innerHTML = `
             <div class="notification-content">
-                <span class="notification-icon">${type === 'success' ? '✓' : type === 'error' ? '✗' : 'ℹ'}</span>
+                <span class="notification-icon">${type === 'success' ? '' : type === 'error' ? '' : 'ℹ'}</span>
                 <span class="notification-message">${message}</span>
             </div>
         `;

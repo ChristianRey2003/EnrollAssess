@@ -31,43 +31,43 @@
             <div class="sidebar-nav">
                 <div class="nav-item">
                     <a href="{{ route('admin.dashboard') }}" class="nav-link">
-                        <span class="nav-icon">📊</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Dashboard</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.applicants.index') }}" class="nav-link">
-                        <span class="nav-icon">👥</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Applicants</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.sets-questions.index') }}" class="nav-link">
-                        <span class="nav-icon">📝</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Exams</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.questions.index') }}" class="nav-link active">
-                        <span class="nav-icon">❓</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Questions</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.interviews.index') }}" class="nav-link">
-                        <span class="nav-icon">📅</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Interviews</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.users.index') }}" class="nav-link">
-                        <span class="nav-icon">👤</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Users</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.reports') }}" class="nav-link">
-                        <span class="nav-icon">📈</span>
+                    <a href="{{ route('admin.reports.index') }}" class="nav-link">
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Reports</span>
                     </a>
                 </div>
@@ -334,10 +334,10 @@
                             <!-- Form Actions -->
                             <div class="form-actions">
                                 <button type="button" onclick="previewQuestion()" class="btn-secondary">
-                                    👁️ Preview Question
+                                    ️ Preview Question
                                 </button>
                                 <button type="submit" class="btn-primary" id="saveButton">
-                                    💾 {{ isset($question) ? 'Update Question' : 'Save Question' }}
+                                     {{ isset($question) ? 'Update Question' : 'Save Question' }}
                                 </button>
                             </div>
                         </form>
@@ -463,7 +463,7 @@
                             <div class="preview-option ${isCorrect ? 'correct-option' : ''}">
                                 <span class="option-letter">${letter})</span>
                                 <span class="option-text">${option}</span>
-                                ${isCorrect ? '<span class="correct-indicator">✓ Correct</span>' : ''}
+                                ${isCorrect ? '<span class="correct-indicator"> Correct</span>' : ''}
                             </div>
                         `;
                     });
@@ -481,7 +481,7 @@
                         previewHtml += `
                             <div class="preview-option ${isCorrect ? 'correct-option' : ''}">
                                 <span class="option-letter">${option}</span>
-                                ${isCorrect ? '<span class="correct-indicator">✓ Correct</span>' : ''}
+                                ${isCorrect ? '<span class="correct-indicator"> Correct</span>' : ''}
                             </div>
                         `;
                     });
@@ -624,13 +624,13 @@
         document.getElementById('questionForm').addEventListener('submit', function(e) {
             const saveButton = document.getElementById('saveButton');
             saveButton.disabled = true;
-            saveButton.innerHTML = '💾 Saving...';
+            saveButton.innerHTML = ' Saving...';
             
             // In a real application, form would submit normally
             // This is just for demo feedback
             setTimeout(() => {
                 saveButton.disabled = false;
-                saveButton.innerHTML = '💾 {{ isset($question) ? "Update Question" : "Save Question" }}';
+                saveButton.innerHTML = ' {{ isset($question) ? "Update Question" : "Save Question" }}';
             }, 2000);
         });
         

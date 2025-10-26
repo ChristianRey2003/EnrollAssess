@@ -50,7 +50,7 @@ class QuestionBankSeeder extends Seeder
         $this->createMCQQuestions($exam->exam_id);
         $this->createTrueFalseQuestions($exam->exam_id);
         
-        $this->command->info('✓ Successfully seeded 10 IT questions (5 MCQ + 5 T/F)');
+        $this->command->info(' Successfully seeded 10 IT questions (5 MCQ + 5 T/F)');
     }
 
     private function createMCQQuestions($examId): void

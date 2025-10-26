@@ -192,6 +192,12 @@ class InstructorController extends Controller
             'interview_score' => $totalScore,
         ]);
 
+        // Dispatch interview completed event
+        \App\Events\InterviewCompleted::dispatch($interview->load(['applicant', 'instructor']));
+        
+        // Dispatch statistics update event
+        $this->dispatchStatisticsUpdate();
+
         return redirect()->route('instructor.applicants')
                         ->with('success', 'Interview evaluation submitted successfully! Total Score: ' . $totalScore . '/100 points');
     }
@@ -458,6 +464,12 @@ class InstructorController extends Controller
             }
         }
 
+        // Dispatch interview scheduled event
+        \App\Events\InterviewScheduled::dispatch($interview->load(['applicant', 'instructor']));
+        
+        // Dispatch statistics update event
+        $this->dispatchStatisticsUpdate();
+
         return response()->json([
             'success' => true,
             'message' => 'Interview scheduled successfully!',
@@ -536,6 +548,11 @@ class InstructorController extends Controller
             }
         });
 
+        // Dispatch statistics update event after bulk operation
+        if ($scheduled > 0) {
+            $this->dispatchStatisticsUpdate();
+        }
+
         return response()->json([
             'success' => true,
             'scheduled' => $scheduled,
@@ -586,5 +603,103 @@ class InstructorController extends Controller
                 'message' => 'Failed to send email. Please try again.'
             ], 500);
         }
+    }
+
+    /**
+     * Reschedule an existing interview
+     */
+    public function rescheduleInterview(Request $request, $interviewId)
+    {
+        $instructor = Auth::user();
+        
+        $request->validate([
+            'schedule_date' => 'required|date|after:now',
+            'notes' => 'nullable|string|max:1000',
+            'notify_email' => 'nullable|boolean',
+        ]);
+
+        $interview = Interview::findOrFail($interviewId);
+        
+        // Verify instructor owns this interview
+        if ($interview->interviewer_id !== $instructor->user_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not assigned to this interview.'
+            ], 403);
+        }
+
+        // Check for scheduling conflicts
+        $conflict = Interview::where('interviewer_id', $instructor->user_id)
+            ->where('interview_id', '!=', $interviewId)
+            ->where('status', 'scheduled')
+            ->whereNotNull('schedule_date')
+            ->where(function($q) use ($request) {
+                $scheduleDate = \Carbon\Carbon::parse($request->schedule_date);
+                $q->whereBetween('schedule_date', [
+                    $scheduleDate->copy()->subMinutes(30),
+                    $scheduleDate->copy()->addMinutes(30)
+                ]);
+            })
+            ->exists();
+
+        if ($conflict) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You have another interview scheduled within 30 minutes of this time.'
+            ], 400);
+        }
+
+        // Update interview
+        $interview->update([
+            'schedule_date' => $request->schedule_date,
+            'status' => 'scheduled',
+            'notes' => $request->notes,
+        ]);
+
+        // Update applicant status
+        $interview->applicant->update(['status' => 'interview-scheduled']);
+
+        // Send email notification if requested
+        $emailSent = false;
+        if ($request->notify_email) {
+            try {
+                Mail::to($interview->applicant->email_address)->send(
+                    new InterviewScheduleMail($interview->applicant, $interview)
+                );
+                $emailSent = true;
+            } catch (\Exception $e) {
+                \Log::error('Failed to send rescheduled interview email: ' . $e->getMessage());
+            }
+        }
+
+        // Dispatch interview scheduled event (for rescheduling)
+        \App\Events\InterviewScheduled::dispatch($interview->load(['applicant', 'instructor']));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Interview rescheduled successfully!',
+            'email_sent' => $emailSent,
+            'interview' => $interview->load('applicant')
+        ]);
+    }
+
+    /**
+     * Dispatch statistics update event
+     */
+    protected function dispatchStatisticsUpdate()
+    {
+        $stats = [
+            'total' => \App\Models\Applicant::count(),
+            'pending' => \App\Models\Applicant::where('status', 'pending')->count(),
+            'exam_completed' => \App\Models\Applicant::where('status', 'exam-completed')->count(),
+            'interview_scheduled' => \App\Models\Applicant::where('status', 'interview-scheduled')->count(),
+            'interview_completed' => \App\Models\Applicant::where('status', 'interview-completed')->count(),
+            'admitted' => \App\Models\Applicant::where('status', 'admitted')->count(),
+            'rejected' => \App\Models\Applicant::where('status', 'rejected')->count(),
+            'with_access_codes' => \App\Models\Applicant::whereHas('accessCode')->count(),
+            'without_access_codes' => \App\Models\Applicant::whereDoesntHave('accessCode')->count(),
+        ];
+
+        \App\Events\StatisticsUpdated::dispatch($stats);
     }
 }

@@ -180,7 +180,7 @@
         }
 
         .checkbox-design::after {
-            content: '✓';
+            content: '';
             color: var(--white);
             font-size: 12px;
             font-weight: bold;
@@ -321,11 +321,11 @@
 
         <div class="consent-content">
             <div class="privacy-notice">
-                <h3>📋 Data Collection and Processing Notice</h3>
+                <h3> Data Collection and Processing Notice</h3>
                 <p><strong>In compliance with the Data Privacy Act of 2012 (Republic Act No. 10173)</strong>, we inform you that your personal information will be collected and processed for the purpose of the BSIT screening and enrollment process.</p>
                 
                 <div class="data-purposes">
-                    <h4>📝 Data We Collect:</h4>
+                    <h4> Data We Collect:</h4>
                     <ul>
                         <li>Personal information (name, contact details)</li>
                         <li>Examination scores and responses</li>
@@ -335,7 +335,7 @@
                 </div>
 
                 <div class="data-purposes">
-                    <h4>🎯 Purpose of Data Processing:</h4>
+                    <h4> Purpose of Data Processing:</h4>
                     <ul>
                         <li>Evaluation of your application for the BSIT program</li>
                         <li>Ranking and selection of qualified applicants</li>

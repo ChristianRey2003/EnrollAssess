@@ -13,12 +13,12 @@
         <header class="admin-header">
             <div class="header-content">
                 <div class="header-left">
-                    <h1 class="page-title">📈 Interview Analytics</h1>
+                    <h1 class="page-title"> Interview Analytics</h1>
                     <p class="page-subtitle">Interview performance insights and trends</p>
                 </div>
                 <div class="header-actions">
                     <a href="{{ route('admin.interviews.index') }}" class="btn-secondary">← Back to Interviews</a>
-                    <button onclick="generateReport()" class="btn-primary">📊 Generate Report</button>
+                    <button onclick="generateReport()" class="btn-primary"> Generate Report</button>
                 </div>
             </div>
         </header>
@@ -26,7 +26,7 @@
         <!-- Summary Stats -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-icon">✅</div>
+                <div class="stat-icon"></div>
                 <div class="stat-content">
                     <div class="stat-value">{{ round(($analytics['completion_rate']['completed'] / max(1, array_sum($analytics['completion_rate']))) * 100, 1) }}%</div>
                     <div class="stat-label">Completion Rate</div>
@@ -40,14 +40,14 @@
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">👥</div>
+                <div class="stat-icon"></div>
                 <div class="stat-content">
                     <div class="stat-value">{{ $analytics['instructor_performance']->count() }}</div>
                     <div class="stat-label">Active Instructors</div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">📅</div>
+                <div class="stat-icon"></div>
                 <div class="stat-content">
                     <div class="stat-value">{{ $analytics['recent_trends']->sum('count') }}</div>
                     <div class="stat-label">Recent Interviews (30 days)</div>
@@ -133,12 +133,12 @@
 
         <!-- Detailed Insights -->
         <div class="insights-section">
-            <h2 class="section-title">📊 Key Insights</h2>
+            <h2 class="section-title"> Key Insights</h2>
             
             <div class="insights-grid">
                 <div class="insight-card">
                     <div class="insight-header">
-                        <h4>🏆 Top Performing Areas</h4>
+                        <h4> Top Performing Areas</h4>
                     </div>
                     <div class="insight-content">
                         @php
@@ -146,13 +146,13 @@
                             $topCategory = collect($analytics['average_ratings'])->sortDesc()->keys()->first();
                         @endphp
                         <p><strong>{{ ucfirst(str_replace('_', ' ', $topCategory)) }}</strong> scores highest with an average of <strong>{{ round($topRating, 1) }}</strong> points.</p>
-                        <p class="insight-recommendation">🎯 Continue focusing on strengths in this area while developing other categories.</p>
+                        <p class="insight-recommendation"> Continue focusing on strengths in this area while developing other categories.</p>
                     </div>
                 </div>
 
                 <div class="insight-card">
                     <div class="insight-header">
-                        <h4>📈 Improvement Opportunities</h4>
+                        <h4> Improvement Opportunities</h4>
                     </div>
                     <div class="insight-content">
                         @php
@@ -160,13 +160,13 @@
                             $lowCategory = collect($analytics['average_ratings'])->sort()->keys()->first();
                         @endphp
                         <p><strong>{{ ucfirst(str_replace('_', ' ', $lowCategory)) }}</strong> shows room for improvement with an average of <strong>{{ round($lowRating, 1) }}</strong> points.</p>
-                        <p class="insight-recommendation">💡 Consider additional training or modified evaluation criteria for this area.</p>
+                        <p class="insight-recommendation"> Consider additional training or modified evaluation criteria for this area.</p>
                     </div>
                 </div>
 
                 <div class="insight-card">
                     <div class="insight-header">
-                        <h4>⚡ Efficiency Metrics</h4>
+                        <h4> Efficiency Metrics</h4>
                     </div>
                     <div class="insight-content">
                         @php
@@ -175,7 +175,7 @@
                             $efficiencyRate = $totalScheduled > 0 ? round(($totalCompleted / $totalScheduled) * 100, 1) : 0;
                         @endphp
                         <p>Interview completion efficiency is at <strong>{{ $efficiencyRate }}%</strong> with {{ $totalCompleted }} out of {{ $totalScheduled }} scheduled interviews completed.</p>
-                        <p class="insight-recommendation">📅 Consider optimizing scheduling processes to reduce no-shows and cancellations.</p>
+                        <p class="insight-recommendation"> Consider optimizing scheduling processes to reduce no-shows and cancellations.</p>
                     </div>
                 </div>
             </div>

@@ -50,18 +50,18 @@ Route::get('/exam/pre-requirements', function (Illuminate\Http\Request $request)
                 ->with('error', 'No access code found. Please contact the administrator.');
         }
 
-        // Check if exam is assigned to the access code
-        if (!$applicant->accessCode->exam_id || !$applicant->accessCode->exam) {
-            return redirect()->route('applicant.login')
-                ->with('error', 'No exam assigned. Please contact the administrator.');
-        }
-
-        $exam = $applicant->accessCode->exam;
-
-        // Check if access code has already been used
+        // Check if access code has already been used (check early)
         if ($applicant->accessCode->is_used) {
             return redirect()->route('applicant.login')
                 ->with('error', 'This access code has already been used. You cannot retake the exam.');
+        }
+
+        // Get the currently active exam (simplified - no assignment needed)
+        $exam = \App\Models\Exam::where('is_active', true)->first();
+        
+        if (!$exam) {
+            return redirect()->route('applicant.login')
+                ->with('error', 'No active exam is currently available. Please contact the administration office.');
         }
 
         // Check exam availability (timing window)

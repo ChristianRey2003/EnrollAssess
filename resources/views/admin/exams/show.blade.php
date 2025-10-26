@@ -31,43 +31,43 @@
             <div class="sidebar-nav">
                 <div class="nav-item">
                     <a href="{{ route('admin.dashboard') }}" class="nav-link">
-                        <span class="nav-icon">📊</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Dashboard</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.applicants.index') }}" class="nav-link">
-                        <span class="nav-icon">👥</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Applicants</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.sets-questions.index') }}" class="nav-link active">
-                        <span class="nav-icon">📝</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Exams</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.questions.index') }}" class="nav-link">
-                        <span class="nav-icon">❓</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Questions</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.interviews.index') }}" class="nav-link">
-                        <span class="nav-icon">📅</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Interviews</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="{{ route('admin.users.index') }}" class="nav-link">
-                        <span class="nav-icon">👤</span>
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Users</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ route('admin.reports') }}" class="nav-link">
-                        <span class="nav-icon">📈</span>
+                    <a href="{{ route('admin.reports.index') }}" class="nav-link">
+                        <span class="nav-icon"></span>
                         <span class="nav-text">Reports</span>
                     </a>
                 </div>
@@ -96,10 +96,10 @@
                         <h2 class="section-title">Exam Information</h2>
                         <div class="exam-actions">
                             <a href="{{ route('admin.exams.edit', $exam->exam_id) }}" class="btn-secondary">
-                                ✏️ Edit Exam
+                                ️ Edit Exam
                             </a>
                             <a href="{{ route('admin.exam-sets.create', $exam->exam_id) }}" class="btn-primary">
-                                ➕ Add New Set
+                                 Add New Set
                             </a>
                         </div>
                     </div>
@@ -144,22 +144,22 @@
                     <div class="section-content">
                         <div class="stats-grid">
                             <div class="stat-card">
-                                <div class="stat-icon">📋</div>
+                                <div class="stat-icon"></div>
                                 <div class="stat-value">{{ $stats['total_sets'] }}</div>
                                 <div class="stat-label">Total Sets</div>
                             </div>
                             <div class="stat-card">
-                                <div class="stat-icon">✅</div>
+                                <div class="stat-icon"></div>
                                 <div class="stat-value">{{ $stats['active_sets'] }}</div>
                                 <div class="stat-label">Active Sets</div>
                             </div>
                             <div class="stat-card">
-                                <div class="stat-icon">❓</div>
+                                <div class="stat-icon"></div>
                                 <div class="stat-value">{{ $stats['total_questions'] }}</div>
                                 <div class="stat-label">Total Questions</div>
                             </div>
                             <div class="stat-card">
-                                <div class="stat-icon">🎯</div>
+                                <div class="stat-icon"></div>
                                 <div class="stat-value">{{ $stats['total_points'] }}</div>
                                 <div class="stat-label">Total Points</div>
                             </div>
@@ -218,7 +218,7 @@
                                             </div>
                                         @else
                                             <div class="no-questions">
-                                                <span class="empty-icon">❓</span>
+                                                <span class="empty-icon"></span>
                                                 <span>No questions added yet</span>
                                             </div>
                                         @endif
@@ -226,14 +226,14 @@
                                     
                                     <div class="set-actions">
                                         <a href="{{ route('admin.exam-sets.show', [$exam->exam_id, $examSet->exam_set_id]) }}" class="action-btn action-btn-view">
-                                            👁️ View
+                                            ️ View
                                         </a>
                                         <a href="{{ route('admin.exam-sets.edit', [$exam->exam_id, $examSet->exam_set_id]) }}" class="action-btn action-btn-edit">
-                                            ✏️ Edit
+                                            ️ Edit
                                         </a>
                                         @if($examSet->questions->count() === 0)
                                         <button onclick="deleteExamSet({{ $examSet->exam_set_id }})" class="action-btn action-btn-delete">
-                                            🗑️ Delete
+                                            ️ Delete
                                         </button>
                                         @endif
                                     </div>
@@ -243,11 +243,11 @@
                         @else
                             <div class="empty-state">
                                 <div class="empty-content">
-                                    <span class="empty-icon">📋</span>
+                                    <span class="empty-icon"></span>
                                     <h3>No Exam Sets Created</h3>
                                     <p>This exam doesn't have any question sets yet. Create your first set to start adding questions.</p>
                                     <a href="{{ route('admin.exam-sets.create', $exam->exam_id) }}" class="btn-primary">
-                                        ➕ Create First Set
+                                         Create First Set
                                     </a>
                                 </div>
                             </div>

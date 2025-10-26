@@ -98,7 +98,7 @@
 
         <!-- Warning for Missing Requirements -->
         <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px;">
-            <div style="font-weight: 600; color: #92400e; margin-bottom: 4px;">⚠ Requirements Check</div>
+            <div style="font-weight: 600; color: #92400e; margin-bottom: 4px;"> Requirements Check</div>
             <div style="font-size: 13px; color: #78350f;">
                 Applicants must have:
                 <ul style="margin: 8px 0; padding-left: 20px;">

@@ -276,7 +276,7 @@
 
             <!-- Next Steps Message -->
             <div class="message-box">
-                <h3>📧 Next Steps</h3>
+                <h3> Next Steps</h3>
                 <p>Please wait for the email interview.</p>
             </div>
 

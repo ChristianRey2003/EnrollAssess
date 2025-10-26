@@ -407,7 +407,7 @@
         }
 
         .permission-list li::before {
-            content: '✓';
+            content: '';
             color: var(--success-green);
             font-weight: bold;
         }
@@ -460,30 +460,30 @@
         <aside class="admin-sidebar">
             <div class="sidebar-header">
                 <h2 class="sidebar-title">
-                    <span class="logo-icon">🎓</span>
+                    <span class="logo-icon"></span>
                     EnrollAssess
                 </h2>
             </div>
             
             <nav class="sidebar-nav">
                 <a href="{{ route('admin.dashboard') }}" class="nav-item">
-                    <span class="nav-icon">📊</span>
+                    <span class="nav-icon"></span>
                     <span class="nav-text">Dashboard</span>
                 </a>
                 <a href="{{ route('admin.questions.index') }}" class="nav-item">
-                    <span class="nav-icon">❓</span>
+                    <span class="nav-icon"></span>
                     <span class="nav-text">Questions</span>
                 </a>
                 <a href="{{ route('admin.applicants.index') }}" class="nav-item">
-                    <span class="nav-icon">👥</span>
+                    <span class="nav-icon"></span>
                     <span class="nav-text">Applicants</span>
                 </a>
                 <a href="{{ route('admin.users.index') }}" class="nav-item active">
-                    <span class="nav-icon">👤</span>
+                    <span class="nav-icon"></span>
                     <span class="nav-text">User Management</span>
                 </a>
-                <a href="{{ route('admin.reports') }}" class="nav-item">
-                    <span class="nav-icon">📈</span>
+                <a href="{{ route('admin.reports.index') }}" class="nav-item">
+                    <span class="nav-icon"></span>
                     <span class="nav-text">Reports</span>
                 </a>
             </nav>
@@ -499,7 +499,7 @@
                                         <form method="POST" action="{{ route('admin.logout') }}" style="margin: 0;">
                     @csrf
                     <button type="submit" class="logout-btn">
-                        <span class="logout-icon">🚪</span>
+                        <span class="logout-icon"></span>
                         Logout
                     </button>
                 </form>
@@ -511,11 +511,11 @@
                 <!-- Users Header -->
                 <div class="users-header">
                     <h1 class="users-title">
-                        <span class="title-icon">👤</span>
+                        <span class="title-icon"></span>
                         User Role Management
                     </h1>
                     <button onclick="showAddUserModal()" class="add-user-btn">
-                        <span>➕</span>
+                        <span></span>
                         Add New User
                     </button>
                 </div>
@@ -523,17 +523,17 @@
                 <!-- User Statistics -->
                 <div class="users-stats">
                     <div class="stat-card">
-                        <div class="stat-icon">👥</div>
+                        <div class="stat-icon"></div>
                         <p class="stat-title">Total Users</p>
                         <h3 class="stat-value">8</h3>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">👑</div>
+                        <div class="stat-icon"></div>
                         <p class="stat-title">Administrators</p>
                         <h3 class="stat-value">3</h3>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">🧑‍🏫</div>
+                        <div class="stat-icon">🧑‍</div>
                         <p class="stat-title">Instructors</p>
                         <h3 class="stat-value">4</h3>
                     </div>
@@ -549,7 +549,7 @@
                     <div class="table-header">
                         <h3>Faculty Users</h3>
                         <div class="search-box">
-                            <span class="search-icon">🔍</span>
+                            <span class="search-icon"></span>
                             <input type="text" placeholder="Search users..." id="userSearch">
                         </div>
                     </div>
@@ -592,7 +592,7 @@
                                 <td>
                                     <div class="user-actions">
                                         <button class="action-btn edit" onclick="editUser(1)">
-                                            ✏️ Edit
+                                            ️ Edit
                                         </button>
                                     </div>
                                 </td>
@@ -624,7 +624,7 @@
                                 <td>
                                     <div class="user-actions">
                                         <button class="action-btn edit" onclick="editUser(2)">
-                                            ✏️ Edit
+                                            ️ Edit
                                         </button>
                                         <button class="action-btn deactivate" onclick="toggleUserStatus(2, 'deactivate')">
                                             ⏸️ Deactivate
@@ -659,7 +659,7 @@
                                 <td>
                                     <div class="user-actions">
                                         <button class="action-btn edit" onclick="editUser(3)">
-                                            ✏️ Edit
+                                            ️ Edit
                                         </button>
                                         <button class="action-btn deactivate" onclick="toggleUserStatus(3, 'deactivate')">
                                             ⏸️ Deactivate
@@ -694,7 +694,7 @@
                                 <td>
                                     <div class="user-actions">
                                         <button class="action-btn edit" onclick="editUser(4)">
-                                            ✏️ Edit
+                                            ️ Edit
                                         </button>
                                         <button class="action-btn deactivate" onclick="toggleUserStatus(4, 'deactivate')">
                                             ⏸️ Deactivate
@@ -729,7 +729,7 @@
                                 <td>
                                     <div class="user-actions">
                                         <button class="action-btn edit" onclick="editUser(5)">
-                                            ✏️ Edit
+                                            ️ Edit
                                         </button>
                                         <button class="action-btn activate" onclick="toggleUserStatus(5, 'activate')">
                                             ▶️ Activate
@@ -744,11 +744,11 @@
                 <!-- Role Permissions Reference -->
                 <div class="permissions-section">
                     <div class="permissions-header">
-                        <h3>🔐 Role Permissions Reference</h3>
+                        <h3> Role Permissions Reference</h3>
                     </div>
                     <div class="permissions-grid">
                         <div class="permission-card">
-                            <h4>👑 Department Head</h4>
+                            <h4> Department Head</h4>
                             <ul class="permission-list">
                                 <li>Full system administration</li>
                                 <li>Manage all users and roles</li>
@@ -759,7 +759,7 @@
                             </ul>
                         </div>
                         <div class="permission-card">
-                            <h4>🔧 Administrator</h4>
+                            <h4> Administrator</h4>
                             <ul class="permission-list">
                                 <li>Manage exam questions</li>
                                 <li>View and manage applicants</li>
@@ -770,7 +770,7 @@
                             </ul>
                         </div>
                         <div class="permission-card">
-                            <h4>🧑‍🏫 Instructor</h4>
+                            <h4>🧑‍ Instructor</h4>
                             <ul class="permission-list">
                                 <li>View assigned applicants</li>
                                 <li>Conduct interviews</li>

@@ -423,30 +423,22 @@ class ExamController extends Controller
                 ], 400);
             }
 
-            // Check if exam is assigned to access code
-            if (!$accessCode->exam_id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No exam has been assigned to your access code yet. Please contact the administration office.'
-                ], 400);
-            }
-            
-            $exam = $accessCode->exam;
-            
-            // Additional check if exam relationship loaded properly
-            if (!$exam) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'The assigned exam could not be found. Please contact the administration office.'
-                ], 400);
-            }
-
             // Check if access code has already been used
             if ($accessCode->is_used) {
                 return response()->json([
                     'success' => false,
                     'message' => 'This access code has already been used. You cannot retake the exam.'
                 ], 403);
+            }
+
+            // Get the currently active exam (simplified - no assignment needed)
+            $exam = Exam::where('is_active', true)->first();
+            
+            if (!$exam) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No active exam is currently available. Please contact the administration office.'
+                ], 400);
             }
 
             // Check exam availability (timing window)

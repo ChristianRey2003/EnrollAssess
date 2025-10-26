@@ -181,7 +181,7 @@
                 </div>
             @else
                 <div class="empty-state">
-                    <div class="empty-icon">📋</div>
+                    <div class="empty-icon"></div>
                     <p class="empty-text">Not evaluated yet</p>
                     <p class="empty-subtext">Interview scores will appear here once the evaluation is complete.</p>
                 </div>
@@ -241,7 +241,7 @@
                 </div>
             @else
                 <div class="empty-state">
-                    <div class="empty-icon">📝</div>
+                    <div class="empty-icon"></div>
                     <p class="empty-text">No notes available</p>
                     <p class="empty-subtext">Notes and activity will appear here once the interview is conducted.</p>
                 </div>

@@ -212,7 +212,7 @@
 
             @if($specialInstructions)
             <div style="background: #f0f9ff; border: 2px solid #3b82f6; border-radius: 8px; padding: 20px; margin: 20px 0;">
-                <h3 style="margin: 0 0 10px 0; color: #1e40af; font-size: 16px;">📋 Special Instructions</h3>
+                <h3 style="margin: 0 0 10px 0; color: #1e40af; font-size: 16px;"> Special Instructions</h3>
                 <p style="margin: 0; color: #1e40af; line-height: 1.6; white-space: pre-line;">{{ $specialInstructions }}</p>
             </div>
             @endif

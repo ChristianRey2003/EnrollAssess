@@ -20,7 +20,7 @@
             <!-- University Header -->
             <div class="auth-header">
                 <div class="university-logo">
-                    🎓
+                    
                 </div>
                 <h1 class="university-name">EnrollAssess</h1>
                 <p class="auth-subtitle">University Portal</p>

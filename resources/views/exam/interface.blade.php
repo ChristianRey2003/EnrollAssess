@@ -41,7 +41,7 @@
                 </div>
                 <div class="exam-meta">
                     <div class="violation-counter" id="violationCounter">
-                        <span class="violation-icon">⚠️</span>
+                        <span class="violation-icon">️</span>
                         <span class="violation-text">Violations: <span id="violationCount">0</span>/5</span>
                     </div>
                     <div class="exam-timer" id="examTimer">
@@ -190,7 +190,7 @@
     <!-- Violation Warning Modal -->
     <div id="violationModal" class="violation-modal" style="display: none;">
         <div class="violation-modal-content">
-            <div class="violation-modal-icon">🚨</div>
+            <div class="violation-modal-icon"></div>
             <h3>Violation Detected!</h3>
             <p id="violationMessage">You have switched tabs or minimized the browser window.</p>
             <div class="violation-count-display" id="violationDisplay">
@@ -205,7 +205,7 @@
 
     <!-- Final Violation Overlay -->
     <div id="finalViolationOverlay" class="violation-overlay" style="display: none;">
-        <h1>🚨 EXAM TERMINATED 🚨</h1>
+        <h1> EXAM TERMINATED </h1>
         <p>Maximum violations reached (5/5)</p>
         <p>Your exam has been automatically submitted.</p>
         <p>Redirecting to results page...</p>
@@ -693,7 +693,7 @@
             <div class="modal-content" style="max-width: 600px; text-align: center;">
                 <div class="modal-header">
                     <h3 style="color: ${isAutoSubmitted ? '#DC2626' : '#059669'}; margin-bottom: 16px;">
-                        ${isAutoSubmitted ? '⚠️ Exam Auto-Submitted' : '🎉 Exam Completed Successfully!'}
+                        ${isAutoSubmitted ? '️ Exam Auto-Submitted' : ' Exam Completed Successfully!'}
                     </h3>
                 </div>
                 <div class="modal-body">
@@ -708,7 +708,7 @@
                         </div>
                     </div>
                     <div style="background: #EDE9FE; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
-                        <h4 style="margin: 0 0 8px 0; color: #7C3AED;">🎯 What's Next?</h4>
+                        <h4 style="margin: 0 0 8px 0; color: #7C3AED;"> What's Next?</h4>
                         <p style="margin: 0; color: #6B46C1;">
                             Your exam has been completed and you've been automatically added to the interview pool. 
                             Instructors can now claim your interview for scheduling. You'll be contacted soon!

@@ -116,6 +116,9 @@
     <!-- Non-critical CSS loaded asynchronously -->
     @vite(['resources/css/admin.css'])
     
+    <!-- Global Modal Fix -->
+    <link rel="stylesheet" href="{{ asset('css/components/modal-fix.css') }}">
+    
     <!-- Page-specific CSS -->
     @stack('styles')
 </head>
@@ -128,7 +131,7 @@
             onclick="toggleMobileMenu()" 
             aria-label="Toggle navigation menu"
             style="display: none;">
-        <span aria-hidden="true">☰</span>
+        <span aria-hidden="true"></span>
     </button>
 
     <!-- Mobile menu overlay -->
@@ -173,7 +176,7 @@
     @stack('modals')
 
     <!-- Optimized JavaScript Bundles -->
-    @vite(['resources/js/admin.js'])
+    @vite(['resources/js/admin.js', 'resources/js/app.js'])
     
     <!-- Page-specific JavaScript -->
     @stack('scripts')

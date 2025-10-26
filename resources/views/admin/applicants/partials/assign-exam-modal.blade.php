@@ -51,10 +51,18 @@
             </div>
         </div>
 
+        <!-- Simplified System Notice -->
+        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; margin-bottom: 20px;">
+            <div style="font-weight: 600; color: #92400e; margin-bottom: 4px;"> Simplified Exam System</div>
+            <div style="font-size: 13px; color: #78350f;">
+                The system now uses the <strong>active exam</strong> for all applicants. Exam assignment is maintained for backward compatibility but is no longer required for new applicants.
+            </div>
+        </div>
+
         <!-- Important Notice -->
         @if(!empty($exams))
         <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px; margin-bottom: 20px;">
-            <div style="font-weight: 600; color: #1e40af; margin-bottom: 4px;">What This Does:</div>
+            <div style="font-weight: 600; color: #1e40af; margin-bottom: 4px;">What This Does (Legacy):</div>
             <ul style="margin: 8px 0; padding-left: 20px; font-size: 14px; color: #1e40af;">
                 <li>Links the selected exam to each applicant's access code</li>
                 <li>Applicants will only be able to take this specific exam</li>
@@ -124,10 +132,18 @@
             </div>
         </div>
 
+        <!-- Simplified System Notice -->
+        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; margin-bottom: 20px;">
+            <div style="font-weight: 600; color: #92400e; margin-bottom: 4px;"> Simplified Exam System</div>
+            <div style="font-size: 13px; color: #78350f;">
+                The system now uses the <strong>active exam</strong> for all applicants. Exam assignment is maintained for backward compatibility but is no longer required for new applicants.
+            </div>
+        </div>
+
         <!-- No Exams Notice -->
         @if(empty($exams))
         <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; margin-bottom: 20px;">
-            <div style="font-weight: 600; color: #92400e; margin-bottom: 4px;">⚠ No Active Exams</div>
+            <div style="font-weight: 600; color: #92400e; margin-bottom: 4px;"> No Active Exams</div>
             <div style="font-size: 13px; color: #78350f;">
                 There are currently no active exams available for assignment. 
                 <a href="{{ route('admin.exams.index') }}" style="color: #92400e; text-decoration: underline;">Create or activate an exam first</a>.
@@ -138,7 +154,7 @@
         <!-- Important Notice -->
         @if(!empty($exams))
         <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px;">
-            <div style="font-weight: 600; color: #1e40af; margin-bottom: 4px;">What This Does:</div>
+            <div style="font-weight: 600; color: #1e40af; margin-bottom: 4px;">What This Does (Legacy):</div>
             <ul style="margin: 8px 0; padding-left: 20px; font-size: 14px; color: #1e40af;">
                 <li>Links the selected exam to this applicant's access code</li>
                 <li>The applicant will only be able to take this specific exam</li>
