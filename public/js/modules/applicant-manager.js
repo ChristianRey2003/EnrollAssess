@@ -182,38 +182,41 @@ class ApplicantManager {
             return;
         }
         
-        if (window.modalManager) {
-            window.modalManager.open('generateCodesModal');
+        // Open the drawer
+        if (typeof openGenerateCodesDrawer === 'function') {
+            openGenerateCodesDrawer();
         } else {
-            document.getElementById('generateCodesModal').style.display = 'flex';
+            console.error('openGenerateCodesDrawer function not found');
         }
     }
 
     closeAllModals() {
-        const modals = document.querySelectorAll('.modal-overlay');
-        modals.forEach(modal => {
-            if (window.modalManager) {
-                window.modalManager.close(modal.id);
-            } else {
-                modal.style.display = 'none';
-            }
-        });
+        // Close drawers
+        if (typeof closeGenerateCodesDrawer === 'function') {
+            closeGenerateCodesDrawer();
+        }
+        
+        if (typeof closeEmailNotificationDrawer === 'function') {
+            closeEmailNotificationDrawer();
+        }
     }
 
     // API operations with loading states and error handling
     async confirmGenerateAccessCodes() {
-        if (this.validator && !this.validator.validateAll()) {
-            this.notifications.error('Please fix the form errors before submitting.');
-            return;
-        }
-
         const expiryHours = document.getElementById('expiry_hours')?.value || 72;
         const sendEmail = document.getElementById('send_email')?.checked || false;
         
         const loadingId = this.notifications.info('Generating access codes...', 0);
         
+        const generateButton = document.getElementById('generateCodesButton');
+        const originalText = generateButton?.textContent;
+        if (generateButton) {
+            generateButton.disabled = true;
+            generateButton.textContent = 'Generating...';
+        }
+        
         try {
-            const response = await this.apiCall('/admin/applicants/generate-access-codes', {
+            const response = await this.apiCall('/admin/applicants/bulk/generate-access-codes', {
                 applicant_ids: Array.from(this.selectedApplicants),
                 expiry_hours: expiryHours,
                 send_email: sendEmail
@@ -231,6 +234,10 @@ class ApplicantManager {
         } catch (error) {
             this.notifications.dismiss?.(loadingId);
             this.handleError(error, 'generating access codes');
+            if (generateButton) {
+                generateButton.disabled = false;
+                generateButton.textContent = originalText;
+            }
         }
     }
 
@@ -382,4 +389,3 @@ window.toggleTableSelectAll = () => window.applicantManager?.handleTableSelectAl
 window.updateBulkActions = () => window.applicantManager?.updateBulkActions();
 window.performSearch = () => window.applicantManager?.performSearch();
 window.applyFilter = () => window.applicantManager?.applyFilter();
-window.closeGenerateCodesModal = () => window.applicantManager?.closeAllModals();

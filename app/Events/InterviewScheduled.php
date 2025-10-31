@@ -39,7 +39,7 @@ class InterviewScheduled implements ShouldBroadcastNow
         return [
             'id' => $this->interview->id,
             'applicant_name' => $this->interview->applicant->first_name . ' ' . $this->interview->applicant->last_name,
-            'instructor_name' => $this->interview->instructor->name ?? 'Not assigned',
+            'instructor_name' => $this->interview->interviewer->name ?? 'Not assigned',
             'scheduled_at' => $this->interview->scheduled_at?->format('M d, Y g:i A'),
             'status' => $this->interview->status,
             'message' => 'Interview scheduled for ' . $this->interview->applicant->first_name . ' ' . $this->interview->applicant->last_name,

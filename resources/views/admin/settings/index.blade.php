@@ -318,29 +318,32 @@
 
         <!-- Email Settings Tab -->
         <div id="email-tab" class="tab-content active">
-            <!-- Gmail Setup Instructions -->
-            <div style="background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%); border: 2px solid #3B82F6; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-                <h3 style="color: #1E40AF; margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-                    <span></span> Gmail Setup Guide (FREE)
-                </h3>
-                <div style="color: #1F2937; font-size: 14px; line-height: 1.6;">
-                    <p style="margin: 0 0 10px 0;"><strong>Default Gmail Settings:</strong></p>
-                    <ul style="margin: 0 0 15px 0; padding-left: 20px;">
-                        <li>Mail Driver: <code>smtp</code></li>
-                        <li>SMTP Host: <code>smtp.gmail.com</code></li>
-                        <li>SMTP Port: <code>587</code> (TLS) or <code>465</code> (SSL)</li>
-                        <li>Encryption: <code>tls</code></li>
-                    </ul>
-                    <p style="margin: 0 0 10px 0;"><strong>How to get Gmail App Password:</strong></p>
-                    <ol style="margin: 0; padding-left: 20px;">
-                        <li>Go to <strong>Google Account → Security</strong></li>
-                        <li>Enable <strong>2-Step Verification</strong></li>
-                        <li>Go to <strong>App passwords</strong> section</li>
-                        <li>Select <strong>Mail</strong> and <strong>Other</strong></li>
-                        <li>Name it "EnrollAssess"</li>
-                        <li>Copy the 16-character password (e.g., <code>abcd efgh ijkl mnop</code>)</li>
-                        <li>Paste it in the <strong>Password</strong> field below</li>
-                    </ol>
+            <!-- Gmail Setup Guide - Collapsible -->
+            <div style="margin-bottom: 20px;">
+                <button type="button" onclick="toggleGmailGuide()" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #EFF6FF; border: 2px solid #3B82F6; border-radius: 8px; color: #1E40AF; font-weight: 600; font-size: 14px; cursor: pointer; width: 100%; transition: all 0.2s;">
+                    <span id="gmail-guide-icon" style="font-size: 20px; transition: transform 0.3s;">ℹ️</span>
+                    <span>Gmail Setup Guide (Click to expand)</span>
+                </button>
+                <div id="gmail-guide-content" style="display: none; margin-top: 15px; background: #F0F9FF; border: 1px solid #BAE6FD; border-radius: 8px; padding: 20px;">
+                    <div style="color: #1F2937; font-size: 14px; line-height: 1.8;">
+                        <p style="margin: 0 0 15px 0; font-weight: 600; color: #1E40AF;">Default Gmail Settings:</p>
+                        <ul style="margin: 0 0 20px 0; padding-left: 20px;">
+                            <li>Mail Driver: <code style="background: #FEF3C7; padding: 2px 6px; border-radius: 3px;">smtp</code></li>
+                            <li>SMTP Host: <code style="background: #FEF3C7; padding: 2px 6px; border-radius: 3px;">smtp.gmail.com</code></li>
+                            <li>SMTP Port: <code style="background: #FEF3C7; padding: 2px 6px; border-radius: 3px;">587</code> (TLS) or <code style="background: #FEF3C7; padding: 2px 6px; border-radius: 3px;">465</code> (SSL)</li>
+                            <li>Encryption: <code style="background: #FEF3C7; padding: 2px 6px; border-radius: 3px;">tls</code></li>
+                        </ul>
+                        <p style="margin: 0 0 15px 0; font-weight: 600; color: #1E40AF;">How to get Gmail App Password:</p>
+                        <ol style="margin: 0; padding-left: 20px;">
+                            <li>Go to <strong>Google Account → Security</strong></li>
+                            <li>Enable <strong>2-Step Verification</strong></li>
+                            <li>Go to <strong>App passwords</strong> section</li>
+                            <li>Select <strong>Mail</strong> and <strong>Other</strong></li>
+                            <li>Name it "EnrollAssess"</li>
+                            <li>Copy the 16-character password (e.g., <code style="background: #FEF3C7; padding: 2px 6px; border-radius: 3px;">abcd efgh ijkl mnop</code>)</li>
+                            <li>Paste it in the <strong>Password</strong> field below</li>
+                        </ol>
+                    </div>
                 </div>
             </div>
 
@@ -508,6 +511,19 @@
 
 @push('scripts')
 <script>
+    function toggleGmailGuide() {
+        const content = document.getElementById('gmail-guide-content');
+        const icon = document.getElementById('gmail-guide-icon');
+        
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            icon.textContent = '📖';
+        } else {
+            content.style.display = 'none';
+            icon.textContent = 'ℹ️';
+        }
+    }
+
     function switchTab(tabName) {
         // Remove active class from all tabs and content
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));

@@ -26,9 +26,9 @@ export default defineConfig({
     
     // Define environment variables for frontend
     define: {
-        'import.meta.env.VITE_BROADCAST_DRIVER': JSON.stringify(process.env.BROADCAST_DRIVER || 'pusher'),
-        'import.meta.env.VITE_PUSHER_APP_KEY': JSON.stringify(process.env.PUSHER_APP_KEY || ''),
-        'import.meta.env.VITE_PUSHER_APP_CLUSTER': JSON.stringify(process.env.PUSHER_APP_CLUSTER || ''),
+        'import.meta.env.VITE_BROADCAST_DRIVER': JSON.stringify(process.env.VITE_BROADCAST_DRIVER || process.env.BROADCAST_DRIVER || process.env.BROADCAST_CONNECTION || 'pusher'),
+        'import.meta.env.VITE_PUSHER_APP_KEY': JSON.stringify(process.env.VITE_PUSHER_APP_KEY || process.env.PUSHER_APP_KEY || 'f11dc48551a0d1842558'),
+        'import.meta.env.VITE_PUSHER_APP_CLUSTER': JSON.stringify(process.env.VITE_PUSHER_APP_CLUSTER || process.env.PUSHER_APP_CLUSTER || 'ap1'),
     },
     build: {
         rollupOptions: {

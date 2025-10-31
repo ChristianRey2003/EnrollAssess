@@ -2,19 +2,34 @@
 
 <header class="main-header" role="banner">
     <div class="header-left">
-        @if($level === 1)
-            <h1>{{ $title }}</h1>
-        @elseif($level === 2)
-            <h2>{{ $title }}</h2>
-        @elseif($level === 3)
-            <h3>{{ $title }}</h3>
-        @else
-            <h1>{{ $title }}</h1>
-        @endif
+        <!-- Hamburger Menu Toggle -->
+        <button class="sidebar-toggle-btn" 
+                onclick="toggleSidebar()" 
+                aria-label="Toggle sidebar navigation"
+                aria-expanded="true"
+                aria-controls="adminSidebar">
+            <span class="hamburger-icon">
+                <span></span>
+                <span></span>
+                <span></span>
+            </span>
+        </button>
         
-        @if($subtitle)
-            <p class="header-subtitle">{{ $subtitle }}</p>
-        @endif
+        <div class="header-title-wrapper">
+            @if($level === 1)
+                <h1>{{ $title }}</h1>
+            @elseif($level === 2)
+                <h2>{{ $title }}</h2>
+            @elseif($level === 3)
+                <h3>{{ $title }}</h3>
+            @else
+                <h1>{{ $title }}</h1>
+            @endif
+            
+            @if($subtitle)
+                <p class="header-subtitle">{{ $subtitle }}</p>
+            @endif
+        </div>
     </div>
     <div class="header-right">
         <div class="header-time">
@@ -55,6 +70,12 @@
                        role="menuitem"
                        aria-label="View analytics dashboard">
                         <span class="dropdown-text">Analytics</span>
+                    </a>
+                    <a href="{{ route('admin.settings') }}" 
+                       class="dropdown-item"
+                       role="menuitem"
+                       aria-label="System settings">
+                        <span class="dropdown-text">Settings</span>
                     </a>
                 </div>
                 

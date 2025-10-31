@@ -23,6 +23,7 @@ class Applicant extends Model
         'score',
         'enrollassess_score',
         'interview_score',
+        'card_tor_gwa',
         'verbal_description',
         'status',
         'exam_completed_at',
@@ -32,6 +33,7 @@ class Applicant extends Model
         'score' => 'decimal:2',
         'enrollassess_score' => 'decimal:2',
         'interview_score' => 'decimal:2',
+        'card_tor_gwa' => 'decimal:2',
         'exam_completed_at' => 'datetime',
     ];
 
@@ -226,5 +228,55 @@ class Applicant extends Model
         $count = self::whereYear('created_at', $year)->count() + 1;
         
         return $year . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Get overall admission rating
+     * Uses AdmissionScoringService to calculate 60/30/10 weighted score
+     * 
+     * @return array|null
+     */
+    public function getOverallRating(): ?array
+    {
+        $scoringService = app(\App\Services\AdmissionScoringService::class);
+        
+        if (!$scoringService->hasAllRequiredScores($this)) {
+            return null;
+        }
+        
+        return $scoringService->calculateOverallRating($this);
+    }
+
+    /**
+     * Get overall rating value only
+     * 
+     * @return float|null
+     */
+    public function getOverallRatingValueAttribute(): ?float
+    {
+        $rating = $this->getOverallRating();
+        return $rating ? $rating['overall_rating'] : null;
+    }
+
+    /**
+     * Check if applicant has all required scores for overall rating
+     * 
+     * @return bool
+     */
+    public function hasAllRequiredScores(): bool
+    {
+        $scoringService = app(\App\Services\AdmissionScoringService::class);
+        return $scoringService->hasAllRequiredScores($this);
+    }
+
+    /**
+     * Get missing score components
+     * 
+     * @return array
+     */
+    public function getMissingScores(): array
+    {
+        $scoringService = app(\App\Services\AdmissionScoringService::class);
+        return $scoringService->getMissingScores($this);
     }
 }

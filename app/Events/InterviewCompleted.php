@@ -39,7 +39,7 @@ class InterviewCompleted implements ShouldBroadcastNow
         return [
             'id' => $this->interview->id,
             'applicant_name' => $this->interview->applicant->first_name . ' ' . $this->interview->applicant->last_name,
-            'instructor_name' => $this->interview->instructor->name ?? 'Not assigned',
+            'instructor_name' => $this->interview->interviewer->name ?? 'Not assigned',
             'overall_score' => $this->interview->overall_score,
             'status' => $this->interview->status,
             'message' => 'Interview completed for ' . $this->interview->applicant->first_name . ' ' . $this->interview->applicant->last_name,

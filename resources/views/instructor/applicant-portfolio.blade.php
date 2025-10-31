@@ -369,6 +369,12 @@
         color: white;
     }
 
+    .btn-primary.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
     .btn-secondary {
         background: #6B7280;
         color: white;
@@ -548,7 +554,10 @@
                     ← Back to Applicants
                 </a>
                 @if(!$latestInterview || $latestInterview->status !== 'completed')
-                    <a href="{{ route('instructor.interview.show', $applicant->applicant_id) }}" class="btn btn-primary">
+                    @php $canConduct = $applicant->hasCompletedExam(); @endphp
+                    <a href="{{ route('instructor.interview.show', $applicant->applicant_id) }}" 
+                       class="btn btn-primary{{ !$canConduct ? ' disabled' : '' }}"
+                       @if(!$canConduct) aria-disabled="true" tabindex="-1" title="Applicant must complete exam first" @endif>
                         Conduct Interview
                     </a>
                 @endif

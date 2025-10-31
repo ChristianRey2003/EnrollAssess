@@ -79,6 +79,16 @@ class InterviewController extends Controller
             'notes' => 'nullable|string|max:1000',
         ]);
 
+        // Guard: Applicant must have completed the exam
+        $applicant = Applicant::findOrFail($request->applicant_id);
+        $hasCompletedExam = method_exists($applicant, 'hasCompletedExam') ? $applicant->hasCompletedExam() : ($applicant->status === 'exam-completed');
+        if (!$hasCompletedExam) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot schedule interview. Applicant has not completed the exam.'
+            ], 400);
+        }
+
         // Check if interview already exists
         $existingInterview = Interview::where('applicant_id', $request->applicant_id)->first();
         
@@ -103,7 +113,7 @@ class InterviewController extends Controller
                  ->update(['status' => 'interview-scheduled']);
 
         // Dispatch interview scheduled event
-        \App\Events\InterviewScheduled::dispatch($interview->load(['applicant', 'instructor']));
+        \App\Events\InterviewScheduled::dispatch($interview->load(['applicant', 'interviewer']));
         
         // Dispatch statistics update event
         $this->dispatchStatisticsUpdate();
@@ -141,6 +151,14 @@ class InterviewController extends Controller
             
             foreach ($request->applicant_ids as $applicantId) {
                 try {
+                    // Guard: Applicant must have completed exam
+                    $applicant = Applicant::findOrFail($applicantId);
+                    $hasCompletedExam = method_exists($applicant, 'hasCompletedExam') ? $applicant->hasCompletedExam() : ($applicant->status === 'exam-completed');
+                    if (!$hasCompletedExam) {
+                        $errors[] = "Cannot schedule for applicant #{$applicantId}: exam not completed";
+                        continue;
+                    }
+
                     // Check if already has interview
                     if (Interview::where('applicant_id', $applicantId)->exists()) {
                         $applicant = Applicant::find($applicantId);
@@ -596,29 +614,22 @@ class InterviewController extends Controller
             // Overall Assessment
             'recommendation' => 'required|in:highly_recommended,recommended,conditional,not_recommended',
             'final_comments' => 'required|string|max:5000',
-            'action' => 'required|in:save_draft,submit_final'
+            'action' => 'required|in:save_draft,submit_final',
+            
+            // CARD/TOR GWA - required before submission
+            'card_tor_gwa' => 'required|numeric|min:0|max:100',
         ]);
 
-        // Calculate overall score (sum of 8 criteria = 80 points + recommendation score = 100 total)
-        $criteriaScore = $request->communication_skills + 
-                        $request->motivation_interest + 
-                        $request->problem_solving_attitude + 
-                        $request->program_understanding + 
-                        $request->personality_attitude + 
-                        $request->it_background + 
-                        $request->willingness_to_learn + 
-                        $request->overall_impression;
-        
-        // Add recommendation score
-        $recommendationScore = match($request->recommendation) {
-            'highly_recommended' => 20,
-            'recommended' => 10,
-            'conditional' => 5,
-            'not_recommended' => 0,
-            default => 0
-        };
-        
-        $totalScore = $criteriaScore + $recommendationScore;
+        // Calculate overall score (sum of 8 criteria = 80 points total)
+        // Recommendation is categorical and does not add points
+        $totalScore = $request->communication_skills + 
+                     $request->motivation_interest + 
+                     $request->problem_solving_attitude + 
+                     $request->program_understanding + 
+                     $request->personality_attitude + 
+                     $request->it_background + 
+                     $request->willingness_to_learn + 
+                     $request->overall_impression;
 
         DB::transaction(function () use ($request, $interview, $user, $totalScore) {
             
@@ -649,27 +660,27 @@ class InterviewController extends Controller
             ]);
 
             // Only update applicant status if submitting final (not draft)
+            // Admission decision will be made by department head considering available slots
             if ($request->action === 'submit_final') {
                 $applicant = $interview->applicant;
-                $newStatus = 'interview-completed';
-                
-                // Auto-determine admission based on score and recommendation
-                if ($totalScore >= 75 && in_array($request->recommendation, ['highly_recommended', 'recommended'])) {
-                    $newStatus = 'admitted';
-                } elseif ($totalScore < 50 || $request->recommendation === 'not_recommended') {
-                    $newStatus = 'rejected';
-                }
                 
                 $applicant->update([
-                    'status' => $newStatus,
+                    'status' => 'interview-completed',
                     'interview_score' => $totalScore,
+                    'card_tor_gwa' => $request->card_tor_gwa,
+                ]);
+            } else {
+                // Also save GWA for drafts (it's per-applicant, not per-interview)
+                $interview->applicant->update([
+                    'card_tor_gwa' => $request->card_tor_gwa,
                 ]);
             }
         });
 
+        $percent = round(($totalScore / 80) * 100);
         $message = $request->action === 'submit_final' 
-            ? "Interview evaluation submitted successfully! Total Score: {$totalScore}/100 points"
-            : "Interview draft saved successfully! Total Score: {$totalScore}/100 points";
+            ? "Interview evaluation submitted successfully! Total Score: {$percent}/100"
+            : "Interview draft saved successfully! Total Score: {$percent}/100";
 
         return redirect()->route('admin.interviews.index')
                         ->with('success', $message);

@@ -60,7 +60,13 @@
             color: white;
             z-index: 1000;
             overflow-y: auto;
-            transition: transform 0.3s ease;
+            transition: width 0.3s ease, transform 0.3s ease;
+        }
+
+        /* Collapsed Sidebar - Completely Hidden */
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+            width: var(--sidebar-width);
         }
 
         .sidebar-header {
@@ -110,6 +116,14 @@
             transition: margin-left 0.3s ease;
         }
 
+        .main-content.sidebar-collapsed {
+            margin-left: 0;
+        }
+
+        body.sidebar-collapsed .main-content {
+            margin-left: 0;
+        }
+
         .top-header {
             background: white;
             padding: 16px 32px;
@@ -118,6 +132,60 @@
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Hamburger Menu Button */
+        .sidebar-toggle-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+            margin-right: 12px;
+        }
+
+        .sidebar-toggle-btn:hover {
+            background-color: var(--gray-100);
+        }
+
+        .hamburger-icon {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 24px;
+            height: 20px;
+            justify-content: space-between;
+        }
+
+        .hamburger-icon span {
+            display: block;
+            width: 100%;
+            height: 3px;
+            background-color: #374151;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-toggle-btn.collapsed .hamburger-icon span:nth-child(1) {
+            transform: rotate(45deg) translate(8px, 8px);
+        }
+
+        .sidebar-toggle-btn.collapsed .hamburger-icon span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .sidebar-toggle-btn.collapsed .hamburger-icon span:nth-child(3) {
+            transform: rotate(-45deg) translate(8px, -8px);
+        }
+
+        .header-title-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
 
         .page-title {
@@ -175,37 +243,62 @@
             padding: 32px;
         }
 
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
+        /* Mobile Overlay */
+        .mobile-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
 
-            .sidebar.open {
+        .mobile-menu-overlay.show {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Desktop: Sidebar completely hidden when collapsed */
+        @media (min-width: 769px) {
+            .sidebar {
                 transform: translateX(0);
             }
 
-            .main-content {
-                margin-left: 0;
+            .sidebar.collapsed {
+                transform: translateX(-100%);
             }
 
-            .mobile-menu-btn {
-                display: block;
-                background: none;
-                border: none;
-                font-size: 1.5rem;
-                color: #374151;
-                cursor: pointer;
+            .mobile-menu-overlay {
+                display: none !important;
+            }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 260px !important;
+                transform: translateX(-100%);
+            }
+
+            .sidebar.collapsed {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-content,
+            .main-content.sidebar-collapsed {
+                margin-left: 0 !important;
             }
 
             .content-area {
                 padding: 16px;
-            }
-        }
-
-        @media (min-width: 769px) {
-            .mobile-menu-btn {
-                display: none;
             }
         }
 
@@ -268,6 +361,9 @@
 </head>
 
 <body class="instructor-page">
+    <!-- Mobile Overlay -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="toggleInstructorSidebar()"></div>
+
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -316,19 +412,31 @@
         <!-- Top Header -->
         <header class="top-header">
             <div class="flex items-center gap-4">
-                <button class="mobile-menu-btn" onclick="toggleSidebar()">
-                    
+                <!-- Hamburger Menu Toggle -->
+                <button class="sidebar-toggle-btn" 
+                        onclick="toggleInstructorSidebar()" 
+                        aria-label="Toggle sidebar navigation"
+                        aria-expanded="true"
+                        aria-controls="sidebar">
+                    <span class="hamburger-icon">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </span>
                 </button>
-                <h1 class="page-title">
-                    @if(isset($pageTitle))
-                        {{ $pageTitle }}
-                    @else
-                        @yield('title', 'Instructor Portal')
+                
+                <div class="header-title-wrapper">
+                    <h1 class="page-title">
+                        @if(isset($pageTitle))
+                            {{ $pageTitle }}
+                        @else
+                            @yield('title', 'Instructor Portal')
+                        @endif
+                    </h1>
+                    @if(isset($pageSubtitle))
+                        <span class="text-gray-500 text-sm">{{ $pageSubtitle }}</span>
                     @endif
-                </h1>
-                @if(isset($pageSubtitle))
-                    <span class="text-gray-500 text-sm">{{ $pageSubtitle }}</span>
-                @endif
+                </div>
             </div>
             
             <div class="user-menu">
@@ -385,22 +493,113 @@
 
     <!-- Scripts -->
     <script>
-        // Mobile sidebar toggle
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('open');
-        }
+        // Instructor sidebar toggle functionality
+        window.InstructorPanel = {
+            // Sidebar toggle functionality
+            toggleSidebar() {
+                const sidebar = document.getElementById('sidebar');
+                const mainContent = document.querySelector('.main-content');
+                const toggleBtn = document.querySelector('.sidebar-toggle-btn');
+                const overlay = document.getElementById('mobileMenuOverlay');
+                const body = document.body;
+                const isMobile = window.innerWidth <= 768;
+                
+                if (!sidebar) return;
+                
+                if (isMobile) {
+                    // Mobile behavior: slide out sidebar
+                    const isOpen = sidebar.classList.contains('mobile-open');
+                    
+                    if (isOpen) {
+                        sidebar.classList.remove('mobile-open');
+                        if (overlay) overlay.classList.remove('show');
+                        body.style.overflow = '';
+                    } else {
+                        sidebar.classList.add('mobile-open');
+                        if (overlay) overlay.classList.add('show');
+                        body.style.overflow = 'hidden';
+                    }
+                } else {
+                    // Desktop behavior: completely hide/show sidebar
+                    const isCollapsed = sidebar.classList.contains('collapsed');
+                    
+                    if (isCollapsed) {
+                        // Show sidebar
+                        sidebar.classList.remove('collapsed');
+                        if (mainContent) mainContent.classList.remove('sidebar-collapsed');
+                        if (body) body.classList.remove('sidebar-collapsed');
+                        if (toggleBtn) {
+                            toggleBtn.classList.remove('collapsed');
+                            toggleBtn.setAttribute('aria-expanded', 'true');
+                        }
+                        localStorage.setItem('instructorSidebarCollapsed', 'false');
+                    } else {
+                        // Hide sidebar completely
+                        sidebar.classList.add('collapsed');
+                        if (mainContent) mainContent.classList.add('sidebar-collapsed');
+                        if (body) body.classList.add('sidebar-collapsed');
+                        if (toggleBtn) {
+                            toggleBtn.classList.add('collapsed');
+                            toggleBtn.setAttribute('aria-expanded', 'false');
+                        }
+                        localStorage.setItem('instructorSidebarCollapsed', 'true');
+                    }
+                }
+            },
 
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', function(event) {
-            const sidebar = document.getElementById('sidebar');
-            const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
-            
-            if (window.innerWidth <= 768 && 
-                !sidebar.contains(event.target) && 
-                !mobileMenuBtn.contains(event.target)) {
-                sidebar.classList.remove('open');
+            // Initialize sidebar state from localStorage
+            initSidebarState() {
+                const isMobile = window.innerWidth <= 768;
+                
+                // Only apply saved state on desktop
+                if (!isMobile) {
+                    const isCollapsed = localStorage.getItem('instructorSidebarCollapsed') === 'true';
+                    
+                    if (isCollapsed) {
+                        const sidebar = document.getElementById('sidebar');
+                        const mainContent = document.querySelector('.main-content');
+                        const toggleBtn = document.querySelector('.sidebar-toggle-btn');
+                        const body = document.body;
+                        
+                        if (sidebar) sidebar.classList.add('collapsed');
+                        if (mainContent) mainContent.classList.add('sidebar-collapsed');
+                        if (body) body.classList.add('sidebar-collapsed');
+                        if (toggleBtn) {
+                            toggleBtn.classList.add('collapsed');
+                            toggleBtn.setAttribute('aria-expanded', 'false');
+                        }
+                    }
+                }
+                
+                // Listen for window resize to handle mobile/desktop transitions
+                let resizeTimer;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(() => {
+                        const nowMobile = window.innerWidth <= 768;
+                        const sidebar = document.getElementById('sidebar');
+                        const overlay = document.getElementById('mobileMenuOverlay');
+                        
+                        if (nowMobile) {
+                            // Switched to mobile: close mobile menu if open
+                            if (sidebar) sidebar.classList.remove('mobile-open', 'collapsed');
+                            if (overlay) overlay.classList.remove('show');
+                            document.body.style.overflow = '';
+                        } else {
+                            // Switched to desktop: restore collapsed state
+                            this.initSidebarState();
+                        }
+                    }, 250);
+                });
             }
+        };
+
+        // Make function globally available
+        window.toggleInstructorSidebar = () => InstructorPanel.toggleSidebar();
+
+        // Initialize sidebar state on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            InstructorPanel.initSidebarState();
         });
 
         // Auto-hide alerts after 5 seconds

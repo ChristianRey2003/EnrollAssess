@@ -61,7 +61,7 @@ class DashboardController extends Controller
                 ];
             });
 
-        $recentInterviews = Interview::with(['applicant', 'instructor'])
+        $recentInterviews = Interview::with(['applicant', 'interviewer'])
             ->latest()
             ->take($limit)
             ->get()
@@ -70,7 +70,7 @@ class DashboardController extends Controller
                     'id' => $interview->id,
                     'type' => 'interview',
                     'applicant_name' => $interview->applicant->first_name . ' ' . $interview->applicant->last_name,
-                    'instructor_name' => $interview->instructor->name ?? 'Not assigned',
+                    'instructor_name' => $interview->interviewer->name ?? 'Not assigned',
                     'status' => $interview->status,
                     'scheduled_at' => $interview->scheduled_at?->format('M d, Y g:i A'),
                     'created_at' => $interview->created_at->format('M d, Y g:i A'),

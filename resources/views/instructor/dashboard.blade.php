@@ -357,9 +357,12 @@
                                 </td>
                                 <td>{{ $applicant->application_no }}</td>
                                 <td>
-                                    @if($applicant->score)
-                                        <span class="status-badge {{ $applicant->score >= 70 ? 'status-completed' : 'status-pending' }}">
-                                            {{ number_format($applicant->score, 1) }}%
+                                    @php
+                                        $examScore = $applicant->enrollassess_score ?? null;
+                                    @endphp
+                                    @if($examScore !== null)
+                                        <span class="status-badge {{ $examScore >= 70 ? 'status-completed' : 'status-pending' }}">
+                                            {{ number_format($examScore, 1) }}%
                                         </span>
                                     @else
                                         <span class="status-badge status-pending">Pending</span>

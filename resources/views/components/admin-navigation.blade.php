@@ -12,6 +12,7 @@
 ])
 
 <nav class="admin-sidebar {{ $userRole === 'instructor' ? 'instructor-sidebar' : '' }}" 
+     id="adminSidebar"
      role="navigation" 
      aria-label="{{ $userRole === 'instructor' ? 'Instructor' : 'Admin' }} navigation menu">
     <div class="sidebar-header">
@@ -127,15 +128,5 @@
                 </a>
             </div>
         @endif
-    </div>
-
-    <div class="nav-bottom">
-        <form method="POST" action="{{ $userRole === 'instructor' ? route('admin.logout') : route('admin.logout') }}">
-            @csrf
-            <button type="submit" class="logout-link">
-                <span class="nav-icon"></span>
-                <span class="nav-text">Logout</span>
-            </button>
-        </form>
     </div>
 </nav>

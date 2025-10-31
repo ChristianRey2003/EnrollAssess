@@ -126,18 +126,10 @@
     <!-- Skip to main content link for accessibility -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
-    <!-- Mobile menu toggle -->
-    <button class="mobile-menu-toggle" 
-            onclick="toggleMobileMenu()" 
-            aria-label="Toggle navigation menu"
-            style="display: none;">
-        <span aria-hidden="true"></span>
-    </button>
-
     <!-- Mobile menu overlay -->
     <div class="mobile-menu-overlay" 
          id="mobileMenuOverlay" 
-         onclick="closeMobileMenu()"
+         onclick="toggleSidebar()"
          aria-hidden="true"></div>
 
     <div class="admin-layout">

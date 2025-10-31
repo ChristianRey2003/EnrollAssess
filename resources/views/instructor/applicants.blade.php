@@ -89,6 +89,40 @@
         color: white;
     }
 
+    .btn-primary.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* Tooltip */
+    .tooltip { position: relative; display: inline-block; }
+    .tooltip[data-tip]:hover::after {
+        content: attr(data-tip);
+        position: absolute;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #111827;
+        color: #fff;
+        padding: 6px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .tooltip[data-tip]:hover::before {
+        content: '';
+        position: absolute;
+        bottom: calc(125% - 6px);
+        left: 50%;
+        transform: translateX(-50%);
+        border-width: 6px;
+        border-style: solid;
+        border-color: #111827 transparent transparent transparent;
+    }
+
     .applicants-table-section {
         background: white;
         border-radius: 8px;
@@ -464,9 +498,12 @@
                         </td>
                         <td>{{ $applicant->application_no }}</td>
                         <td>
-                            @if($applicant->score)
-                                <span class="status-badge {{ $applicant->score >= 70 ? 'status-completed' : 'status-pending' }}">
-                                    {{ number_format($applicant->score, 1) }}%
+                            @php
+                                $examScore = $applicant->enrollassess_score ?? null;
+                            @endphp
+                            @if($examScore !== null)
+                                <span class="status-badge {{ $examScore >= 70 ? 'status-completed' : 'status-pending' }}">
+                                    {{ number_format($examScore, 1) }}%
                                 </span>
                             @else
                                 <span class="status-badge status-pending">Pending</span>
@@ -485,11 +522,20 @@
                             @endif
                         </td>
                         <td>
+                            @php $hasCompletedExam = method_exists($applicant, 'hasCompletedExam') ? $applicant->hasCompletedExam() : ($applicant->status === 'exam-completed'); @endphp
                             @if($interview && $canSchedule)
-                                <button type="button" class="btn btn-primary btn-small" 
-                                        onclick="openScheduleModal({{ $interview->interview_id }}, '{{ $applicant->first_name }} {{ $applicant->last_name }}')">
-                                    Schedule Interview
-                                </button>
+                                @if($hasCompletedExam)
+                                    <button type="button" class="btn btn-primary btn-small" 
+                                            onclick="openScheduleModal({{ $interview->interview_id }}, '{{ $applicant->first_name }} {{ $applicant->last_name }}')">
+                                        Schedule Interview
+                                    </button>
+                                @else
+                                    <span class="tooltip" data-tip="Cannot schedule: applicant must complete the exam">
+                                        <button type="button" class="btn btn-primary btn-small disabled" disabled title="Applicant must complete the exam">
+                                            Schedule Interview
+                                        </button>
+                                    </span>
+                                @endif
                             @elseif($applicant->status === 'exam-completed' || $applicant->status === 'interview-scheduled')
                                 <a href="{{ route('instructor.interview.show', $applicant->applicant_id) }}" 
                                    class="btn btn-primary btn-small">

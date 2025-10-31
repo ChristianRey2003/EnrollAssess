@@ -76,6 +76,7 @@ Route::prefix('applicants')->name('applicants.')->middleware('role:department-he
     Route::prefix('export')->name('export.')->group(function () {
         Route::get('/template', [ApplicantController::class, 'downloadTemplate'])->name('template');
         Route::get('/with-access-codes', [ApplicantController::class, 'exportWithAccessCodes'])->name('with-access-codes');
+        Route::get('/evsu-results', [ApplicantController::class, 'exportEVSUResults'])->name('evsu-results');
     });
 
     // API Endpoints

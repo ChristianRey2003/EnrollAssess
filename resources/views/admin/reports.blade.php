@@ -227,6 +227,38 @@
                                     <button onclick="generateTimingReport()" class="btn-report-action">Generate</button>
                                 </div>
                             </div>
+
+                            <!-- EVSU XLSX Export -->
+                            <div class="report-card">
+                                <div class="report-card-icon" aria-hidden="true"></div>
+                                <div class="report-card-content">
+                                    <h3 class="report-card-title">EVSU Entrance Results (XLSX)</h3>
+                                    <p class="report-card-description">
+                                        Download the official EVSU-formatted XLSX with applicants ranked by
+                                        Overall Admission Rating (60% UEE, 30% GWA, 10% Interview/Skill). Requires
+                                        applicants to have UEE, GWA, EnrollAssess, and Interview scores.
+                                    </p>
+                                </div>
+                                <div class="report-card-actions">
+                                    <form action="{{ route('admin.applicants.export.evsu-results') }}" method="GET" class="evsu-export-form" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, auto)); gap: 10px; align-items: end;">
+                                        <input type="hidden" name="status" value="interview-completed">
+                                        <div>
+                                            <label for="evsu_limit" class="filter-label">Top N</label>
+                                            <input id="evsu_limit" name="limit" type="number" min="1" step="1" value="{{ request('limit', 120) }}" class="filter-input" style="width: 120px;">
+                                        </div>
+                                        <div>
+                                            <label for="evsu_sort" class="filter-label">Sort</label>
+                                            <select id="evsu_sort" name="sort" class="filter-select" style="width: 180px;">
+                                                <option value="overall_desc" {{ request('sort','overall_desc')==='overall_desc' ? 'selected' : '' }}>Overall Rating (Highest → Lowest)</option>
+                                                <option value="overall_asc" {{ request('sort')==='overall_asc' ? 'selected' : '' }}>Overall Rating (Lowest → Highest)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <button type="submit" class="btn-report-action">Export EVSU XLSX</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

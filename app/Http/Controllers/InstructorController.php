@@ -87,6 +87,19 @@ class InstructorController extends Controller
             abort(403, 'You are not assigned to interview this applicant.');
         }
         
+        // Guard: Applicant must have completed the exam before interview
+        if (method_exists($applicant, 'hasCompletedExam')) {
+            if (!$applicant->hasCompletedExam()) {
+                return redirect()->route('instructor.applicants')
+                    ->with('warning', 'Applicant must complete the exam before conducting the interview.');
+            }
+        } else {
+            if ($applicant->status !== 'exam-completed') {
+                return redirect()->route('instructor.applicants')
+                    ->with('warning', 'Applicant must complete the exam before conducting the interview.');
+            }
+        }
+        
         // Get or create interview record
         $interview = Interview::firstOrCreate(
             [
@@ -125,32 +138,25 @@ class InstructorController extends Controller
             // Overall Assessment
             'recommendation' => 'required|in:highly_recommended,recommended,conditional,not_recommended',
             'final_comments' => 'required|string|max:5000',
+            
+            // CARD/TOR GWA - required before submission
+            'card_tor_gwa' => 'required|numeric|min:0|max:100',
         ]);
 
         $interview = Interview::where('applicant_id', $applicantId)
                              ->where('interviewer_id', $instructor->user_id)
                              ->firstOrFail();
 
-        // Calculate overall score (sum of 8 criteria = 80 points + recommendation score = 100 total)
-        $criteriaScore = $request->communication_skills + 
-                        $request->motivation_interest + 
-                        $request->problem_solving_attitude + 
-                        $request->program_understanding + 
-                        $request->personality_attitude + 
-                        $request->it_background + 
-                        $request->willingness_to_learn + 
-                        $request->overall_impression;
-        
-        // Add recommendation score
-        $recommendationScore = match($request->recommendation) {
-            'highly_recommended' => 20,
-            'recommended' => 10,
-            'conditional' => 5,
-            'not_recommended' => 0,
-            default => 0
-        };
-        
-        $totalScore = $criteriaScore + $recommendationScore;
+        // Calculate overall score (sum of 8 criteria = 80 points total)
+        // Recommendation is categorical and does not add points
+        $totalScore = $request->communication_skills + 
+                     $request->motivation_interest + 
+                     $request->problem_solving_attitude + 
+                     $request->program_understanding + 
+                     $request->personality_attitude + 
+                     $request->it_background + 
+                     $request->willingness_to_learn + 
+                     $request->overall_impression;
 
         // Update interview record with BSIT rubric scores
         $interview->update([
@@ -176,30 +182,25 @@ class InstructorController extends Controller
             'status' => 'completed',
         ]);
 
-        // Update applicant status and interview score
+        // Update applicant status to interview-completed
+        // Admission decision will be made by department head considering available slots
         $applicant = Applicant::findOrFail($applicantId);
-        $newStatus = 'interview-completed';
-        
-        // Auto-determine admission based on score and recommendation
-        if ($totalScore >= 75 && in_array($request->recommendation, ['highly_recommended', 'recommended'])) {
-            $newStatus = 'admitted';
-        } elseif ($totalScore < 50 || $request->recommendation === 'not_recommended') {
-            $newStatus = 'rejected';
-        }
         
         $applicant->update([
-            'status' => $newStatus,
+            'status' => 'interview-completed',
             'interview_score' => $totalScore,
+            'card_tor_gwa' => $request->card_tor_gwa,
         ]);
 
         // Dispatch interview completed event
-        \App\Events\InterviewCompleted::dispatch($interview->load(['applicant', 'instructor']));
+        \App\Events\InterviewCompleted::dispatch($interview->load(['applicant', 'interviewer']));
         
         // Dispatch statistics update event
         $this->dispatchStatisticsUpdate();
 
+        $totalPercent = round(($totalScore / 80) * 100);
         return redirect()->route('instructor.applicants')
-                        ->with('success', 'Interview evaluation submitted successfully! Total Score: ' . $totalScore . '/100 points');
+                        ->with('success', 'Interview evaluation submitted successfully! Total Score: ' . $totalPercent . '/100');
     }
 
     /**
@@ -289,7 +290,8 @@ class InstructorController extends Controller
         // Compute basic exam stats
         $totalQuestions = $applicant->results->count();
         $correctAnswers = $applicant->results->where('is_correct', true)->count();
-        $examPercentage = $totalQuestions > 0 ? round(($correctAnswers / $totalQuestions) * 100, 2) : ($applicant->exam_percentage ?? 0);
+        // Use enrollassess_score first, then calculate from results, then fallback to exam_percentage
+        $examPercentage = $applicant->enrollassess_score ?? ($totalQuestions > 0 ? round(($correctAnswers / $totalQuestions) * 100, 2) : ($applicant->exam_percentage ?? 0));
 
         // Latest interview
         $latestInterview = $applicant->latestInterview;
@@ -410,7 +412,7 @@ class InstructorController extends Controller
             'notify_email' => 'nullable|boolean',
         ]);
 
-        $interview = Interview::findOrFail($interviewId);
+        $interview = Interview::with('applicant')->findOrFail($interviewId);
         
         // Verify instructor owns this interview
         if ($interview->interviewer_id !== $instructor->user_id) {
@@ -418,6 +420,16 @@ class InstructorController extends Controller
                 'success' => false,
                 'message' => 'You are not assigned to this interview.'
             ], 403);
+        }
+
+        // Guard: Applicant must have completed the exam before scheduling
+        $applicant = $interview->applicant;
+        $hasCompletedExam = method_exists($applicant, 'hasCompletedExam') ? $applicant->hasCompletedExam() : ($applicant->status === 'exam-completed');
+        if (!$hasCompletedExam) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot schedule interview. Applicant has not completed the exam.'
+            ], 400);
         }
 
         // Check for scheduling conflicts
@@ -465,7 +477,7 @@ class InstructorController extends Controller
         }
 
         // Dispatch interview scheduled event
-        \App\Events\InterviewScheduled::dispatch($interview->load(['applicant', 'instructor']));
+        \App\Events\InterviewScheduled::dispatch($interview->load(['applicant', 'interviewer']));
         
         // Dispatch statistics update event
         $this->dispatchStatisticsUpdate();
@@ -502,11 +514,19 @@ class InstructorController extends Controller
             
             foreach ($request->interview_ids as $interviewId) {
                 try {
-                    $interview = Interview::findOrFail($interviewId);
+                    $interview = Interview::with('applicant')->findOrFail($interviewId);
                     
                     // Verify ownership
                     if ($interview->interviewer_id !== $instructor->user_id) {
                         $errors[] = "Interview #{$interviewId}: Not assigned to you";
+                        continue;
+                    }
+
+                    // Guard: Applicant must have completed exam
+                    $applicant = $interview->applicant;
+                    $hasCompletedExam = method_exists($applicant, 'hasCompletedExam') ? $applicant->hasCompletedExam() : ($applicant->status === 'exam-completed');
+                    if (!$hasCompletedExam) {
+                        $errors[] = "Interview #{$interviewId}: Applicant has not completed the exam";
                         continue;
                     }
 

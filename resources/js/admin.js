@@ -9,7 +9,6 @@ import Alpine from 'alpinejs'
 // Import admin utilities
 import './utils/modal-manager.js'
 import './utils/form-validator.js'
-import './utils/mobile-menu.js'
 import './notifications.js'
 
 // Global admin functionality
@@ -17,6 +16,127 @@ window.Alpine = Alpine
 
 // Admin-specific global functions
 window.AdminPanel = {
+    // Sidebar toggle functionality
+    toggleSidebar() {
+        const sidebar = document.getElementById('adminSidebar');
+        const mainContent = document.querySelector('.admin-main');
+        const toggleBtn = document.querySelector('.sidebar-toggle-btn');
+        const overlay = document.getElementById('mobileMenuOverlay');
+        const body = document.body;
+        const isMobile = window.innerWidth <= 768;
+        
+        if (!sidebar) return;
+        
+        if (isMobile) {
+            // Mobile behavior: slide out sidebar
+            const isOpen = sidebar.classList.contains('mobile-open');
+            
+            if (isOpen) {
+                sidebar.classList.remove('mobile-open');
+                if (overlay) overlay.classList.remove('show');
+                body.style.overflow = '';
+            } else {
+                sidebar.classList.add('mobile-open');
+                if (overlay) overlay.classList.add('show');
+                body.style.overflow = 'hidden';
+            }
+        } else {
+            // Desktop behavior: collapse/expand sidebar
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            
+            if (isCollapsed) {
+                // Expand sidebar
+                sidebar.classList.remove('collapsed');
+                if (mainContent) mainContent.classList.remove('sidebar-collapsed');
+                if (body) body.classList.remove('sidebar-collapsed');
+                if (toggleBtn) {
+                    toggleBtn.classList.remove('collapsed');
+                    toggleBtn.setAttribute('aria-expanded', 'true');
+                }
+                localStorage.setItem('sidebarCollapsed', 'false');
+            } else {
+                // Collapse sidebar
+                sidebar.classList.add('collapsed');
+                if (mainContent) mainContent.classList.add('sidebar-collapsed');
+                if (body) body.classList.add('sidebar-collapsed');
+                if (toggleBtn) {
+                    toggleBtn.classList.add('collapsed');
+                    toggleBtn.setAttribute('aria-expanded', 'false');
+                }
+                localStorage.setItem('sidebarCollapsed', 'true');
+            }
+        }
+    },
+
+    // Initialize sidebar state from localStorage
+    initSidebarState() {
+        const isMobile = window.innerWidth <= 768;
+        
+        // Only apply saved state on desktop
+        if (!isMobile) {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            
+            if (isCollapsed) {
+                const sidebar = document.getElementById('adminSidebar');
+                const mainContent = document.querySelector('.admin-main');
+                const toggleBtn = document.querySelector('.sidebar-toggle-btn');
+                const body = document.body;
+                
+                if (sidebar) sidebar.classList.add('collapsed');
+                if (mainContent) mainContent.classList.add('sidebar-collapsed');
+                if (body) body.classList.add('sidebar-collapsed');
+                if (toggleBtn) {
+                    toggleBtn.classList.add('collapsed');
+                    toggleBtn.setAttribute('aria-expanded', 'false');
+                }
+            }
+        }
+        
+        // Listen for window resize to handle mobile/desktop transitions
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                const nowMobile = window.innerWidth <= 768;
+                const sidebar = document.getElementById('adminSidebar');
+                const overlay = document.getElementById('mobileMenuOverlay');
+                
+                if (nowMobile) {
+                    // Switched to mobile: close mobile menu if open
+                    if (sidebar) sidebar.classList.remove('mobile-open');
+                    if (overlay) overlay.classList.remove('show');
+                    document.body.style.overflow = '';
+                } else {
+                    // Switched to desktop: restore collapsed state
+                    this.initSidebarState();
+                }
+            }, 250);
+        });
+    },
+
+    // Mobile menu functionality
+    toggleMobileMenu() {
+        const sidebar = document.getElementById('adminSidebar');
+        const overlay = document.getElementById('mobileMenuOverlay');
+        
+        if (sidebar && overlay) {
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('show');
+            document.body.style.overflow = sidebar.classList.contains('mobile-open') ? 'hidden' : '';
+        }
+    },
+
+    closeMobileMenu() {
+        const sidebar = document.getElementById('adminSidebar');
+        const overlay = document.getElementById('mobileMenuOverlay');
+        
+        if (sidebar && overlay) {
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+    },
+
     // User dropdown functionality (global for all admin pages)
     toggleUserDropdown() {
         const dropdown = document.getElementById('userDropdownMenu');
@@ -77,6 +197,7 @@ window.AdminPanel = {
 
     // Initialize all admin functionality
     init() {
+        this.initSidebarState(); // Initialize sidebar from localStorage
         this.setupDropdownListeners();
         this.setupCSRF();
         
@@ -148,6 +269,9 @@ if (document.readyState === 'loading') {
 
 // Make global functions available
 window.toggleUserDropdown = () => AdminPanel.toggleUserDropdown();
+window.toggleSidebar = () => AdminPanel.toggleSidebar();
+window.toggleMobileMenu = () => AdminPanel.toggleMobileMenu();
+window.closeMobileMenu = () => AdminPanel.closeMobileMenu();
 
 // Export for module usage
 export default AdminPanel;

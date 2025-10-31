@@ -249,15 +249,15 @@ class AnalyticsController extends Controller
     public function getInstructorWorkload()
     {
         $workload = Interview::select(
-                'instructor_id',
+                'interviewer_id',
                 DB::raw('COUNT(*) as total_interviews'),
                 DB::raw('SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed'),
                 DB::raw('SUM(CASE WHEN status = "scheduled" THEN 1 ELSE 0 END) as scheduled'),
                 DB::raw('AVG(CASE WHEN status = "completed" AND overall_score IS NOT NULL THEN overall_score END) as avg_score')
             )
-            ->with('instructor:id,name')
-            ->whereNotNull('instructor_id')
-            ->groupBy('instructor_id')
+            ->with('interviewer:user_id,name')
+            ->whereNotNull('interviewer_id')
+            ->groupBy('interviewer_id')
             ->get();
 
         $labels = [];
@@ -266,7 +266,7 @@ class AnalyticsController extends Controller
         $scheduledData = [];
 
         foreach ($workload as $item) {
-            $labels[] = $item->instructor->name ?? 'Unknown';
+            $labels[] = $item->interviewer->name ?? 'Unknown';
             $totalData[] = $item->total_interviews;
             $completedData[] = $item->completed;
             $scheduledData[] = $item->scheduled;
@@ -296,7 +296,7 @@ class AnalyticsController extends Controller
             ],
             'details' => $workload->map(function ($item) {
                 return [
-                    'instructor' => $item->instructor->name ?? 'Unknown',
+                    'instructor' => $item->interviewer->name ?? 'Unknown',
                     'total' => $item->total_interviews,
                     'completed' => $item->completed,
                     'scheduled' => $item->scheduled,

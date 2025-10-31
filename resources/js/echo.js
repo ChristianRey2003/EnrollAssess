@@ -11,13 +11,13 @@ window.Pusher = Pusher;
 
 // Check if environment variables are available
 const broadcastDriver = import.meta.env.VITE_BROADCAST_DRIVER || 'pusher';
-const pusherKey = import.meta.env.VITE_PUSHER_APP_KEY || 'f11dc48551a0d1842558';
+const pusherKey = import.meta.env.VITE_PUSHER_APP_KEY;
 const pusherCluster = import.meta.env.VITE_PUSHER_APP_CLUSTER || 'ap1';
 
 console.log('Echo config:', { broadcastDriver, pusherKey, pusherCluster });
 
-// Only initialize if broadcasting is enabled
-if (broadcastDriver === 'pusher' && pusherKey) {
+// Only initialize if broadcasting is enabled and we have valid credentials
+if (broadcastDriver === 'pusher' && pusherKey && pusherKey !== '' && pusherKey !== 'undefined') {
     try {
         window.Echo = new Echo({
             broadcaster: 'pusher',
@@ -26,15 +26,34 @@ if (broadcastDriver === 'pusher' && pusherKey) {
             forceTLS: true,
             encrypted: true,
             enabledTransports: ['ws', 'wss'],
+            // Add connection options for better stability
+            authEndpoint: '/broadcasting/auth',
+            auth: {
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            }
         });
 
-        // Log connection status
+        // Log connection status with better error handling
         window.Echo.connector.pusher.connection.bind('connected', () => {
             console.log('✅ Connected to Pusher');
         });
 
+        window.Echo.connector.pusher.connection.bind('connecting', () => {
+            console.log('🔄 Connecting to Pusher...');
+        });
+
+        window.Echo.connector.pusher.connection.bind('disconnected', () => {
+            console.log('⚠️ Disconnected from Pusher');
+        });
+
         window.Echo.connector.pusher.connection.bind('error', (err) => {
             console.error('❌ Pusher connection error:', err);
+        });
+
+        window.Echo.connector.pusher.connection.bind('state_change', (states) => {
+            console.log('🔄 Connection state changed:', states.previous, '->', states.current);
         });
         
         console.log('✅ Echo initialized successfully');

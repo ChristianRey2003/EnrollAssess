@@ -162,7 +162,7 @@ class ApplicantController extends BaseController
                     ]);
                     
                     // Dispatch interview scheduled event
-                    \App\Events\InterviewScheduled::dispatch($interview->load(['applicant', 'instructor']));
+                    \App\Events\InterviewScheduled::dispatch($interview->load(['applicant', 'interviewer']));
                 }
             });
 
@@ -864,6 +864,97 @@ class ApplicantController extends BaseController
         } catch (Exception $e) {
             return redirect()->route('admin.applicants.index')
                 ->with('error', 'Failed to load exam results: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Export applicants to official EVSU XLSX format
+     * 
+     * @param Request $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function exportEVSUResults(Request $request)
+    {
+        try {
+            // Build query with filters
+            $query = Applicant::with(['assignedInstructor', 'accessCode']);
+
+            // Filter by status (only interview-completed by default)
+            $status = $request->get('status', 'interview-completed');
+            if ($status !== 'all') {
+                $query->where('status', $status);
+            }
+
+            // Filter by instructor
+            if ($request->has('instructor_id') && $request->instructor_id) {
+                if ($request->instructor_id === 'unassigned') {
+                    $query->whereNull('assigned_instructor_id');
+                } else {
+                    $query->where('assigned_instructor_id', $request->instructor_id);
+                }
+            }
+
+            // Filter by program/course
+            if ($request->has('preferred_course') && $request->preferred_course) {
+                $query->where('preferred_course', $request->preferred_course);
+            }
+
+            // Parameters: limit and sort
+            $limit = (int) $request->get('limit', 120);
+            if ($limit <= 0) { $limit = 120; }
+            $sort = $request->get('sort', 'overall_desc'); // overall_desc | overall_asc
+
+            // Get applicants and sort by Overall Rating
+            $collection = $query->get()->filter(function($applicant) {
+                // Only include applicants with all required scores
+                return $applicant->hasAllRequiredScores();
+            });
+
+            if ($sort === 'overall_asc') {
+                $collection = $collection->sortBy(function($applicant) {
+                    $rating = $applicant->getOverallRating();
+                    return $rating ? $rating['overall_rating'] : 0;
+                });
+            } else { // default: overall_desc
+                $collection = $collection->sortByDesc(function($applicant) {
+                    $rating = $applicant->getOverallRating();
+                    return $rating ? $rating['overall_rating'] : 0;
+                });
+            }
+
+            // Apply Top N limit and reindex to ensure numbering starts at 1
+            $applicants = $collection->take($limit)->values();
+
+            // Prepare filters for export
+            $exportFilters = [
+                'campus' => $request->get('campus', 'Ormoc Campus'),
+                'college' => $request->get('college', 'College'),
+                'department' => $request->get('department', 'Department'),
+                'program_code' => $request->get('program_code', 'BSIT'),
+                'program_description' => $request->get('program_description', 'Bachelor of Science in Information Technology'),
+                'academic_year' => $request->get('academic_year', date('Y') . '-' . (date('Y') + 1)),
+                'release_date' => $request->get('release_date', now()->format('Y-m-d')),
+            ];
+
+            // Create export instance
+            $export = new \App\Exports\EVSUResultsExport($applicants, $exportFilters);
+            $tempFile = $export->export();
+
+            // Generate filename
+            $filename = 'EVSU_Entrance_Results_' . 
+                       str_replace(' ', '_', $exportFilters['program_code']) . '_' . 
+                       date('Y-m-d_His') . '.xlsx';
+
+            return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
+
+        } catch (Exception $e) {
+            \Log::error('EVSU export failed: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()->with('error', 'Failed to export results: ' . $e->getMessage());
         }
     }
 

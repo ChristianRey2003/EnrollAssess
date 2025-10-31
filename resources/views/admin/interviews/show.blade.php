@@ -95,6 +95,35 @@
                         <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}" class="detail-link">View Details</a>
                     </span>
                 </div>
+
+                @if($applicant->card_tor_gwa !== null)
+                    <div class="summary-row">
+                        <span class="row-label">CARD/TOR GWA</span>
+                        <span class="row-value">
+                            <span class="score-highlight">{{ number_format($applicant->card_tor_gwa, 2) }}%</span>
+                        </span>
+                    </div>
+                @endif
+
+                @if($applicant->hasAllRequiredScores())
+                    @php
+                        $overallData = $applicant->getOverallRating();
+                        $overallRating = $overallData['overall_rating'];
+                        $components = $overallData['components'];
+                    @endphp
+                    <div class="summary-divider"></div>
+                    <div class="summary-row">
+                        <span class="row-label">Overall Admission Rating</span>
+                        <span class="row-value">
+                            <span class="score-highlight" style="font-size: 1.25rem; color: #10B981;">{{ number_format($overallRating, 2) }}%</span>
+                        </span>
+                    </div>
+                    <div style="margin-top: 8px; padding: 10px; background: #F0FDF4; border-radius: 4px; font-size: 0.75rem;">
+                        <div style="margin-bottom: 4px;"><strong>UEE (60%):</strong> {{ number_format($components['uee']['weighted'], 2) }}</div>
+                        <div style="margin-bottom: 4px;"><strong>GWA (30%):</strong> {{ number_format($components['gwa']['weighted'], 2) }}</div>
+                        <div><strong>Interview/Skill (10%):</strong> {{ number_format($components['interview_skill']['weighted'], 2) }}</div>
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -255,8 +284,11 @@
             Back to Applicant
         </a>
         
+        @php $canConduct = $applicant->hasCompletedExam(); @endphp
         @if($interview->status !== 'completed')
-            <a href="{{ route('admin.interviews.conduct', $interview->interview_id) }}" class="btn btn-primary">
+            <a href="{{ route('admin.interviews.conduct', $interview->interview_id) }}" 
+               class="btn btn-primary{{ !$canConduct ? ' disabled' : '' }}"
+               @if(!$canConduct) aria-disabled="true" tabindex="-1" title="Applicant must complete exam first" @endif>
                 Conduct Interview
             </a>
         @else
@@ -758,6 +790,12 @@
 .btn-primary:hover {
     background: #a00028;
     border-color: #a00028;
+}
+
+.btn-primary.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 .btn-secondary {

@@ -364,46 +364,83 @@
                 @endif
     </div>
 
-    <!-- Generate Access Codes Modal -->
-    <div id="generateCodesModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Generate Access Codes</h3>
-                <button type="button" class="modal-close" onclick="closeGenerateCodesModal()" aria-label="Close modal">×</button>
+    <!-- Generate Access Codes Drawer -->
+    <div id="generateCodesDrawerOverlay" class="drawer-overlay" onclick="closeGenerateCodesDrawer()"></div>
+    <div id="generateCodesDrawer" class="drawer">
+        <div class="drawer-header">
+            <h3 class="drawer-title">Generate Access Codes</h3>
+            <button type="button" class="drawer-close" onclick="closeGenerateCodesDrawer()">×</button>
+        </div>
+        
+        <div class="drawer-body">
+            <!-- Selected Applicants Info -->
+            <div style="background: #f3f4f6; padding: 12px; border-radius: 6px; margin-bottom: 20px;">
+                <div style="font-weight: 600; margin-bottom: 4px;">Selected Applicants</div>
+                <div style="font-size: 14px; color: #6b7280;">
+                    <span id="codesSelectedCount">0</span> applicant(s) will receive access codes
+                </div>
             </div>
-            <div class="modal-body">
-                <form id="generateCodesForm">
-                    <div class="form-group">
-                        <label for="expiry_hours" class="form-label required">Expiry Hours</label>
-                        <input type="number" 
-                               id="expiry_hours" 
-                               name="expiry_hours" 
-                               class="form-control" 
-                               value="72" 
-                               min="1" 
-                               max="168"
-                               required
-                               aria-describedby="expiry-help">
-                        <div id="expiry-help" class="form-help">How many hours should the access code be valid?</div>
-                    </div>
-                    <div class="form-group">
-                        <div class="checkbox-group">
-                            <input type="checkbox" 
-                                   id="send_email" 
-                                   name="send_email" 
-                                   class="checkbox-input" 
-                                   checked>
-                            <label for="send_email" class="checkbox-label">
-                                Send email notifications to applicants
-                            </label>
-                        </div>
-                    </div>
-                </form>
+
+            <!-- Important Notice -->
+            <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px; margin-bottom: 20px;">
+                <div style="font-weight: 600; color: #1e40af; margin-bottom: 4px;">What This Does:</div>
+                <ul style="margin: 8px 0; padding-left: 20px; font-size: 14px; color: #1e40af;">
+                    <li>Generates unique access codes for selected applicants</li>
+                    <li>Codes can be used to access the examination portal</li>
+                    <li>Codes will expire after the specified time period</li>
+                    <li>Optionally sends email notifications with the codes</li>
+                </ul>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeGenerateCodesModal()">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="confirmGenerateAccessCodes()">Generate Codes</button>
+
+            <!-- Expiry Hours -->
+            <div style="margin-bottom: 20px;">
+                <label for="expiry_hours" style="font-weight: 600; margin-bottom: 8px; display: block;">
+                    Expiry Hours <span style="color: #ef4444;">*</span>
+                </label>
+                <input type="number" 
+                       id="expiry_hours" 
+                       name="expiry_hours" 
+                       class="form-control" 
+                       value="72" 
+                       min="1" 
+                       max="168"
+                       required
+                       style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                <small style="color: #6b7280; font-size: 12px;">How many hours should the access code be valid?</small>
             </div>
+
+            <!-- Email Notification Option -->
+            <div style="margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px;">
+                    <input type="checkbox" 
+                           id="send_email" 
+                           name="send_email" 
+                           class="checkbox-input" 
+                           checked
+                           style="width: 18px; height: 18px; cursor: pointer;">
+                    <label for="send_email" style="font-size: 14px; font-weight: 500; color: #374151; cursor: pointer; flex: 1;">
+                        Send email notifications to applicants
+                    </label>
+                </div>
+                <small style="color: #6b7280; font-size: 12px; display: block; margin-top: 6px;">
+                    An email with the access code will be sent to each applicant's registered email address
+                </small>
+            </div>
+
+            <!-- Security Notice -->
+            <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px;">
+                <div style="font-weight: 600; color: #92400e; margin-bottom: 4px;">Security Notice</div>
+                <div style="font-size: 13px; color: #78350f;">
+                    Access codes are unique and cannot be regenerated for the same applicant. Keep codes secure and only share them with authorized applicants.
+                </div>
+            </div>
+        </div>
+        
+        <div class="drawer-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeGenerateCodesDrawer()">Cancel</button>
+            <button type="button" class="btn btn-primary" id="generateCodesButton" onclick="confirmGenerateAccessCodes()">
+                Generate Codes
+            </button>
         </div>
     </div>
 
@@ -654,5 +691,47 @@
                 btn.textContent = 'Assign Exam';
             }
         }
+
+        // Generate Codes Drawer Functions
+        function openGenerateCodesDrawer() {
+            // Get selected applicants
+            const selectedApplicants = window.selectedApplicants || 
+                                       (window.applicantManager ? Array.from(window.applicantManager.selectedApplicants) : []);
+            
+            if (!selectedApplicants || selectedApplicants.length === 0) {
+                alert('Please select at least one applicant first.');
+                return;
+            }
+            
+            const overlay = document.getElementById('generateCodesDrawerOverlay');
+            const drawer = document.getElementById('generateCodesDrawer');
+            
+            if (overlay && drawer) {
+                overlay.classList.add('active');
+                drawer.classList.add('active');
+                
+                // Update selected count
+                const countSpan = document.getElementById('codesSelectedCount');
+                if (countSpan) {
+                    countSpan.textContent = selectedApplicants.length;
+                }
+            } else {
+                console.error('Generate codes drawer elements not found');
+            }
+        }
+
+        function closeGenerateCodesDrawer() {
+            const overlay = document.getElementById('generateCodesDrawerOverlay');
+            const drawer = document.getElementById('generateCodesDrawer');
+            
+            if (overlay && drawer) {
+                overlay.classList.remove('active');
+                drawer.classList.remove('active');
+            }
+        }
+
+        // Make functions global
+        window.openGenerateCodesDrawer = openGenerateCodesDrawer;
+        window.closeGenerateCodesDrawer = closeGenerateCodesDrawer;
     </script>
 @endpush

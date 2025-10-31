@@ -180,6 +180,12 @@
         color: white;
     }
 
+    .btn-primary.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
     .btn-secondary {
         background: #6B7280;
         color: white;
@@ -199,6 +205,37 @@
     .btn-outline:hover {
         background: var(--maroon-primary);
         color: white;
+    }
+
+    /* Tooltip for disabled actions */
+    .tooltip {
+        position: relative;
+        display: inline-block;
+    }
+    .tooltip[data-tip]:hover::after {
+        content: attr(data-tip);
+        position: absolute;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #111827;
+        color: #fff;
+        padding: 6px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .tooltip[data-tip]:hover::before {
+        content: '';
+        position: absolute;
+        bottom: calc(125% - 6px);
+        left: 50%;
+        transform: translateX(-50%);
+        border-width: 6px;
+        border-style: solid;
+        border-color: #111827 transparent transparent transparent;
     }
 
     .status-badge {
@@ -522,13 +559,18 @@
                             </div>
                             <div class="meta-item">
                                 <span class="meta-label">Score:</span>
-                                <span>{{ $interview->applicant->score ? number_format($interview->applicant->score, 1) . '%' : 'N/A' }}</span>
+                                @php
+                                    $examScore = $interview->applicant->enrollassess_score ?? null;
+                                @endphp
+                                <span>{{ $examScore !== null ? number_format($examScore, 1) . '%' : 'N/A' }}</span>
                             </div>
                         </div>
 
                         <div class="interview-actions">
+                            @php $canConduct = $interview->applicant->hasCompletedExam(); @endphp
                             <a href="{{ route('instructor.interview.show', $interview->applicant->applicant_id) }}" 
-                               class="btn btn-primary">
+                               class="btn btn-primary{{ !$canConduct ? ' disabled' : '' }}"
+                               @if(!$canConduct) aria-disabled="true" tabindex="-1" title="Applicant must complete exam first" @endif>
                                 Conduct Interview
                             </a>
                             <button onclick="rescheduleInterview({{ $interview->interview_id }})" 
@@ -576,7 +618,10 @@
                             </div>
                             <div class="meta-item">
                                 <span class="meta-label">Score:</span>
-                                <span>{{ $interview->applicant->score ? number_format($interview->applicant->score, 1) . '%' : 'N/A' }}</span>
+                                @php
+                                    $examScore = $interview->applicant->enrollassess_score ?? null;
+                                @endphp
+                                <span>{{ $examScore !== null ? number_format($examScore, 1) . '%' : 'N/A' }}</span>
                             </div>
                             <div class="meta-item">
                                 <span class="meta-label">Exam Date:</span>
@@ -589,10 +634,19 @@
                         </div>
 
                         <div class="interview-actions">
-                            <button onclick="scheduleInterview({{ $interview->interview_id }})" 
-                                    class="btn btn-primary">
-                                Schedule Interview
-                            </button>
+                            @php $canSchedule = $interview->applicant->hasCompletedExam(); @endphp
+                            @if($canSchedule)
+                                <button onclick="scheduleInterview({{ $interview->interview_id }})" 
+                                        class="btn btn-primary">
+                                    Schedule Interview
+                                </button>
+                            @else
+                                <span class="tooltip" data-tip="Cannot schedule: applicant must complete the exam">
+                                    <button class="btn btn-primary disabled" disabled title="Applicant must complete the exam">
+                                        Schedule Interview
+                                    </button>
+                                </span>
+                            @endif
                         </div>
                     </div>
                 @empty
