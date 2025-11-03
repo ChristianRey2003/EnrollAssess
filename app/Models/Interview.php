@@ -38,11 +38,17 @@ class Interview extends Model
         // Pool Management
         'claimed_by',
         'claimed_at',
+        // Assignment and Deadlines
+        'assignment_notes',
+        'interview_deadline_start',
+        'interview_deadline_end',
     ];
 
     protected $casts = [
         'schedule_date' => 'datetime',
         'claimed_at' => 'datetime',
+        'interview_deadline_start' => 'datetime',
+        'interview_deadline_end' => 'datetime',
         // BSIT Rubric Criteria
         'communication_skills' => 'integer',
         'motivation_interest' => 'integer',

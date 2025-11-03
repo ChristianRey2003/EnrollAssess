@@ -4,7 +4,7 @@
 
 @php
     $pageTitle = 'Exam Results';
-    $pageSubtitle = 'View EnrollAssess exam scores and interview evaluations';
+    $pageSubtitle = 'View applicant scores, evaluations, and overall admission ratings';
 @endphp
 
 @push('styles')
@@ -168,20 +168,20 @@
     <!-- Statistics Section -->
     <section class="stats-section">
         <div class="stat-card">
-            <div class="stat-value">{{ $stats['total_with_scores'] ?? 0 }}</div>
-            <div class="stat-label">With EnrollAssess Scores</div>
+            <div class="stat-value">{{ $stats['qualifiers_count'] ?? 0 }}</div>
+            <div class="stat-label">Qualifiers</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">{{ $stats['with_interview_scores'] ?? 0 }}</div>
-            <div class="stat-label">With Interview Scores</div>
+            <div class="stat-value">{{ $stats['average_overall'] ?? 0 }}</div>
+            <div class="stat-label">Avg Overall Rating</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">{{ $stats['average_enrollassess'] ?? 0 }}%</div>
-            <div class="stat-label">Avg EnrollAssess Score</div>
+            <div class="stat-value">{{ $stats['average_uee'] ?? 0 }}</div>
+            <div class="stat-label">Avg UEE</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">{{ $stats['average_interview'] ?? 0 }}%</div>
-            <div class="stat-label">Avg Interview Score</div>
+            <div class="stat-value">{{ $stats['average_gwa'] ?? 0 }}</div>
+            <div class="stat-label">Avg GWA</div>
         </div>
     </section>
 
@@ -225,11 +225,28 @@
                             @endif
                         </a>
                     </th>
-                    <th>Course</th>
+                    <th>
+                        <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'score', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
+                           style="color: inherit; text-decoration: none;">
+                            UEE
+                            @if(request('sort_by') == 'score')
+                                <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
+                            @endif
+                        </a>
+                    </th>
+                    <th>
+                        <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'card_tor_gwa', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
+                           style="color: inherit; text-decoration: none;">
+                            GWA
+                            @if(request('sort_by') == 'card_tor_gwa')
+                                <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
+                            @endif
+                        </a>
+                    </th>
                     <th>
                         <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'enrollassess_score', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
                            style="color: inherit; text-decoration: none;">
-                            EnrollAssess Score
+                            EnrollAssess
                             @if(request('sort_by') == 'enrollassess_score')
                                 <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
                             @endif
@@ -238,13 +255,21 @@
                     <th>
                         <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'interview_score', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
                            style="color: inherit; text-decoration: none;">
-                            Interview Score
+                            Interview
                             @if(request('sort_by') == 'interview_score')
                                 <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
                             @endif
                         </a>
                     </th>
-                    <th>Exam Set</th>
+                    <th>
+                        <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'overall_rating', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
+                           style="color: inherit; text-decoration: none;">
+                            Overall
+                            @if(request('sort_by') == 'overall_rating')
+                                <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
+                            @endif
+                        </a>
+                    </th>
                     <th>
                         <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'status', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
                            style="color: inherit; text-decoration: none;">
@@ -259,58 +284,77 @@
             </thead>
             <tbody>
                 @forelse($applicants as $applicant)
+                    @php
+                        $overallRating = $applicant->getOverallRating();
+                        $hasAllScores = $applicant->hasAllRequiredScores();
+                    @endphp
                     <tr>
                         <td>
                             <div style="font-weight: 500;">{{ $applicant->full_name }}</div>
                             <div style="font-size: 12px; color: #6b7280;">{{ $applicant->application_no }}</div>
-                            <div style="font-size: 12px; color: #6b7280;">{{ $applicant->email_address }}</div>
-                        </td>
-                        <td>{{ $applicant->preferred_course ?? 'N/A' }}</td>
-                        <td>
-                            @if($applicant->enrollassess_score || $applicant->exam_percentage)
+                            @if(!$hasAllScores)
                                 @php
-                                    $percentage = $applicant->exam_percentage ?? $applicant->enrollassess_score ?? 0;
-                                    $class = 'score-needs-improvement';
-                                    if ($percentage >= 95) $class = 'score-excellent';
-                                    elseif ($percentage >= 85) $class = 'score-very-good';
-                                    elseif ($percentage >= 75) $class = 'score-good';
-                                    elseif ($percentage >= 65) $class = 'score-satisfactory';
-                                    elseif ($percentage >= 50) $class = 'score-fair';
+                                    $missing = $applicant->getMissingScores();
                                 @endphp
-                                <div class="score-badge {{ $class }}">
-                                    {{ round($percentage, 2) }}%
+                                <div style="font-size: 11px; color: #dc2626; margin-top: 2px;">
+                                    Missing: {{ implode(', ', array_map(fn($s) => match($s) {
+                                        'University Entrance Examination' => 'UEE',
+                                        'CARD/TOR GWA' => 'GWA',
+                                        'EnrollAssess Exam' => 'Exam',
+                                        'Interview Evaluation' => 'Interview',
+                                        default => $s
+                                    }, $missing)) }}
                                 </div>
-                                <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">
-                                    {{ $applicant->results->where('is_correct', true)->count() }}/{{ $applicant->results->count() }} correct
-                                </div>
+                            @endif
+                        </td>
+                        <td>
+                            @if($applicant->score)
+                                <div style="font-weight: 500;">{{ round($applicant->score, 2) }}</div>
                             @else
-                                <span style="color: #9ca3af;">No score</span>
+                                <span style="color: #9ca3af;">-</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($applicant->card_tor_gwa)
+                                <div style="font-weight: 500;">{{ round($applicant->card_tor_gwa, 2) }}</div>
+                            @else
+                                <span style="color: #9ca3af;">-</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($applicant->enrollassess_score)
+                                <div style="font-weight: 500;">{{ round($applicant->enrollassess_score, 2) }}%</div>
+                            @else
+                                <span style="color: #9ca3af;">-</span>
                             @endif
                         </td>
                         <td>
                             @if($applicant->interview_score)
-                                @php
-                                    $interviewScore = $applicant->interview_score;
-                                    $class = 'score-needs-improvement';
-                                    if ($interviewScore >= 95) $class = 'score-excellent';
-                                    elseif ($interviewScore >= 85) $class = 'score-very-good';
-                                    elseif ($interviewScore >= 75) $class = 'score-good';
-                                    elseif ($interviewScore >= 65) $class = 'score-satisfactory';
-                                    elseif ($interviewScore >= 50) $class = 'score-fair';
-                                @endphp
-                                <div class="score-badge {{ $class }}">
-                                    {{ $interviewScore }}%
-                                </div>
+                                <div style="font-weight: 500;">{{ round($applicant->interview_score, 2) }}%</div>
                             @else
-                                <span style="color: #9ca3af;">Not evaluated</span>
+                                <span style="color: #9ca3af;">-</span>
                             @endif
                         </td>
                         <td>
-                            @if($applicant->accessCode && $applicant->accessCode->exam)
-                                <div style="font-weight: 500;">{{ $applicant->accessCode->exam->title }}</div>
-                                <div style="font-size: 12px; color: #6b7280;">{{ $applicant->accessCode->exam->duration_minutes ?? 'N/A' }} mins</div>
+                            @if($overallRating)
+                                @php
+                                    $rating = $overallRating['overall_rating'];
+                                    $class = 'score-needs-improvement';
+                                    if ($rating >= 95) $class = 'score-excellent';
+                                    elseif ($rating >= 90) $class = 'score-very-good';
+                                    elseif ($rating >= 85) $class = 'score-good';
+                                    elseif ($rating >= 75) $class = 'score-satisfactory';
+                                    elseif ($rating >= 70) $class = 'score-fair';
+                                    
+                                    $scoringService = app(\App\Services\AdmissionScoringService::class);
+                                    $verbal = $scoringService->getVerbalDescription($rating);
+                                @endphp
+                                <div class="score-badge {{ $class }}" style="display: block; margin-bottom: 2px;">
+                                    {{ round($rating, 2) }}
+                                </div>
+                                <div style="font-size: 11px; color: #6b7280;">{{ $verbal }}</div>
                             @else
-                                <span style="color: #9ca3af;">No exam assigned</span>
+                                <span style="color: #9ca3af;">-</span>
                             @endif
                         </td>
                         <td>
@@ -339,7 +383,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" style="text-align: center; padding: 40px; color: #6b7280;">
+                        <td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">
                             No exam results found. Only applicants who completed the EnrollAssess exam are shown here.
                         </td>
                     </tr>

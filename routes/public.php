@@ -80,6 +80,53 @@ Route::get('/exam/pre-requirements', function (Illuminate\Http\Request $request)
     }
 })->name('exam.pre-requirements');
 
+// Basic Information Form (between pre-requirements and exam)
+Route::get('/exam/basic-info', [App\Http\Controllers\BasicInfoController::class, 'showBasicInfoForm'])->name('exam.basic-info');
+Route::post('/exam/basic-info', [App\Http\Controllers\BasicInfoController::class, 'storeBasicInfo'])->name('exam.basic-info.store');
+
+// Exam Start Form (page before starting exam)
+Route::get('/exam/start-form', function (Illuminate\Http\Request $request) {
+    $applicantId = $request->session()->get('applicant_id');
+    
+    if (!$applicantId) {
+        return redirect()->route('applicant.login')
+            ->with('error', 'Please verify your access code first.');
+    }
+
+    try {
+        $applicant = \App\Models\Applicant::with(['accessCode', 'basicInfo'])->findOrFail($applicantId);
+        
+        // Check if basic info is completed
+        if (!$applicant->hasCompletedBasicInfo()) {
+            return redirect()->route('exam.basic-info')
+                ->with('error', 'Please complete the basic information form first.');
+        }
+
+        // Check if access code has already been used
+        if ($applicant->accessCode && $applicant->accessCode->is_used) {
+            return redirect()->route('applicant.login')
+                ->with('error', 'This access code has already been used. You cannot retake the exam.');
+        }
+
+        $exam = \App\Models\Exam::where('is_active', true)->first();
+        
+        if (!$exam) {
+            return redirect()->route('applicant.login')
+                ->with('error', 'No active exam is currently available.');
+        }
+
+        if (!$exam->isAvailable()) {
+            return redirect()->route('applicant.login')
+                ->with('error', $exam->getAvailabilityMessage());
+        }
+
+        return view('exam.start-form', compact('applicant', 'exam'));
+    } catch (\Exception $e) {
+        return redirect()->route('applicant.login')
+            ->with('error', 'An error occurred. Please try again.');
+    }
+})->name('exam.start.form');
+
 // Privacy & Consent (legacy route - redirects to pre-requirements)
 Route::get('/privacy/consent', function () {
     return redirect()->route('exam.pre-requirements');

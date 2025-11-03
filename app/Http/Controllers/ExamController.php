@@ -412,7 +412,16 @@ class ExamController extends Controller
         }
         
         try {
-            $applicant = Applicant::findOrFail($applicantId);
+            $applicant = Applicant::with(['basicInfo', 'accessCode'])->findOrFail($applicantId);
+            
+            // Check if basic info is completed
+            if (!$applicant->hasCompletedBasicInfo()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please complete the basic information form first.',
+                    'redirect_url' => route('exam.basic-info')
+                ], 400);
+            }
             
             // Get access code
             $accessCode = $applicant->accessCode;

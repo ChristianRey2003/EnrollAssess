@@ -10,6 +10,7 @@ use App\Models\Question;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Exports\EVSUQualifiersExport;
 
 class ReportGenerationService
 {
@@ -390,6 +391,103 @@ class ReportGenerationService
             default:
                 return [];
         }
+    }
+
+    /**
+     * Generate Qualifiers List report (Word document)
+     * Get top N qualifiers based on overall rating, sorted alphabetically
+     */
+    public function generateQualifiersList($filters, $userId)
+    {
+        \Log::info('Starting qualifiers list generation', ['filters' => $filters, 'userId' => $userId]);
+
+        // Get number of slots (required parameter)
+        $slots = $filters['slots'] ?? 112;
+        
+        // Get all applicants with complete scores
+        $query = Applicant::query()
+            ->whereNotNull('score')
+            ->whereNotNull('card_tor_gwa')
+            ->whereNotNull('enrollassess_score')
+            ->whereNotNull('interview_score');
+
+        // Get applicants and filter those with all required scores
+        $allApplicants = $query->get()->filter(function($applicant) {
+            return $applicant->hasAllRequiredScores();
+        });
+
+        \Log::info('Applicants with all scores', ['count' => $allApplicants->count()]);
+
+        // Sort by overall rating (descending - highest first)
+        $sortedByRating = $allApplicants->sortByDesc(function($applicant) {
+            $rating = $applicant->getOverallRating();
+            return $rating ? $rating['overall_rating'] : 0;
+        });
+
+        // Take top N based on slots
+        $topQualifiers = $sortedByRating->take($slots);
+
+        // Sort alphabetically by last name (as per document note: "The list is arranged alphabetically")
+        $qualifiers = $topQualifiers->sortBy('last_name')->values();
+
+        \Log::info('Qualifiers selected and sorted', ['count' => $qualifiers->count()]);
+
+        // Prepare export filters
+        $exportFilters = [
+            'campus' => $filters['campus'] ?? 'Ormoc/Computer Studies',
+            'program_code' => $filters['program_code'] ?? 'BSIT',
+            'program_description' => $filters['program_description'] ?? 'Bachelor of Science in Information Technology',
+            'academic_year' => $filters['academic_year'] ?? (date('Y') . '-' . (date('Y') + 1)),
+            'slots' => $slots,
+        ];
+
+        try {
+            // Generate Word document
+            $export = new EVSUQualifiersExport($qualifiers, $exportFilters);
+            $tempFile = $export->export();
+
+            // Read file content for storage
+            $fileContent = file_get_contents($tempFile);
+            
+            // Generate filename
+            $filename = 'EVSU_Qualifiers_List_' . 
+                       str_replace(' ', '_', $exportFilters['program_code']) . '_' . 
+                       now()->format('Y-m-d_His') . '.docx';
+            
+            $path = 'reports/' . $filename;
+
+            // Save to storage
+            Storage::put($path, $fileContent);
+
+            // Clean up temp file
+            @unlink($tempFile);
+
+            \Log::info('Word document saved', ['path' => $path]);
+
+        } catch (\Exception $e) {
+            \Log::error('Word document generation failed', [
+                'error' => $e->getMessage(), 
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
+
+        // Save to database
+        $report = $this->saveReportToDatabase(
+            'qualifiers_list',
+            'List of Qualifiers Report',
+            $path,
+            $filters,
+            $userId,
+            [
+                'total_qualifiers' => $qualifiers->count(),
+                'slots' => $slots,
+                'format' => 'docx',
+            ]
+        );
+
+        \Log::info('Qualifiers list generation complete', ['report_id' => $report->id]);
+        return $report;
     }
 }
 

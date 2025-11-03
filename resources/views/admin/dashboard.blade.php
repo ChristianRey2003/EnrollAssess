@@ -363,6 +363,58 @@
             </table>
     </div>
 
+    <!-- Interview Assignment Progress -->
+    @if(isset($interviewProgress) && $interviewProgress->count() > 0)
+    <div class="recent-table-container" style="margin-bottom: 30px;">
+        <div class="table-header">
+            <div class="table-title">Interview Assignment Progress</div>
+        </div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Instructor</th>
+                    <th style="text-align: center;">Assigned</th>
+                    <th style="text-align: center;">Completed</th>
+                    <th style="text-align: center;">Pending</th>
+                    <th style="text-align: center;">Progress</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($interviewProgress as $progress)
+                <tr>
+                    <td>
+                        <div style="font-weight: 500; color: #1f2937;">{{ $progress->instructor_name }}</div>
+                    </td>
+                    <td style="text-align: center; font-weight: 500; color: #1f2937;">{{ $progress->total }}</td>
+                    <td style="text-align: center; font-weight: 500; color: #10b981;">{{ $progress->completed }}</td>
+                    <td style="text-align: center; font-weight: 500; color: #f59e0b;">{{ $progress->pending }}</td>
+                    <td style="text-align: center;">
+                        <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                            <div style="flex: 1; max-width: 120px; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+                                <div style="height: 100%; background: {{ $progress->completion_rate == 100 ? '#10b981' : '#3b82f6' }}; width: {{ $progress->completion_rate }}%;"></div>
+                            </div>
+                            <span style="font-size: 13px; font-weight: 600; color: #6b7280; min-width: 40px;">{{ $progress->completion_rate }}%</span>
+                        </div>
+                    </td>
+                    <td>
+                        @if($progress->completion_rate == 100)
+                            <span class="status-badge" style="background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;">Complete</span>
+                        @elseif($progress->has_overdue)
+                            <span class="status-badge" style="background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;">Overdue</span>
+                        @elseif($progress->has_upcoming_deadline)
+                            <span class="status-badge" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">Due Soon</span>
+                        @else
+                            <span class="status-badge" style="background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe;">In Progress</span>
+                        @endif
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+    @endif
+
     <!-- Quick Access -->
     <div class="quick-access">
             <div class="access-title">Quick Access</div>

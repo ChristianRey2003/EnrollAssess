@@ -88,6 +88,14 @@
                     <span class="nav-text">Analytics</span>
                 </a>
             </div>
+            
+            <div class="nav-item">
+                <a href="{{ route('admin.settings') }}" 
+                   class="nav-link {{ str_starts_with($currentRoute, 'admin.settings') ? 'active' : '' }}">
+                    <span class="nav-icon"></span>
+                    <span class="nav-text">Settings</span>
+                </a>
+            </div>
 
             
         @elseif($userRole === 'instructor')

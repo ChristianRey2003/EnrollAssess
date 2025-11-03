@@ -650,8 +650,10 @@ class ApplicantController extends BaseController
             'applicant_ids' => 'required|array',
             'applicant_ids.*' => 'exists:applicants,applicant_id',
             'instructor_id' => 'required|exists:users,user_id',
+            'interview_start_date' => 'required|date|after_or_equal:today',
+            'interview_end_date' => 'required|date|after_or_equal:interview_start_date',
             'notify_email' => 'nullable|boolean',
-            'note' => 'nullable|string|max:500',
+            'assignment_message' => 'nullable|string|max:1000',
         ]);
 
         $updated = 0;
@@ -671,12 +673,20 @@ class ApplicantController extends BaseController
                 // Create or update interview record
                 $interview = $applicant->latestInterview;
                 if ($interview) {
-                    $interview->update(['interviewer_id' => $request->instructor_id]);
+                    $interview->update([
+                        'interviewer_id' => $request->instructor_id,
+                        'interview_deadline_start' => $request->interview_start_date,
+                        'interview_deadline_end' => $request->interview_end_date,
+                        'assignment_notes' => $request->assignment_message,
+                    ]);
                 } else {
                     Interview::create([
                         'applicant_id' => $applicantId,
                         'interviewer_id' => $request->instructor_id,
                         'status' => 'scheduled',
+                        'interview_deadline_start' => $request->interview_start_date,
+                        'interview_deadline_end' => $request->interview_end_date,
+                        'assignment_notes' => $request->assignment_message,
                     ]);
                     $interviewsCreated++;
                 }
@@ -685,7 +695,7 @@ class ApplicantController extends BaseController
                 if ($request->notify_email) {
                     try {
                         Mail::to($applicant->email_address)->send(
-                            new \App\Mail\InterviewInvitationMail($applicant, $instructor, $request->note)
+                            new \App\Mail\InterviewInvitationMail($applicant, $instructor, $request->assignment_message)
                         );
                         $emailsSent++;
                     } catch (\Exception $e) {
@@ -813,8 +823,6 @@ class ApplicantController extends BaseController
                 $query->where('status', $request->status);
             }
 
-            // Removed course and score range filters (single course setup; simplified UI)
-
             // Sorting
             $sortBy = $request->get('sort_by', 'enrollassess_score');
             $sortOrder = $request->get('sort_order', 'desc');
@@ -828,14 +836,36 @@ class ApplicantController extends BaseController
                 'email_address',
                 'enrollassess_score',
                 'interview_score',
+                'score',
+                'card_tor_gwa',
                 'status',
                 'exam_completed_at',
             ];
-            if (in_array($sortBy, $allowedSorts)) {
+            
+            // Handle overall_rating sorting (calculated field)
+            if ($sortBy === 'overall_rating') {
+                $collection = $query->get();
+                $sorted = $collection->sortBy(function($applicant) {
+                    $rating = $applicant->getOverallRating();
+                    return $rating ? $rating['overall_rating'] : 0;
+                }, SORT_REGULAR, $sortOrder === 'desc');
+                
+                $page = $request->get('page', 1);
+                $perPage = 20;
+                $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                    $sorted->forPage($page, $perPage),
+                    $sorted->count(),
+                    $perPage,
+                    $page,
+                    ['path' => $request->url(), 'query' => $request->query()]
+                );
+                $applicants = $paginator;
+            } elseif (in_array($sortBy, $allowedSorts)) {
                 $query->orderBy($sortBy, $sortOrder);
+                $applicants = $query->paginate(20);
+            } else {
+                $applicants = $query->paginate(20);
             }
-
-            $applicants = $query->paginate(20);
 
             $statuses = [
                 'exam-completed',
@@ -847,12 +877,24 @@ class ApplicantController extends BaseController
                 'rejected'
             ];
 
-            // Statistics
+            // Statistics - 4 most important metrics
+            $scoringService = app(\App\Services\AdmissionScoringService::class);
+            $allApplicants = Applicant::whereNotNull('enrollassess_score')->get();
+            
+            $qualifiersCount = $allApplicants->filter(function($applicant) use ($scoringService) {
+                return $scoringService->hasAllRequiredScores($applicant);
+            })->count();
+            
+            $overallRatings = $allApplicants->map(function($applicant) {
+                $rating = $applicant->getOverallRating();
+                return $rating ? $rating['overall_rating'] : null;
+            })->filter()->values();
+            
             $stats = [
-                'total_with_scores' => Applicant::whereNotNull('enrollassess_score')->count(),
-                'with_interview_scores' => Applicant::whereNotNull('interview_score')->count(),
-                'average_enrollassess' => round(Applicant::whereNotNull('enrollassess_score')->avg('enrollassess_score'), 2),
-                'average_interview' => round(Applicant::whereNotNull('interview_score')->avg('interview_score'), 2),
+                'qualifiers_count' => $qualifiersCount,
+                'average_overall' => $overallRatings->count() > 0 ? round($overallRatings->avg(), 2) : 0,
+                'average_uee' => round(Applicant::whereNotNull('score')->avg('score'), 2),
+                'average_gwa' => round(Applicant::whereNotNull('card_tor_gwa')->avg('card_tor_gwa'), 2),
             ];
 
             return view('admin.applicants.exam-results', compact(

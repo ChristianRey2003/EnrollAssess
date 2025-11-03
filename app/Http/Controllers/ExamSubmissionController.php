@@ -58,7 +58,7 @@ class ExamSubmissionController extends Controller
             
             // Update applicant with exam results
             $applicant->update([
-                'enrollassess_score' => $scoreData['total_score'],
+                'enrollassess_score' => $scoreData['percentage'],
                 'status' => 'exam-completed',
                 'exam_completed_at' => now(),
                 'verbal_description' => $scoreData['verbal_description']

@@ -467,6 +467,7 @@
                         <th>Exam Score</th>
                         <th>Status</th>
                         <th>Interview Date</th>
+                        <th>Interview Window</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -490,9 +491,28 @@
                                 <div class="applicant-avatar">
                                     {{ substr($applicant->first_name ?? 'A', 0, 1) }}{{ substr($applicant->last_name ?? 'A', 0, 1) }}
                                 </div>
-                                <div>
-                                    <div class="applicant-name">{{ $applicant->first_name }} {{ $applicant->last_name }}</div>
-                                    <div class="applicant-email">{{ $applicant->email_address }}</div>
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div>
+                                            <div class="applicant-name">{{ $applicant->first_name }} {{ $applicant->last_name }}</div>
+                                            <div class="applicant-email">{{ $applicant->email_address }}</div>
+                                        </div>
+                                        @if($interview && $interview->assignment_notes)
+                                            <button type="button" 
+                                                    onclick="toggleAssignmentInfo({{ $applicant->applicant_id }})" 
+                                                    style="background: none; border: none; cursor: pointer; padding: 4px; font-size: 1.2rem; color: #3B82F6;"
+                                                    title="View assignment message">
+                                                📋
+                                            </button>
+                                        @endif
+                                    </div>
+                                    @if($interview && $interview->assignment_notes)
+                                        <div id="assignment-info-{{ $applicant->applicant_id }}" 
+                                             style="display: none; margin-top: 8px; padding: 10px; background: #F3F4F6; border-radius: 6px; font-size: 0.875rem; color: #374151;">
+                                            <strong style="color: #1F2937;">Assignment Message:</strong><br>
+                                            <div style="margin-top: 4px;">{{ $interview->assignment_notes }}</div>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </td>
@@ -519,6 +539,27 @@
                                 {{ $interview->schedule_date->format('M d, Y g:i A') }}
                             @else
                                 <span style="color: #6B7280;">Not scheduled</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($interview && $interview->interview_deadline_start && $interview->interview_deadline_end)
+                                <div style="font-size: 0.875rem;">
+                                    <div style="color: #374151; font-weight: 500;">
+                                        {{ $interview->interview_deadline_start->format('M d, Y') }} - 
+                                        {{ $interview->interview_deadline_end->format('M d, Y') }}
+                                    </div>
+                                    @php
+                                        $now = now();
+                                        $daysUntilEnd = $now->diffInDays($interview->interview_deadline_end, false);
+                                    @endphp
+                                    @if($interview->interview_deadline_end->isPast())
+                                        <span style="color: #DC2626; font-size: 0.813rem; font-weight: 600;">⚠️ Deadline passed</span>
+                                    @elseif($daysUntilEnd <= 3 && $daysUntilEnd >= 0)
+                                        <span style="color: #F59E0B; font-size: 0.813rem; font-weight: 600;">⚠️ Due soon</span>
+                                    @endif
+                                </div>
+                            @else
+                                <span style="color: #9CA3AF; font-size: 0.875rem;">No deadline set</span>
                             @endif
                         </td>
                         <td>
@@ -688,6 +729,13 @@
         checkboxes.forEach(cb => cb.checked = false);
         document.getElementById('selectAll').checked = false;
         updateBulkActions();
+    }
+
+    function toggleAssignmentInfo(applicantId) {
+        const infoDiv = document.getElementById('assignment-info-' + applicantId);
+        if (infoDiv) {
+            infoDiv.style.display = infoDiv.style.display === 'none' ? 'block' : 'none';
+        }
     }
 
     // Individual schedule modal

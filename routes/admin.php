@@ -38,7 +38,29 @@ Route::get('/dashboard', function () {
         ->take(5)
         ->get();
     
-    return view('admin.dashboard', compact('stats', 'recent_applicants'));
+    // Interview Progress Tracking
+    $interviewProgress = \App\Models\Interview::select(
+            'users.full_name as instructor_name',
+            \DB::raw('COUNT(interviews.interview_id) as total'),
+            \DB::raw('SUM(CASE WHEN interviews.status = "completed" THEN 1 ELSE 0 END) as completed'),
+            \DB::raw('SUM(CASE WHEN interviews.status != "completed" THEN 1 ELSE 0 END) as pending'),
+            \DB::raw('MIN(interviews.interview_deadline_end) as nearest_deadline')
+        )
+        ->join('users', 'interviews.interviewer_id', '=', 'users.user_id')
+        ->whereNotNull('interviews.interview_deadline_start')
+        ->whereNotNull('interviews.interview_deadline_end')
+        ->groupBy('interviews.interviewer_id', 'users.full_name')
+        ->get()
+        ->map(function($row) {
+            $row->completion_rate = $row->total > 0 ? round(($row->completed / $row->total) * 100, 1) : 0;
+            $row->has_upcoming_deadline = $row->nearest_deadline && 
+                                          now()->diffInDays($row->nearest_deadline, false) <= 3 &&
+                                          now()->diffInDays($row->nearest_deadline, false) >= 0;
+            $row->has_overdue = $row->nearest_deadline && now()->gt($row->nearest_deadline);
+            return $row;
+        });
+    
+    return view('admin.dashboard', compact('stats', 'recent_applicants', 'interviewProgress'));
 })->middleware('role:department-head,administrator')->name('dashboard');
 
 // Applicant Management Routes

@@ -77,7 +77,7 @@ class ReportsController extends Controller
     public function generate(Request $request)
     {
         $validated = $request->validate([
-            'type' => 'required|in:final_ranking,statistical_analysis,interview_summary',
+            'type' => 'required|in:final_ranking,statistical_analysis,interview_summary,qualifiers_list',
             'filters' => 'nullable|array',
         ]);
 
@@ -86,10 +86,18 @@ class ReportsController extends Controller
             $filters = $validated['filters'] ?? [];
             $userId = auth()->id();
 
+            // Validate slots for qualifiers_list
+            if ($reportType === 'qualifiers_list') {
+                $request->validate([
+                    'filters.slots' => 'required|integer|min:1|max:500',
+                ]);
+            }
+
             $report = match($reportType) {
                 'final_ranking' => $this->reportService->generateFinalRanking($filters, $userId),
                 'statistical_analysis' => $this->reportService->generateStatisticalAnalysis($filters, $userId),
                 'interview_summary' => $this->reportService->generateInterviewSummary($filters, $userId),
+                'qualifiers_list' => $this->reportService->generateQualifiersList($filters, $userId),
             };
 
             return response()->json([
@@ -123,10 +131,35 @@ class ReportsController extends Controller
         }
 
         try {
-            return Storage::download($report->file_path, basename($report->file_path));
+            // Get the file path using Storage facade to respect configured disk root
+            $filePath = Storage::path($report->file_path);
+            $filename = basename($report->file_path);
+            
+            // Force download with proper headers to prompt save dialog
+            return response()->download($filePath, $filename, [
+                'Content-Type' => $this->getContentType($filename),
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ]);
         } catch (\Exception $e) {
             return back()->with('error', 'Failed to download report: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Get content type based on file extension
+     */
+    private function getContentType($filename)
+    {
+        $extension = pathinfo($filename, PATHINFO_EXTENSION);
+        
+        return match(strtolower($extension)) {
+            'pdf' => 'application/pdf',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'doc' => 'application/msword',
+            'xls' => 'application/vnd.ms-excel',
+            default => 'application/octet-stream',
+        };
     }
 
     /**
@@ -135,7 +168,7 @@ class ReportsController extends Controller
     public function preview(Request $request)
     {
         $validated = $request->validate([
-            'type' => 'required|in:final_ranking,statistical_analysis,interview_summary',
+            'type' => 'required|in:final_ranking,statistical_analysis,interview_summary,qualifiers_list',
             'filters' => 'nullable|array',
         ]);
 

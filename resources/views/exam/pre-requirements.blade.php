@@ -320,37 +320,27 @@
                 <button type="button" class="btn btn-secondary" onclick="window.history.back()">
                     Cancel
                 </button>
-                <button type="button" class="btn btn-primary" id="startExamBtn" disabled onclick="startExam()">
-                    Start Exam
+                <button type="button" class="btn btn-primary" id="continueBtn" disabled onclick="continueToBasicInfo()">
+                    Continue
                 </button>
             </div>
         </div>
     </div>
 
     <script>
-        // Enable start button only when all checkboxes are checked
+        // Enable continue button only when all checkboxes are checked
         const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-        const startButton = document.getElementById('startExamBtn');
+        const continueButton = document.getElementById('continueBtn');
 
         checkboxes.forEach(checkbox => {
             checkbox.addEventListener('change', function() {
                 const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-                startButton.disabled = !allChecked;
+                continueButton.disabled = !allChecked;
             });
         });
 
-        let isStartingExam = false;
-
-        async function startExam() {
-            // Prevent double-clicks
-            if (isStartingExam) return;
-            isStartingExam = true;
-            
-            // Disable button and show loading state
-            startButton.disabled = true;
-            startButton.textContent = 'Starting Exam...';
-
-            // Store consent in localStorage
+        function continueToBasicInfo() {
+            // Store consent acknowledgment in localStorage
             localStorage.setItem('examPreRequirements', JSON.stringify({
                 instructionsAcknowledged: true,
                 timestamp: new Date().toISOString(),
@@ -358,46 +348,14 @@
                 maxViolations: 5
             }));
 
-            try {
-                // Call the exam start endpoint to initialize session
-                const response = await fetch("{{ route('exam.start') }}", {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept': 'application/json'
-                    }
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    // Successfully initialized exam session, redirect to interface
-                    window.location.href = data.redirect_url || "{{ route('exam.interface') }}";
-                } else {
-                    // Show error message
-                    alert(data.message || 'Failed to start exam. Please try again.');
-                    startButton.disabled = false;
-                    startButton.textContent = 'Start Exam';
-                    isStartingExam = false;
-                }
-            } catch (error) {
-                console.error('Error starting exam:', error);
-                alert('An error occurred while starting the exam. Please try again.');
-                startButton.disabled = false;
-                startButton.textContent = 'Start Exam';
-                isStartingExam = false;
-            }
+            // Redirect to basic information form
+            window.location.href = "{{ route('exam.basic-info') }}";
         }
 
-        // Prevent accidental navigation (but allow when starting exam)
+        // Prevent accidental navigation
         window.addEventListener('beforeunload', function(e) {
-            if (isStartingExam) {
-                return; // Allow navigation when starting exam
-            }
-
             const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-            if (allChecked && !startButton.disabled) {
+            if (allChecked && !continueButton.disabled) {
                 e.preventDefault();
                 e.returnValue = '';
             }

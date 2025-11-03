@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class GeneratedReport extends Model
 {
@@ -64,6 +65,7 @@ class GeneratedReport extends Model
             'final_ranking' => 'Final Applicant Ranking',
             'statistical_analysis' => 'Statistical Analysis',
             'interview_summary' => 'Interview Summary',
+            'qualifiers_list' => 'List of Qualifiers (DOCX)',
             'question_analytics' => 'Question Analytics',
             'communication_log' => 'Communication Log',
             'security_audit' => 'Security Audit',
@@ -94,6 +96,6 @@ class GeneratedReport extends Model
      */
     public function fileExists()
     {
-        return file_exists(storage_path('app/' . $this->file_path));
+        return Storage::exists($this->file_path);
     }
 }

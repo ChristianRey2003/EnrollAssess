@@ -9,10 +9,20 @@
 
 @push('styles')
 <style>
+    /* Remove horizontal padding from main-content to allow proper centering with header */
+    /* This only affects this page to ensure assign-container aligns with header */
+    .admin-main .main-content {
+        padding-left: 0;
+        padding-right: 0;
+        padding-top: 30px;
+        padding-bottom: 30px;
+    }
+
     /* ============================================
        LAYOUT CONTAINER - Consistent padding with header
        ============================================ */
     .assign-container {
+        width: 100%;
         max-width: 1600px;
         margin: 0 auto;
         padding: 24px 30px 30px; /* Matches header horizontal padding */
@@ -646,14 +656,22 @@
                     </select>
                 </div>
                 <div class="form-group">
+                    <label for="interview_start_date">Interview Start Date *</label>
+                    <input type="date" id="interview_start_date" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="interview_end_date">Interview End Date *</label>
+                    <input type="date" id="interview_end_date" class="form-control" required>
+                </div>
+                <div class="form-group">
                     <label class="checkbox-label">
                         <input type="checkbox" id="notify_email" checked>
                         Notify applicants by email
                     </label>
                 </div>
                 <div class="form-group">
-                    <label for="assign_note">Note (Optional)</label>
-                    <input type="text" id="assign_note" class="form-control" placeholder="Add a note for the assignment">
+                    <label for="assignment_message">Assignment Message (Optional)</label>
+                    <textarea id="assignment_message" class="form-control" rows="3" placeholder="Add instructions or context for the instructor"></textarea>
                 </div>
             </div>
             <div class="drawer-footer">
@@ -737,9 +755,21 @@
     // Assign button functionality
     assignBtn?.addEventListener('click', async function() {
         const instructorId = parseInt(document.getElementById('instructor_id').value, 10);
+        const startDate = document.getElementById('interview_start_date').value;
+        const endDate = document.getElementById('interview_end_date').value;
         
         if (!instructorId) {
             alert('Please select an instructor.');
+            return;
+        }
+
+        if (!startDate || !endDate) {
+            alert('Please select both interview start and end dates.');
+            return;
+        }
+
+        if (new Date(endDate) < new Date(startDate)) {
+            alert('Interview end date must be after or equal to start date.');
             return;
         }
 
@@ -758,8 +788,10 @@
         const payload = {
             applicant_ids: Array.from(selected),
             instructor_id: instructorId,
+            interview_start_date: startDate,
+            interview_end_date: endDate,
             notify_email: document.getElementById('notify_email').checked,
-            note: document.getElementById('assign_note').value || null
+            assignment_message: document.getElementById('assignment_message').value || null
         };
 
         try {

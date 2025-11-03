@@ -221,6 +221,7 @@ body.admin-page.instructor-portal .sidebar-subtitle::after {
     margin-left: 0;
 }
 
+/* Center header and content - applies to both collapsed and expanded sidebar */
 .main-header {
     background: var(--white);
     padding: 20px 30px;
@@ -233,6 +234,9 @@ body.admin-page.instructor-portal .sidebar-subtitle::after {
     flex-shrink: 0 !important;
     position: relative;
     z-index: 10;
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
 }
 
 /* Hamburger button */

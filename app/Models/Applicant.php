@@ -81,6 +81,22 @@ class Applicant extends Model
         return $this->hasMany(Result::class, 'applicant_id', 'applicant_id');
     }
 
+    /**
+     * Get the basic information for this applicant.
+     */
+    public function basicInfo()
+    {
+        return $this->hasOne(ApplicantBasicInfo::class, 'applicant_id', 'applicant_id');
+    }
+
+    /**
+     * Check if applicant has completed basic information.
+     */
+    public function hasCompletedBasicInfo(): bool
+    {
+        return $this->basicInfo && $this->basicInfo->completed_at !== null;
+    }
+
 
     /**
      * Scope queries by status
