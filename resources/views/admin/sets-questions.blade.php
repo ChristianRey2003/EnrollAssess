@@ -516,7 +516,7 @@
         <div class="section-actions">
             @if($currentExam)
                 <button type="button" onclick="showNewSemesterModal()" class="btn-outline">
-                    New Exam
+                    New Semester
                 </button>
                 <button onclick="showAddQuestionModal()" class="btn-primary">
                     Add Question
@@ -530,18 +530,44 @@
     </div>
 
     @if($currentExam)
-        <!-- Compact Exam Info Bar -->
-        <div class="exam-info-card">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="flex: 1;">
-                    <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
-                        <div style="font-size: 13px; color: #6b7280;">
+        <!-- Compact Status Bar with Quick Stats -->
+        <div style="background: #fafafa; border: 1px solid #e5e7eb; border-radius: 4px; padding: 8px 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap; font-size: 13px; color: #6b7280;">
+                <span style="color: #1f2937; font-weight: 500;">{{ $stats['total_questions'] }} questions</span>
+                <span style="color: #059669;">{{ $stats['active_questions'] }} active</span>
+                <span style="color: #1e40af;">{{ $stats['mcq_count'] }} MCQ</span>
+                <span style="color: #166534;">{{ $stats['tf_count'] }} T/F</span>
+                @if($stats['draft_questions'] > 0)
+                    <span style="color: #991b1b;">{{ $stats['draft_questions'] }} drafts</span>
+                @endif
+            </div>
+            <div style="display: flex; gap: 6px; align-items: center;">
+                <button onclick="toggleOverviewPanel()" class="btn-outline" style="padding: 4px 10px; font-size: 13px;">
+                    <span id="overviewToggleIcon">▼</span> Overview
+                </button>
+                @if(!$currentExam->is_active)
+                    <button onclick="publishExam({{ $currentExam->exam_id }})" class="btn-success" style="padding: 4px 10px; font-size: 13px;">
+                        Publish
+                    </button>
+                @endif
+                <button onclick="openEditSettingsDrawer()" class="btn-outline" style="padding: 4px 10px; font-size: 13px;">
+                    Settings
+                </button>
+            </div>
+        </div>
+
+        <!-- Collapsible Overview Panel -->
+        <div id="overviewPanel" style="display: none; margin-bottom: 16px;">
+            <!-- Exam Info Card -->
+            <div class="exam-info-card">
+                <div style="display: flex; justify-content: space-between; align-items: start; gap: 16px;">
+                    <div style="flex: 1;">
+                        <div style="font-size: 13px; color: #6b7280; margin-bottom: 8px;">
                             {{ $currentExam->description }}
                         </div>
                         <div class="exam-meta" style="margin: 0;">
                             <span class="meta-item"><span class="meta-label">Duration:</span> {{ $currentExam->formatted_duration }}</span>
                             <span class="meta-item"><span class="meta-label">Created:</span> {{ $currentExam->created_at->format('M d, Y') }}</span>
-                            <span class="meta-item"><span class="meta-label">Questions:</span> {{ $stats['total_questions'] }} ({{ $stats['active_questions'] }} active)</span>
                             @if($currentExam->total_items)
                                 <span class="meta-item"><span class="meta-label">Exam Size:</span> {{ $currentExam->total_items }} items</span>
                             @endif
@@ -551,67 +577,163 @@
                         </div>
                     </div>
                 </div>
-                <div style="display: flex; gap: 8px;">
-                    @if(!$currentExam->is_active)
-                        <button onclick="publishExam({{ $currentExam->exam_id }})" class="btn-success">
-                            Publish
-                        </button>
+            </div>
+
+            @if($quotaProgress && ($quotaProgress['total_items'] > 0 || $quotaProgress['mcq_quota'] > 0 || $quotaProgress['tf_quota'] > 0))
+            <!-- Quota Progress Indicators -->
+            <div style="background: white; border: 1px solid #e5e7eb; border-radius: 4px; padding: 12px 16px; margin-bottom: 16px;">
+                <div style="font-size: 14px; font-weight: 600; color: #1f2937; margin-bottom: 12px;">Quota Progress</div>
+                <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                    @if($quotaProgress['total_items'] > 0)
+                    <div style="flex: 1; min-width: 150px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="font-size: 12px; color: #6b7280;">Total Items</span>
+                            <span style="font-size: 12px; font-weight: 600; color: #1f2937;">{{ $stats['active_questions'] }} / {{ $quotaProgress['total_items'] }}</span>
+                        </div>
+                        <div style="height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;">
+                            <div style="height: 100%; width: {{ min(100, ($stats['active_questions'] / $quotaProgress['total_items']) * 100) }}%; background: {{ $stats['active_questions'] >= $quotaProgress['total_items'] ? '#059669' : '#991b1b' }};"></div>
+                        </div>
+                    </div>
                     @endif
-                    <button onclick="openEditSettingsDrawer()" class="btn-outline">
-                        Edit Settings
-                    </button>
+                    @if($quotaProgress['mcq_quota'] > 0)
+                    <div style="flex: 1; min-width: 150px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="font-size: 12px; color: #6b7280;">MCQ Quota</span>
+                            <span style="font-size: 12px; font-weight: 600; color: {{ $quotaProgress['mcq_available'] >= $quotaProgress['mcq_quota'] ? '#059669' : '#991b1b' }};">{{ $quotaProgress['mcq_available'] }} / {{ $quotaProgress['mcq_quota'] }}</span>
+                        </div>
+                        <div style="height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;">
+                            <div style="height: 100%; width: {{ min(100, ($quotaProgress['mcq_available'] / $quotaProgress['mcq_quota']) * 100) }}%; background: {{ $quotaProgress['mcq_available'] >= $quotaProgress['mcq_quota'] ? '#059669' : '#991b1b' }};"></div>
+                        </div>
+                    </div>
+                    @endif
+                    @if($quotaProgress['tf_quota'] > 0)
+                    <div style="flex: 1; min-width: 150px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="font-size: 12px; color: #6b7280;">T/F Quota</span>
+                            <span style="font-size: 12px; font-weight: 600; color: {{ $quotaProgress['tf_available'] >= $quotaProgress['tf_quota'] ? '#059669' : '#991b1b' }};">{{ $quotaProgress['tf_available'] }} / {{ $quotaProgress['tf_quota'] }}</span>
+                        </div>
+                        <div style="height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;">
+                            <div style="height: 100%; width: {{ min(100, ($quotaProgress['tf_available'] / $quotaProgress['tf_quota']) * 100) }}%; background: {{ $quotaProgress['tf_available'] >= $quotaProgress['tf_quota'] ? '#059669' : '#991b1b' }};"></div>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @endif
+
+            <!-- Clickable Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card" onclick="filterByType('')" style="cursor: pointer;" title="Click to show all">
+                    <span class="stat-value">{{ $stats['total_questions'] }}</span>
+                    <span class="stat-label">Total Questions</span>
+                </div>
+                <div class="stat-card" onclick="filterByStatus('active')" style="cursor: pointer;" title="Click to filter active">
+                    <span class="stat-value" style="color: #059669;">{{ $stats['active_questions'] }}</span>
+                    <span class="stat-label">Active</span>
+                </div>
+                <div class="stat-card" onclick="filterByType('multiple_choice')" style="cursor: pointer;" title="Click to filter MCQ">
+                    <span class="stat-value" style="color: #1e40af;">{{ $stats['mcq_count'] }}</span>
+                    <span class="stat-label">MCQ</span>
+                </div>
+                <div class="stat-card" onclick="filterByType('true_false')" style="cursor: pointer;" title="Click to filter T/F">
+                    <span class="stat-value" style="color: #166534;">{{ $stats['tf_count'] }}</span>
+                    <span class="stat-label">True/False</span>
+                </div>
+                <div class="stat-card" onclick="filterByStatus('draft')" style="cursor: pointer;" title="Click to filter drafts">
+                    <span class="stat-value" style="color: #991b1b;">{{ $stats['draft_questions'] }}</span>
+                    <span class="stat-label">Drafts</span>
                 </div>
             </div>
         </div>
 
         <!-- Toolbar -->
-        <div class="toolbar">
-            <div class="toolbar-left">
-                <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="Search questions..." onkeyup="filterQuestions()">
+        <form method="GET" action="{{ route('admin.sets-questions.index') }}" id="filterForm">
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <div class="search-box">
+                        <input type="text" name="search" id="searchInput" placeholder="Search questions..." 
+                               value="{{ request('search') }}" onkeyup="if(event.key==='Enter') this.form.submit()">
+                    </div>
+                    <select class="filter-select" name="type" id="typeFilter" onchange="this.form.submit()">
+                        <option value="">All Types</option>
+                        <option value="multiple_choice" {{ request('type') === 'multiple_choice' ? 'selected' : '' }}>Multiple Choice</option>
+                        <option value="true_false" {{ request('type') === 'true_false' ? 'selected' : '' }}>True/False</option>
+                    </select>
+                    <select class="filter-select" name="status" id="statusFilter" onchange="this.form.submit()">
+                        <option value="">All Status</option>
+                        <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
+                        <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
+                    </select>
+                    <select class="filter-select" name="sort_by" id="sortByFilter" onchange="this.form.submit()">
+                        <option value="order_number" {{ request('sort_by', 'order_number') === 'order_number' ? 'selected' : '' }}>Sort by Order</option>
+                        <option value="points" {{ request('sort_by') === 'points' ? 'selected' : '' }}>Sort by Points</option>
+                        <option value="type" {{ request('sort_by') === 'type' ? 'selected' : '' }}>Sort by Type</option>
+                        <option value="status" {{ request('sort_by') === 'status' ? 'selected' : '' }}>Sort by Status</option>
+                    </select>
+                    <select class="filter-select" name="sort_order" id="sortOrderFilter" onchange="this.form.submit()">
+                        <option value="asc" {{ request('sort_order', 'asc') === 'asc' ? 'selected' : '' }}>Ascending</option>
+                        <option value="desc" {{ request('sort_order') === 'desc' ? 'selected' : '' }}>Descending</option>
+                    </select>
+                    @if(request()->hasAny(['search', 'type', 'status', 'sort_by', 'sort_order']))
+                    <a href="{{ route('admin.sets-questions.index') }}" class="btn-outline" style="text-decoration: none; display: inline-flex; align-items: center;">Clear Filters</a>
+                    @endif
                 </div>
-                <select class="filter-select" id="typeFilter" onchange="filterQuestions()">
-                    <option value="">All Types</option>
-                    <option value="multiple_choice">Multiple Choice</option>
-                    <option value="true_false">True/False</option>
-                </select>
-                <select class="filter-select" id="statusFilter" onchange="filterQuestions()">
-                    <option value="">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="draft">Draft</option>
-                </select>
+                <button type="button" onclick="runConsistencyCheck()" class="btn-outline">
+                    Consistency Check
+                </button>
             </div>
-            <button onclick="runConsistencyCheck()" class="btn-outline">
-                Consistency Check
-            </button>
+        </form>
+
+        <!-- Bulk Actions Bar -->
+        <div id="bulkActionsBar" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 10px 12px; margin-bottom: 12px; align-items: center; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                <span id="selectedCount" style="font-size: 14px; font-weight: 500; color: #1e40af;">0 selected</span>
+                <div style="display: flex; gap: 6px;">
+                    <button onclick="bulkUpdateStatus(true)" class="btn-outline" style="padding: 5px 12px; font-size: 13px;">Activate Selected</button>
+                    <button onclick="bulkUpdateStatus(false)" class="btn-outline" style="padding: 5px 12px; font-size: 13px;">Deactivate Selected</button>
+                    <button onclick="bulkDuplicate()" class="btn-outline" style="padding: 5px 12px; font-size: 13px;">Duplicate Selected</button>
+                    <button onclick="bulkDelete()" class="btn-outline" style="padding: 5px 12px; font-size: 13px; color: #991b1b; border-color: #fecaca;">Delete Selected</button>
+                </div>
+            </div>
+            <button onclick="clearSelection()" style="background: none; border: none; color: #6b7280; cursor: pointer; font-size: 13px;">Clear</button>
         </div>
 
         <!-- Questions List -->
         <div class="questions-container" id="questionsList">
-            @forelse($questions as $index => $question)
+            @if($questions->count() > 0)
+                <div style="padding: 8px 16px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; gap: 12px;">
+                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" style="cursor: pointer;">
+                    <label for="selectAll" style="font-size: 13px; color: #6b7280; cursor: pointer; margin: 0;">Select All</label>
+                </div>
+            @endif
+            @forelse($questions as $question)
                 <div class="question-item" 
+                     data-question-id="{{ $question->question_id }}"
                      data-type="{{ $question->question_type }}" 
                      data-status="{{ $question->is_active ? 'active' : 'draft' }}"
                      data-text="{{ strtolower($question->question_text) }}">
-                    <div class="question-content">
-                        <div class="question-header">
-                            <span class="question-number">Q{{ $index + 1 }}</span>
-                            <span class="question-type-badge type-{{ $question->question_type }}">
-                                {{ str_replace('_', ' ', $question->question_type) }}
-                            </span>
-                            @if(!$question->is_active)
-                                <span class="status-badge status-draft">Draft</span>
-                            @endif
-                        </div>
-                        <div class="question-text">{{ $question->question_text }}</div>
-                        <div class="question-meta">
-                            <span>Points: {{ $question->points }}</span>
-                            @if($question->options->count() > 0)
-                                <span>Options: {{ $question->options->count() }}</span>
-                            @endif
-                            @if($question->order_number)
-                                <span>Order: {{ $question->order_number }}</span>
-                            @endif
+                    <div style="display: flex; align-items: start; gap: 12px; flex: 1;">
+                        <input type="checkbox" class="question-checkbox" value="{{ $question->question_id }}" onchange="updateBulkActions()" style="margin-top: 4px; cursor: pointer;">
+                        <div class="question-content" style="flex: 1;">
+                            <div class="question-header">
+                                <span class="question-number">Q{{ $question->order_number ?? ($loop->iteration + ($questions->currentPage() - 1) * $questions->perPage()) }}</span>
+                                <span class="question-type-badge type-{{ $question->question_type }}">
+                                    {{ str_replace('_', ' ', $question->question_type) }}
+                                </span>
+                                @if(!$question->is_active)
+                                    <span class="status-badge status-draft">Draft</span>
+                                @endif
+                            </div>
+                            <div class="question-text">{{ $question->question_text }}</div>
+                            <div class="question-meta">
+                                <span>Points: {{ $question->points }}</span>
+                                @if($question->options->count() > 0)
+                                    <span>Options: {{ $question->options->count() }}</span>
+                                @endif
+                                @if($question->order_number)
+                                    <span>Order: {{ $question->order_number }}</span>
+                                @endif
+                            </div>
                         </div>
                     </div>
                     <div class="question-actions">
@@ -631,14 +753,24 @@
                 </div>
             @empty
                 <div class="empty-state">
-                    <h4>No Questions Yet</h4>
-                    <p>Start building your question bank by adding your first question.</p>
+                    <h4>No Questions Found</h4>
+                    <p>@if(request()->hasAny(['search', 'type', 'status'])) No questions match your filters. @else Start building your question bank by adding your first question. @endif</p>
+                    @if(request()->hasAny(['search', 'type', 'status']))
+                        <a href="{{ route('admin.sets-questions.index') }}" class="btn-outline" style="display: inline-block; text-decoration: none; margin-right: 8px;">Clear Filters</a>
+                    @endif
                     <button onclick="showAddQuestionModal()" class="btn-primary">
                         Add First Question
                     </button>
                 </div>
             @endforelse
         </div>
+
+        <!-- Pagination -->
+        @if($questions->hasPages())
+        <div style="margin-top: 16px; display: flex; justify-content: center; align-items: center; gap: 8px;">
+            {{ $questions->links() }}
+        </div>
+        @endif
     @else
         <!-- No Exam Setup -->
         <div class="questions-container">
@@ -846,9 +978,9 @@
                     <span class="error-message" id="exam_error_duration_minutes" style="color: #ef4444; font-size: 12px; margin-top: 4px; display: block;"></span>
                 </div>
 
-                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; padding: 12px; margin-bottom: 20px;">
-                    <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.5;">
-                        <strong style="color: #374151;">Next steps:</strong> After creating this exam, you'll be able to add questions to build your question bank.
+                <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 4px; padding: 12px; margin-bottom: 20px;">
+                    <p style="margin: 0; font-size: 13px; color: #92400e; line-height: 1.5;">
+                        <strong style="color: #78350f;">Important:</strong> Creating a new exam will archive the current active exam. Only one exam can be active at a time (per semester). The new exam starts as a draft - publish it when ready.
                     </p>
                 </div>
             </form>
@@ -876,23 +1008,180 @@
 
 @push('scripts')
 <script>
-    // Filter questions
-    function filterQuestions() {
-        const searchText = document.getElementById('searchInput').value.toLowerCase();
-        const typeFilter = document.getElementById('typeFilter').value;
-        const statusFilter = document.getElementById('statusFilter').value;
+    // Toggle overview panel
+    function toggleOverviewPanel() {
+        const panel = document.getElementById('overviewPanel');
+        const icon = document.getElementById('overviewToggleIcon');
         
-        document.querySelectorAll('.question-item').forEach(item => {
-            const text = item.dataset.text;
-            const type = item.dataset.type;
-            const status = item.dataset.status;
-            
-            const matchesSearch = !searchText || text.includes(searchText);
-            const matchesType = !typeFilter || type === typeFilter;
-            const matchesStatus = !statusFilter || status === statusFilter;
-            
-            item.style.display = (matchesSearch && matchesType && matchesStatus) ? 'flex' : 'none';
-        });
+        if (panel.style.display === 'none') {
+            panel.style.display = 'block';
+            icon.textContent = '▲';
+        } else {
+            panel.style.display = 'none';
+            icon.textContent = '▼';
+        }
+    }
+
+    // Filter by type (clickable stats cards)
+    function filterByType(type) {
+        const form = document.getElementById('filterForm');
+        const typeInput = form.querySelector('[name="type"]');
+        typeInput.value = type;
+        form.submit();
+    }
+
+    // Filter by status (clickable stats cards)
+    function filterByStatus(status) {
+        const form = document.getElementById('filterForm');
+        const statusInput = form.querySelector('[name="status"]');
+        statusInput.value = status;
+        form.submit();
+    }
+
+    // Bulk selection functions
+    function toggleSelectAll() {
+        const selectAll = document.getElementById('selectAll');
+        const checkboxes = document.querySelectorAll('.question-checkbox');
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        updateBulkActions();
+    }
+
+    function updateBulkActions() {
+        const checkedBoxes = document.querySelectorAll('.question-checkbox:checked');
+        const bulkBar = document.getElementById('bulkActionsBar');
+        const selectedCount = document.getElementById('selectedCount');
+        
+        if (checkedBoxes.length > 0) {
+            bulkBar.style.display = 'flex';
+            selectedCount.textContent = `${checkedBoxes.length} selected`;
+        } else {
+            bulkBar.style.display = 'none';
+        }
+        
+        // Update select all checkbox
+        const allCheckboxes = document.querySelectorAll('.question-checkbox');
+        const selectAll = document.getElementById('selectAll');
+        if (selectAll) {
+            selectAll.checked = allCheckboxes.length > 0 && checkedBoxes.length === allCheckboxes.length;
+        }
+    }
+
+    function clearSelection() {
+        document.querySelectorAll('.question-checkbox').forEach(cb => cb.checked = false);
+        const selectAll = document.getElementById('selectAll');
+        if (selectAll) selectAll.checked = false;
+        updateBulkActions();
+    }
+
+    function getSelectedQuestionIds() {
+        return Array.from(document.querySelectorAll('.question-checkbox:checked')).map(cb => parseInt(cb.value));
+    }
+
+    // Bulk update status
+    function bulkUpdateStatus(status) {
+        const ids = getSelectedQuestionIds();
+        if (ids.length === 0) {
+            alert('Please select at least one question.');
+            return;
+        }
+
+        const action = status ? 'activate' : 'deactivate';
+        if (!confirm(`Are you sure you want to ${action} ${ids.length} selected question(s)?`)) {
+            return;
+        }
+
+        fetch('{{ route("admin.sets-questions.bulk-update-status") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                question_ids: ids,
+                status: status
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => alert('Error: ' + error.message));
+    }
+
+    // Bulk delete
+    function bulkDelete() {
+        const ids = getSelectedQuestionIds();
+        if (ids.length === 0) {
+            alert('Please select at least one question.');
+            return;
+        }
+
+        if (!confirm(`Are you sure you want to delete ${ids.length} selected question(s)? This action cannot be undone.`)) {
+            return;
+        }
+
+        fetch('{{ route("admin.sets-questions.bulk-delete") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                question_ids: ids
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => alert('Error: ' + error.message));
+    }
+
+    // Bulk duplicate
+    function bulkDuplicate() {
+        const ids = getSelectedQuestionIds();
+        if (ids.length === 0) {
+            alert('Please select at least one question.');
+            return;
+        }
+
+        if (!confirm(`Are you sure you want to duplicate ${ids.length} selected question(s)?`)) {
+            return;
+        }
+
+        fetch('{{ route("admin.sets-questions.bulk-duplicate") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                question_ids: ids
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => alert('Error: ' + error.message));
     }
 
     // Show add question drawer
@@ -1124,10 +1413,10 @@
         }
     }
 
-    // Publish exam
+    // Publish exam (make it the single active exam)
     function publishExam(id) {
-        if (confirm('Publish this exam? It will become active for applicants.')) {
-            fetch(`/admin/sets-questions/publish-exam/${id}`, {
+        if (confirm('Publish this exam? It will become the active exam for applicants and deactivate any previous exam.')) {
+            fetch(`/admin/sets-questions/${id}/publish`, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -1146,31 +1435,119 @@
         }
     }
 
-    // Run consistency check
+    // Run consistency check with improved UI
     function runConsistencyCheck() {
         const examId = {{ $currentExam->exam_id ?? 'null' }};
-        if (!examId) return;
+        if (!examId) {
+            alert('No exam selected.');
+            return;
+        }
+        
+        // Show loading state
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Checking...';
         
         fetch(`/admin/sets-questions/consistency-check/${examId}`)
             .then(response => response.json())
             .then(data => {
+                btn.disabled = false;
+                btn.textContent = originalText;
+                
                 if (data.success) {
                     if (data.total_issues === 0) {
-                        alert('All checks passed! No issues found.');
+                        showConsistencyCheckModal([], 0);
                     } else {
-                        let message = `Found ${data.total_issues} issue(s):\n\n`;
-                        data.issues.forEach(issue => {
-                            message += `- ${issue.message}\n`;
-                        });
-                        alert(message);
+                        showConsistencyCheckModal(data.issues, data.total_issues);
                     }
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to run consistency check'));
                 }
+            })
+            .catch(error => {
+                btn.disabled = false;
+                btn.textContent = originalText;
+                alert('Error: ' + error.message);
             });
+    }
+
+    // Show consistency check results modal
+    function showConsistencyCheckModal(issues, totalIssues) {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+        
+        const content = document.createElement('div');
+        content.style.cssText = 'background: white; border-radius: 8px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;';
+        
+        const header = document.createElement('div');
+        header.style.cssText = 'padding: 20px 24px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;';
+        header.innerHTML = `
+            <h3 style="margin: 0; font-size: 20px; font-weight: 600; color: #1f2937;">
+                Consistency Check Results
+            </h3>
+            <button onclick="this.closest('[style*=\'position: fixed\']').remove()" style="background: none; border: none; font-size: 28px; color: #6b7280; cursor: pointer; padding: 0; width: 32px; height: 32px;">&times;</button>
+        `;
+        
+        const body = document.createElement('div');
+        body.style.cssText = 'padding: 24px;';
+        
+        if (totalIssues === 0) {
+            body.innerHTML = `
+                <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 48px; color: #059669; margin-bottom: 12px;">✓</div>
+                    <h4 style="font-size: 18px; font-weight: 600; color: #1f2937; margin: 0 0 8px 0;">All Checks Passed!</h4>
+                    <p style="color: #6b7280; font-size: 14px; margin: 0;">No issues found. Your question bank is ready to publish.</p>
+                </div>
+            `;
+        } else {
+            let issuesHtml = '<div style="margin-bottom: 16px;"><p style="color: #991b1b; font-weight: 600; margin: 0 0 16px 0;">Found ' + totalIssues + ' issue(s):</p><ul style="margin: 0; padding-left: 20px;">';
+            issues.forEach(issue => {
+                issuesHtml += '<li style="margin-bottom: 12px; color: #1f2937;">';
+                issuesHtml += '<strong style="color: #991b1b;">' + issue.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) + ':</strong> ';
+                issuesHtml += issue.message;
+                if (issue.details && issue.details.length > 0) {
+                    issuesHtml += '<ul style="margin-top: 8px; padding-left: 20px; color: #6b7280; font-size: 13px;">';
+                    issue.details.slice(0, 3).forEach(detail => {
+                        issuesHtml += '<li>' + (typeof detail === 'string' ? detail.substring(0, 100) : JSON.stringify(detail).substring(0, 100)) + '</li>';
+                    });
+                    if (issue.details.length > 3) {
+                        issuesHtml += '<li>... and ' + (issue.details.length - 3) + ' more</li>';
+                    }
+                    issuesHtml += '</ul>';
+                }
+                issuesHtml += '</li>';
+            });
+            issuesHtml += '</ul></div>';
+            body.innerHTML = issuesHtml;
+        }
+        
+        const footer = document.createElement('div');
+        footer.style.cssText = 'padding: 16px 24px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 8px;';
+        footer.innerHTML = `
+            <button onclick="this.closest('[style*=\'position: fixed\']').remove()" 
+                    style="padding: 8px 16px; background: #991b1b; color: white; border: none; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer;">
+                Close
+            </button>
+        `;
+        
+        content.appendChild(header);
+        content.appendChild(body);
+        content.appendChild(footer);
+        modal.appendChild(content);
+        document.body.appendChild(modal);
+        
+        // Close on outside click
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
     }
 
     // Show new semester modal
     function showNewSemesterModal() {
-        document.getElementById('examModalTitle').textContent = 'Create New Exam';
+        document.getElementById('examModalTitle').textContent = 'Create New Semester Exam';
         document.getElementById('examForm').reset();
         document.getElementById('examModal').style.display = 'flex';
         clearExamErrors();

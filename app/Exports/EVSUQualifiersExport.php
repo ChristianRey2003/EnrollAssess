@@ -4,6 +4,8 @@ namespace App\Exports;
 
 use App\Models\Applicant;
 use PhpOffice\PhpWord\TemplateProcessor;
+use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\Settings;
 
 class EVSUQualifiersExport
 {
@@ -21,6 +23,142 @@ class EVSUQualifiersExport
      * This approach preserves template formatting 100% like XLSX export
      */
     public function export()
+    {
+        $templateProcessor = $this->loadAndFillTemplate();
+
+        // Save to temporary file
+        $tempFile = tempnam(sys_get_temp_dir(), 'evsu_qualifiers_');
+        $templateProcessor->saveAs($tempFile);
+
+        return $tempFile;
+    }
+
+    /**
+     * Export qualifiers list as PDF using LibreOffice headless (exact DOCX→PDF match)
+     */
+    public function exportPdf()
+    {
+        // Step 1: Create the filled DOCX file
+        $templateProcessor = $this->loadAndFillTemplate();
+
+        // Save DOCX to temporary file
+        $tempDocx = tempnam(sys_get_temp_dir(), 'evsu_qualifiers_docx_') . '.docx';
+        $templateProcessor->saveAs($tempDocx);
+
+        // Step 2: Convert DOCX to PDF using LibreOffice headless
+        $tempPdf = tempnam(sys_get_temp_dir(), 'evsu_qualifiers_pdf_') . '.pdf';
+        $this->convertDocxToPdfWithLibreOffice($tempDocx, $tempPdf);
+
+        // Clean up temporary DOCX file
+        @unlink($tempDocx);
+
+        return $tempPdf;
+    }
+
+    /**
+     * Convert DOCX to PDF using LibreOffice headless mode
+     */
+    protected function convertDocxToPdfWithLibreOffice($docxPath, $pdfPath)
+    {
+        // Detect LibreOffice executable
+        $soffice = $this->findLibreOfficeExecutable();
+        
+        if (!$soffice) {
+            throw new \RuntimeException(
+                'LibreOffice not found. Please install LibreOffice or set LIBREOFFICE_PATH in .env'
+            );
+        }
+
+        // Get output directory
+        $outputDir = dirname($pdfPath);
+        
+        // Build command: convert to PDF in output directory
+        $command = sprintf(
+            '%s --headless --convert-to pdf --outdir %s %s 2>&1',
+            escapeshellarg($soffice),
+            escapeshellarg($outputDir),
+            escapeshellarg($docxPath)
+        );
+
+        \Log::info('LibreOffice conversion command (Qualifiers)', ['command' => $command]);
+
+        // Execute conversion
+        exec($command, $output, $returnCode);
+
+        if ($returnCode !== 0) {
+            \Log::error('LibreOffice conversion failed (Qualifiers)', [
+                'return_code' => $returnCode,
+                'output' => $output
+            ]);
+            throw new \RuntimeException('PDF conversion failed: ' . implode("\n", $output));
+        }
+
+        // LibreOffice creates filename.pdf in the output directory
+        $basename = pathinfo($docxPath, PATHINFO_FILENAME);
+        $generatedPdf = $outputDir . DIRECTORY_SEPARATOR . $basename . '.pdf';
+
+        // Move to the expected output path if different
+        if ($generatedPdf !== $pdfPath && file_exists($generatedPdf)) {
+            rename($generatedPdf, $pdfPath);
+        }
+
+        if (!file_exists($pdfPath)) {
+            throw new \RuntimeException('PDF file was not created by LibreOffice');
+        }
+
+        \Log::info('LibreOffice PDF conversion successful (Qualifiers)', ['output' => $pdfPath]);
+    }
+
+    /**
+     * Find LibreOffice executable on the system
+     */
+    protected function findLibreOfficeExecutable()
+    {
+        // Check environment variable first
+        if ($envPath = env('LIBREOFFICE_PATH')) {
+            if (file_exists($envPath)) {
+                return $envPath;
+            }
+        }
+
+        // Common paths on different OS
+        $possiblePaths = [
+            // Windows
+            'C:\Program Files\LibreOffice\program\soffice.exe',
+            'C:\Program Files (x86)\LibreOffice\program\soffice.exe',
+            // Linux
+            '/usr/bin/soffice',
+            '/usr/bin/libreoffice',
+            // macOS
+            '/Applications/LibreOffice.app/Contents/MacOS/soffice',
+        ];
+
+        foreach ($possiblePaths as $path) {
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+
+        // Try 'which' command on Unix-like systems
+        if (PHP_OS_FAMILY !== 'Windows') {
+            exec('which soffice 2>/dev/null', $output, $returnCode);
+            if ($returnCode === 0 && !empty($output[0])) {
+                return trim($output[0]);
+            }
+            
+            exec('which libreoffice 2>/dev/null', $output, $returnCode);
+            if ($returnCode === 0 && !empty($output[0])) {
+                return trim($output[0]);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Load template and fill with data - shared logic for DOCX and PDF export
+     */
+    protected function loadAndFillTemplate()
     {
         // Official template path
         $template = resource_path('reports/templates/qualifiers_template.docx');
@@ -65,11 +203,7 @@ class EVSUQualifiersExport
             }
         }
 
-        // Save to temporary file
-        $tempFile = tempnam(sys_get_temp_dir(), 'evsu_qualifiers_');
-        $templateProcessor->saveAs($tempFile);
-
-        return $tempFile;
+        return $templateProcessor;
     }
 }
 

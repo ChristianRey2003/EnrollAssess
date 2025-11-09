@@ -13,38 +13,85 @@ class SetsQuestionsController extends Controller
 {
     /**
      * Display the Question Bank management interface.
+     * Always shows the single active exam (or latest if none active).
      */
     public function index(Request $request)
     {
-        // Single-exam mode: pick active exam, or latest if none active
+        // Single active exam mode: only one exam can be active at a time
         $currentExam = Exam::where('is_active', true)->first() ?? Exam::latest()->first();
         
         $questions = collect();
-        $examSets = collect(); // Empty collection for backward compatibility with view
-        $selectedSet = null;
         
         if ($currentExam) {
-            // Get all questions for the current exam (Question Bank approach)
-            $questions = Question::where('exam_id', $currentExam->exam_id)
-                ->with('options')
-                ->orderBy('order_number')
-                ->get();
+            // Build query with filters
+            $query = Question::where('exam_id', $currentExam->exam_id)
+                ->with('options');
+            
+            // Search filter
+            if ($request->filled('search')) {
+                $query->where('question_text', 'like', '%' . $request->search . '%');
+            }
+            
+            // Type filter
+            if ($request->filled('type')) {
+                $query->where('question_type', $request->type);
+            }
+            
+            // Status filter
+            if ($request->filled('status')) {
+                $query->where('is_active', $request->status === 'active');
+            }
+            
+            // Sort
+            $sortBy = $request->get('sort_by', 'order_number');
+            $sortOrder = $request->get('sort_order', 'asc');
+            
+            if ($sortBy === 'points') {
+                $query->orderBy('points', $sortOrder);
+            } elseif ($sortBy === 'type') {
+                $query->orderBy('question_type', $sortOrder);
+            } elseif ($sortBy === 'status') {
+                $query->orderBy('is_active', $sortOrder === 'asc' ? 'desc' : 'asc');
+            } else {
+                $query->orderBy('order_number', $sortOrder);
+            }
+            
+            // Pagination
+            $perPage = $request->get('per_page', 15);
+            $questions = $query->paginate($perPage)->withQueryString();
+        } else {
+            // Empty paginator for consistency
+            $questions = \Illuminate\Pagination\LengthAwarePaginator::make([], 0, 15);
         }
         
-        // Calculate statistics
+        // Calculate statistics (from all questions, not just paginated)
+        $allQuestions = $currentExam ? Question::where('exam_id', $currentExam->exam_id)->get() : collect();
         $stats = [
-            'total_questions' => $questions->count(),
-            'active_questions' => $questions->where('is_active', true)->count(),
-            'mcq_count' => $questions->where('question_type', 'multiple_choice')->count(),
-            'tf_count' => $questions->where('question_type', 'true_false')->count(),
-            'draft_questions' => $questions->where('is_active', false)->count(),
+            'total_questions' => $allQuestions->count(),
+            'active_questions' => $allQuestions->where('is_active', true)->count(),
+            'mcq_count' => $allQuestions->where('question_type', 'multiple_choice')->count(),
+            'tf_count' => $allQuestions->where('question_type', 'true_false')->count(),
+            'draft_questions' => $allQuestions->where('is_active', false)->count(),
         ];
         
-        return view('admin.sets-questions', compact('currentExam', 'questions', 'stats', 'examSets', 'selectedSet'));
+        // Calculate quota progress
+        $quotaProgress = null;
+        if ($currentExam) {
+            $quotaProgress = [
+                'total_items' => $currentExam->total_items ?? 0,
+                'mcq_quota' => $currentExam->mcq_quota ?? 0,
+                'tf_quota' => $currentExam->tf_quota ?? 0,
+                'mcq_available' => $allQuestions->where('question_type', 'multiple_choice')->where('is_active', true)->count(),
+                'tf_available' => $allQuestions->where('question_type', 'true_false')->where('is_active', true)->count(),
+            ];
+        }
+        
+        return view('admin.sets-questions', compact('currentExam', 'questions', 'stats', 'quotaProgress'));
     }
     
     /**
-     * Create a new semester by duplicating or starting fresh.
+     * Create a new semester exam (archives current active exam).
+     * Only one exam can be active at a time - the new exam starts as draft.
      */
     public function newSemester(Request $request)
     {
@@ -63,29 +110,29 @@ class SetsQuestionsController extends Controller
         
         try {
             DB::transaction(function () use ($request) {
-                // Archive current exam if exists
+                // Archive current active exam (only one can be active)
                 $currentExam = Exam::where('is_active', true)->first();
                 if ($currentExam) {
                     $currentExam->update(['is_active' => false]);
                 }
                 
-                // Create new exam
+                // Create new exam as draft
                 $newExam = Exam::create([
                     'title' => $request->title,
                     'description' => $request->description,
                     'duration_minutes' => $currentExam->duration_minutes ?? 90,
-                    'is_active' => false, // Start as draft
+                    'is_active' => false, // Start as draft, publish when ready
                 ]);
                 
                 if ($request->semester_option === 'duplicate' && $currentExam) {
-                    // Duplicate all sets and questions
+                    // Duplicate question bank from previous semester
                     $this->duplicateExamContent($currentExam, $newExam);
                 }
             });
             
             return response()->json([
                 'success' => true,
-                'message' => 'New semester created successfully!'
+                'message' => 'New semester exam created successfully! Review questions and publish when ready.'
             ]);
             
         } catch (\Exception $e) {
@@ -97,7 +144,8 @@ class SetsQuestionsController extends Controller
     }
     
     /**
-     * Publish the current exam (make it active for applicants).
+     * Publish the current exam (make it the single active exam).
+     * Deactivates all other exams - only one exam can be active at a time.
      */
     public function publishExam($id)
     {
@@ -113,13 +161,15 @@ class SetsQuestionsController extends Controller
                 ]);
             }
             
-            // Deactivate other exams and activate this one
-            Exam::where('exam_id', '!=', $exam->exam_id)->update(['is_active' => false]);
-            $exam->update(['is_active' => true]);
+            // Enforce single active exam: deactivate all others
+            DB::transaction(function () use ($exam) {
+                Exam::where('exam_id', '!=', $exam->exam_id)->update(['is_active' => false]);
+                $exam->update(['is_active' => true]);
+            });
             
             return response()->json([
                 'success' => true,
-                'message' => 'Exam published successfully!'
+                'message' => 'Exam published successfully! This is now the active exam for applicants.'
             ]);
             
         } catch (\Exception $e) {
@@ -296,5 +346,170 @@ class SetsQuestionsController extends Controller
         }
         
         return $errors;
+    }
+    
+    /**
+     * Bulk update question status (activate/deactivate).
+     */
+    public function bulkUpdateStatus(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'question_ids' => 'required|array',
+            'question_ids.*' => 'required|exists:questions,question_id',
+            'status' => 'required|boolean',
+        ]);
+        
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . $validator->errors()->first()
+            ], 422);
+        }
+        
+        try {
+            $count = Question::whereIn('question_id', $request->question_ids)
+                ->update(['is_active' => $request->status]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => "Updated {$count} question(s) successfully!",
+                'count' => $count
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update questions: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Bulk delete questions.
+     */
+    public function bulkDelete(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'question_ids' => 'required|array',
+            'question_ids.*' => 'required|exists:questions,question_id',
+        ]);
+        
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . $validator->errors()->first()
+            ], 422);
+        }
+        
+        try {
+            $result = DB::transaction(function () use ($request) {
+                $questions = Question::whereIn('question_id', $request->question_ids)
+                    ->with('results')
+                    ->get();
+                
+                $deletedCount = 0;
+                $skippedCount = 0;
+                
+                foreach ($questions as $question) {
+                    // Check if question has results
+                    if ($question->results()->count() > 0) {
+                        $skippedCount++;
+                        continue;
+                    }
+                    
+                    $question->options()->delete();
+                    $question->delete();
+                    $deletedCount++;
+                }
+                
+                return [
+                    'deleted_count' => $deletedCount,
+                    'skipped_count' => $skippedCount
+                ];
+            });
+            
+            $message = "Deleted {$result['deleted_count']} question(s)";
+            if ($result['skipped_count'] > 0) {
+                $message .= ". {$result['skipped_count']} question(s) skipped (have been answered by applicants).";
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'deleted_count' => $result['deleted_count'],
+                'skipped_count' => $result['skipped_count']
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete questions: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Bulk duplicate questions.
+     */
+    public function bulkDuplicate(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'question_ids' => 'required|array',
+            'question_ids.*' => 'required|exists:questions,question_id',
+        ]);
+        
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . $validator->errors()->first()
+            ], 422);
+        }
+        
+        try {
+            $duplicatedCount = DB::transaction(function () use ($request) {
+                $questions = Question::whereIn('question_id', $request->question_ids)
+                    ->with('options')
+                    ->get();
+                
+                $duplicatedCount = 0;
+                
+                foreach ($questions as $originalQuestion) {
+                    $exam = $originalQuestion->exam;
+                    $maxOrder = Question::where('exam_id', $exam->exam_id)->max('order_number') ?? 0;
+                    
+                    $newQuestion = Question::create([
+                        'exam_id' => $originalQuestion->exam_id,
+                        'question_text' => $originalQuestion->question_text . ' (Copy)',
+                        'question_type' => $originalQuestion->question_type,
+                        'points' => $originalQuestion->points,
+                        'order_number' => $maxOrder + 1,
+                        'explanation' => $originalQuestion->explanation,
+                        'is_active' => false, // Start as draft
+                    ]);
+                    
+                    foreach ($originalQuestion->options as $originalOption) {
+                        QuestionOption::create([
+                            'question_id' => $newQuestion->question_id,
+                            'option_text' => $originalOption->option_text,
+                            'is_correct' => $originalOption->is_correct,
+                            'order_number' => $originalOption->order_number,
+                        ]);
+                    }
+                    
+                    $duplicatedCount++;
+                }
+                
+                return $duplicatedCount;
+            });
+            
+            return response()->json([
+                'success' => true,
+                'message' => "Duplicated {$duplicatedCount} question(s) successfully!",
+                'count' => $duplicatedCount
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to duplicate questions: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

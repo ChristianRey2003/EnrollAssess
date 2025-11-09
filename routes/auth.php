@@ -16,14 +16,14 @@ use Illuminate\Support\Facades\Route;
 // Admin Authentication
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [AdminAuthController::class, 'login'])->name('login.submit');
+    Route::post('/login', [AdminAuthController::class, 'login'])->name('login.submit')->middleware('rate.limit:login');
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 });
 
 // Applicant Authentication
 Route::prefix('applicant')->name('applicant.')->group(function () {
     Route::get('/login', [AdminAuthController::class, 'showApplicantLogin'])->name('login');
-    Route::post('/verify', [AdminAuthController::class, 'verifyAccessCode'])->name('verify');
+    Route::post('/verify', [AdminAuthController::class, 'verifyAccessCode'])->name('verify')->middleware('rate.limit:access-code');
 });
 
 // Legacy Route Redirects

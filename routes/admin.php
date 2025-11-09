@@ -136,6 +136,9 @@ Route::prefix('sets-questions')->name('sets-questions.')->middleware('role:depar
     Route::post('/{id}/publish', [SetsQuestionsController::class, 'publishExam'])->name('publish-exam');
     Route::get('/{id}/consistency-check', [SetsQuestionsController::class, 'consistencyCheck'])->name('consistency-check');
     Route::post('/archive-old', [SetsQuestionsController::class, 'archiveOldExams'])->name('archive-old');
+    Route::post('/bulk/update-status', [SetsQuestionsController::class, 'bulkUpdateStatus'])->name('bulk-update-status');
+    Route::post('/bulk/delete', [SetsQuestionsController::class, 'bulkDelete'])->name('bulk-delete');
+    Route::post('/bulk/duplicate', [SetsQuestionsController::class, 'bulkDuplicate'])->name('bulk-duplicate');
 });
 
 // Simplified direct routes - no unnecessary redirects

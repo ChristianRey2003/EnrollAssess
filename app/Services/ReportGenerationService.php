@@ -11,6 +11,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Exports\EVSUQualifiersExport;
+use App\Exports\EVSUResultsExport;
 
 class ReportGenerationService
 {
@@ -487,6 +488,606 @@ class ReportGenerationService
         );
 
         \Log::info('Qualifiers list generation complete', ['report_id' => $report->id]);
+        return $report;
+    }
+
+    /**
+     * Generate Qualifiers List as PDF
+     */
+    public function generateQualifiersListPdf($filters, $userId)
+    {
+        \Log::info('Starting Qualifiers List PDF generation', ['filters' => $filters]);
+
+        // Get number of slots (required)
+        $slots = (int) ($filters['slots'] ?? 0);
+        if ($slots <= 0) {
+            throw new \InvalidArgumentException('Slots parameter is required and must be greater than 0');
+        }
+
+        // Get all applicants with complete scores
+        $applicants = $this->getApplicantRankings($filters);
+        
+        // Filter to only include applicants with all required scores
+        $completeApplicants = $applicants->filter(function ($applicant) {
+            return $applicant->hasAllRequiredScores();
+        });
+
+        // Get top N qualifiers ordered by overall rating (desc)
+        $topQualifiers = $completeApplicants->sortByDesc(function ($applicant) {
+            $rating = $applicant->getOverallRating();
+            return $rating ? $rating['overall_rating'] : 0;
+        })->take($slots);
+
+        // Sort qualifiers alphabetically by last name for final output
+        $qualifiers = $topQualifiers->sortBy('last_name')->values();
+
+        \Log::info('Qualifiers selected and sorted', ['count' => $qualifiers->count()]);
+
+        // Prepare export filters
+        $exportFilters = [
+            'campus' => $filters['campus'] ?? 'Ormoc/Computer Studies',
+            'program_code' => $filters['program_code'] ?? 'BSIT',
+            'program_description' => $filters['program_description'] ?? 'Bachelor of Science in Information Technology',
+            'academic_year' => $filters['academic_year'] ?? (date('Y') . '-' . (date('Y') + 1)),
+            'slots' => $slots,
+        ];
+
+        try {
+            // Generate PDF from template
+            $export = new EVSUQualifiersExport($qualifiers, $exportFilters);
+            $tempFile = $export->exportPdf();
+
+            // Read file content for storage
+            $fileContent = file_get_contents($tempFile);
+            
+            // Generate filename
+            $filename = 'EVSU_Qualifiers_List_' . 
+                       str_replace(' ', '_', $exportFilters['program_code']) . '_' . 
+                       now()->format('Y-m-d_His') . '.pdf';
+            
+            $path = 'reports/' . $filename;
+
+            // Save to storage
+            Storage::put($path, $fileContent);
+
+            // Clean up temp file
+            @unlink($tempFile);
+
+            \Log::info('Qualifiers PDF saved', ['path' => $path]);
+
+        } catch (\Exception $e) {
+            \Log::error('Qualifiers PDF generation failed', [
+                'error' => $e->getMessage(), 
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
+
+        // Save to database
+        $report = $this->saveReportToDatabase(
+            'qualifiers_list_pdf',
+            'List of Qualifiers Report (PDF)',
+            $path,
+            $filters,
+            $userId,
+            [
+                'total_qualifiers' => $qualifiers->count(),
+                'slots' => $slots,
+                'format' => 'pdf',
+            ]
+        );
+
+        \Log::info('Qualifiers PDF generation complete', ['report_id' => $report->id]);
+        return $report;
+    }
+
+    /**
+     * Generate EVSU Results as XLSX
+     */
+    public function generateEVSUResults($filters, $userId)
+    {
+        \Log::info('Starting EVSU Results XLSX generation', ['filters' => $filters]);
+
+        // Build query with filters
+        $query = Applicant::with(['assignedInstructor', 'accessCode']);
+
+        // Apply filters using existing filter logic
+        $this->applyFilters($query, $filters);
+
+        // Get applicants and filter to only those with complete scores
+        $collection = $query->get()->filter(function($applicant) {
+            return $applicant->hasAllRequiredScores();
+        });
+
+        // Sort by overall rating (descending by default)
+        $sort = $filters['sort'] ?? 'overall_desc';
+        if ($sort === 'overall_asc') {
+            $collection = $collection->sortBy(function($applicant) {
+                $rating = $applicant->getOverallRating();
+                return $rating ? $rating['overall_rating'] : 0;
+            });
+        } else {
+            $collection = $collection->sortByDesc(function($applicant) {
+                $rating = $applicant->getOverallRating();
+                return $rating ? $rating['overall_rating'] : 0;
+            });
+        }
+
+        // Apply limit if specified
+        $limit = (int) ($filters['limit'] ?? 120);
+        if ($limit > 0) {
+            $collection = $collection->take($limit);
+        }
+        $applicants = $collection->values();
+
+        // Prepare export filters
+        $exportFilters = [
+            'campus' => $filters['campus'] ?? 'Ormoc Campus',
+            'college' => $filters['college'] ?? 'College',
+            'department' => $filters['department'] ?? 'Department',
+            'program_code' => $filters['program_code'] ?? 'BSIT',
+            'program_description' => $filters['program_description'] ?? 'Bachelor of Science in Information Technology',
+            'academic_year' => $filters['academic_year'] ?? (date('Y') . '-' . (date('Y') + 1)),
+            'release_date' => $filters['release_date'] ?? now()->format('Y-m-d'),
+        ];
+
+        try {
+            // Generate XLSX
+            $export = new EVSUResultsExport($applicants, $exportFilters);
+            $tempFile = $export->export();
+
+            // Read file content for storage
+            $fileContent = file_get_contents($tempFile);
+            
+            // Generate filename
+            $filename = 'EVSU_Entrance_Results_' . 
+                       str_replace(' ', '_', $exportFilters['program_code']) . '_' . 
+                       now()->format('Y-m-d_His') . '.xlsx';
+            
+            $path = 'reports/' . $filename;
+
+            // Save to storage
+            Storage::put($path, $fileContent);
+
+            // Clean up temp file
+            @unlink($tempFile);
+
+            \Log::info('EVSU Results XLSX saved', ['path' => $path]);
+
+        } catch (\Exception $e) {
+            \Log::error('EVSU Results XLSX generation failed', [
+                'error' => $e->getMessage(), 
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
+
+        // Save to database
+        $report = $this->saveReportToDatabase(
+            'evsu_results',
+            'EVSU Entrance Results Report',
+            $path,
+            $filters,
+            $userId,
+            [
+                'total_applicants' => $applicants->count(),
+                'format' => 'xlsx',
+            ]
+        );
+
+        \Log::info('EVSU Results XLSX generation complete', ['report_id' => $report->id]);
+        return $report;
+    }
+
+    /**
+     * Generate EVSU Results as PDF
+     */
+    public function generateEVSUResultsPdf($filters, $userId)
+    {
+        \Log::info('Starting EVSU Results PDF generation', ['filters' => $filters]);
+
+        // Build query with filters
+        $query = Applicant::with(['assignedInstructor', 'accessCode']);
+
+        // Apply filters using existing filter logic
+        $this->applyFilters($query, $filters);
+
+        // Get applicants and filter to only those with complete scores
+        $collection = $query->get()->filter(function($applicant) {
+            return $applicant->hasAllRequiredScores();
+        });
+
+        // Sort by overall rating (descending by default)
+        $sort = $filters['sort'] ?? 'overall_desc';
+        if ($sort === 'overall_asc') {
+            $collection = $collection->sortBy(function($applicant) {
+                $rating = $applicant->getOverallRating();
+                return $rating ? $rating['overall_rating'] : 0;
+            });
+        } else {
+            $collection = $collection->sortByDesc(function($applicant) {
+                $rating = $applicant->getOverallRating();
+                return $rating ? $rating['overall_rating'] : 0;
+            });
+        }
+
+        // Apply limit if specified
+        $limit = (int) ($filters['limit'] ?? 120);
+        if ($limit > 0) {
+            $collection = $collection->take($limit);
+        }
+        $applicants = $collection->values();
+
+        // Prepare export filters
+        $exportFilters = [
+            'campus' => $filters['campus'] ?? 'Ormoc Campus',
+            'college' => $filters['college'] ?? 'College',
+            'department' => $filters['department'] ?? 'Department',
+            'program_code' => $filters['program_code'] ?? 'BSIT',
+            'program_description' => $filters['program_description'] ?? 'Bachelor of Science in Information Technology',
+            'academic_year' => $filters['academic_year'] ?? (date('Y') . '-' . (date('Y') + 1)),
+            'release_date' => $filters['release_date'] ?? now()->format('Y-m-d'),
+        ];
+
+        try {
+            // Generate PDF from template
+            $export = new EVSUResultsExport($applicants, $exportFilters);
+            $tempFile = $export->exportPdf();
+
+            // Read file content for storage
+            $fileContent = file_get_contents($tempFile);
+            
+            // Generate filename
+            $filename = 'EVSU_Entrance_Results_' . 
+                       str_replace(' ', '_', $exportFilters['program_code']) . '_' . 
+                       now()->format('Y-m-d_His') . '.pdf';
+            
+            $path = 'reports/' . $filename;
+
+            // Save to storage
+            Storage::put($path, $fileContent);
+
+            // Clean up temp file
+            @unlink($tempFile);
+
+            \Log::info('EVSU Results PDF saved', ['path' => $path]);
+
+        } catch (\Exception $e) {
+            \Log::error('EVSU Results PDF generation failed', [
+                'error' => $e->getMessage(), 
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
+
+        // Save to database
+        $report = $this->saveReportToDatabase(
+            'evsu_results_pdf',
+            'EVSU Entrance Results Report (PDF)',
+            $path,
+            $filters,
+            $userId,
+            [
+                'total_applicants' => $applicants->count(),
+                'format' => 'pdf',
+            ]
+        );
+
+        \Log::info('EVSU Results PDF generation complete', ['report_id' => $report->id]);
+        return $report;
+    }
+
+    /**
+     * Generate Geographic Performance Report (PDF)
+     */
+    public function generateGeographicPerformanceReport($filters, $userId)
+    {
+        \Log::info('Starting Geographic Performance Report generation', ['filters' => $filters, 'userId' => $userId]);
+        
+        // Get applicants with basic info
+        $query = Applicant::with('basicInfo')
+            ->whereHas('basicInfo');
+        
+        // Apply status filter
+        if (isset($filters['status']) && $filters['status'] !== 'all') {
+            $query->where('status', $filters['status']);
+        }
+        
+        // Apply province filter
+        if (isset($filters['province']) && $filters['province'] !== 'all') {
+            $query->whereHas('basicInfo', function($q) use ($filters) {
+                $q->where('province', $filters['province']);
+            });
+        }
+        
+        $applicants = $query->get();
+        
+        // Group by province with performance data
+        $provinceData = $applicants->groupBy(function($applicant) {
+            return $applicant->basicInfo->province ?? 'Unknown';
+        })->map(function($group, $province) {
+            $examScores = $group->whereNotNull('enrollassess_score')->pluck('enrollassess_score');
+            $overallRatings = $group->filter(function($applicant) {
+                return $applicant->hasAllRequiredScores();
+            })->map(function($applicant) {
+                return $applicant->getOverallRatingValueAttribute();
+            })->filter();
+            
+            return [
+                'province' => $province,
+                'count' => $group->count(),
+                'avg_exam_score' => $examScores->isNotEmpty() ? round($examScores->average(), 2) : 0,
+                'avg_overall_rating' => $overallRatings->isNotEmpty() ? round($overallRatings->average(), 2) : 0,
+                'exam_completed' => $group->where('status', '!=', 'pending')->count(),
+                'admitted' => $group->where('status', 'admitted')->count(),
+            ];
+        })->sortByDesc('count')->values();
+        
+        // Group by city (top 10)
+        $cityData = $applicants->groupBy(function($applicant) {
+            return $applicant->basicInfo->city_municipality ?? 'Unknown';
+        })->map(function($group, $city) {
+            $examScores = $group->whereNotNull('enrollassess_score')->pluck('enrollassess_score');
+            
+            return [
+                'city' => $city,
+                'count' => $group->count(),
+                'avg_exam_score' => $examScores->isNotEmpty() ? round($examScores->average(), 2) : 0,
+                'province' => $group->first()->basicInfo->province ?? 'Unknown',
+            ];
+        })->sortByDesc('count')->take(10)->values();
+        
+        $data = [
+            'provinceData' => $provinceData,
+            'cityData' => $cityData,
+            'totalApplicants' => $applicants->count(),
+            'totalProvinces' => $provinceData->count(),
+            'topProvince' => $provinceData->first(),
+            'filters' => $filters,
+            'generatedAt' => now()->format('F d, Y - g:i A'),
+            'generatedBy' => auth()->user()->name ?? 'System',
+        ];
+        
+        \Log::info('Generating Geographic Performance PDF');
+        $pdf = Pdf::loadView('reports.pdf.geographic-performance', $data);
+        $pdf->setPaper('A4', 'landscape');
+        
+        $filename = 'geographic_performance_' . now()->format('Y-m-d_His') . '.pdf';
+        $path = 'reports/' . $filename;
+        
+        $output = $pdf->output();
+        Storage::put($path, $output);
+        
+        $report = $this->saveReportToDatabase(
+            'geographic_performance',
+            'Geographic Performance Report - ' . now()->format('M d, Y'),
+            $path,
+            $filters,
+            $userId,
+            strlen($output)
+        );
+        
+        \Log::info('Geographic Performance Report generation complete', ['report_id' => $report->id]);
+        return $report;
+    }
+
+    /**
+     * Generate Strand Distribution Report (PDF)
+     */
+    public function generateStrandDistributionReport($filters, $userId)
+    {
+        \Log::info('Starting Strand Distribution Report generation', ['filters' => $filters, 'userId' => $userId]);
+        
+        // Get applicants with basic info
+        $query = Applicant::with('basicInfo')
+            ->whereHas('basicInfo');
+        
+        // Apply status filter
+        if (isset($filters['status']) && $filters['status'] !== 'all') {
+            $query->where('status', $filters['status']);
+        }
+        
+        // Apply strand filter
+        if (isset($filters['strand']) && $filters['strand'] !== 'all') {
+            $query->whereHas('basicInfo', function($q) use ($filters) {
+                $q->where('senior_high_school_strand', $filters['strand']);
+            });
+        }
+        
+        $applicants = $query->get();
+        
+        // Group by strand
+        $strandData = $applicants->groupBy(function($applicant) {
+            return $applicant->basicInfo->senior_high_school_strand ?? 'Unknown';
+        })->map(function($group, $strand) {
+            $examScores = $group->whereNotNull('enrollassess_score')->pluck('enrollassess_score');
+            
+            return [
+                'strand' => $strand,
+                'count' => $group->count(),
+                'percentage' => 0, // Will be calculated below
+                'avg_exam_score' => $examScores->isNotEmpty() ? round($examScores->average(), 2) : 0,
+                'exam_completed' => $group->where('status', '!=', 'pending')->count(),
+                'admitted' => $group->where('status', 'admitted')->count(),
+            ];
+        });
+        
+        // Calculate percentages
+        $total = $applicants->count();
+        $strandData = $strandData->map(function($item) use ($total) {
+            $item['percentage'] = $total > 0 ? round(($item['count'] / $total) * 100, 2) : 0;
+            return $item;
+        })->sortByDesc('count')->values();
+        
+        // Get "Others" specifications
+        $othersData = $applicants->filter(function($applicant) {
+            return $applicant->basicInfo && 
+                   $applicant->basicInfo->senior_high_school_strand === 'Others' && 
+                   $applicant->basicInfo->senior_high_school_strand_other;
+        })->pluck('basicInfo.senior_high_school_strand_other')
+          ->countBy()
+          ->map(function($count, $strand) {
+              return ['strand' => $strand, 'count' => $count];
+          })->sortByDesc('count')->take(10)->values();
+        
+        $data = [
+            'strandData' => $strandData,
+            'othersData' => $othersData,
+            'totalApplicants' => $applicants->count(),
+            'topStrand' => $strandData->first(),
+            'filters' => $filters,
+            'generatedAt' => now()->format('F d, Y - g:i A'),
+            'generatedBy' => auth()->user()->name ?? 'System',
+        ];
+        
+        \Log::info('Generating Strand Distribution PDF');
+        $pdf = Pdf::loadView('reports.pdf.strand-distribution', $data);
+        $pdf->setPaper('A4', 'portrait');
+        
+        $filename = 'strand_distribution_' . now()->format('Y-m-d_His') . '.pdf';
+        $path = 'reports/' . $filename;
+        
+        $output = $pdf->output();
+        Storage::put($path, $output);
+        
+        $report = $this->saveReportToDatabase(
+            'strand_distribution',
+            'Strand Distribution Report - ' . now()->format('M d, Y'),
+            $path,
+            $filters,
+            $userId,
+            strlen($output)
+        );
+        
+        \Log::info('Strand Distribution Report generation complete', ['report_id' => $report->id]);
+        return $report;
+    }
+
+    /**
+     * Generate Demographic Overview Report (PDF)
+     */
+    public function generateDemographicOverviewReport($filters, $userId)
+    {
+        \Log::info('Starting Demographic Overview Report generation', ['filters' => $filters, 'userId' => $userId]);
+        
+        // Get applicants with basic info
+        $query = Applicant::with('basicInfo')
+            ->whereHas('basicInfo');
+        
+        // Apply status filter
+        if (isset($filters['status']) && $filters['status'] !== 'all') {
+            $query->where('status', $filters['status']);
+        }
+        
+        // Apply age range filter
+        if (isset($filters['age_range']) && $filters['age_range'] !== 'all') {
+            $ageRange = explode('-', $filters['age_range']);
+            $query->whereHas('basicInfo', function($q) use ($ageRange) {
+                if (count($ageRange) === 2) {
+                    if ($ageRange[1] === '+') {
+                        $q->where('age', '>=', (int)$ageRange[0]);
+                    } else {
+                        $q->whereBetween('age', [(int)$ageRange[0], (int)$ageRange[1]]);
+                    }
+                }
+            });
+        }
+        
+        $applicants = $query->get();
+        
+        // Gender distribution
+        $genderData = $applicants->groupBy(function($applicant) {
+            return $applicant->basicInfo->sex ?? 'Unknown';
+        })->map(function($group, $gender) use ($applicants) {
+            return [
+                'gender' => $gender,
+                'count' => $group->count(),
+                'percentage' => round(($group->count() / $applicants->count()) * 100, 2),
+            ];
+        })->values();
+        
+        // Age distribution
+        $ageData = $applicants->groupBy(function($applicant) {
+            $age = $applicant->basicInfo->age ?? 0;
+            if ($age >= 16 && $age <= 20) return '16-20';
+            if ($age >= 21 && $age <= 25) return '21-25';
+            if ($age >= 26 && $age <= 30) return '26-30';
+            if ($age >= 31) return '31+';
+            return 'Unknown';
+        })->map(function($group, $range) use ($applicants) {
+            return [
+                'range' => $range,
+                'count' => $group->count(),
+                'percentage' => round(($group->count() / $applicants->count()) * 100, 2),
+            ];
+        })->sortBy('range')->values();
+        
+        // Civil status distribution
+        $civilStatusData = $applicants->groupBy(function($applicant) {
+            return $applicant->basicInfo->civil_status ?? 'Not Specified';
+        })->map(function($group, $status) use ($applicants) {
+            return [
+                'status' => $status,
+                'count' => $group->count(),
+                'percentage' => round(($group->count() / $applicants->count()) * 100, 2),
+            ];
+        })->values();
+        
+        // Applicant type distribution
+        $applicantTypeData = $applicants->groupBy(function($applicant) {
+            return $applicant->basicInfo->applicant_type ?? 'Unknown';
+        })->map(function($group, $type) use ($applicants) {
+            return [
+                'type' => $type,
+                'count' => $group->count(),
+                'percentage' => round(($group->count() / $applicants->count()) * 100, 2),
+            ];
+        })->values();
+        
+        // PWD statistics
+        $pwdData = $applicants->groupBy(function($applicant) {
+            return $applicant->basicInfo->is_pwd ?? 'Not Specified';
+        })->map(function($group, $status) use ($applicants) {
+            return [
+                'status' => $status,
+                'count' => $group->count(),
+                'percentage' => round(($group->count() / $applicants->count()) * 100, 2),
+            ];
+        })->values();
+        
+        $data = [
+            'genderData' => $genderData,
+            'ageData' => $ageData,
+            'civilStatusData' => $civilStatusData,
+            'applicantTypeData' => $applicantTypeData,
+            'pwdData' => $pwdData,
+            'totalApplicants' => $applicants->count(),
+            'averageAge' => $applicants->pluck('basicInfo.age')->filter()->average(),
+            'filters' => $filters,
+            'generatedAt' => now()->format('F d, Y - g:i A'),
+            'generatedBy' => auth()->user()->name ?? 'System',
+        ];
+        
+        \Log::info('Generating Demographic Overview PDF');
+        $pdf = Pdf::loadView('reports.pdf.demographic-overview', $data);
+        $pdf->setPaper('A4', 'portrait');
+        
+        $filename = 'demographic_overview_' . now()->format('Y-m-d_His') . '.pdf';
+        $path = 'reports/' . $filename;
+        
+        $output = $pdf->output();
+        Storage::put($path, $output);
+        
+        $report = $this->saveReportToDatabase(
+            'demographic_overview',
+            'Demographic Overview Report - ' . now()->format('M d, Y'),
+            $path,
+            $filters,
+            $userId,
+            strlen($output)
+        );
+        
+        \Log::info('Demographic Overview Report generation complete', ['report_id' => $report->id]);
         return $report;
     }
 }

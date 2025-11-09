@@ -54,7 +54,7 @@
                 <a href="{{ route('admin.sets-questions.index') }}" 
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.sets-questions') || str_starts_with($currentRoute, 'admin.exams') || str_starts_with($currentRoute, 'admin.questions') ? 'active' : '' }}">
                     <span class="nav-icon"></span>
-                    <span class="nav-text">Sets & Questions</span>
+                    <span class="nav-text">Question Bank</span>
                 </a>
             </div>
             

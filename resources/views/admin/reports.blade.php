@@ -8,30 +8,6 @@
 @endphp
 
 @section('content')
-                <!-- Quick Stats Overview - Compact -->
-                <div class="stats-grid reports-stats-compact">
-                    <div class="stat-card">
-                        <div class="stat-icon" aria-hidden="true"></div>
-                        <div class="stat-value">{{ $totalApplicants }}</div>
-                        <div class="stat-label">Total Applicants</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" aria-hidden="true"></div>
-                        <div class="stat-value">{{ $examCompleted }}</div>
-                        <div class="stat-label">Exam Completed</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" aria-hidden="true"></div>
-                        <div class="stat-value">{{ $admitted }}</div>
-                        <div class="stat-label">Admitted</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" aria-hidden="true"></div>
-                        <div class="stat-value">{{ $passRate }}%</div>
-                        <div class="stat-label">Pass Rate</div>
-                    </div>
-                </div>
-
                 <!-- Primary Reports Section -->
                 <div class="content-section">
                     <div class="section-header">
@@ -44,13 +20,13 @@
                             <div class="primary-report-card">
                                 <div class="report-card-header">
                                     <div class="report-card-icon">📊</div>
-                                    <h3 class="report-card-title">EVSU Entrance Results (XLSX)</h3>
+                                    <h3 class="report-card-title">EVSU Entrance Results</h3>
                                 </div>
                                 <p class="report-card-description">
-                                    Official EVSU-formatted Excel export with applicants ranked by Overall Admission Rating
+                                    Official EVSU-formatted export with applicants ranked by Overall Admission Rating
                                     (60% UEE, 30% GWA, 10% Interview/Skill). Complete scoring breakdown included.
                                 </p>
-                                <form action="{{ route('admin.applicants.export.evsu-results') }}" method="GET" class="export-form">
+                                <form id="evsuResultsForm" class="export-form">
                                     <input type="hidden" name="status" value="interview-completed">
                                     <div class="form-row">
                                         <div class="form-group">
@@ -65,19 +41,22 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <button type="submit" class="btn-primary-export">📥 Export EVSU XLSX</button>
+                                    <div style="display: flex; gap: 10px;">
+                                        <button type="button" onclick="generateEVSUResults('xlsx')" class="btn-primary-export">📥 Export XLSX</button>
+                                        <button type="button" onclick="generateEVSUResults('pdf')" class="btn-primary-export" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">📄 Export PDF</button>
+                                    </div>
                                 </form>
                             </div>
 
-                            <!-- Qualifiers List DOCX -->
+                            <!-- Qualifiers List -->
                             <div class="primary-report-card">
                                 <div class="report-card-header">
                                     <div class="report-card-icon">📄</div>
-                                    <h3 class="report-card-title">Qualifiers List (DOCX)</h3>
+                                    <h3 class="report-card-title">Qualifiers List</h3>
                                 </div>
                                 <p class="report-card-description">
                                     Official list of qualified applicants based on overall rating, sorted alphabetically.
-                                    Word document format for easy editing and official submission.
+                                    Available in Word (editable) or PDF format for official submission.
                                 </p>
                                 <div class="export-form">
                                     <div class="form-group">
@@ -92,7 +71,10 @@
                                                required>
                                         <span class="help-text">Enter the number of available slots for qualified applicants</span>
                                     </div>
-                                    <button onclick="generateQualifiersReport()" class="btn-primary-export">📥 Generate DOCX</button>
+                                    <div style="display: flex; gap: 10px;">
+                                        <button onclick="generateQualifiersReport('docx')" class="btn-primary-export">📥 Generate DOCX</button>
+                                        <button onclick="generateQualifiersReport('pdf')" class="btn-primary-export" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">📄 Generate PDF</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -183,118 +165,127 @@
                     </div>
                 </div>
 
-                <!-- Collapsible: Additional Reports -->
+                <!-- Collapsible: Student Information Reports -->
                 <div class="content-section collapsible-section">
-                    <div class="section-header" onclick="toggleSection('additionalReportsSection')">
+                    <div class="section-header" onclick="toggleSection('studentInfoReportsSection')">
                         <div>
-                            <h2 class="section-title">📋 Additional Reports</h2>
-                            <p class="section-subtitle">PDF analytics and summary reports (optional)</p>
+                            <h2 class="section-title">📊 Student Information Reports</h2>
+                            <p class="section-subtitle">Reports based on student basic information data</p>
                         </div>
-                        <button class="toggle-btn" id="additionalReportsToggle">
+                        <button class="toggle-btn" id="studentInfoReportsToggle">
                             <span class="toggle-icon">▼</span>
                         </button>
                     </div>
-                    <div class="section-content collapsible-content" id="additionalReportsSection" style="display: none; padding: 30px;">
+                    <div class="section-content collapsible-content" id="studentInfoReportsSection" style="display: none; padding: 30px;">
                         <div class="additional-reports-grid">
-                            <!-- Final Applicant Ranking -->
+                            <!-- Geographic Performance Report -->
                             <div class="report-card">
-                                <div class="report-card-icon" aria-hidden="true">📊</div>
+                                <div class="report-card-icon" aria-hidden="true">🗺️</div>
                                 <div class="report-card-content">
-                                    <h3 class="report-card-title">Final Applicant Ranking (PDF)</h3>
+                                    <h3 class="report-card-title">Geographic Performance Report</h3>
                                     <p class="report-card-description">
-                                        Comprehensive PDF report with all applicants ranked by examination scores, 
-                                        interview evaluations, and final recommendations.
+                                        Performance analysis by geographic location including applicants by province, 
+                                        average exam scores by region, and top performing areas.
                                     </p>
                                 </div>
+                                <form class="report-filters-form">
+                                    <div class="filter-group-inline">
+                                        <label class="filter-label">Province</label>
+                                        <select id="geoProvince" class="filter-select-sm">
+                                            <option value="all">All Provinces</option>
+                                            <option value="Leyte">Leyte</option>
+                                            <option value="Southern Leyte">Southern Leyte</option>
+                                            <option value="Biliran">Biliran</option>
+                                            <option value="Samar">Samar</option>
+                                            <option value="Eastern Samar">Eastern Samar</option>
+                                            <option value="Northern Samar">Northern Samar</option>
+                                        </select>
+                                    </div>
+                                    <div class="filter-group-inline">
+                                        <label class="filter-label">Status</label>
+                                        <select id="geoStatus" class="filter-select-sm">
+                                            <option value="all">All Status</option>
+                                            <option value="exam-completed">Exam Completed</option>
+                                            <option value="interview-completed">Interview Completed</option>
+                                            <option value="admitted">Admitted</option>
+                                        </select>
+                                    </div>
+                                </form>
                                 <div class="report-card-actions">
-                                    <button onclick="generateMainReport()" class="btn-report-action">Generate PDF</button>
+                                    <button onclick="generateGeographicReport()" class="btn-report-action">📄 Generate PDF</button>
                                 </div>
                             </div>
 
-                            <!-- Statistical Analysis -->
+                            <!-- Strand Distribution Report -->
                             <div class="report-card">
-                                <div class="report-card-icon" aria-hidden="true">📈</div>
+                                <div class="report-card-icon" aria-hidden="true">🎓</div>
                                 <div class="report-card-content">
-                                    <h3 class="report-card-title">Statistical Analysis (PDF)</h3>
+                                    <h3 class="report-card-title">Strand Distribution Report</h3>
                                     <p class="report-card-description">
-                                        Detailed statistics including score distributions, category performance, 
-                                        and comparative analysis across different metrics.
+                                        Senior High School strand analysis showing distribution across ABM, STEM, HUMSS, TVL, 
+                                        and Others with percentages and trends.
                                     </p>
                                 </div>
+                                <form class="report-filters-form">
+                                    <div class="filter-group-inline">
+                                        <label class="filter-label">Strand</label>
+                                        <select id="strandFilter" class="filter-select-sm">
+                                            <option value="all">All Strands</option>
+                                            <option value="ABM">ABM</option>
+                                            <option value="STEM">STEM</option>
+                                            <option value="HUMSS">HUMSS</option>
+                                            <option value="TVL">TVL</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </div>
+                                    <div class="filter-group-inline">
+                                        <label class="filter-label">Status</label>
+                                        <select id="strandStatus" class="filter-select-sm">
+                                            <option value="all">All Status</option>
+                                            <option value="exam-completed">Exam Completed</option>
+                                            <option value="interview-completed">Interview Completed</option>
+                                            <option value="admitted">Admitted</option>
+                                        </select>
+                                    </div>
+                                </form>
                                 <div class="report-card-actions">
-                                    <button onclick="generateStatReport()" class="btn-report-action">Generate PDF</button>
+                                    <button onclick="generateStrandReport()" class="btn-report-action">📄 Generate PDF</button>
                                 </div>
                             </div>
 
-                            <!-- Interview Summary -->
+                            <!-- Demographic Overview Report -->
                             <div class="report-card">
-                                <div class="report-card-icon" aria-hidden="true">💼</div>
+                                <div class="report-card-icon" aria-hidden="true">👥</div>
                                 <div class="report-card-content">
-                                    <h3 class="report-card-title">Interview Summary (PDF)</h3>
+                                    <h3 class="report-card-title">Demographic Overview Report</h3>
                                     <p class="report-card-description">
-                                        Comprehensive interview evaluations, interviewer notes, and 
-                                        final recommendations for decision making.
+                                        Comprehensive demographic breakdown including age distribution, gender, civil status, 
+                                        applicant type, and PWD representation statistics.
                                     </p>
                                 </div>
+                                <form class="report-filters-form">
+                                    <div class="filter-group-inline">
+                                        <label class="filter-label">Age Range</label>
+                                        <select id="demoAgeRange" class="filter-select-sm">
+                                            <option value="all">All Ages</option>
+                                            <option value="16-20">16-20 years</option>
+                                            <option value="21-25">21-25 years</option>
+                                            <option value="26-30">26-30 years</option>
+                                            <option value="31+">31+ years</option>
+                                        </select>
+                                    </div>
+                                    <div class="filter-group-inline">
+                                        <label class="filter-label">Status</label>
+                                        <select id="demoStatus" class="filter-select-sm">
+                                            <option value="all">All Status</option>
+                                            <option value="exam-completed">Exam Completed</option>
+                                            <option value="interview-completed">Interview Completed</option>
+                                            <option value="admitted">Admitted</option>
+                                        </select>
+                                    </div>
+                                </form>
                                 <div class="report-card-actions">
-                                    <button onclick="generateInterviewReport()" class="btn-report-action">Generate PDF</button>
-                                </div>
-                            </div>
-
-                            <!-- Coming Soon Reports -->
-                            <div class="report-card report-card-disabled">
-                                <div class="report-card-icon" aria-hidden="true">❓</div>
-                                <div class="report-card-content">
-                                    <h3 class="report-card-title">Question Analytics <span class="badge-coming-soon">Coming Soon</span></h3>
-                                    <p class="report-card-description">
-                                        Analysis of question difficulty, answer patterns, and performance 
-                                        by category to improve future examinations.
-                                    </p>
-                                </div>
-                                <div class="report-card-actions">
-                                    <button onclick="generateQuestionReport()" class="btn-report-action" disabled>Coming Soon</button>
-                                </div>
-                            </div>
-
-                            <div class="report-card report-card-disabled">
-                                <div class="report-card-icon" aria-hidden="true">📧</div>
-                                <div class="report-card-content">
-                                    <h3 class="report-card-title">Communication Log <span class="badge-coming-soon">Coming Soon</span></h3>
-                                    <p class="report-card-description">
-                                        Record of all communications sent to applicants including 
-                                        emails, notifications, and system messages.
-                                    </p>
-                                </div>
-                                <div class="report-card-actions">
-                                    <button onclick="generateCommReport()" class="btn-report-action" disabled>Coming Soon</button>
-                                </div>
-                            </div>
-
-                            <div class="report-card report-card-disabled">
-                                <div class="report-card-icon" aria-hidden="true">🔒</div>
-                                <div class="report-card-content">
-                                    <h3 class="report-card-title">Security Audit <span class="badge-coming-soon">Coming Soon</span></h3>
-                                    <p class="report-card-description">
-                                        Examination security report including access attempts, 
-                                        suspicious activities, and integrity verification.
-                                    </p>
-                                </div>
-                                <div class="report-card-actions">
-                                    <button onclick="generateSecurityReport()" class="btn-report-action" disabled>Coming Soon</button>
-                                </div>
-                            </div>
-
-                            <div class="report-card report-card-disabled">
-                                <div class="report-card-icon" aria-hidden="true">⏱️</div>
-                                <div class="report-card-content">
-                                    <h3 class="report-card-title">Timing Analysis <span class="badge-coming-soon">Coming Soon</span></h3>
-                                    <p class="report-card-description">
-                                        Examination timing patterns, completion rates, and time 
-                                        management analysis for process optimization.
-                                    </p>
-                                </div>
-                                <div class="report-card-actions">
-                                    <button onclick="generateTimingReport()" class="btn-report-action" disabled>Coming Soon</button>
+                                    <button onclick="generateDemographicReport()" class="btn-report-action">📄 Generate PDF</button>
                                 </div>
                             </div>
                         </div>
@@ -464,7 +455,7 @@
         }
 
         // Qualifiers List Report (Word DOCX)
-        async function generateQualifiersReport() {
+        async function generateQualifiersReport(format = 'docx') {
             const btn = event.target.closest('button');
             const slotsInput = document.getElementById('qualifiersSlots');
             const slots = parseInt(slotsInput.value);
@@ -484,6 +475,9 @@
             btn.disabled = true;
             btn.textContent = 'Generating...';
 
+            // Determine report type based on format
+            const reportType = format === 'pdf' ? 'qualifiers_list_pdf' : 'qualifiers_list';
+
             try {
                 const response = await fetch('/admin/reports/generate', {
                     method: 'POST',
@@ -495,7 +489,7 @@
                     },
                     credentials: 'same-origin',
                     body: JSON.stringify({
-                        type: 'qualifiers_list',
+                        type: reportType,
                         filters: filters
                     })
                 });
@@ -503,7 +497,7 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    showNotification('Qualifiers list generated successfully!', 'success');
+                    showNotification(`Qualifiers list ${format.toUpperCase()} generated successfully!`, 'success');
                     
                     // Refresh report history
                     await loadReportHistory();
@@ -520,24 +514,223 @@
                 showNotification('Failed to generate report. Please try again.', 'error');
             } finally {
                 btn.disabled = false;
-                btn.textContent = btn.dataset.originalText || 'Generate DOCX';
+                btn.textContent = btn.dataset.originalText || `Generate ${format.toUpperCase()}`;
             }
         }
 
-        function generateQuestionReport() {
-            showNotification('Question Analytics report is coming soon!', 'info');
+        async function generateEVSUResults(format = 'xlsx') {
+            const btn = event.target.closest('button');
+            const limitInput = document.getElementById('evsu_limit');
+            const sortInput = document.getElementById('evsu_sort');
+            
+            const limit = parseInt(limitInput.value) || 120;
+            const sort = sortInput.value || 'overall_desc';
+
+            // Get base filters and add EVSU-specific parameters
+            const filters = getFiltersObject();
+            filters.limit = limit;
+            filters.sort = sort;
+            filters.status = 'interview-completed';
+
+            btn.dataset.originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+
+            // Determine report type based on format
+            const reportType = format === 'pdf' ? 'evsu_results_pdf' : 'evsu_results';
+
+            try {
+                const response = await fetch('/admin/reports/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        type: reportType,
+                        filters: filters
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification(`EVSU Results ${format.toUpperCase()} generated successfully!`, 'success');
+                    
+                    // Refresh report history
+                    await loadReportHistory();
+                    
+                    // Download the report
+                    if (data.report && data.report.id) {
+                        window.location.href = `/admin/reports/${data.report.id}/download`;
+                    }
+                } else {
+                    showNotification(data.message || 'Failed to generate report', 'error');
+                }
+            } catch (error) {
+                console.error('Error generating EVSU results:', error);
+                showNotification('Failed to generate report. Please try again.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = btn.dataset.originalText || `Export ${format.toUpperCase()}`;
+            }
         }
 
-        function generateCommReport() {
-            showNotification('Communication Log report is coming soon!', 'info');
+        // Student Information Reports
+        async function generateGeographicReport() {
+            const btn = event.target.closest('button');
+            const provinceFilter = document.getElementById('geoProvince').value;
+            const statusFilter = document.getElementById('geoStatus').value;
+
+            const filters = {
+                province: provinceFilter,
+                status: statusFilter
+            };
+
+            btn.dataset.originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+
+            try {
+                const response = await fetch('/admin/reports/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        type: 'geographic_performance',
+                        filters: filters
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('Geographic Performance Report generated successfully!', 'success');
+                    await loadReportHistory();
+                    
+                    if (data.report && data.report.id) {
+                        window.location.href = `/admin/reports/${data.report.id}/download`;
+                    }
+                } else {
+                    showNotification(data.message || 'Failed to generate report', 'error');
+                }
+            } catch (error) {
+                console.error('Error generating geographic report:', error);
+                showNotification('Failed to generate report. Please try again.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = btn.dataset.originalText || '📄 Generate PDF';
+            }
         }
 
-        function generateSecurityReport() {
-            showNotification('Security Audit report is coming soon!', 'info');
+        async function generateStrandReport() {
+            const btn = event.target.closest('button');
+            const strandFilter = document.getElementById('strandFilter').value;
+            const statusFilter = document.getElementById('strandStatus').value;
+
+            const filters = {
+                strand: strandFilter,
+                status: statusFilter
+            };
+
+            btn.dataset.originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+
+            try {
+                const response = await fetch('/admin/reports/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        type: 'strand_distribution',
+                        filters: filters
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('Strand Distribution Report generated successfully!', 'success');
+                    await loadReportHistory();
+                    
+                    if (data.report && data.report.id) {
+                        window.location.href = `/admin/reports/${data.report.id}/download`;
+                    }
+                } else {
+                    showNotification(data.message || 'Failed to generate report', 'error');
+                }
+            } catch (error) {
+                console.error('Error generating strand report:', error);
+                showNotification('Failed to generate report. Please try again.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = btn.dataset.originalText || '📄 Generate PDF';
+            }
         }
 
-        function generateTimingReport() {
-            showNotification('Timing Analysis report is coming soon!', 'info');
+        async function generateDemographicReport() {
+            const btn = event.target.closest('button');
+            const ageRangeFilter = document.getElementById('demoAgeRange').value;
+            const statusFilter = document.getElementById('demoStatus').value;
+
+            const filters = {
+                age_range: ageRangeFilter,
+                status: statusFilter
+            };
+
+            btn.dataset.originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+
+            try {
+                const response = await fetch('/admin/reports/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        type: 'demographic_overview',
+                        filters: filters
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('Demographic Overview Report generated successfully!', 'success');
+                    await loadReportHistory();
+                    
+                    if (data.report && data.report.id) {
+                        window.location.href = `/admin/reports/${data.report.id}/download`;
+                    }
+                } else {
+                    showNotification(data.message || 'Failed to generate report', 'error');
+                }
+            } catch (error) {
+                console.error('Error generating demographic report:', error);
+                showNotification('Failed to generate report. Please try again.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = btn.dataset.originalText || '📄 Generate PDF';
+            }
         }
 
         // Preview report
@@ -861,21 +1054,6 @@
 
     <style>
         /* Additional styles for reports page */
-        .reports-stats {
-            margin-bottom: 30px;
-        }
-
-        /* Compact Stats Grid */
-        .reports-stats-compact {
-            margin-bottom: 24px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-        }
-
-        .reports-stats-compact .stat-card {
-            padding: 20px;
-        }
 
         /* Section Subtitle */
         .section-subtitle {
@@ -1497,6 +1675,46 @@
             color: var(--yellow-primary);
         }
 
+        /* Report Filters Form Styles */
+        .report-filters-form {
+            margin: 16px 0;
+            padding: 16px;
+            background: var(--light-gray);
+            border-radius: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .filter-group-inline {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .filter-group-inline .filter-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--maroon-primary);
+        }
+
+        .filter-select-sm {
+            padding: 8px 12px;
+            border: 2px solid var(--border-gray);
+            border-radius: 6px;
+            font-size: 13px;
+            transition: var(--transition);
+            background: var(--white);
+        }
+
+        .filter-select-sm:focus {
+            outline: none;
+            border-color: var(--yellow-primary);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.15);
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .primary-report-layout {
@@ -1524,6 +1742,14 @@
 
             .date-inputs {
                 grid-template-columns: 1fr;
+            }
+
+            .report-filters-form {
+                flex-direction: column;
+            }
+
+            .filter-group-inline {
+                min-width: 100%;
             }
         }
     </style>

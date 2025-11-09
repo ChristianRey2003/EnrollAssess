@@ -77,7 +77,7 @@ class ReportsController extends Controller
     public function generate(Request $request)
     {
         $validated = $request->validate([
-            'type' => 'required|in:final_ranking,statistical_analysis,interview_summary,qualifiers_list',
+            'type' => 'required|in:final_ranking,statistical_analysis,interview_summary,qualifiers_list,qualifiers_list_pdf,evsu_results,evsu_results_pdf,geographic_performance,strand_distribution,demographic_overview',
             'filters' => 'nullable|array',
         ]);
 
@@ -87,7 +87,7 @@ class ReportsController extends Controller
             $userId = auth()->id();
 
             // Validate slots for qualifiers_list
-            if ($reportType === 'qualifiers_list') {
+            if (in_array($reportType, ['qualifiers_list', 'qualifiers_list_pdf'])) {
                 $request->validate([
                     'filters.slots' => 'required|integer|min:1|max:500',
                 ]);
@@ -98,6 +98,12 @@ class ReportsController extends Controller
                 'statistical_analysis' => $this->reportService->generateStatisticalAnalysis($filters, $userId),
                 'interview_summary' => $this->reportService->generateInterviewSummary($filters, $userId),
                 'qualifiers_list' => $this->reportService->generateQualifiersList($filters, $userId),
+                'qualifiers_list_pdf' => $this->reportService->generateQualifiersListPdf($filters, $userId),
+                'evsu_results' => $this->reportService->generateEVSUResults($filters, $userId),
+                'evsu_results_pdf' => $this->reportService->generateEVSUResultsPdf($filters, $userId),
+                'geographic_performance' => $this->reportService->generateGeographicPerformanceReport($filters, $userId),
+                'strand_distribution' => $this->reportService->generateStrandDistributionReport($filters, $userId),
+                'demographic_overview' => $this->reportService->generateDemographicOverviewReport($filters, $userId),
             };
 
             return response()->json([
@@ -168,7 +174,7 @@ class ReportsController extends Controller
     public function preview(Request $request)
     {
         $validated = $request->validate([
-            'type' => 'required|in:final_ranking,statistical_analysis,interview_summary,qualifiers_list',
+            'type' => 'required|in:final_ranking,statistical_analysis,interview_summary,qualifiers_list,qualifiers_list_pdf,evsu_results,evsu_results_pdf',
             'filters' => 'nullable|array',
         ]);
 

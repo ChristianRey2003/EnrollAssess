@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'ajax.auth' => \App\Http\Middleware\AjaxAuthMiddleware::class,
             'no.cache' => \App\Http\Middleware\NoCacheMiddleware::class,
+            'rate.limit' => \App\Http\Middleware\RateLimitPublicRoutes::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
