@@ -20,7 +20,7 @@ class SystemSettingsSeeder extends Seeder
                 'value' => 'smtp',
                 'group' => 'email',
                 'type' => 'select',
-                'description' => 'Mail driver (smtp recommended for Gmail)',
+                'description' => 'Mail driver (smtp for Gmail, ses for Amazon SES)',
             ],
             [
                 'key' => 'mail_host',
@@ -70,6 +70,29 @@ class SystemSettingsSeeder extends Seeder
                 'group' => 'email',
                 'type' => 'text',
                 'description' => 'Display name for sent emails',
+            ],
+
+            // Amazon SES Settings (only required if mail_mailer is 'ses')
+            [
+                'key' => 'aws_access_key_id',
+                'value' => '',
+                'group' => 'email',
+                'type' => 'password',
+                'description' => 'AWS Access Key ID for Amazon SES (required for SES mailer)',
+            ],
+            [
+                'key' => 'aws_secret_access_key',
+                'value' => '',
+                'group' => 'email',
+                'type' => 'password',
+                'description' => 'AWS Secret Access Key for Amazon SES (required for SES mailer)',
+            ],
+            [
+                'key' => 'aws_region',
+                'value' => 'ap-southeast-1',
+                'group' => 'email',
+                'type' => 'select',
+                'description' => 'AWS Region for SES (ap-southeast-1: Singapore - recommended for Philippines)',
             ],
 
             // System Settings

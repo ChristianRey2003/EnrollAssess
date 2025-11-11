@@ -720,7 +720,7 @@
                             Enter Fullscreen & Start Exam
                         </button>
                         <p style="font-size: 13px; color: #9ca3af; margin: 24px 0 0 0;">
-                            Exiting fullscreen during the exam will be recorded as a violation.
+                            <strong>Security Notice:</strong> The exam is continuously monitored. Exiting fullscreen, switching tabs, or using Alt+Tab will be recorded as violations. After 5 violations, your exam will be automatically submitted.
                         </p>
                     </div>
                 </div>
@@ -778,28 +778,69 @@
         document.addEventListener('mozfullscreenchange', handleFullscreenChange);
         document.addEventListener('MSFullscreenChange', handleFullscreenChange);
 
+        let fullscreenReEntryAttempts = 0;
+        const MAX_FULLSCREEN_ATTEMPTS = 10;
+
         function handleFullscreenChange() {
             const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
                                    document.mozFullScreenElement || document.msFullscreenElement);
             
             if (!isFullscreen && fullscreenActive && examStarted && timeRemaining > 0) {
-                recordViolation('FULLSCREEN_EXIT', 'You exited fullscreen mode.');
-                // Try to re-enter fullscreen
-                setTimeout(reEnterFullscreen, 1000);
+                // Immediately try to re-enter fullscreen (no delay)
+                fullscreenReEntryAttempts = 0;
+                reEnterFullscreen();
+            } else if (isFullscreen) {
+                // Reset attempts when fullscreen is successfully entered
+                fullscreenReEntryAttempts = 0;
             }
         }
 
         function reEnterFullscreen() {
+            if (!examStarted || timeRemaining <= 0) {
+                return;
+            }
+
             const elem = document.documentElement;
+            const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
+                                   document.mozFullScreenElement || document.msFullscreenElement);
+            
+            // If already in fullscreen, don't try again
+            if (isFullscreen) {
+                fullscreenReEntryAttempts = 0;
+                return;
+            }
+
+            // Limit re-entry attempts to prevent infinite loops
+            if (fullscreenReEntryAttempts >= MAX_FULLSCREEN_ATTEMPTS) {
+                console.warn('Maximum fullscreen re-entry attempts reached');
+                recordViolation('FULLSCREEN_BLOCKED', 'Unable to maintain fullscreen mode. Please contact the administrator.');
+                return;
+            }
+
+            fullscreenReEntryAttempts++;
+            
+            // Try all fullscreen methods
             const requestFullscreen = elem.requestFullscreen || 
                                       elem.webkitRequestFullscreen || 
                                       elem.mozRequestFullScreen || 
                                       elem.msRequestFullscreen;
             
             if (requestFullscreen) {
-                requestFullscreen.call(elem).catch(err => {
-                    console.log('Re-entering fullscreen failed:', err);
-                });
+                requestFullscreen.call(elem)
+                    .then(() => {
+                        fullscreenReEntryAttempts = 0;
+                        fullscreenActive = true;
+                    })
+                    .catch(err => {
+                        console.warn('Re-entering fullscreen failed, attempt', fullscreenReEntryAttempts, err);
+                        
+                        // If user denied fullscreen or it failed, try again after a short delay
+                        if (fullscreenReEntryAttempts < MAX_FULLSCREEN_ATTEMPTS) {
+                            setTimeout(() => {
+                                reEnterFullscreen();
+                            }, 200);
+                        }
+                    });
             }
         }
 
@@ -852,27 +893,263 @@
         }
 
         function setupViolationMonitoring() {
-            // Tab visibility
+            let lastFocusTime = Date.now();
+            let focusCheckInterval = null;
+            let fullscreenCheckInterval = null;
+            let fullscreenRetryInterval = null; // For tab visibility retries
+            let violationCooldown = {}; // Prevent spam violations
+            
+            // AGGRESSIVE: Continuous fullscreen monitoring (every 100ms)
+            let wasFullscreen = true; // Track previous state
+            fullscreenCheckInterval = setInterval(function() {
+                if (!examStarted || timeRemaining <= 0) {
+                    clearInterval(fullscreenCheckInterval);
+                    return;
+                }
+                
+                const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
+                                       document.mozFullScreenElement || document.msFullscreenElement);
+                
+                // Only record violation on state change, not on every check
+                if (fullscreenActive && wasFullscreen && !isFullscreen) {
+                    // Fullscreen was just exited - record violation and try to re-enter
+                    const violationKey = 'FS_EXIT_' + Math.floor(Date.now() / 1000);
+                    if (!violationCooldown[violationKey]) {
+                        violationCooldown[violationKey] = true;
+                        recordViolation('FULLSCREEN_EXIT', 'Fullscreen mode was exited. Re-entering immediately...');
+                        setTimeout(() => delete violationCooldown[violationKey], 2000);
+                    }
+                    reEnterFullscreen();
+                }
+                wasFullscreen = isFullscreen;
+            }, 100); // Check every 100ms
+
+            // AGGRESSIVE: Continuous focus monitoring (every 50ms)
+            focusCheckInterval = setInterval(function() {
+                if (!examStarted || timeRemaining <= 0) {
+                    clearInterval(focusCheckInterval);
+                    return;
+                }
+                
+                const now = Date.now();
+                const timeSinceFocus = now - lastFocusTime;
+                
+                // If window lost focus for more than 200ms, it's likely Alt+Tab or window switch
+                if (!document.hasFocus() && timeSinceFocus > 200) {
+                    const violationKey = 'FOCUS_LOST_' + Math.floor(now / 1000); // Rate limit to once per second
+                    if (!violationCooldown[violationKey]) {
+                        violationCooldown[violationKey] = true;
+                        recordViolation('WINDOW_SWITCH', 'Window lost focus. This may indicate application switching.');
+                        
+                        // Immediately try to regain focus and fullscreen
+                        window.focus();
+                        reEnterFullscreen();
+                        
+                        // Clear old cooldown entries
+                        setTimeout(() => delete violationCooldown[violationKey], 2000);
+                    }
+                } else if (document.hasFocus()) {
+                    lastFocusTime = now;
+                }
+            }, 50); // Check every 50ms
+
+            // Tab visibility - IMMEDIATE detection and aggressive fullscreen re-entry
+            let wasHidden = false;
+            
             document.addEventListener('visibilitychange', function() {
                 if (document.hidden && examStarted && timeRemaining > 0) {
-                    recordViolation('TAB_SWITCH', 'You switched to another tab or minimized the browser.');
+                    // Only record if this is a new hidden state
+                    if (!wasHidden) {
+                        const violationKey = 'TAB_SWITCH_' + Math.floor(Date.now() / 1000);
+                        if (!violationCooldown[violationKey]) {
+                            violationCooldown[violationKey] = true;
+                            recordViolation('TAB_SWITCH', 'You switched to another tab or minimized the browser.');
+                            setTimeout(() => delete violationCooldown[violationKey], 2000);
+                        }
+                    }
+                    wasHidden = true;
+                    
+                    // Stop retry interval when tab is hidden
+                    if (fullscreenRetryInterval) {
+                        clearInterval(fullscreenRetryInterval);
+                        fullscreenRetryInterval = null;
+                    }
+                } else if (!document.hidden && examStarted) {
+                    // Tab is visible again - AGGRESSIVELY ensure fullscreen
+                    wasHidden = false;
+                    lastFocusTime = Date.now();
+                    
+                    // Immediate fullscreen attempt
+                    window.focus();
+                    reEnterFullscreen();
+                    
+                    // Persistent retry: Try to enter fullscreen every 200ms until successful
+                    if (fullscreenRetryInterval) {
+                        clearInterval(fullscreenRetryInterval);
+                    }
+                    
+                    let retryCount = 0;
+                    const maxRetries = 25; // Try for 5 seconds (25 * 200ms)
+                    
+                    fullscreenRetryInterval = setInterval(function() {
+                        if (!examStarted || timeRemaining <= 0 || document.hidden) {
+                            clearInterval(fullscreenRetryInterval);
+                            fullscreenRetryInterval = null;
+                            return;
+                        }
+                        
+                        const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
+                                               document.mozFullScreenElement || document.msFullscreenElement);
+                        
+                        if (isFullscreen) {
+                            // Success! Stop retrying
+                            clearInterval(fullscreenRetryInterval);
+                            fullscreenRetryInterval = null;
+                            fullscreenActive = true;
+                        } else {
+                            // Not in fullscreen, try again
+                            retryCount++;
+                            if (retryCount <= maxRetries) {
+                                reEnterFullscreen();
+                            } else {
+                                // Stop after max retries
+                                clearInterval(fullscreenRetryInterval);
+                                fullscreenRetryInterval = null;
+                            }
+                        }
+                    }, 200); // Try every 200ms
                 }
             });
 
-            // Window blur
+            // Window blur - IMMEDIATE detection
             window.addEventListener('blur', function() {
-                if (!document.hidden && examStarted && timeRemaining > 0) {
-                    recordViolation('WINDOW_BLUR', 'You clicked outside the exam window.');
+                if (examStarted && timeRemaining > 0) {
+                    lastFocusTime = Date.now();
+                    const violationKey = 'BLUR_' + Math.floor(Date.now() / 500);
+                    if (!violationCooldown[violationKey]) {
+                        violationCooldown[violationKey] = true;
+                        recordViolation('WINDOW_BLUR', 'You clicked outside the exam window or switched applications.');
+                        setTimeout(() => delete violationCooldown[violationKey], 1000);
+                    }
                 }
             });
 
-            // Keyboard shortcuts
+            // Window focus - AGGRESSIVELY ensure fullscreen when window regains focus (e.g., after Alt+Tab)
+            window.addEventListener('focus', function() {
+                if (examStarted && timeRemaining > 0) {
+                    lastFocusTime = Date.now();
+                    
+                    // Immediate fullscreen attempt
+                    reEnterFullscreen();
+                    
+                    // Persistent retry for Alt+Tab scenarios - user might have switched back
+                    let focusRetryCount = 0;
+                    const focusRetryMax = 15; // Try for 3 seconds (15 * 200ms)
+                    
+                    const focusRetryInterval = setInterval(function() {
+                        if (!examStarted || timeRemaining <= 0 || !document.hasFocus()) {
+                            clearInterval(focusRetryInterval);
+                            return;
+                        }
+                        
+                        const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
+                                               document.mozFullScreenElement || document.msFullscreenElement);
+                        
+                        if (isFullscreen) {
+                            // Success! Stop retrying
+                            clearInterval(focusRetryInterval);
+                            fullscreenActive = true;
+                        } else {
+                            focusRetryCount++;
+                            if (focusRetryCount <= focusRetryMax) {
+                                reEnterFullscreen();
+                            } else {
+                                clearInterval(focusRetryInterval);
+                            }
+                        }
+                    }, 200);
+                }
+            });
+
+            // Keyboard shortcuts - ENHANCED blocking
             document.addEventListener('keydown', function(e) {
+                // ESC KEY - Block exiting fullscreen (this CAN be blocked)
+                if (e.key === 'Escape' || e.keyCode === 27) {
+                    if (examStarted && timeRemaining > 0) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                        recordViolation('ESC_PRESSED', 'ESC key is disabled during the exam. You cannot exit fullscreen mode.');
+                        // Immediately re-enter fullscreen if somehow exited
+                        reEnterFullscreen();
+                        return false;
+                    }
+                }
+
+                // Alt+Tab detection (cannot block, but can detect and record)
+                if (e.altKey && (e.key === 'Tab' || e.keyCode === 9)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    recordViolation('ALT_TAB_ATTEMPT', 'Alt+Tab detected. Application switching is not allowed.');
+                    
+                    // Immediately try to regain focus and fullscreen
+                    // Use multiple attempts since Alt+Tab might have already switched windows
+                    let altTabRetryCount = 0;
+                    const altTabRetryMax = 20; // Try for 4 seconds (20 * 200ms)
+                    
+                    const altTabRetryInterval = setInterval(function() {
+                        if (!examStarted || timeRemaining <= 0) {
+                            clearInterval(altTabRetryInterval);
+                            return;
+                        }
+                        
+                        // Try to regain focus and fullscreen
+                        window.focus();
+                        reEnterFullscreen();
+                        
+                        const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
+                                               document.mozFullScreenElement || document.msFullscreenElement);
+                        const hasFocus = document.hasFocus();
+                        
+                        if (isFullscreen && hasFocus) {
+                            // Success! Stop retrying
+                            clearInterval(altTabRetryInterval);
+                            fullscreenActive = true;
+                        } else {
+                            altTabRetryCount++;
+                            if (altTabRetryCount >= altTabRetryMax) {
+                                clearInterval(altTabRetryInterval);
+                            }
+                        }
+                    }, 200); // Try every 200ms
+                    
+                    return false;
+                }
+
+                // Alt key alone - monitor for Alt+Tab attempts
+                if (e.key === 'Alt' || e.altKey) {
+                    // Set a flag to detect if Tab is pressed shortly after
+                    const altPressTime = Date.now();
+                    const keyupHandler = function(upEvent) {
+                        if (upEvent.key === 'Alt' && (Date.now() - altPressTime) < 500) {
+                            // Alt was released, check if Tab might have been pressed
+                            if (!document.hasFocus()) {
+                                recordViolation('ALT_TAB_DETECTED', 'Application switching detected via Alt key.');
+                                window.focus();
+                                reEnterFullscreen();
+                            }
+                        }
+                        document.removeEventListener('keyup', keyupHandler);
+                    };
+                    document.addEventListener('keyup', keyupHandler);
+                }
+
                 // Dev tools
                 if (e.key === 'F12' || 
                     (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
                     (e.ctrlKey && (e.key === 'u' || e.key === 'U'))) {
                     e.preventDefault();
+                    e.stopPropagation();
                     recordViolation('DEV_TOOLS', 'Developer tools access blocked.');
                     return false;
                 }
@@ -881,6 +1158,7 @@
                 if (e.ctrlKey && (e.key === 'c' || e.key === 'C' || e.key === 'v' || e.key === 'V' || 
                                  e.key === 'x' || e.key === 'X' || e.key === 'a' || e.key === 'A')) {
                     e.preventDefault();
+                    e.stopPropagation();
                     recordViolation('COPY_PASTE', 'Copy/paste is not allowed.');
                     return false;
                 }
@@ -888,6 +1166,7 @@
                 // Print
                 if (e.ctrlKey && (e.key === 'p' || e.key === 'P')) {
                     e.preventDefault();
+                    e.stopPropagation();
                     recordViolation('PRINT_ATTEMPT', 'Printing is not allowed.');
                     return false;
                 }
@@ -895,31 +1174,51 @@
                 // Refresh
                 if (e.key === 'F5' || (e.ctrlKey && (e.key === 'r' || e.key === 'R'))) {
                     e.preventDefault();
+                    e.stopPropagation();
                     recordViolation('REFRESH_ATTEMPT', 'Page refresh is not allowed.');
                     return false;
                 }
 
-                // Alt+Tab
-                if (e.altKey && e.key === 'Tab') {
+                // Windows key / Meta key
+                if (e.key === 'Meta' || e.key === 'OS' || e.keyCode === 91 || e.keyCode === 92) {
                     e.preventDefault();
-                    recordViolation('ALT_TAB', 'Application switching is not allowed.');
+                    e.stopPropagation();
+                    recordViolation('WINDOWS_KEY', 'Windows/System key pressed. This is not allowed.');
                     return false;
                 }
 
-                // Windows key
-                if (e.key === 'Meta' || e.key === 'OS') {
+                // Ctrl+Alt+Del attempt
+                if (e.ctrlKey && e.altKey && (e.key === 'Delete' || e.keyCode === 46)) {
                     e.preventDefault();
-                    recordViolation('WINDOWS_KEY', 'System key pressed.');
+                    e.stopPropagation();
+                    recordViolation('SYSTEM_SHORTCUT', 'System shortcut (Ctrl+Alt+Del) is not allowed.');
                     return false;
                 }
-            });
+
+                // Task Manager (Ctrl+Shift+Esc)
+                if (e.ctrlKey && e.shiftKey && (e.key === 'Escape' || e.keyCode === 27)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    recordViolation('TASK_MANAGER', 'Task Manager shortcut is not allowed.');
+                    return false;
+                }
+            }, true); // Use capture phase for better interception
 
             // Right-click
             document.addEventListener('contextmenu', function(e) {
                 e.preventDefault();
+                e.stopPropagation();
                 recordViolation('RIGHT_CLICK', 'Right-click is not allowed.');
                 return false;
+            }, true);
+
+            // Cleanup intervals when exam ends
+            window.addEventListener('beforeunload', function() {
+                if (focusCheckInterval) clearInterval(focusCheckInterval);
+                if (fullscreenCheckInterval) clearInterval(fullscreenCheckInterval);
+                if (fullscreenRetryInterval) clearInterval(fullscreenRetryInterval);
             });
+            
         }
 
         function recordViolation(type, message) {

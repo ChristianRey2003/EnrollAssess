@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Settings;
+use App\Services\MailConfigurationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
@@ -10,6 +11,21 @@ use Illuminate\Support\Facades\Validator;
 
 class SettingsController extends Controller
 {
+    /**
+     * Mail Configuration Service
+     *
+     * @var MailConfigurationService
+     */
+    protected $mailConfigService;
+
+    /**
+     * Constructor
+     */
+    public function __construct(MailConfigurationService $mailConfigService)
+    {
+        $this->mailConfigService = $mailConfigService;
+    }
+
     /**
      * Display the settings page
      */
@@ -119,9 +135,16 @@ class SettingsController extends Controller
         } catch (\Exception $e) {
             Log::error('Test email failed: ' . $e->getMessage());
 
+            // Check if this is an SES sandbox mode error
+            $errorMessage = 'Failed to send test email: ' . $e->getMessage();
+            
+            if ($this->mailConfigService->isSandboxModeError($e)) {
+                $errorMessage = $this->mailConfigService->getSandboxModeErrorMessage();
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to send test email: ' . $e->getMessage()
+                'message' => $errorMessage
             ], 500);
         }
     }
@@ -132,29 +155,8 @@ class SettingsController extends Controller
     protected function reloadMailConfig()
     {
         try {
-            // Get current email settings from database
-            $emailSettings = Settings::getGroup('email');
-
-            if ($emailSettings->isNotEmpty()) {
-                // Update mail configuration
-                config([
-                    'mail.default' => $emailSettings->get('mail_mailer', env('MAIL_MAILER', 'smtp')),
-                    'mail.mailers.smtp' => [
-                        'transport' => 'smtp',
-                        'host' => $emailSettings->get('mail_host', env('MAIL_HOST', 'smtp.gmail.com')),
-                        'port' => (int) $emailSettings->get('mail_port', env('MAIL_PORT', 587)),
-                        'username' => $emailSettings->get('mail_username', env('MAIL_USERNAME')),
-                        'password' => $emailSettings->get('mail_password', env('MAIL_PASSWORD')),
-                        'encryption' => $emailSettings->get('mail_encryption', env('MAIL_ENCRYPTION', 'tls')),
-                        'timeout' => null,
-                        'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
-                    ],
-                    'mail.from' => [
-                        'address' => $emailSettings->get('mail_from_address', env('MAIL_FROM_ADDRESS', 'hello@example.com')),
-                        'name' => $emailSettings->get('mail_from_name', env('MAIL_FROM_NAME', 'EnrollAssess System')),
-                    ],
-                ]);
-            }
+            // Use MailConfigurationService to load configuration
+            $this->mailConfigService->loadFromDatabase();
         } catch (\Exception $e) {
             Log::error('Failed to reload mail config: ' . $e->getMessage());
         }

@@ -741,7 +741,30 @@ crontab -e
 
 ## Post-Deployment Configuration
 
-### 1. Create Admin User
+### 1. Configure Gmail SMTP Email
+
+**📧 IMPORTANT**: Your system uses database-based email configuration. Configure email settings through the admin panel after deployment.
+
+**Quick Steps:**
+1. Get Gmail App Password (see detailed guide below)
+2. Login to admin panel: `https://your-domain.com/admin/settings`
+3. Go to "Email Settings" tab
+4. Enter Gmail credentials and test
+5. Save settings
+
+**📖 For detailed Gmail SMTP setup instructions, see:**
+- **`GMAIL_SMTP_DIGITALOCEAN_SETUP.md`** - Complete guide with troubleshooting
+
+**Key Points:**
+- ✅ Gmail SMTP works out of the box on DigitalOcean (no special configuration)
+- ✅ Free Gmail account: 500 emails/day limit
+- ✅ Settings stored in database (no `.env` editing needed)
+- ✅ Changes apply immediately (no restart required)
+- ✅ Queue workers automatically use database email settings
+
+---
+
+### 2. Create Admin User
 ```bash
 cd /var/www/enrollassess
 
@@ -796,12 +819,15 @@ soffice --version
 
 ### 4. Test Critical Features
 - [ ] Admin login works
+- [ ] Email configuration works (test email sent successfully)
 - [ ] Create/edit exam works
 - [ ] Generate access codes works
+- [ ] Access code emails sent to applicants
 - [ ] Applicant can take exam
 - [ ] Reports generate (XLSX)
 - [ ] PDF export works (LibreOffice conversion)
 - [ ] Interview assignment works
+- [ ] Interview notification emails sent
 - [ ] Real-time updates work (Pusher)
 
 ---

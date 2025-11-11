@@ -318,11 +318,11 @@
 
         <!-- Email Settings Tab -->
         <div id="email-tab" class="tab-content active">
-            <!-- Gmail Setup Guide - Collapsible -->
-            <div style="margin-bottom: 20px;">
+            <!-- SMTP/Gmail Setup Guide - Collapsible -->
+            <div id="smtp-guide" style="margin-bottom: 20px;">
                 <button type="button" onclick="toggleGmailGuide()" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #EFF6FF; border: 2px solid #3B82F6; border-radius: 8px; color: #1E40AF; font-weight: 600; font-size: 14px; cursor: pointer; width: 100%; transition: all 0.2s;">
                     <span id="gmail-guide-icon" style="font-size: 20px; transition: transform 0.3s;">ℹ️</span>
-                    <span>Gmail Setup Guide (Click to expand)</span>
+                    <span>Gmail SMTP Setup Guide (Click to expand)</span>
                 </button>
                 <div id="gmail-guide-content" style="display: none; margin-top: 15px; background: #F0F9FF; border: 1px solid #BAE6FD; border-radius: 8px; padding: 20px;">
                     <div style="color: #1F2937; font-size: 14px; line-height: 1.8;">
@@ -347,17 +347,63 @@
                 </div>
             </div>
 
+            <!-- Amazon SES Setup Guide - Collapsible -->
+            <div id="ses-guide" style="margin-bottom: 20px; display: none;">
+                <button type="button" onclick="toggleSesGuide()" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #FEF3C7; border: 2px solid #F59E0B; border-radius: 8px; color: #92400E; font-weight: 600; font-size: 14px; cursor: pointer; width: 100%; transition: all 0.2s;">
+                    <span id="ses-guide-icon" style="font-size: 20px; transition: transform 0.3s;">☁️</span>
+                    <span>Amazon SES Setup Guide (Click to expand)</span>
+                </button>
+                <div id="ses-guide-content" style="display: none; margin-top: 15px; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 20px;">
+                    <div style="color: #1F2937; font-size: 14px; line-height: 1.8;">
+                        <p style="margin: 0 0 15px 0; font-weight: 600; color: #92400E;">What is Amazon SES?</p>
+                        <p style="margin: 0 0 15px 0;">Amazon Simple Email Service (SES) is a cloud-based email service for sending transactional and marketing emails. It's more reliable and scalable than SMTP for production use.</p>
+                        
+                        <p style="margin: 0 0 15px 0; font-weight: 600; color: #92400E;">Setup Steps:</p>
+                        <ol style="margin: 0 0 20px 0; padding-left: 20px;">
+                            <li>Sign up for AWS at <a href="https://aws.amazon.com" target="_blank" style="color: #2563EB;">aws.amazon.com</a></li>
+                            <li>Go to <strong>AWS Console → SES</strong></li>
+                            <li>Verify your sender email address or domain</li>
+                            <li>Create SMTP credentials or IAM user with SES permissions</li>
+                            <li>Copy <strong>Access Key ID</strong> and <strong>Secret Access Key</strong></li>
+                            <li>Choose your AWS region (Singapore recommended for Philippines)</li>
+                            <li>Paste credentials below</li>
+                        </ol>
+                        
+                        <p style="margin: 0 0 15px 0; font-weight: 600; color: #92400E;">⚠️ Important Notes:</p>
+                        <ul style="margin: 0; padding-left: 20px;">
+                            <li><strong>Sandbox Mode:</strong> New SES accounts start in sandbox mode. You can only send to verified email addresses.</li>
+                            <li><strong>Production Access:</strong> Request production access in AWS SES Console to send to any email address.</li>
+                            <li><strong>Region:</strong> <code style="background: #FEF3C7; padding: 2px 6px; border-radius: 3px;">ap-southeast-1</code> (Singapore) is recommended for best performance in Philippines.</li>
+                            <li><strong>Cost:</strong> First 62,000 emails/month are free, then $0.10 per 1,000 emails.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
             <div class="settings-card">
                 <h3> Email Configuration</h3>
                 
                 @foreach($emailSettings as $setting)
-                <div class="form-group">
-                    <label for="{{ $setting->key }}">{{ ucwords(str_replace('_', ' ', str_replace('mail_', '', $setting->key))) }}</label>
+                    @php
+                        // Determine field grouping for show/hide logic
+                        $isSmtpField = in_array($setting->key, ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_encryption']);
+                        $isSesField = in_array($setting->key, ['aws_access_key_id', 'aws_secret_access_key', 'aws_region']);
+                        $fieldClass = '';
+                        if ($isSmtpField) {
+                            $fieldClass = 'smtp-field';
+                        } elseif ($isSesField) {
+                            $fieldClass = 'ses-field';
+                        }
+                    @endphp
+                    
+                <div class="form-group {{ $fieldClass }}" @if($fieldClass) data-field-type="{{ $fieldClass }}" @endif>
+                    <label for="{{ $setting->key }}">{{ ucwords(str_replace('_', ' ', str_replace(['mail_', 'aws_'], '', $setting->key))) }}</label>
                     
                     @if($setting->type === 'select')
                         @if($setting->key === 'mail_mailer')
-                            <select name="settings[{{ $setting->key }}]" id="{{ $setting->key }}">
-                                <option value="smtp" {{ $setting->value === 'smtp' ? 'selected' : '' }}>SMTP</option>
+                            <select name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" onchange="toggleMailerFields()">
+                                <option value="smtp" {{ $setting->value === 'smtp' ? 'selected' : '' }}>SMTP (Gmail, etc.)</option>
+                                <option value="ses" {{ $setting->value === 'ses' ? 'selected' : '' }}>Amazon SES</option>
                                 <option value="sendmail" {{ $setting->value === 'sendmail' ? 'selected' : '' }}>Sendmail</option>
                                 <option value="mailgun" {{ $setting->value === 'mailgun' ? 'selected' : '' }}>Mailgun</option>
                                 <option value="log" {{ $setting->value === 'log' ? 'selected' : '' }}>Log (Testing)</option>
@@ -367,6 +413,14 @@
                                 <option value="tls" {{ $setting->value === 'tls' ? 'selected' : '' }}>TLS</option>
                                 <option value="ssl" {{ $setting->value === 'ssl' ? 'selected' : '' }}>SSL</option>
                                 <option value="" {{ $setting->value === '' ? 'selected' : '' }}>None</option>
+                            </select>
+                        @elseif($setting->key === 'aws_region')
+                            <select name="settings[{{ $setting->key }}]" id="{{ $setting->key }}">
+                                <option value="ap-southeast-1" {{ $setting->value === 'ap-southeast-1' ? 'selected' : '' }}>ap-southeast-1 (Singapore)</option>
+                                <option value="us-east-1" {{ $setting->value === 'us-east-1' ? 'selected' : '' }}>us-east-1 (N. Virginia)</option>
+                                <option value="us-west-2" {{ $setting->value === 'us-west-2' ? 'selected' : '' }}>us-west-2 (Oregon)</option>
+                                <option value="eu-west-1" {{ $setting->value === 'eu-west-1' ? 'selected' : '' }}>eu-west-1 (Ireland)</option>
+                                <option value="ap-northeast-1" {{ $setting->value === 'ap-northeast-1' ? 'selected' : '' }}>ap-northeast-1 (Tokyo)</option>
                             </select>
                         @endif
                     @elseif($setting->type === 'password')
@@ -523,6 +577,57 @@
             icon.textContent = 'ℹ️';
         }
     }
+
+    function toggleSesGuide() {
+        const content = document.getElementById('ses-guide-content');
+        const icon = document.getElementById('ses-guide-icon');
+        
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            icon.textContent = '📚';
+        } else {
+            content.style.display = 'none';
+            icon.textContent = '☁️';
+        }
+    }
+
+    function toggleMailerFields() {
+        const mailerType = document.getElementById('mail_mailer').value;
+        
+        // Get all SMTP and SES fields
+        const smtpFields = document.querySelectorAll('.smtp-field');
+        const sesFields = document.querySelectorAll('.ses-field');
+        
+        // Get guide sections
+        const smtpGuide = document.getElementById('smtp-guide');
+        const sesGuide = document.getElementById('ses-guide');
+        
+        // Show/hide fields based on mailer type
+        if (mailerType === 'smtp') {
+            // Show SMTP fields, hide SES fields
+            smtpFields.forEach(field => field.style.display = 'block');
+            sesFields.forEach(field => field.style.display = 'none');
+            smtpGuide.style.display = 'block';
+            sesGuide.style.display = 'none';
+        } else if (mailerType === 'ses') {
+            // Show SES fields, hide SMTP fields
+            smtpFields.forEach(field => field.style.display = 'none');
+            sesFields.forEach(field => field.style.display = 'block');
+            smtpGuide.style.display = 'none';
+            sesGuide.style.display = 'block';
+        } else {
+            // For other mailers (log, sendmail, etc.), hide both
+            smtpFields.forEach(field => field.style.display = 'none');
+            sesFields.forEach(field => field.style.display = 'none');
+            smtpGuide.style.display = 'none';
+            sesGuide.style.display = 'none';
+        }
+    }
+
+    // Call on page load to set initial state
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleMailerFields();
+    });
 
     function switchTab(tabName) {
         // Remove active class from all tabs and content
