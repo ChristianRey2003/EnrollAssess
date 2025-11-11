@@ -288,58 +288,30 @@
 
 @section('content')
 <div class="users-container">
-    <!-- Header with Add Button -->
-    <div class="users-header">
-        <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
-            <span></span> Add New User
-        </a>
-    </div>
-
-    <!-- Statistics -->
-    <div class="users-stats">
-        <div class="stat-card">
-            <div class="stat-icon"></div>
-            <p class="stat-title">Total Users</p>
-            <h3 class="stat-value">{{ $stats['total_users'] }}</h3>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon"></div>
-            <p class="stat-title">Department Heads</p>
-            <h3 class="stat-value">{{ $stats['department_heads'] }}</h3>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon"></div>
-            <p class="stat-title">Administrators</p>
-            <h3 class="stat-value">{{ $stats['administrators'] }}</h3>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">🧑‍</div>
-            <p class="stat-title">Instructors</p>
-            <h3 class="stat-value">{{ $stats['instructors'] }}</h3>
-        </div>
-    </div>
-
     <!-- Users Table -->
     <div class="users-table-container">
         <div class="table-header">
-            <h3>System Users</h3>
-            <div class="search-filter-section">
-                <form method="GET" action="{{ route('admin.users.index') }}" style="display: flex; gap: 10px;">
+            <h3>Users</h3>
+            <div class="search-filter-section" style="display: flex; gap: 12px; align-items: center;">
+                <a href="{{ route('admin.users.create') }}" class="btn btn-primary" style="padding: 8px 16px; white-space: nowrap;">
+                    Add New User
+                </a>
+                <form method="GET" action="{{ route('admin.users.index') }}" style="display: flex; gap: 10px; align-items: center;">
+                    <label style="font-size: 13px; color: rgba(255,255,255,0.9);">Search:</label>
                     <div class="search-box">
                         <input type="text" 
                                name="search" 
-                               placeholder="Search users..." 
-                               value="{{ request('search') }}">
+                               placeholder="Search..." 
+                               value="{{ request('search') }}"
+                               style="width: 180px;">
                     </div>
-                    <select name="role" class="filter-select" onchange="this.form.submit()">
-                        <option value="">All Roles</option>
+                    <label style="font-size: 13px; color: rgba(255,255,255,0.9);">Role:</label>
+                    <select name="role" class="filter-select" onchange="this.form.submit()" style="width: 140px;">
+                        <option value="">All Roles ▼</option>
                         <option value="department-head" {{ request('role') === 'department-head' ? 'selected' : '' }}>Department Head</option>
                         <option value="administrator" {{ request('role') === 'administrator' ? 'selected' : '' }}>Administrator</option>
                         <option value="instructor" {{ request('role') === 'instructor' ? 'selected' : '' }}>Instructor</option>
                     </select>
-                    <button type="submit" class="btn btn-primary" style="padding: 8px 16px;">
-                         Search
-                    </button>
                 </form>
             </div>
         </div>

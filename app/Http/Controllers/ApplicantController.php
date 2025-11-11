@@ -79,20 +79,33 @@ class ApplicantController extends BaseController
 
             $applicants = $query->orderBy('created_at', 'desc')->paginate(20);
 
-            // Statistics
+            // Meaningful Statistics
             $stats = [
-                'total' => Applicant::count(),
-                'pending' => Applicant::where('status', 'pending')->count(),
-                'exam_completed' => Applicant::where('status', '!=', 'pending')->count(),
-                'with_access_codes' => Applicant::whereHas('accessCode')->count(),
-                'without_access_codes' => Applicant::whereDoesntHave('accessCode')->count(),
-                'assigned_to_instructor' => Applicant::whereNotNull('assigned_instructor_id')->count(),
-                'unassigned_instructor' => Applicant::whereNull('assigned_instructor_id')->count(),
+                'total_applicants' => Applicant::count(),
+                'exam_completed' => Applicant::where('status', '!=', 'pending')->whereNotNull('enrollassess_score')->count(),
+                'interview_completed' => Applicant::where('status', 'interview-completed')->count(),
+                // Use admitted as proxy for qualified since overall_rating is computed, not a DB column
+                'qualified' => Applicant::where('status', 'admitted')->count(),
             ];
 
             $instructors = User::where('role', 'instructor')->get();
 
             $exams = Exam::where('is_active', true)->get();
+            
+            // Return JSON for AJAX requests
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'applicants' => $applicants->items(),
+                    'pagination' => [
+                        'current_page' => $applicants->currentPage(),
+                        'last_page' => $applicants->lastPage(),
+                        'per_page' => $applicants->perPage(),
+                        'total' => $applicants->total(),
+                        'from' => $applicants->firstItem(),
+                        'to' => $applicants->lastItem(),
+                    ],
+                ]);
+            }
             
             return view('admin.applicants.index', compact('applicants', 'stats', 'instructors', 'exams'));
         } catch (Exception $e) {

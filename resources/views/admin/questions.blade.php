@@ -132,7 +132,7 @@
                         <div class="questions-toolbar">
                             <div class="search-filter-group">
                                 <div class="search-box">
-                                    <input type="text" placeholder="Search questions..." class="search-input" id="searchInput">
+                                    <input type="text" placeholder="Search questions..." class="search-input" id="searchInput" value="{{ request('search') }}">
                                     <button class="search-btn">Search</button>
                                 </div>
                                 <select class="filter-select" id="typeFilter" name="type">
@@ -143,16 +143,14 @@
                                     <option value="essay" {{ request('type') == 'essay' ? 'selected' : '' }}>Essay</option>
                                 </select>
                                 
-                                <select class="filter-select" id="examSetFilter" name="exam_set_id">
-                                    <option value="">All Exam Sets</option>
-                                    @foreach($examSets ?? [] as $examSet)
-                                        <option value="{{ $examSet->exam_set_id }}" {{ request('exam_set_id') == $examSet->exam_set_id ? 'selected' : '' }}>
-                                            {{ $examSet->exam->title ?? 'Exam' }} - {{ $examSet->set_name }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                @if(request()->hasAny(['search', 'type']))
+                                    <a href="{{ route('admin.questions.index') }}" class="filter-select" style="padding: 10px 16px; text-decoration: none; background: #f3f4f6; color: #6b7280;">Clear Filter</a>
+                                @endif
                             </div>
-                                            <a href="{{ route('admin.questions.create') }}" class="section-action">Add New Question</a>
+                            <div style="display: flex; gap: 10px;">
+                                <a href="{{ route('admin.settings') }}" class="section-action" style="background: #6b7280;">Exam Settings</a>
+                                <a href="{{ route('admin.questions.create') }}" class="section-action">Add Question</a>
+                            </div>
                         </div>
                     </div>
                 </div>

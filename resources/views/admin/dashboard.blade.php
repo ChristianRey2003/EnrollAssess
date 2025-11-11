@@ -4,491 +4,451 @@
 
 @php
     $pageTitle = 'Dashboard';
-    $pageSubtitle = 'Computer Studies Department';
+    $pageSubtitle = 'Student Basic Information Analytics';
 @endphp
 
+@push('body-class')
+dashboard-page
+@endpush
+
 @push('styles')
-    <link href="{{ asset('css/admin/admin-dashboard.css') }}" rel="stylesheet">
     <style>
-        .stats-grid {
+        /* Dashboard-specific scoped styles */
+        .dashboard-page .main-content {
+            padding: 0;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        
+        .dashboard-page .main-header {
+            margin-bottom: 0;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .dashboard-wrapper {
+            padding: 15px 20px;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* Ensure dashboard adjusts when sidebar is collapsed */
+        .admin-main.sidebar-collapsed .dashboard-wrapper {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .dashboard-wrapper .period-selector {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 12px;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .dashboard-wrapper .period-selector label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #6b7280;
+        }
+
+        .dashboard-wrapper .period-selector select {
+            padding: 6px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .dashboard-wrapper .kpis-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 8px;
+            margin-bottom: 15px;
         }
 
-        @media (max-width: 1200px) {
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
+        .dashboard-wrapper .kpi-card {
+            background: white;
+            border-radius: 8px;
+            padding: 10px 12px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e7eb;
         }
 
-        @media (max-width: 640px) {
-            .stats-grid {
+        .dashboard-wrapper .kpi-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .dashboard-wrapper .kpi-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .dashboard-wrapper .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 15px;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            min-width: 0; /* Important for grid items to shrink below content size */
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-wrapper .charts-grid {
                 grid-template-columns: 1fr;
             }
         }
 
-        .stat-card {
+        .dashboard-wrapper .chart-card {
             background: white;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s ease;
-            border: 1px solid #e5e7eb;
-        }
-
-        .stat-card:hover {
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-            transform: translateY(-2px);
-        }
-
-        .stat-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-        }
-
-        .stat-label {
-            font-size: 14px;
-            color: #6b7280;
-            font-weight: 500;
-            white-space: nowrap;
-        }
-
-        .stat-value {
-            font-size: 32px;
-            font-weight: 700;
-            color: #1f2937;
-            line-height: 1;
-            white-space: nowrap;
-        }
-
-        .stat-trend {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .trend-up {
-            color: #10b981;
-        }
-
-        .trend-down {
-            color: #ef4444;
-        }
-
-
-
-        .recent-table-container {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e5e7eb;
-        }
-
-        .table-header {
-            padding: 20px 24px;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .table-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1f2937;
-        }
-
-        .table-action {
-            color: #800020;
-            font-size: 14px;
-            font-weight: 500;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        .table-action:hover {
-            color: #5c0017;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .data-table thead {
-            background: #f9fafb;
-        }
-
-        .data-table th {
-            padding: 12px 24px;
-            text-align: left;
-            font-size: 13px;
-            font-weight: 600;
-            color: #6b7280;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .data-table td {
-            padding: 16px 24px;
-            border-top: 1px solid #e5e7eb;
-            font-size: 14px;
-            color: #1f2937;
-        }
-
-        .data-table tbody tr {
-            transition: background 0.2s;
-        }
-
-        .data-table tbody tr:hover {
-            background: #f9fafb;
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: capitalize;
-        }
-
-        .status-pending {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .status-exam-completed, .status-completed {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .status-in-progress, .status-interview-scheduled {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .quick-access {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e5e7eb;
-        }
-
-        .access-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1f2937;
-            margin-bottom: 20px;
-        }
-
-        .access-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-        }
-
-        .access-item {
-            margin-bottom: 0;
-        }
-
-        .access-link {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-            padding: 20px;
             border-radius: 8px;
-            text-decoration: none;
-            color: #374151;
-            transition: all 0.2s;
-            font-size: 14px;
-            text-align: center;
+            padding: 12px 14px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
             border: 1px solid #e5e7eb;
-            background: white;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            min-width: 0; /* Important for grid items to shrink below content size */
+            overflow: hidden; /* Prevent content from overflowing */
         }
 
-        .access-link:hover {
-            background: #f9fafb;
-            color: #800020;
-        }
-
-        .access-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            background: #f3f4f6;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            font-size: 24px;
-        }
-
-        .access-content {
-            flex: 0;
-        }
-
-        .access-name {
-            font-weight: 600;
-            margin-bottom: 4px;
+        .dashboard-wrapper .chart-title {
             font-size: 15px;
-        }
-
-        .access-desc {
-            font-size: 12px;
-            color: #9ca3af;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #9ca3af;
-        }
-
-        .empty-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-            opacity: 0.5;
-        }
-
-        .empty-title {
-            font-size: 16px;
             font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .dashboard-wrapper .chart-headline {
+            font-size: 12px;
             color: #6b7280;
             margin-bottom: 8px;
         }
 
-        .empty-message {
-            font-size: 14px;
+        .dashboard-wrapper .chart-container {
+            position: relative;
+            height: 220px;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            min-width: 0; /* Important for grid items to shrink below content size */
+        }
+
+        .dashboard-wrapper .chart-container.small {
+            height: 180px;
+        }
+        
+        .dashboard-wrapper .chart-title,
+        .dashboard-wrapper .chart-headline {
+            min-width: 0; /* Allow text to wrap if needed */
+            word-wrap: break-word;
+        }
+
+        .dashboard-wrapper .no-data {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
             color: #9ca3af;
+            font-size: 13px;
+            text-align: center;
         }
     </style>
 @endpush
 
 @section('content')
-    <!-- Statistics Cards -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-content">
-                <div class="stat-label">Total Applicants</div>
-                <div class="stat-value" data-stat="total">{{ $stats['total'] ?? $stats['total_applicants'] ?? 0 }}</div>
-            </div>
+<div class="dashboard-wrapper">
+    <!-- Period Selector -->
+    <div class="period-selector">
+        <label for="periodSelect">Period:</label>
+        <select id="periodSelect" onchange="window.location.href='?period=' + this.value">
+            <option value="7" {{ $period == 7 ? 'selected' : '' }}>Last 7 Days</option>
+            <option value="30" {{ $period == 30 ? 'selected' : '' }}>Last 30 Days</option>
+            <option value="90" {{ $period == 90 ? 'selected' : '' }}>Last 90 Days</option>
+            <option value="0" {{ $period == 0 ? 'selected' : '' }}>All Time</option>
+        </select>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpis-grid">
+        <div class="kpi-card">
+            <div class="kpi-label">Forms Completed</div>
+            <div class="kpi-value">{{ number_format($analytics['kpis']['total_completed']) }}</div>
         </div>
-        
-        <div class="stat-card">
-            <div class="stat-content">
-                <div class="stat-label">Exams Completed</div>
-                <div class="stat-value" data-stat="exam_completed">{{ $stats['exam_completed'] ?? 0 }}</div>
-            </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Average Age</div>
+            <div class="kpi-value">{{ $analytics['kpis']['avg_age'] }}</div>
         </div>
-        
-        <div class="stat-card">
-            <div class="stat-content">
-                <div class="stat-label">Interviews Scheduled</div>
-                <div class="stat-value" data-stat="interview_scheduled">{{ $stats['interview_scheduled'] ?? $stats['interviews_scheduled'] ?? 0 }}</div>
-            </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Female %</div>
+            <div class="kpi-value">{{ $analytics['kpis']['female_percentage'] ?? 0 }}%</div>
         </div>
-        
-        <div class="stat-card">
-            <div class="stat-content">
-                <div class="stat-label">Pending Reviews</div>
-                <div class="stat-value" data-stat="pending">{{ $stats['pending'] ?? $stats['pending_reviews'] ?? 0 }}</div>
-            </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Top City / Municipality</div>
+            <div class="kpi-value" style="font-size: 18px;">{{ $analytics['kpis']['top_city'] ?? 'N/A' }}</div>
         </div>
     </div>
 
-    <!-- Recent Applicants -->
-    <div class="recent-table-container" style="margin-bottom: 30px;">
-            <div class="table-header">
-                <div class="table-title">Recent Applicants</div>
-                <a href="{{ route('admin.applicants.index') }}" class="table-action">View All</a>
+    <!-- Charts Grid -->
+    <div class="charts-grid">
+        <!-- Exam High Scores by Sex -->
+        <div class="chart-card">
+            <div class="chart-title">Exam High Score by Sex</div>
+            <div class="chart-headline">{{ $analytics['exam_scores_by_sex']['headline'] ?? 'No exam scores recorded yet.' }}</div>
+            @php
+                $examMax = isset($analytics['exam_scores_by_sex']['data'])
+                    ? collect($analytics['exam_scores_by_sex']['data'])->max()
+                    : 0;
+            @endphp
+            <div class="chart-container small">
+                @if($examMax > 0)
+                    <canvas id="examSexChart"></canvas>
+                @else
+                    <div class="no-data">No exam scores recorded yet.</div>
+                @endif
             </div>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Applicant</th>
-                        <th>Status</th>
-                        <th>Score</th>
-                        <th>Date</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($recent_applicants ?? [] as $applicant)
-                    <tr>
-                        <td>
-                            <div>
-                                <div style="font-weight: 500; color: #1f2937;">{{ $applicant->full_name }}</div>
-                                <div style="font-size: 12px; color: #9ca3af;">{{ $applicant->email_address }}</div>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="status-badge status-{{ strtolower(str_replace(' ', '-', $applicant->status)) }}">
-                                {{ $applicant->status }}
-                            </span>
-                        </td>
-                        <td>{{ $applicant->score ? $applicant->score . '%' : '--' }}</td>
-                        <td style="color: #6b7280;">{{ $applicant->created_at->format('M d, Y') }}</td>
-                        <td>
-                            <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}" 
-                               style="color: #800020; text-decoration: none; font-weight: 500; font-size: 13px;">
-                                View
-                            </a>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="5">
-                            <div class="empty-state">
-                                <div class="empty-title">No applicants yet</div>
-                                <div class="empty-message">Start by importing or adding applicants</div>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-    </div>
-
-    <!-- Interview Assignment Progress -->
-    @if(isset($interviewProgress) && $interviewProgress->count() > 0)
-    <div class="recent-table-container" style="margin-bottom: 30px;">
-        <div class="table-header">
-            <div class="table-title">Interview Assignment Progress</div>
         </div>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Instructor</th>
-                    <th style="text-align: center;">Assigned</th>
-                    <th style="text-align: center;">Completed</th>
-                    <th style="text-align: center;">Pending</th>
-                    <th style="text-align: center;">Progress</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($interviewProgress as $progress)
-                <tr>
-                    <td>
-                        <div style="font-weight: 500; color: #1f2937;">{{ $progress->instructor_name }}</div>
-                    </td>
-                    <td style="text-align: center; font-weight: 500; color: #1f2937;">{{ $progress->total }}</td>
-                    <td style="text-align: center; font-weight: 500; color: #10b981;">{{ $progress->completed }}</td>
-                    <td style="text-align: center; font-weight: 500; color: #f59e0b;">{{ $progress->pending }}</td>
-                    <td style="text-align: center;">
-                        <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
-                            <div style="flex: 1; max-width: 120px; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
-                                <div style="height: 100%; background: {{ $progress->completion_rate == 100 ? '#10b981' : '#3b82f6' }}; width: {{ $progress->completion_rate }}%;"></div>
-                            </div>
-                            <span style="font-size: 13px; font-weight: 600; color: #6b7280; min-width: 40px;">{{ $progress->completion_rate }}%</span>
-                        </div>
-                    </td>
-                    <td>
-                        @if($progress->completion_rate == 100)
-                            <span class="status-badge" style="background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;">Complete</span>
-                        @elseif($progress->has_overdue)
-                            <span class="status-badge" style="background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;">Overdue</span>
-                        @elseif($progress->has_upcoming_deadline)
-                            <span class="status-badge" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">Due Soon</span>
-                        @else
-                            <span class="status-badge" style="background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe;">In Progress</span>
-                        @endif
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-    @endif
 
-    <!-- Quick Access -->
-    <div class="quick-access">
-            <div class="access-title">Quick Access</div>
-            <ul class="access-list">
-                <li class="access-item">
-                    <a href="{{ route('admin.applicants.index') }}" class="access-link">
-                        <div class="access-icon">👥</div>
-                        <div class="access-content">
-                            <div class="access-name">Manage Applicants</div>
-                            <div class="access-desc">View and manage all applicants</div>
-                        </div>
-                    </a>
-                </li>
-                <li class="access-item">
-                    <a href="{{ route('admin.questions.create') }}" class="access-link">
-                        <div class="access-icon">📝</div>
-                        <div class="access-content">
-                            <div class="access-name">Add Questions</div>
-                            <div class="access-desc">Create new exam questions</div>
-                        </div>
-                    </a>
-                </li>
-                <li class="access-item">
-                    <a href="{{ route('admin.reports.index') }}" class="access-link">
-                        <div class="access-icon">📊</div>
-                        <div class="access-content">
-                            <div class="access-name">Generate Reports</div>
-                            <div class="access-desc">Export applicant data</div>
-                        </div>
-                    </a>
-                </li>
-                <li class="access-item">
-                    <a href="{{ route('admin.interviews.index') }}" class="access-link">
-                        <div class="access-icon">💼</div>
-                        <div class="access-content">
-                            <div class="access-name">Schedule Interviews</div>
-                            <div class="access-desc">Manage interview sessions</div>
-                        </div>
-                    </a>
-                </li>
-                <li class="access-item">
-                    <a href="{{ route('admin.settings') }}" class="access-link">
-                        <div class="access-icon">⚙️</div>
-                        <div class="access-content">
-                            <div class="access-name">System Settings</div>
-                            <div class="access-desc">Configure exam parameters</div>
-                        </div>
-                    </a>
-                </li>
-            </ul>
-    </div>
+        <!-- Interview High Scores by Sex -->
+        <div class="chart-card">
+            <div class="chart-title">Interview High Score by Sex</div>
+            <div class="chart-headline">{{ $analytics['interview_scores_by_sex']['headline'] ?? 'No interview scores recorded yet.' }}</div>
+            @php
+                $interviewMax = isset($analytics['interview_scores_by_sex']['data'])
+                    ? collect($analytics['interview_scores_by_sex']['data'])->max()
+                    : 0;
+            @endphp
+            <div class="chart-container small">
+                @if($interviewMax > 0)
+                    <canvas id="interviewSexChart"></canvas>
+                @else
+                    <div class="no-data">No interview scores recorded yet.</div>
+                @endif
+            </div>
+        </div>
 
+        <!-- City Top 10 (Vertical Bar) -->
+        <div class="chart-card">
+            <div class="chart-title">Top Cities / Municipalities</div>
+            <div class="chart-container">
+                @if(!empty($analytics['cities']['labels'] ?? []))
+                    <canvas id="cityChart"></canvas>
+                @else
+                    <div class="no-data">No data available</div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
-    @section('scripts')
-    <script>
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Listen for real-time updates
-        if (typeof window.Echo !== 'undefined') {
-            window.Echo.channel('dashboard')
-                .listen('.statistics.updated', (data) => {
-                    // Update stat values with animation
-                    if (data.stats) {
-                        Object.keys(data.stats).forEach(stat => {
-                            const element = document.querySelector(`[data-stat="${stat}"]`);
-                            if (element) {
-                                element.classList.add('stat-updated');
-                                element.textContent = data.stats[stat];
-                                setTimeout(() => element.classList.remove('stat-updated'), 600);
+        const analytics = @json($analytics);
+        
+        // Store chart instances for resizing
+        const charts = {};
+
+        // Function to resize all charts
+        function resizeAllCharts() {
+            Object.values(charts).forEach(chart => {
+                if (chart && typeof chart.resize === 'function') {
+                    chart.resize();
+                }
+            });
+        }
+
+        // Exam High Scores by Sex (Horizontal Bar Chart)
+        const examData = analytics.exam_scores_by_sex ?? { labels: [], data: [], colors: [] };
+        if (examData.data.length && Math.max(...examData.data) > 0) {
+            const examChartElement = document.getElementById('examSexChart');
+            if (examChartElement) {
+                charts.examSexChart = new Chart(examChartElement, {
+                    type: 'bar',
+                    data: {
+                        labels: examData.labels,
+                        datasets: [{
+                            data: examData.data,
+                            backgroundColor: examData.colors,
+                            borderRadius: 6,
+                            maxBarThickness: 26,
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: context => `${context.label}: ${context.formattedValue}`
+                                }
                             }
-                        });
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                suggestedMax: 100,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
                     }
                 });
+            }
         }
+
+        // Interview High Scores by Sex (Horizontal Bar Chart)
+        const interviewData = analytics.interview_scores_by_sex ?? { labels: [], data: [], colors: [] };
+        if (interviewData.data.length && Math.max(...interviewData.data) > 0) {
+            const interviewChartElement = document.getElementById('interviewSexChart');
+            if (interviewChartElement) {
+                charts.interviewSexChart = new Chart(interviewChartElement, {
+                    type: 'bar',
+                    data: {
+                        labels: interviewData.labels,
+                        datasets: [{
+                            data: interviewData.data,
+                            backgroundColor: interviewData.colors,
+                            borderRadius: 6,
+                            maxBarThickness: 26,
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: context => `${context.label}: ${context.formattedValue}`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                suggestedMax: 80,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // City Top 10 (Vertical Bar Chart)
+        const cityData = analytics.cities ?? { labels: [], data: [], color: '#1D4ED8' };
+        if (cityData.labels.length > 0) {
+            const cityChartElement = document.getElementById('cityChart');
+            if (cityChartElement) {
+                charts.cityChart = new Chart(cityChartElement, {
+                    type: 'bar',
+                    data: {
+                        labels: cityData.labels,
+                        datasets: [{
+                            label: 'Applicants',
+                            data: cityData.data,
+                            backgroundColor: cityData.color,
+                            borderRadius: 6,
+                            maxBarThickness: 40,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: context => `${context.label}: ${context.formattedValue} applicants`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 45,
+                                    font: {
+                                        size: 10
+                                    }
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Listen for sidebar toggle to resize charts
+        // Hook into the global toggleSidebar function
+        const originalToggleSidebar = window.toggleSidebar;
+        if (typeof originalToggleSidebar === 'function') {
+            window.toggleSidebar = function() {
+                originalToggleSidebar();
+                // Resize charts after sidebar animation completes (300ms transition + 50ms buffer)
+                setTimeout(resizeAllCharts, 350);
+            };
+        }
+
+        // Also listen for class changes on admin-main to catch any sidebar state changes
+        const adminMain = document.querySelector('.admin-main');
+        if (adminMain) {
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                        // Debounce resize to avoid multiple calls
+                        setTimeout(resizeAllCharts, 350);
+                    }
+                });
+            });
+            observer.observe(adminMain, { attributes: true, attributeFilter: ['class'] });
+        }
+
+        // Also use ResizeObserver to detect container size changes
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent && window.ResizeObserver) {
+            const resizeObserver = new ResizeObserver(() => {
+                resizeAllCharts();
+            });
+            resizeObserver.observe(mainContent);
+        }
+
+        // Fallback: Listen for window resize
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(resizeAllCharts, 250);
+        });
     });
-    </script>
-    @endsection
+</script>
+@endpush

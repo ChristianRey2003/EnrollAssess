@@ -14,7 +14,7 @@
     .admin-main .main-content {
         padding-left: 0;
         padding-right: 0;
-        padding-top: 30px;
+        padding-top: 5;
         padding-bottom: 30px;
     }
 
@@ -25,7 +25,7 @@
         width: 100%;
         max-width: 1600px;
         margin: 0 auto;
-        padding: 24px 30px 30px; /* Matches header horizontal padding */
+        padding: 0 30px 30px; /* No top padding to remove gap from header */
     }
 
     /* ============================================
@@ -135,6 +135,16 @@
         background: white;
     }
 
+    /* Dropdown arrow for select elements */
+    .filter-group select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B7280' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 36px;
+        cursor: pointer;
+    }
+
     .filter-group input:focus,
     .filter-group select:focus {
         outline: none;
@@ -146,6 +156,7 @@
         display: flex;
         gap: 10px;
         align-items: flex-end;
+        flex-wrap: wrap;
     }
 
     .btn-filter,
@@ -247,8 +258,8 @@
         border-radius: 12px; /* More rounded */
         font-size: 11px;
         font-weight: 600;
-        text-transform: uppercase;
         letter-spacing: 0.025em;
+        text-transform: none !important; /* Override global uppercase transform */
     }
 
     .status-pending { 
@@ -528,18 +539,8 @@
     <div class="assign-grid">
         <!-- Left Panel: Applicants List -->
         <div class="assign-left">
-            <!-- Bulk actions bar -->
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px;">
-                <div style="font-size:14px;color:#6B7280;">
-                    <span id="bulkCount">0</span> selected
-                </div>
-                <div style="display:flex;gap:8px;">
-                    <button type="button" id="openAssignDrawer" class="btn-filter" disabled>Assign Selected</button>
-                </div>
-            </div>
             <div class="filters">
                 <div class="filter-group">
-                    <label for="search">Search</label>
                     <input type="text" 
                            id="search" 
                            name="q" 
@@ -548,7 +549,6 @@
                 </div>
 
                 <div class="filter-group">
-                    <label for="status">Status</label>
                     <select id="status" name="status">
                         <option value="">All Statuses</option>
                         <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
@@ -558,7 +558,6 @@
                 </div>
 
                 <div class="filter-group">
-                    <label for="assigned">Assignment</label>
                     <select id="assigned" name="assigned">
                         <option value="">All</option>
                         <option value="unassigned" {{ request('assigned') === 'unassigned' ? 'selected' : '' }}>Unassigned Only</option>
@@ -567,7 +566,10 @@
                 </div>
 
                 <div class="filter-actions">
-                    <button type="button" class="btn-filter" onclick="applyFilters()">Apply</button>
+                    <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#6B7280;margin-right:8px;">
+                        <span id="bulkCount">0</span> selected
+                    </div>
+                    <button type="button" id="openAssignDrawer" class="btn-filter" disabled>Assign Selected</button>
                     <button type="button" class="btn-clear" onclick="clearFilters()">Clear</button>
                 </div>
             </div>
@@ -600,7 +602,7 @@
                                 <td>{{ $applicant->email_address }}</td>
                                 <td>
                                     <span class="status-badge status-{{ str_replace('-', '', $applicant->status) }}">
-                                        {{ strtoupper(str_replace('-', ' ', $applicant->status)) }}
+                                        {{ ucwords(str_replace('-', ' ', $applicant->status)) }}
                                     </span>
                                 </td>
                                 <td>
@@ -823,10 +825,12 @@
     });
 
     // Filter functionality
+    let searchTimeout;
+    
     function applyFilters() {
         const params = new URLSearchParams();
         
-        const search = document.getElementById('search').value;
+        const search = document.getElementById('search').value.trim();
         const status = document.getElementById('status').value;
         const assigned = document.getElementById('assigned').value;
 
@@ -839,12 +843,33 @@
     }
 
     function clearFilters() {
+        document.getElementById('search').value = '';
+        document.getElementById('status').value = '';
+        document.getElementById('assigned').value = '';
         window.location.href = '{{ route('admin.applicants.assign') }}';
     }
 
-    // Enter key support for search
+    // Auto-apply filters when dropdowns change
+    document.getElementById('status')?.addEventListener('change', function() {
+        applyFilters();
+    });
+
+    document.getElementById('assigned')?.addEventListener('change', function() {
+        applyFilters();
+    });
+
+    // Debounced auto-apply for search input (500ms delay)
+    document.getElementById('search')?.addEventListener('input', function(e) {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() {
+            applyFilters();
+        }, 500);
+    });
+
+    // Enter key support for search (immediate apply)
     document.getElementById('search')?.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
+            clearTimeout(searchTimeout);
             applyFilters();
         }
     });

@@ -515,8 +515,8 @@
         </div>
         <div class="section-actions">
             @if($currentExam)
-                <button type="button" onclick="showNewSemesterModal()" class="btn-outline">
-                    New Semester
+                <button type="button" onclick="showNewSemesterDrawer()" class="btn-outline">
+                    Add Question Bank
                 </button>
                 <button onclick="showAddQuestionModal()" class="btn-primary">
                     Add Question
@@ -551,7 +551,7 @@
                     </button>
                 @endif
                 <button onclick="openEditSettingsDrawer()" class="btn-outline" style="padding: 4px 10px; font-size: 13px;">
-                    Settings
+                    Exam Setting
                 </button>
             </div>
         </div>
@@ -664,23 +664,10 @@
                         <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
                         <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
                     </select>
-                    <select class="filter-select" name="sort_by" id="sortByFilter" onchange="this.form.submit()">
-                        <option value="order_number" {{ request('sort_by', 'order_number') === 'order_number' ? 'selected' : '' }}>Sort by Order</option>
-                        <option value="points" {{ request('sort_by') === 'points' ? 'selected' : '' }}>Sort by Points</option>
-                        <option value="type" {{ request('sort_by') === 'type' ? 'selected' : '' }}>Sort by Type</option>
-                        <option value="status" {{ request('sort_by') === 'status' ? 'selected' : '' }}>Sort by Status</option>
-                    </select>
-                    <select class="filter-select" name="sort_order" id="sortOrderFilter" onchange="this.form.submit()">
-                        <option value="asc" {{ request('sort_order', 'asc') === 'asc' ? 'selected' : '' }}>Ascending</option>
-                        <option value="desc" {{ request('sort_order') === 'desc' ? 'selected' : '' }}>Descending</option>
-                    </select>
-                    @if(request()->hasAny(['search', 'type', 'status', 'sort_by', 'sort_order']))
+                    @if(request()->hasAny(['search', 'type', 'status']))
                     <a href="{{ route('admin.sets-questions.index') }}" class="btn-outline" style="text-decoration: none; display: inline-flex; align-items: center;">Clear Filters</a>
                     @endif
                 </div>
-                <button type="button" onclick="runConsistencyCheck()" class="btn-outline">
-                    Consistency Check
-                </button>
             </div>
         </form>
 
@@ -691,7 +678,6 @@
                 <div style="display: flex; gap: 6px;">
                     <button onclick="bulkUpdateStatus(true)" class="btn-outline" style="padding: 5px 12px; font-size: 13px;">Activate Selected</button>
                     <button onclick="bulkUpdateStatus(false)" class="btn-outline" style="padding: 5px 12px; font-size: 13px;">Deactivate Selected</button>
-                    <button onclick="bulkDuplicate()" class="btn-outline" style="padding: 5px 12px; font-size: 13px;">Duplicate Selected</button>
                     <button onclick="bulkDelete()" class="btn-outline" style="padding: 5px 12px; font-size: 13px; color: #991b1b; border-color: #fecaca;">Delete Selected</button>
                 </div>
             </div>
@@ -739,9 +725,6 @@
                     <div class="question-actions">
                         <button onclick="editQuestion({{ $question->question_id }})" class="btn-icon" title="Edit">
                             Edit
-                        </button>
-                        <button onclick="duplicateQuestion({{ $question->question_id }})" class="btn-icon" title="Duplicate">
-                            Duplicate
                         </button>
                         <button onclick="toggleQuestionStatus({{ $question->question_id }})" class="btn-icon" title="Toggle Status">
                             {{ $question->is_active ? 'Hide' : 'Show' }}
@@ -917,7 +900,78 @@
     </div>
 </div>
 
-<!-- Create Exam Modal -->
+<!-- New Semester Drawer (Add Question Bank) -->
+<div id="newSemesterDrawer" class="drawer-overlay">
+    <div class="drawer-content">
+        <div class="drawer-header">
+            <h3 id="newSemesterDrawerTitle">Add Question Bank</h3>
+            <button class="drawer-close" onclick="closeNewSemesterDrawer()">×</button>
+        </div>
+        <div class="drawer-body">
+            <form id="newSemesterForm">
+                @csrf
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        Exam Title <span style="color: #ef4444;">*</span>
+                    </label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="newSemester_title" 
+                           name="title" 
+                           placeholder="e.g., EnrollAssess - First Semester 2025" 
+                           required>
+                    <span class="error-message" id="newSemester_error_title"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        Description
+                    </label>
+                    <textarea class="form-control" 
+                              id="newSemester_description" 
+                              name="description" 
+                              rows="3" 
+                              placeholder="Brief description of this exam..."></textarea>
+                    <span class="error-message" id="newSemester_error_description"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        Duration (minutes) <span style="color: #ef4444;">*</span>
+                    </label>
+                    <input type="number" 
+                           class="form-control" 
+                           id="newSemester_duration_minutes" 
+                           name="duration_minutes" 
+                           min="5" 
+                           max="480" 
+                           value="60" 
+                           required>
+                    <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <button type="button" onclick="document.getElementById('newSemester_duration_minutes').value=30" style="padding: 4px 12px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; cursor: pointer;">30 min</button>
+                        <button type="button" onclick="document.getElementById('newSemester_duration_minutes').value=60" style="padding: 4px 12px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; cursor: pointer;">1 hour</button>
+                        <button type="button" onclick="document.getElementById('newSemester_duration_minutes').value=90" style="padding: 4px 12px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; cursor: pointer;">1.5 hours</button>
+                        <button type="button" onclick="document.getElementById('newSemester_duration_minutes').value=120" style="padding: 4px 12px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; cursor: pointer;">2 hours</button>
+                    </div>
+                    <span class="error-message" id="newSemester_error_duration_minutes"></span>
+                </div>
+
+                <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 4px; padding: 12px; margin-top: 16px;">
+                    <p style="margin: 0; font-size: 13px; color: #92400e; line-height: 1.5;">
+                        <strong style="color: #78350f;">Important:</strong> Creating a new exam will archive the current active exam. Only one exam can be active at a time (per semester). The new exam starts as a draft - publish it when ready.
+                    </p>
+                </div>
+            </form>
+        </div>
+        <div class="drawer-footer">
+            <button class="btn-secondary" onclick="closeNewSemesterDrawer()">Cancel</button>
+            <button class="btn-primary" onclick="saveNewSemester()" id="saveNewSemesterBtn">Create Exam</button>
+        </div>
+    </div>
+</div>
+
+<!-- Create Exam Modal (for first exam setup only) -->
 <div id="examModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
     <div style="background: white; border-radius: 8px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
         <div style="padding: 20px 24px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
@@ -1149,40 +1203,6 @@
         .catch(error => alert('Error: ' + error.message));
     }
 
-    // Bulk duplicate
-    function bulkDuplicate() {
-        const ids = getSelectedQuestionIds();
-        if (ids.length === 0) {
-            alert('Please select at least one question.');
-            return;
-        }
-
-        if (!confirm(`Are you sure you want to duplicate ${ids.length} selected question(s)?`)) {
-            return;
-        }
-
-        fetch('{{ route("admin.sets-questions.bulk-duplicate") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                question_ids: ids
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                location.reload();
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => alert('Error: ' + error.message));
-    }
 
     // Show add question drawer
     function showAddQuestionModal() {
@@ -1307,10 +1327,20 @@
 
     // Edit question
     function editQuestion(id) {
-        fetch(`/admin/questions/${id}`)
-            .then(response => response.json())
+        fetch(`/admin/questions/${id}`, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch question');
+                }
+                return response.json();
+            })
             .then(data => {
-                if (data.success) {
+                if (data.success && data.question) {
                     const question = data.question;
                     
                     document.getElementById('drawerTitle').textContent = 'Edit Question';
@@ -1321,55 +1351,69 @@
                     document.getElementById('questionOrder').value = question.order_number || '';
                     document.getElementById('questionExplanation').value = question.explanation || '';
                     
-                    handleTypeChange();
+                    // Set up options container first
+                    const optionsContainer = document.getElementById('optionsContainer');
+                    const optionsList = document.getElementById('optionsList');
                     
-                    // Load options if MCQ or T/F
-                    if (question.options && question.options.length > 0) {
-                        const optionsList = document.getElementById('optionsList');
+                    if (question.question_type === 'multiple_choice' || question.question_type === 'true_false') {
+                        optionsContainer.style.display = 'block';
                         optionsList.innerHTML = '';
+                        optionCount = 0;
                         
-                        question.options.forEach((option, index) => {
-                            const optionHtml = `
-                                <div class="option-item" style="display: flex; gap: 8px; margin-bottom: 8px;">
-                                    <input type="text" class="form-control" name="options[]" value="${option.option_text}" required>
-                                    <label style="display: flex; align-items: center; gap: 4px; white-space: nowrap;">
-                                        <input type="radio" name="correct_option" value="${index}" ${option.is_correct ? 'checked' : ''} required> Correct
-                                    </label>
-                                </div>
-                            `;
-                            optionsList.insertAdjacentHTML('beforeend', optionHtml);
-                        });
+                        // Load options if they exist
+                        if (question.options && question.options.length > 0) {
+                            if (question.question_type === 'true_false') {
+                                // True/False options - readonly
+                                question.options.forEach((option, index) => {
+                                    const escapedText = (option.option_text || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                                    const optionHtml = `
+                                        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                            <input type="text" class="form-control" name="options[]" value="${escapedText}" readonly>
+                                            <label style="display: flex; align-items: center; gap: 4px;">
+                                                <input type="radio" name="correct_option" value="${optionCount}" ${option.is_correct ? 'checked' : ''} required> Correct
+                                            </label>
+                                        </div>
+                                    `;
+                                    optionsList.insertAdjacentHTML('beforeend', optionHtml);
+                                    optionCount++;
+                                });
+                            } else {
+                                // Multiple choice options - editable and deletable
+                                question.options.forEach((option, index) => {
+                                    const escapedText = (option.option_text || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                                    const optionHtml = `
+                                        <div class="option-item" style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                            <input type="text" class="form-control" name="options[]" value="${escapedText}" required>
+                                            <label style="display: flex; align-items: center; gap: 4px; white-space: nowrap;">
+                                                <input type="radio" name="correct_option" value="${optionCount}" ${option.is_correct ? 'checked' : ''} required> Correct
+                                            </label>
+                                            <button type="button" onclick="this.parentElement.remove()" class="btn-icon danger">×</button>
+                                        </div>
+                                    `;
+                                    optionsList.insertAdjacentHTML('beforeend', optionHtml);
+                                    optionCount++;
+                                });
+                            }
+                        } else if (question.question_type === 'multiple_choice') {
+                            // If no options for MCQ, add default empty ones
+                            addOption();
+                            addOption();
+                        }
+                    } else {
+                        optionsContainer.style.display = 'none';
                     }
                     
                     document.getElementById('questionDrawer').classList.add('active');
                 } else {
-                    alert('Error loading question');
+                    alert('Error loading question: ' + (data.message || 'Unknown error'));
                 }
             })
-            .catch(error => alert('Error: ' + error.message));
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error loading question: ' + error.message);
+            });
     }
 
-    // Duplicate question
-    function duplicateQuestion(id) {
-        if (confirm('Duplicate this question?')) {
-            fetch(`/admin/questions/${id}/duplicate`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => alert('Error: ' + error.message));
-        }
-    }
 
     // Toggle question status
     function toggleQuestionStatus(id) {
@@ -1435,122 +1479,88 @@
         }
     }
 
-    // Run consistency check with improved UI
-    function runConsistencyCheck() {
-        const examId = {{ $currentExam->exam_id ?? 'null' }};
-        if (!examId) {
-            alert('No exam selected.');
-            return;
-        }
-        
-        // Show loading state
-        const btn = event.target;
-        const originalText = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = 'Checking...';
-        
-        fetch(`/admin/sets-questions/consistency-check/${examId}`)
-            .then(response => response.json())
-            .then(data => {
-                btn.disabled = false;
-                btn.textContent = originalText;
-                
-                if (data.success) {
-                    if (data.total_issues === 0) {
-                        showConsistencyCheckModal([], 0);
-                    } else {
-                        showConsistencyCheckModal(data.issues, data.total_issues);
-                    }
-                } else {
-                    alert('Error: ' + (data.message || 'Failed to run consistency check'));
-                }
-            })
-            .catch(error => {
-                btn.disabled = false;
-                btn.textContent = originalText;
-                alert('Error: ' + error.message);
-            });
+    // Show new semester drawer
+    function showNewSemesterDrawer() {
+        document.getElementById('newSemesterDrawerTitle').textContent = 'Add Question Bank';
+        document.getElementById('newSemesterForm').reset();
+        document.getElementById('newSemesterDrawer').classList.add('active');
+        clearNewSemesterErrors();
     }
 
-    // Show consistency check results modal
-    function showConsistencyCheckModal(issues, totalIssues) {
-        const modal = document.createElement('div');
-        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+    // Close new semester drawer
+    function closeNewSemesterDrawer() {
+        document.getElementById('newSemesterDrawer').classList.remove('active');
+        clearNewSemesterErrors();
+    }
+
+    // Clear new semester form errors
+    function clearNewSemesterErrors() {
+        document.querySelectorAll('#newSemesterForm .error-message').forEach(el => el.textContent = '');
+        document.querySelectorAll('#newSemesterForm .form-control.error').forEach(el => el.classList.remove('error'));
+    }
+
+    // Show new semester field error
+    function showNewSemesterFieldError(fieldName, message) {
+        const errorEl = document.getElementById('newSemester_error_' + fieldName);
+        const inputEl = document.getElementById('newSemester_' + fieldName);
         
-        const content = document.createElement('div');
-        content.style.cssText = 'background: white; border-radius: 8px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;';
+        if (errorEl) {
+            errorEl.textContent = message;
+        }
+        if (inputEl) {
+            inputEl.classList.add('error');
+        }
+    }
+
+    // Save new semester (create new exam)
+    function saveNewSemester() {
+        const form = document.getElementById('newSemesterForm');
+        const formData = new FormData(form);
+        const submitBtn = document.getElementById('saveNewSemesterBtn');
         
-        const header = document.createElement('div');
-        header.style.cssText = 'padding: 20px 24px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;';
-        header.innerHTML = `
-            <h3 style="margin: 0; font-size: 20px; font-weight: 600; color: #1f2937;">
-                Consistency Check Results
-            </h3>
-            <button onclick="this.closest('[style*=\'position: fixed\']').remove()" style="background: none; border: none; font-size: 28px; color: #6b7280; cursor: pointer; padding: 0; width: 32px; height: 32px;">&times;</button>
-        `;
+        // Disable button and show loading state
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating...';
         
-        const body = document.createElement('div');
-        body.style.cssText = 'padding: 24px;';
+        clearNewSemesterErrors();
         
-        if (totalIssues === 0) {
-            body.innerHTML = `
-                <div style="text-align: center; padding: 20px;">
-                    <div style="font-size: 48px; color: #059669; margin-bottom: 12px;">✓</div>
-                    <h4 style="font-size: 18px; font-weight: 600; color: #1f2937; margin: 0 0 8px 0;">All Checks Passed!</h4>
-                    <p style="color: #6b7280; font-size: 14px; margin: 0;">No issues found. Your question bank is ready to publish.</p>
-                </div>
-            `;
-        } else {
-            let issuesHtml = '<div style="margin-bottom: 16px;"><p style="color: #991b1b; font-weight: 600; margin: 0 0 16px 0;">Found ' + totalIssues + ' issue(s):</p><ul style="margin: 0; padding-left: 20px;">';
-            issues.forEach(issue => {
-                issuesHtml += '<li style="margin-bottom: 12px; color: #1f2937;">';
-                issuesHtml += '<strong style="color: #991b1b;">' + issue.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) + ':</strong> ';
-                issuesHtml += issue.message;
-                if (issue.details && issue.details.length > 0) {
-                    issuesHtml += '<ul style="margin-top: 8px; padding-left: 20px; color: #6b7280; font-size: 13px;">';
-                    issue.details.slice(0, 3).forEach(detail => {
-                        issuesHtml += '<li>' + (typeof detail === 'string' ? detail.substring(0, 100) : JSON.stringify(detail).substring(0, 100)) + '</li>';
+        fetch('/admin/exams', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Close drawer and reload page to show new exam
+                closeNewSemesterDrawer();
+                window.location.reload();
+            } else {
+                // Show validation errors
+                if (data.errors) {
+                    Object.keys(data.errors).forEach(field => {
+                        showNewSemesterFieldError(field, data.errors[field][0]);
                     });
-                    if (issue.details.length > 3) {
-                        issuesHtml += '<li>... and ' + (issue.details.length - 3) + ' more</li>';
-                    }
-                    issuesHtml += '</ul>';
+                } else if (data.message) {
+                    alert(data.message);
                 }
-                issuesHtml += '</li>';
-            });
-            issuesHtml += '</ul></div>';
-            body.innerHTML = issuesHtml;
-        }
-        
-        const footer = document.createElement('div');
-        footer.style.cssText = 'padding: 16px 24px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 8px;';
-        footer.innerHTML = `
-            <button onclick="this.closest('[style*=\'position: fixed\']').remove()" 
-                    style="padding: 8px 16px; background: #991b1b; color: white; border: none; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer;">
-                Close
-            </button>
-        `;
-        
-        content.appendChild(header);
-        content.appendChild(body);
-        content.appendChild(footer);
-        modal.appendChild(content);
-        document.body.appendChild(modal);
-        
-        // Close on outside click
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                modal.remove();
+                
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Exam';
             }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to create exam. Please try again.');
+            
+            // Re-enable button
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Exam';
         });
-    }
-
-    // Show new semester modal
-    function showNewSemesterModal() {
-        document.getElementById('examModalTitle').textContent = 'Create New Semester Exam';
-        document.getElementById('examForm').reset();
-        document.getElementById('examModal').style.display = 'flex';
-        clearExamErrors();
     }
 
     // Show create exam modal
@@ -1794,6 +1804,8 @@
                 closeQuestionDrawer();
             } else if (event.target.id === 'settingsDrawer') {
                 closeSettingsDrawer();
+            } else if (event.target.id === 'newSemesterDrawer') {
+                closeNewSemesterDrawer();
             }
         }
     });
@@ -1802,6 +1814,7 @@
         if (event.key === 'Escape') {
             closeQuestionDrawer();
             closeSettingsDrawer();
+            closeNewSemesterDrawer();
             closeExamModal();
         }
     });

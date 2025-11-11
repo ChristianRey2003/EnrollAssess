@@ -62,7 +62,7 @@ body.admin-page.instructor-portal .sidebar-subtitle::after {
 
 /* ===== SIDEBAR ===== */
 .admin-sidebar {
-    width: 260px;
+    width: 200px;
     background: linear-gradient(180deg, var(--maroon-primary) 0%, var(--maroon-dark) 100%);
     color: var(--white);
     position: fixed;
@@ -84,7 +84,7 @@ body.admin-page.instructor-portal .sidebar-subtitle::after {
 }
 
 .sidebar-header {
-    padding: 24px 20px;
+    padding: 16px 12px;
     border-bottom: 1px solid rgba(255, 215, 0, 0.2);
     text-align: center;
 }
@@ -93,33 +93,31 @@ body.admin-page.instructor-portal .sidebar-subtitle::after {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 
 .sidebar-logo img {
-    width: 40px;
-    height: 40px;
-    object-fit: contain;
-    margin-right: 12px;
+    display: none; /* Logo removed */
 }
 
 .sidebar-title {
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--yellow-primary);
     margin: 0;
+    line-height: 1.2;
 }
 
 .sidebar-subtitle {
-    font-size: 12px;
+    font-size: 11px;
     color: rgba(255, 255, 255, 0.8);
-    margin: 4px 0 0 0;
+    margin: 2px 0 0 0;
 }
 
 /* ===== NAVIGATION ===== */
 .sidebar-nav,
 .nav-menu {
-    padding: 20px 0;
+    padding: 12px 0;
     flex: 1;
     overflow-y: auto;
 }
@@ -131,11 +129,11 @@ body.admin-page.instructor-portal .sidebar-subtitle::after {
 .nav-link {
     display: flex;
     align-items: center;
-    padding: 14px 20px;
+    padding: 12px 14px;
     color: rgba(255, 255, 255, 0.9);
     text-decoration: none;
     transition: var(--transition);
-    border-left: 4px solid transparent;
+    border-left: 3px solid transparent;
     font-weight: 500;
 }
 
@@ -143,44 +141,47 @@ body.admin-page.instructor-portal .sidebar-subtitle::after {
     background: rgba(255, 215, 0, 0.1);
     color: var(--yellow-primary);
     border-left-color: var(--yellow-primary);
+    border-left-width: 3px;
 }
 
 /* Navigation Sections */
 .nav-section {
-    margin: 20px 0 10px 0;
-    padding: 0 16px;
+    margin: 16px 0 8px 0;
+    padding: 0 14px;
 }
 
 .nav-section-title {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.6);
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
 }
 
 .nav-link.active {
     background: var(--maroon-light);
     color: var(--white);
     border-left-color: var(--yellow-primary);
+    border-left-width: 3px;
 }
 
 .nav-icon {
-    font-size: 18px;
-    margin-right: 12px;
-    width: 20px;
+    font-size: 16px;
+    margin-right: 10px;
+    width: 18px;
     text-align: center;
+    flex-shrink: 0;
 }
 
 .nav-text {
-    font-size: 15px;
+    font-size: 13px;
 }
 
 /* ===== SIDEBAR FOOTER ===== */
 .sidebar-footer,
 .nav-bottom {
-    padding: 16px 20px 20px 20px;
+    padding: 12px 14px 16px 14px;
     margin-top: auto;
     border-top: 1px solid rgba(255, 215, 0, 0.2);
 }
@@ -188,12 +189,12 @@ body.admin-page.instructor-portal .sidebar-subtitle::after {
 .logout-link {
     display: flex;
     align-items: center;
-    padding: 12px 16px;
+    padding: 10px 12px;
     color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
-    border-radius: 8px;
+    border-radius: 6px;
     transition: var(--transition);
-    font-size: 14px;
+    font-size: 13px;
     width: 100%;
     background: none;
     border: none;
@@ -208,23 +209,27 @@ body.admin-page.instructor-portal .sidebar-subtitle::after {
 /* ===== MAIN CONTENT ===== */
 .admin-main {
     flex: 1;
-    margin-left: 260px;
+    
     min-height: 100vh;
     background: var(--light-gray);
     display: flex !important;
     flex-direction: column !important;
     transition: margin-left 0.3s ease;
+    width: calc(100% - 200px);
+    box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 /* Sidebar collapsed state - main content takes full width */
 .admin-main.sidebar-collapsed {
     margin-left: 0;
+    width: 100%;
 }
 
-/* Center header and content - applies to both collapsed and expanded sidebar */
+/* Header extends full width to touch sidebar */
 .main-header {
     background: var(--white);
-    padding: 20px 30px;
+    padding: 15px 0 15px 20px;
     border-bottom: 1px solid var(--border-gray);
     display: flex;
     justify-content: space-between;
@@ -235,8 +240,17 @@ body.admin-page.instructor-portal .sidebar-subtitle::after {
     position: relative;
     z-index: 10;
     width: 100%;
-    max-width: 1600px;
-    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+.main-header .header-right {
+    padding-right: 20px;
+}
+
+/* Ensure header adjusts properly when sidebar is collapsed */
+.admin-main.sidebar-collapsed .main-header {
+    width: 100%;
+    max-width: 100%;
 }
 
 /* Hamburger button */
@@ -312,6 +326,63 @@ body.admin-page.instructor-portal .sidebar-subtitle::after {
     margin: 0 0 4px 0;
 }
 
+.header-left h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--maroon-primary);
+    margin: 0 0 4px 0;
+}
+
+.header-left h3 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--maroon-primary);
+    margin: 0 0 4px 0;
+}
+
+/* Page title style for consistency across all pages */
+.page-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--maroon-primary);
+    margin: 0 0 4px 0;
+}
+
+/* Page header style for pages that use page-header class */
+.page-header {
+    background: var(--white);
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-gray);
+    margin-bottom: 20px;
+    border-radius: 0;
+}
+
+.page-header .page-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--maroon-primary);
+    margin: 0 0 4px 0;
+}
+
+/* Admin header style for pages that use admin-header class (alternative to main-header) */
+.admin-header {
+    background: var(--white);
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-gray);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 0;
+}
+
+.admin-header .page-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--maroon-primary);
+    margin: 0 0 4px 0;
+}
+
 .header-subtitle {
     font-size: 14px;
     color: var(--text-gray);
@@ -339,6 +410,16 @@ body.admin-page.instructor-portal .sidebar-subtitle::after {
     padding: 30px;
     order: 1 !important;
     flex: 1;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+/* Ensure main content adjusts properly when sidebar is collapsed */
+.admin-main.sidebar-collapsed .main-content {
+    width: 100%;
+    max-width: 100%;
 }
 
 /* ===== STATISTICS CARDS ===== */
@@ -616,7 +697,13 @@ body.admin-page.instructor-portal .sidebar-subtitle::after {
     }
     
     .page-title {
-        font-size: 20px;
+        font-size: 24px;
+    }
+    
+    .header-left h1,
+    .header-left h2,
+    .header-left h3 {
+        font-size: 24px;
     }
     
     .breadcrumb {
@@ -795,7 +882,7 @@ body.admin-page.instructor-portal .sidebar-subtitle::after {
     /* Tablet and mobile screens */
     .admin-sidebar {
         position: fixed;
-        width: 260px !important; /* Force full width on mobile */
+        width: 200px !important; /* Compact sidebar width on mobile */
         transform: translateX(-100%);
         transition: transform 0.3s ease;
         z-index: 1000;

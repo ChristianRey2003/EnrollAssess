@@ -25,42 +25,14 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Admin Dashboard - Main admin dashboard with stats
-Route::get('/dashboard', function () {
-    $stats = [
-        'total_applicants' => \App\Models\Applicant::count(),
-        'exam_completed' => \App\Models\Applicant::where('status', '!=', 'pending')->count(),
-        'interviews_scheduled' => \App\Models\Interview::where('status', 'scheduled')->count(),
-        'pending_reviews' => \App\Models\Applicant::where('status', 'exam-completed')->count(),
-    ];
+Route::get('/dashboard', function (Illuminate\Http\Request $request) {
+    $period = (int) $request->get('period', 30);
     
-    $recent_applicants = \App\Models\Applicant::with(['assignedInstructor', 'accessCode'])
-        ->latest()
-        ->take(5)
-        ->get();
+    // Get basic info analytics
+    $analyticsService = app(\App\Services\Dashboard\BasicInfoAnalyticsService::class);
+    $analytics = $analyticsService->getDashboardAnalytics($period);
     
-    // Interview Progress Tracking
-    $interviewProgress = \App\Models\Interview::select(
-            'users.full_name as instructor_name',
-            \DB::raw('COUNT(interviews.interview_id) as total'),
-            \DB::raw('SUM(CASE WHEN interviews.status = "completed" THEN 1 ELSE 0 END) as completed'),
-            \DB::raw('SUM(CASE WHEN interviews.status != "completed" THEN 1 ELSE 0 END) as pending'),
-            \DB::raw('MIN(interviews.interview_deadline_end) as nearest_deadline')
-        )
-        ->join('users', 'interviews.interviewer_id', '=', 'users.user_id')
-        ->whereNotNull('interviews.interview_deadline_start')
-        ->whereNotNull('interviews.interview_deadline_end')
-        ->groupBy('interviews.interviewer_id', 'users.full_name')
-        ->get()
-        ->map(function($row) {
-            $row->completion_rate = $row->total > 0 ? round(($row->completed / $row->total) * 100, 1) : 0;
-            $row->has_upcoming_deadline = $row->nearest_deadline && 
-                                          now()->diffInDays($row->nearest_deadline, false) <= 3 &&
-                                          now()->diffInDays($row->nearest_deadline, false) >= 0;
-            $row->has_overdue = $row->nearest_deadline && now()->gt($row->nearest_deadline);
-            return $row;
-        });
-    
-    return view('admin.dashboard', compact('stats', 'recent_applicants', 'interviewProgress'));
+    return view('admin.dashboard', compact('analytics', 'period'));
 })->middleware('role:department-head,administrator')->name('dashboard');
 
 // Applicant Management Routes

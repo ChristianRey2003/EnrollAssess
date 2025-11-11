@@ -332,7 +332,7 @@
         .admin-header {
             background: var(--white);
             border-radius: 12px;
-            padding: 30px;
+            padding: 15px 20px;
             margin-bottom: 30px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }

@@ -37,7 +37,7 @@
             --gray-100: #F3F4F6;
             --gray-200: #E5E7EB;
             --gray-400: #9CA3AF;
-            --sidebar-width: 260px;
+            --sidebar-width: 200px;
         }
         
         body.instructor-page {
@@ -70,22 +70,22 @@
         }
 
         .sidebar-header {
-            padding: 24px 20px;
+            padding: 16px 12px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .sidebar-brand {
-            font-size: 1.5rem;
+            font-size: 16px;
             font-weight: 700;
             color: white;
             text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         .sidebar-nav {
-            padding: 20px 0;
+            padding: 12px 0;
         }
 
         .nav-item {
@@ -95,11 +95,12 @@
         .nav-link {
             display: flex;
             align-items: center;
-            padding: 12px 20px;
+            padding: 12px 14px;
             color: rgba(255, 255, 255, 0.8);
             text-decoration: none;
             transition: all 0.3s ease;
             border-left: 3px solid transparent;
+            font-size: 13px;
         }
 
         .nav-link:hover,
@@ -126,7 +127,7 @@
 
         .top-header {
             background: white;
-            padding: 16px 32px;
+            padding: 15px 20px;
             border-bottom: 1px solid var(--gray-200);
             display: flex;
             justify-content: space-between;
@@ -189,10 +190,10 @@
         }
 
         .page-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #1F2937;
-            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--maroon-primary);
+            margin: 0 0 4px 0;
         }
 
         .user-menu {

@@ -43,7 +43,7 @@
             --gray-100: #F3F4F6;
             --gray-200: #E5E7EB;
             --gray-400: #9CA3AF;
-            --sidebar-width: 260px;
+            --sidebar-width: 200px;
         }
         
         body.admin-page {
@@ -76,11 +76,19 @@
             background: var(--light-gray);
             display: flex;
             flex-direction: column;
+            width: calc(100% - var(--sidebar-width));
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+        
+        .admin-main.sidebar-collapsed {
+            margin-left: 0;
+            width: 100%;
         }
         
         .main-header {
             background: var(--white);
-            padding: 20px 30px;
+            padding: 15px 20px;
             border-bottom: 1px solid var(--gray-200);
             order: 0; /* Ensure header appears first */
             flex-shrink: 0;
@@ -122,7 +130,7 @@
     <!-- Page-specific CSS -->
     @stack('styles')
 </head>
-<body class="admin-page">
+<body class="admin-page @stack('body-class')">
     <!-- Skip to main content link for accessibility -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
@@ -169,6 +177,31 @@
 
     <!-- Optimized JavaScript Bundles -->
     @vite(['resources/js/admin.js', 'resources/js/app.js'])
+    
+    <!-- Sidebar Persistence Script -->
+    <script>
+        // Persist sidebar state
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('adminSidebar');
+            const savedState = localStorage.getItem('sidebarCollapsed');
+            
+            if (savedState === 'true' && sidebar) {
+                sidebar.classList.add('collapsed');
+                document.querySelector('.admin-main')?.classList.add('sidebar-collapsed');
+            }
+        });
+        
+        function toggleSidebar() {
+            const sidebar = document.getElementById('adminSidebar');
+            const main = document.querySelector('.admin-main');
+            
+            if (sidebar && main) {
+                const isCollapsed = sidebar.classList.toggle('collapsed');
+                main.classList.toggle('sidebar-collapsed');
+                localStorage.setItem('sidebarCollapsed', isCollapsed);
+            }
+        }
+    </script>
     
     <!-- Page-specific JavaScript -->
     @stack('scripts')

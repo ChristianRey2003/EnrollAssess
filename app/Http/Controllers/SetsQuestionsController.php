@@ -42,19 +42,8 @@ class SetsQuestionsController extends Controller
                 $query->where('is_active', $request->status === 'active');
             }
             
-            // Sort
-            $sortBy = $request->get('sort_by', 'order_number');
-            $sortOrder = $request->get('sort_order', 'asc');
-            
-            if ($sortBy === 'points') {
-                $query->orderBy('points', $sortOrder);
-            } elseif ($sortBy === 'type') {
-                $query->orderBy('question_type', $sortOrder);
-            } elseif ($sortBy === 'status') {
-                $query->orderBy('is_active', $sortOrder === 'asc' ? 'desc' : 'asc');
-            } else {
-                $query->orderBy('order_number', $sortOrder);
-            }
+            // Default sort by order number
+            $query->orderBy('order_number', 'asc');
             
             // Pagination
             $perPage = $request->get('per_page', 15);

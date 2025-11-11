@@ -111,40 +111,35 @@
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon" aria-hidden="true"></div>
-                        <div class="stat-value">{{ $stats['with_access_codes'] ?? 0 }}</div>
-                        <div class="stat-label">With Access Codes</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" aria-hidden="true"></div>
                         <div class="stat-value">{{ $stats['exam_completed'] ?? 0 }}</div>
                         <div class="stat-label">Exam Completed</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon" aria-hidden="true"></div>
-                        <div class="stat-value">{{ $stats['pending_admission'] ?? 0 }}</div>
-                        <div class="stat-label">Pending Admission</div>
+                        <div class="stat-value">{{ $stats['interview_completed'] ?? 0 }}</div>
+                        <div class="stat-label">Interview Completed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" aria-hidden="true"></div>
+                        <div class="stat-value">{{ $stats['qualified'] ?? 0 }}</div>
+                        <div class="stat-label">Qualified (≥75%)</div>
                     </div>
                 </section>
 
                 <!-- Compact Toolbar -->
-                <div class="applicants-toolbar" style="display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 20px; padding: 12px 0;">
-                    <div class="toolbar-left" style="display: flex; align-items: center; gap: 8px;">
+                <div class="applicants-toolbar" style="display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 15px; padding: 10px 0;">
+                    <div class="toolbar-left" style="display: flex; align-items: center; gap: 10px;">
                         <input type="text" 
                                id="searchInput" 
                                class="form-control" 
-                               placeholder="Search applicants..." 
+                               placeholder="Search..." 
                                value="{{ request('search') }}"
-                               style="width: 200px; height: 32px; padding: 4px 8px; font-size: 13px; border: 1px solid #d1d5db; border-radius: 4px;"
+                               style="width: 180px; height: 30px; padding: 4px 8px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 4px;"
                                aria-label="Search applicants">
-                        <button onclick="performSearch()" 
-                                class="btn btn-secondary" 
-                                style="height: 32px; padding: 4px 12px; font-size: 13px; border-radius: 4px;">Search</button>
-                    </div>
-                    <div class="toolbar-right" style="display: flex; align-items: center; gap: 8px;">
                         <select id="statusFilter" 
                                 class="form-control" 
                                 onchange="applyFilter()" 
-                                style="width: 120px; height: 32px; padding: 4px 8px; font-size: 13px; border: 1px solid #d1d5db; border-radius: 4px;"
+                                style="width: 140px; height: 30px; padding: 2px 6px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 4px;"
                                 aria-label="Filter by status">
                             <option value="">All Status</option>
                             <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
@@ -154,45 +149,41 @@
                             <option value="admitted" {{ request('status') == 'admitted' ? 'selected' : '' }}>Admitted</option>
                             <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
                         </select>
+                    </div>
+                    <div class="toolbar-right" style="display: flex; align-items: center; gap: 8px;">
                         <a href="{{ route('admin.applicants.assign') }}" 
                            class="btn btn-primary" 
-                           style="height: 32px; padding: 4px 12px; font-size: 13px; border-radius: 4px; background: #800020; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Assign</a>
+                           style="height: 30px; padding: 4px 12px; font-size: 12px; border-radius: 4px; background: #800020; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Assign</a>
                         <a href="{{ route('admin.applicants.exam-results') }}" 
                            class="btn btn-primary" 
-                           style="height: 32px; padding: 4px 12px; font-size: 13px; border-radius: 4px; background: #059669; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Exam Results</a>
+                           style="height: 30px; padding: 4px 12px; font-size: 12px; border-radius: 4px; background: #059669; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Exam Results</a>
                         <a href="{{ route('admin.applicants.create') }}" 
                            class="btn btn-secondary" 
-                           style="height: 32px; padding: 4px 10px; font-size: 13px; border-radius: 4px; background: #6b7280; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Add</a>
+                           style="height: 30px; padding: 4px 10px; font-size: 12px; border-radius: 4px; background: #6b7280; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Add</a>
                         <a href="{{ route('admin.applicants.import') }}" 
                            class="btn btn-secondary" 
-                           style="height: 32px; padding: 4px 10px; font-size: 13px; border-radius: 4px; background: #6b7280; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Import</a>
+                           style="height: 30px; padding: 4px 10px; font-size: 12px; border-radius: 4px; background: #6b7280; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Import</a>
                     </div>
                 </div>
 
                 <!-- Compact Bulk Actions -->
-                <div id="bulkActions" class="bulk-actions" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 8px 12px; margin-bottom: 15px;">
+                <div id="bulkActions" class="bulk-actions" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 6px 10px; margin-bottom: 10px;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span id="selectedCount" style="font-size: 13px; font-weight: 500; color: #1e40af;">0 selected</span>
+                        <span id="selectedCount" style="font-size: 12px; font-weight: 500; color: #1e40af;">0 selected</span>
                         <div style="display: flex; gap: 6px;">
                             <button onclick="showGenerateAccessCodesModal()" 
                                     class="bulk-btn" 
-                                    style="height: 28px; padding: 4px 8px; font-size: 12px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                    style="height: 26px; padding: 3px 8px; font-size: 11px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
                                 Generate Codes
-                            </button>
-                            <!-- Hidden: Assign Exam (Legacy - kept for potential future use) -->
-                            <button onclick="showAssignExamModal()" 
-                                    class="bulk-btn" 
-                                    style="display: none; height: 28px; padding: 4px 8px; font-size: 12px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                Assign Exam
                             </button>
                             <button onclick="openEmailNotificationDrawer()" 
                                     class="bulk-btn" 
-                                    style="height: 28px; padding: 4px 8px; font-size: 12px; background: #059669; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                Send Exam Notifications
+                                    style="height: 26px; padding: 3px 8px; font-size: 11px; background: #059669; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                Send Notifications
                             </button>
                             <button onclick="bulkExport()" 
                                     class="bulk-btn" 
-                                    style="height: 28px; padding: 4px 8px; font-size: 12px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                    style="height: 26px; padding: 3px 8px; font-size: 11px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">
                                 Export
                             </button>
                         </div>
@@ -733,5 +724,70 @@
         // Make functions global
         window.openGenerateCodesDrawer = openGenerateCodesDrawer;
         window.closeGenerateCodesDrawer = closeGenerateCodesDrawer;
+
+        // AJAX Pagination
+        document.addEventListener('click', function(e) {
+            if (e.target.matches('.pagination a')) {
+                e.preventDefault();
+                const url = e.target.href;
+                
+                if (!url) return;
+                
+                // Show loading state
+                const tableBody = document.querySelector('.data-table tbody');
+                if (tableBody) {
+                    tableBody.style.opacity = '0.5';
+                }
+                
+                // Fetch new page
+                fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.applicants && tableBody) {
+                        // Build new table rows
+                        let html = '';
+                        const currentPage = data.pagination.current_page;
+                        const perPage = data.pagination.per_page;
+                        const from = data.pagination.from || 0;
+                        
+                        if (data.applicants.length === 0) {
+                            html = '<tr><td colspan="9" class="text-center py-8"><div class="empty-state"><div class="empty-title">No applicants found</div></div></td></tr>';
+                        } else {
+                            data.applicants.forEach((applicant, index) => {
+                                const rowNum = (from - 1) + index + 1;
+                                html += `<tr>
+                                    <td class="text-center"><input type="checkbox" class="applicant-checkbox" value="${applicant.applicant_id}"></td>
+                                    <td class="text-center">${rowNum}</td>
+                                    <td>${applicant.application_no || applicant.formatted_applicant_no || 'N/A'}</td>
+                                    <td>${(applicant.full_name || '').toUpperCase()}</td>
+                                    <td>${applicant.email_address || ''}</td>
+                                    <td class="text-center">${applicant.preferred_course || '-'}</td>
+                                    <td class="text-center">${applicant.score !== null ? Number(applicant.score).toFixed(2) + '%' : '-'}</td>
+                                    <td class="text-center">${applicant.computed_verbal_description || '-'}</td>
+                                    <td class="text-center"><span class="status-badge">${(applicant.status || 'pending').replace('-', ' ').toUpperCase()}</span></td>
+                                </tr>`;
+                            });
+                        }
+                        
+                        tableBody.innerHTML = html;
+                        tableBody.style.opacity = '1';
+                        
+                        // Update URL without reload
+                        window.history.pushState({}, '', url);
+                    }
+                })
+                .catch(error => {
+                    console.error('Pagination error:', error);
+                    if (tableBody) {
+                        tableBody.style.opacity = '1';
+                    }
+                });
+            }
+        });
     </script>
 @endpush

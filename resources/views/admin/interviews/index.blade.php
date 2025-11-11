@@ -16,11 +16,6 @@
     <section class="stats-section">
         <div class="stat-card">
             <div class="stat-icon" aria-hidden="true"></div>
-            <div class="stat-value">{{ $stats['total'] }}</div>
-            <div class="stat-label">Total Interviews</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon" aria-hidden="true"></div>
             <div class="stat-value">{{ $stats['scheduled'] }}</div>
             <div class="stat-label">Scheduled</div>
         </div>
@@ -29,60 +24,31 @@
             <div class="stat-value">{{ $stats['completed'] }}</div>
             <div class="stat-label">Completed</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-icon" aria-hidden="true"></div>
-            <div class="stat-value">{{ $stats['pending_assignment'] }}</div>
-            <div class="stat-label">Pending Assignment</div>
-        </div>
     </section>
 
     <!-- Main Content Card -->
     <div class="content-card">
         <div class="content-header">
             <h2 class="section-title">Interview Schedule</h2>
-            <div class="section-actions">
-                <a href="{{ route('admin.interviews.analytics') }}" class="btn-outline">
-                    Analytics
-                </a>
-                <button onclick="showExportModal()" class="btn-outline">
-                    Export
-                </button>
-            </div>
         </div>
 
         <!-- Search and Filter Bar -->
-        <div class="search-controls" style="padding: 24px; background: #F9FAFB; border-bottom: 1px solid #E5E7EB;">
-            <form method="GET" action="{{ route('admin.interviews.index') }}" class="search-form">
-                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                    <div class="search-input-group">
-                        <input type="text" name="search" placeholder="Search applicants or interviewers..." 
-                               value="{{ request('search') }}" class="search-input">
-                        <button type="submit" class="search-btn">Search</button>
-                    </div>
+        <div class="search-controls" style="padding: 20px 24px; background: #F9FAFB; border-bottom: 1px solid #E5E7EB;">
+            <form method="GET" action="{{ route('admin.interviews.index') }}" id="interviewSearchForm" class="search-form">
+                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                    <input type="text" name="search" placeholder="Search..." 
+                           value="{{ request('search') }}" class="search-input" style="width: 180px; height: 30px; padding: 4px 8px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 4px; flex: none;">
                     
-                    <div class="filter-group">
-                        <select name="status" class="filter-select">
-                            <option value="">All Status</option>
-                            <option value="scheduled" {{ request('status') == 'scheduled' ? 'selected' : '' }}>Scheduled</option>
-                            <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
-                            <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                        </select>
-                        
-                        <select name="interviewer_id" class="filter-select">
-                            <option value="">All Interviewers</option>
-                            @foreach($instructors as $instructor)
-                                <option value="{{ $instructor->user_id }}" 
-                                        {{ request('interviewer_id') == $instructor->user_id ? 'selected' : '' }}>
-                                    {{ $instructor->full_name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        
-                        <button type="submit" class="btn-outline">Apply Filters</button>
-                        @if(request()->hasAny(['search', 'status', 'interviewer_id']))
-                            <a href="{{ route('admin.interviews.index') }}" class="btn-clear">Clear</a>
-                        @endif
-                    </div>
+                    <select name="status" class="filter-select" style="width: 140px; height: 30px; padding: 2px 6px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 4px;" onchange="this.form.submit()">
+                        <option value="">All Status</option>
+                        <option value="scheduled" {{ request('status') == 'scheduled' ? 'selected' : '' }}>Scheduled</option>
+                        <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                        <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                    </select>
+                    
+                    @if(request()->hasAny(['search', 'status']))
+                        <a href="{{ route('admin.interviews.index') }}" class="btn-clear" style="height: 30px; padding: 4px 12px; font-size: 12px; border-radius: 4px; background: #800020; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Clear</a>
+                    @endif
                 </div>
             </form>
         </div>
@@ -222,70 +188,9 @@
     </div>
 @endsection
 
-@push('modals')
-    <!-- Export Modal -->
-    <div id="exportModal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Export Interviews</h3>
-                <button onclick="closeExportModal()" class="modal-close">×</button>
-            </div>
-            <div class="modal-body">
-                <form id="exportForm">
-                    <div class="form-group">
-                        <label class="form-label">Status Filter</label>
-                        <select name="status" class="form-control">
-                            <option value="">All Status</option>
-                            <option value="scheduled">Scheduled Only</option>
-                            <option value="completed">Completed Only</option>
-                            <option value="cancelled">Cancelled Only</option>
-                        </select>
-                    </div>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        <div class="form-group">
-                            <label class="form-label">Date From</label>
-                            <input type="date" name="date_from" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Date To</label>
-                            <input type="date" name="date_to" class="form-control">
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button onclick="closeExportModal()" class="btn-secondary">Cancel</button>
-                <button onclick="confirmExport()" class="btn-primary">Export CSV</button>
-            </div>
-        </div>
-    </div>
-@endpush
 
 @push('scripts')
 <script>
-    function showExportModal() {
-        document.getElementById('exportModal').style.display = 'flex';
-    }
-
-    function closeExportModal() {
-        document.getElementById('exportModal').style.display = 'none';
-    }
-
-    function confirmExport() {
-        const form = document.getElementById('exportForm');
-        const formData = new FormData(form);
-        
-        const params = new URLSearchParams();
-        for (let [key, value] of formData.entries()) {
-            if (value) params.append(key, value);
-        }
-        
-        const url = '/admin/interviews/export?' + params.toString();
-        window.open(url, '_blank');
-        closeExportModal();
-    }
-
     function editInterview(interviewId) {
         // Implementation for editing interview
         alert('Edit interview functionality - to be implemented with inline editing');
@@ -310,12 +215,5 @@
             });
         }
     }
-
-    // Close modals when clicking outside
-    window.addEventListener('click', function(e) {
-        if (e.target.classList.contains('modal-overlay')) {
-            closeExportModal();
-        }
-    });
 </script>
 @endpush

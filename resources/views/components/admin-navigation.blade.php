@@ -17,13 +17,6 @@
      aria-label="{{ $userRole === 'instructor' ? 'Instructor' : 'Admin' }} navigation menu">
     <div class="sidebar-header">
         <div class="sidebar-logo">
-            <img src="{{ asset('images/image-removebg-preview.png') }}" 
-                 alt="University Logo" 
-                 class="logo-image"
-                 width="60" 
-                 height="60" 
-                 loading="eager"
-                 decoding="async">
             <div class="logo-content">
                 <h2 class="sidebar-title">EnrollAssess</h2>
                 <p class="sidebar-subtitle">{{ $userRole === 'instructor' ? 'Instructor Portal' : 'Admin Portal' }}</p>
@@ -78,14 +71,6 @@
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.reports') ? 'active' : '' }}">
                     <span class="nav-icon"></span>
                     <span class="nav-text">Reports</span>
-                </a>
-            </div>
-            
-            <div class="nav-item">
-                <a href="{{ route('admin.analytics.index') }}" 
-                   class="nav-link {{ str_starts_with($currentRoute, 'admin.analytics') ? 'active' : '' }}">
-                    <span class="nav-icon"></span>
-                    <span class="nav-text">Analytics</span>
                 </a>
             </div>
             
