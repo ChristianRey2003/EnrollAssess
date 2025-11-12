@@ -397,7 +397,8 @@
 
         .search-input {
             width: 100%;
-            padding: 10px 40px 10px 16px;
+            padding: 6px 40px 6px 16px;
+            height: 26px;
             border: 2px solid var(--border-gray);
             border-radius: 8px;
             font-size: 14px;
@@ -423,7 +424,8 @@
         }
 
         .filter-select {
-            padding: 10px 16px;
+            padding: 6px 16px;
+            height: 26px;
             border: 2px solid var(--border-gray);
             border-radius: 8px;
             font-size: 14px;

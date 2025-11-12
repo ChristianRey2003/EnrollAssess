@@ -13,24 +13,9 @@
 
 @section('content')
 
-<!-- Header Section -->
-<div class="page-header">
-    <div class="header-content">
-        <div class="header-left">
-            <h1 class="page-title">{{ $pageTitle }}</h1>
-            <p class="page-subtitle">{{ $pageSubtitle }}</p>
-        </div>
-        <div class="header-actions">
-            <a href="{{ route('admin.applicants.index') }}" class="btn-secondary">
-                ← Back to Applicants
-            </a>
-        </div>
-    </div>
-</div>
-
 <!-- Main Content -->
 <div class="content-section">
-    <div class="form-container">
+    <div class="form-container compact-form">
         <!-- Success/Error Messages -->
         @if(session('success'))
             <div class="alert alert-success">
@@ -62,9 +47,14 @@
 
             <!-- Personal Information Section -->
             <div class="form-section">
-                <h3 class="section-title">Personal Information</h3>
+                <div class="section-header">
+                    <h3 class="section-title">Personal Information</h3>
+                    <a href="{{ route('admin.applicants.index') }}" class="btn-secondary compact-back-link">
+                        ← Back to Applicants
+                    </a>
+                </div>
                 
-                <div class="form-row">
+                <div class="form-row form-row-three">
                     <div class="form-group">
                         <label for="first_name" class="form-label">First Name *</label>
                         <input type="text" 
@@ -165,7 +155,9 @@
 
             <!-- Status Section -->
             <div class="form-section">
-                <h3 class="section-title">Application Status</h3>
+                <div class="section-header">
+                    <h3 class="section-title">Application Status</h3>
+                </div>
 
                 <div class="form-row">
                     <div class="form-group">

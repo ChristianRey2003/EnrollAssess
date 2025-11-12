@@ -80,19 +80,6 @@
                 
                 <!-- Department Head Features -->
                 <div class="dropdown-section">
-                    <div class="dropdown-section-title" role="presentation">Department Head</div>
-                    <a href="{{ route('admin.interview-results') }}" 
-                       class="dropdown-item"
-                       role="menuitem"
-                       aria-label="View interview results">
-                        <span class="dropdown-text">Interview Results</span>
-                    </a>
-                    <a href="{{ route('admin.analytics.index') }}" 
-                       class="dropdown-item"
-                       role="menuitem"
-                       aria-label="View analytics dashboard">
-                        <span class="dropdown-text">Analytics</span>
-                    </a>
                     <a href="{{ route('admin.settings') }}" 
                        class="dropdown-item"
                        role="menuitem"

@@ -43,7 +43,8 @@
 
     .form-input, .form-select {
         width: 100%;
-        padding: 10px 12px;
+        padding: 6px 12px;
+        height: 26px;
         border: 1px solid #D1D5DB;
         border-radius: 6px;
         font-size: 0.875rem;

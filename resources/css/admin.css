@@ -3,6 +3,9 @@
   Optimized CSS bundle for admin interface
 ===========================================*/
 
+/* Import Bootstrap 5 */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
 /* Import Tailwind base and utilities */
 @import 'tailwindcss/base';
 @import 'tailwindcss/utilities';

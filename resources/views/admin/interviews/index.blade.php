@@ -12,68 +12,73 @@
 @endpush
 
 @section('content')
-    <!-- Statistics Section -->
-    <section class="stats-section">
-        <div class="stat-card">
-            <div class="stat-icon" aria-hidden="true"></div>
-            <div class="stat-value">{{ $stats['scheduled'] }}</div>
-            <div class="stat-label">Scheduled</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon" aria-hidden="true"></div>
-            <div class="stat-value">{{ $stats['completed'] }}</div>
-            <div class="stat-label">Completed</div>
-        </div>
-    </section>
-
     <!-- Main Content Card -->
     <div class="content-card">
         <div class="content-header">
             <h2 class="section-title">Interview Schedule</h2>
+            <!-- Statistics Section -->
+            <section class="stats-section">
+                <div class="stat-card">
+                    <div class="stat-icon" aria-hidden="true"></div>
+                    <div class="stat-value">{{ $stats['scheduled'] }}</div>
+                    <div class="stat-label">Scheduled</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" aria-hidden="true"></div>
+                    <div class="stat-value">{{ $stats['completed'] }}</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+            </section>
         </div>
 
         <!-- Search and Filter Bar -->
         <div class="search-controls" style="padding: 20px 24px; background: #F9FAFB; border-bottom: 1px solid #E5E7EB;">
             <form method="GET" action="{{ route('admin.interviews.index') }}" id="interviewSearchForm" class="search-form">
                 <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                    <input type="text" name="search" placeholder="Search..." 
-                           value="{{ request('search') }}" class="search-input" style="width: 180px; height: 30px; padding: 4px 40px 4px 8px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 4px; flex: none; background-position: right 12px center;">
+                    <div style="position: relative; width: 220px;">
+                        <input type="text" 
+                               id="searchInput" 
+                               name="search" 
+                               placeholder="Search..." 
+                               value="{{ request('search') }}" 
+                               class="form-control form-control-sm" 
+                               style="width: 100%; height: 26px; padding: 4px 32px 4px 8px;">
+                        <svg style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
                     
-                    <select name="status" class="filter-select" style="width: 140px; height: 30px; padding: 2px 6px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 4px;" onchange="this.form.submit()">
+                    <select name="status" class="form-select form-select-sm" style="width: 140px; height: 26px; padding: 4px 28px 4px 8px;" onchange="this.form.submit()">
                         <option value="">All Status</option>
                         <option value="scheduled" {{ request('status') == 'scheduled' ? 'selected' : '' }}>Scheduled</option>
                         <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
                         <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                     </select>
-                    
-                    @if(request()->hasAny(['search', 'status']))
-                        <a href="{{ route('admin.interviews.index') }}" class="btn-clear" style="height: 30px; padding: 4px 12px; font-size: 12px; border-radius: 4px; background: #800020; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Clear</a>
-                    @endif
                 </div>
             </form>
         </div>
 
         <!-- Interviews Table -->
-        <div class="interviews-table">
+        <div class="table-responsive">
             @if($interviews->count() > 0)
-                <table class="data-table">
-                    <thead>
+                <table class="table table-hover table-striped align-middle">
+                    <thead class="table-light">
                         <tr>
-                            <th style="width: 40px;">NO.</th>
-                            <th>APPLICANT</th>
-                            <th>INTERVIEWER</th>
-                            <th>SCHEDULE DATE</th>
-                            <th>STATUS</th>
-                            <th>INTERVIEW SCORE</th>
+                            <th style="width: 40px; font-size: 0.85rem; font-weight: bold;" class="text-center">No.</th>
+                            <th style="font-size: 0.85rem; font-weight: bold;" class="text-left">Applicant</th>
+                            <th style="font-size: 0.85rem; font-weight: bold;" class="text-left">Interviewer</th>
+                            <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">Schedule date</th>
+                            <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">Status</th>
+                            <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">Interview score</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($interviews as $index => $interview)
                             <tr>
-                                <td class="text-center">
+                                <td class="text-center" style="font-size: 13px; font-weight: normal;">
                                     {{ ($interviews->currentPage() - 1) * $interviews->perPage() + $index + 1 }}
                                 </td>
-                                <td style="position: relative;">
+                                <td class="text-left" style="font-size: 13px; font-weight: normal; position: relative;">
                                     <div class="applicant-info">
                                         @if($interview->applicant)
                                             <div class="applicant-name">{{ $interview->applicant->full_name }}</div>
@@ -122,7 +127,7 @@
                                         </a>
                                     </div>
                                 </td>
-                                <td>
+                                <td class="text-left" style="font-size: 13px; font-weight: normal;">
                                     <div class="interviewer-info">
                                         @if($interview->interviewer)
                                             <div class="interviewer-name">{{ $interview->interviewer->full_name }}</div>
@@ -133,18 +138,18 @@
                                         @endif
                                     </div>
                                 </td>
-                                <td>
+                                <td class="text-center" style="font-size: 13px; font-weight: normal;">
                                     <div class="schedule-info">
                                         <div class="schedule-date">{{ $interview->schedule_date ? $interview->schedule_date->format('M d, Y') : 'Not set' }}</div>
                                         <div class="schedule-time">{{ $interview->schedule_date ? $interview->schedule_date->format('g:i A') : '' }}</div>
                                     </div>
                                 </td>
-                                <td class="text-center">
-                                    <span class="status-badge status-{{ $interview->status }}">
+                                <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                                    <span class="badge bg-secondary">
                                         {{ ucfirst($interview->status) }}
                                     </span>
                                 </td>
-                                <td>
+                                <td class="text-center" style="font-size: 13px; font-weight: normal;">
                                     <div class="score-display">
                                         @if($interview->status === 'completed' && $interview->overall_score !== null)
                                             @php
@@ -176,12 +181,14 @@
                     {{ $interviews->appends(request()->query())->links() }}
                 </div>
             @else
-                <div class="empty-state">
-                    <h3>No Interviews Found</h3>
-                    <p>No interviews match your current search criteria.</p>
-                    <a href="{{ route('admin.applicants.assign') }}" class="btn-primary">
-                        Assign Applicants to Instructors
-                    </a>
+                <div class="text-center py-5">
+                    <div class="text-muted">
+                        <h5>No Interviews Found</h5>
+                        <p>No interviews match your current search criteria.</p>
+                        <a href="{{ route('admin.applicants.assign') }}" class="btn btn-sm" style="background: #800020; color: white; border: none;">
+                            Assign Applicants to Instructors
+                        </a>
+                    </div>
                 </div>
             @endif
         </div>
@@ -191,6 +198,27 @@
 
 @push('scripts')
 <script>
+    // Auto-search functionality
+    let searchTimeout;
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            const searchValue = e.target.value.trim();
+            
+            searchTimeout = setTimeout(function() {
+                const url = new URL(window.location);
+                if (searchValue) {
+                    url.searchParams.set('search', searchValue);
+                } else {
+                    url.searchParams.delete('search');
+                }
+                url.searchParams.delete('page'); // Reset to first page
+                window.location.href = url.toString();
+            }, 500); // 500ms debounce
+        });
+    }
+
     function editInterview(interviewId) {
         // Implementation for editing interview
         alert('Edit interview functionality - to be implemented with inline editing');

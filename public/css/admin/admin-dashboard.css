@@ -250,7 +250,7 @@ body.admin-page.instructor-portal .sidebar-subtitle::after {
 /* Header extends full width to touch sidebar */
 .main-header {
     background: var(--white);
-    padding: 15px 0 15px 20px;
+    padding: 10px 0 10px 20px;
     border-bottom: 1px solid var(--border-gray);
     display: flex;
     justify-content: space-between;
@@ -340,33 +340,17 @@ body.admin-page.instructor-portal .sidebar-subtitle::after {
     align-items: center;
 }
 
-.header-left h1 {
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--maroon-primary);
-    margin: 0 0 4px 0;
-}
-
-.header-left h2 {
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--maroon-primary);
-    margin: 0 0 4px 0;
-}
-
-.header-left h3 {
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--maroon-primary);
-    margin: 0 0 4px 0;
-}
-
-/* Page title style for consistency across all pages */
+.header-left h1,
+.header-left h2,
+.header-left h3,
 .page-title {
-    font-size: 28px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--maroon-primary);
-    margin: 0 0 4px 0;
+    margin: 0 0 2px 0;
+    line-height: 1.2;
+    letter-spacing: 0.2px;
+    text-transform: none;
 }
 
 /* Page header style for pages that use page-header class */
@@ -379,10 +363,13 @@ body.admin-page.instructor-portal .sidebar-subtitle::after {
 }
 
 .page-header .page-title {
-    font-size: 28px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--maroon-primary);
-    margin: 0 0 4px 0;
+    margin: 0 0 2px 0;
+    line-height: 1.2;
+    letter-spacing: 0.2px;
+    text-transform: none;
 }
 
 /* Admin header style for pages that use admin-header class (alternative to main-header) */
@@ -398,10 +385,13 @@ body.admin-page.instructor-portal .sidebar-subtitle::after {
 }
 
 .admin-header .page-title {
-    font-size: 28px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--maroon-primary);
-    margin: 0 0 4px 0;
+    margin: 0 0 2px 0;
+    line-height: 1.2;
+    letter-spacing: 0.2px;
+    text-transform: none;
 }
 
 .header-subtitle {
@@ -718,13 +708,13 @@ body.admin-page.instructor-portal .sidebar-subtitle::after {
     }
     
     .page-title {
-        font-size: 24px;
+        font-size: 12px;
     }
     
     .header-left h1,
     .header-left h2,
     .header-left h3 {
-        font-size: 24px;
+        font-size: 12px;
     }
     
     .breadcrumb {

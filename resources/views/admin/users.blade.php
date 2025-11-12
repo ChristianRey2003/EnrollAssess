@@ -135,7 +135,8 @@
         }
 
         .search-box input {
-            padding: 8px 15px 8px 35px;
+            padding: 6px 15px 6px 35px;
+            height: 26px;
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.1);

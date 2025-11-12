@@ -188,17 +188,21 @@
     <!-- Results Toolbar -->
     <div class="results-toolbar">
         <div class="toolbar-left">
-            <input type="text" 
-                   id="searchInput" 
-                   class="form-control" 
-                   placeholder="Search applicants..." 
-                   value="{{ request('search') }}"
-                   style="width: 200px;"
-                   aria-label="Search applicants">
-            <button onclick="performSearch()" class="btn btn-secondary">Search</button>
+            <div style="position: relative; width: 220px;">
+                <input type="text" 
+                       id="searchInput" 
+                       class="form-control form-control-sm" 
+                       placeholder="Search..." 
+                       value="{{ request('search') }}"
+                       style="width: 100%; height: 26px; padding: 4px 32px 4px 8px;"
+                       aria-label="Search applicants">
+                <svg style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </div>
         </div>
         <div class="toolbar-right">
-            <select id="statusFilter" class="form-control" onchange="applyFilter()" style="width: 140px;">
+            <select id="statusFilter" class="form-select form-select-sm" onchange="applyFilter()" style="width: 140px; height: 26px; padding: 4px 28px 4px 8px;">
                 <option value="">All Status</option>
                 @foreach($statuses as $status)
                     <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : '' }}>
@@ -206,80 +210,80 @@
                     </option>
                 @endforeach
             </select>
-            <button onclick="applyFilter()" class="btn btn-primary">Filter</button>
-            <a href="{{ route('admin.applicants.index') }}" class="btn btn-secondary">Back to Applicants</a>
+            <button onclick="applyFilter()" class="btn btn-sm" style="background: #800020; color: white; border: none; height: 26px; display: inline-flex; align-items: center;">Filter</button>
+            <a href="{{ route('admin.applicants.index') }}" class="btn btn-secondary btn-sm" style="height: 26px; display: inline-flex; align-items: center;">Back to Applicants</a>
         </div>
     </div>
 
     <!-- Results Table -->
-    <div class="results-table">
-        <table class="data-table">
-            <thead>
+    <div class="table-responsive">
+        <table class="table table-hover table-striped align-middle">
+            <thead class="table-light">
                 <tr>
-                    <th>
+                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-left">
                         <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'first_name', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
-                           style="color: inherit; text-decoration: none;">
+                           style="color: inherit; text-decoration: none; font-weight: bold;">
                             Applicant
                             @if(request('sort_by') == 'first_name')
                                 <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
                             @endif
                         </a>
                     </th>
-                    <th>
+                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">
                         <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'score', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
-                           style="color: inherit; text-decoration: none;">
+                           style="color: inherit; text-decoration: none; font-weight: bold;">
                             UEE
                             @if(request('sort_by') == 'score')
                                 <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
                             @endif
                         </a>
                     </th>
-                    <th>
+                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">
                         <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'card_tor_gwa', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
-                           style="color: inherit; text-decoration: none;">
+                           style="color: inherit; text-decoration: none; font-weight: bold;">
                             GWA
                             @if(request('sort_by') == 'card_tor_gwa')
                                 <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
                             @endif
                         </a>
                     </th>
-                    <th>
+                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">
                         <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'enrollassess_score', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
-                           style="color: inherit; text-decoration: none;">
+                           style="color: inherit; text-decoration: none; font-weight: bold;">
                             EnrollAssess
                             @if(request('sort_by') == 'enrollassess_score')
                                 <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
                             @endif
                         </a>
                     </th>
-                    <th>
+                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">
                         <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'interview_score', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
-                           style="color: inherit; text-decoration: none;">
+                           style="color: inherit; text-decoration: none; font-weight: bold;">
                             Interview
                             @if(request('sort_by') == 'interview_score')
                                 <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
                             @endif
                         </a>
                     </th>
-                    <th>
+                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">
                         <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'overall_rating', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
-                           style="color: inherit; text-decoration: none;">
+                           style="color: inherit; text-decoration: none; font-weight: bold;">
                             Overall
                             @if(request('sort_by') == 'overall_rating')
                                 <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
                             @endif
                         </a>
                     </th>
-                    <th>
+                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">
                         <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'status', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
-                           style="color: inherit; text-decoration: none;">
+                           style="color: inherit; text-decoration: none; font-weight: bold;">
                             Status
                             @if(request('sort_by') == 'status')
                                 <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
                             @endif
                         </a>
                     </th>
-                    <th>Actions</th>
+                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -289,8 +293,8 @@
                         $hasAllScores = $applicant->hasAllRequiredScores();
                     @endphp
                     <tr>
-                        <td>
-                            <div style="font-weight: 500;">{{ $applicant->full_name }}</div>
+                        <td class="text-left" style="font-size: 13px; font-weight: normal;">
+                            <div>{{ $applicant->full_name }}</div>
                             <div style="font-size: 12px; color: #6b7280;">{{ $applicant->application_no }}</div>
                             @if(!$hasAllScores)
                                 @php
@@ -307,30 +311,30 @@
                                 </div>
                             @endif
                         </td>
-                        <td>
+                        <td class="text-center" style="font-size: 13px; font-weight: normal;">
                             @if($applicant->score)
-                                <div style="font-weight: 500;">{{ round($applicant->score, 2) }}</div>
+                                <div>{{ round($applicant->score, 2) }}</div>
                             @else
                                 <span style="color: #9ca3af;">-</span>
                             @endif
                         </td>
-                        <td>
+                        <td class="text-center" style="font-size: 13px; font-weight: normal;">
                             @if($applicant->card_tor_gwa)
-                                <div style="font-weight: 500;">{{ round($applicant->card_tor_gwa, 2) }}</div>
+                                <div>{{ round($applicant->card_tor_gwa, 2) }}</div>
                             @else
                                 <span style="color: #9ca3af;">-</span>
                             @endif
                         </td>
-                        <td>
+                        <td class="text-center" style="font-size: 13px; font-weight: normal;">
                             @if($applicant->enrollassess_score)
-                                <div style="font-weight: 500;">{{ round($applicant->enrollassess_score, 2) }}%</div>
+                                <div>{{ round($applicant->enrollassess_score, 2) }}%</div>
                             @else
                                 <span style="color: #9ca3af;">-</span>
                             @endif
                         </td>
-                        <td>
+                        <td class="text-center" style="font-size: 13px; font-weight: normal;">
                             @if($applicant->interview_score)
-                                <div style="font-weight: 500;">{{ round($applicant->interview_score, 2) }}%</div>
+                                <div>{{ round($applicant->interview_score, 2) }}%</div>
                             @else
                                 <span style="color: #9ca3af;">-</span>
                             @endif
@@ -357,23 +361,22 @@
                                 <span style="color: #9ca3af;">-</span>
                             @endif
                         </td>
-                        <td>
-                            <span class="status-badge status-{{ str_replace('-', '-', $applicant->status) }}">
+                        <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                            <span class="badge bg-secondary">
                                 {{ ucwords(str_replace('-', ' ', $applicant->status)) }}
                             </span>
                         </td>
-                        <td>
-                            <div style="display: flex; gap: 4px;">
+                        <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                            <div class="d-flex gap-1">
                                 <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}" 
-                                   class="btn btn-secondary" 
-                                   style="padding: 2px 6px; font-size: 11px;"
+                                   class="btn btn-secondary btn-sm"
                                    title="View Details">
                                     View
                                 </a>
                                 @if($applicant->latestInterview)
                                     <a href="{{ route('admin.interviews.show', $applicant->latestInterview->interview_id) }}" 
-                                       class="btn btn-primary" 
-                                       style="padding: 2px 6px; font-size: 11px;"
+                                       class="btn btn-sm"
+                                       style="background: #800020; color: white; border: none;"
                                        title="View Interview">
                                         Interview
                                     </a>
@@ -383,8 +386,11 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">
-                            No exam results found. Only applicants who completed the EnrollAssess exam are shown here.
+                        <td colspan="8" class="text-center py-5">
+                            <div class="text-muted">
+                                <h5>No exam results found</h5>
+                                <p class="mb-0">Only applicants who completed the EnrollAssess exam are shown here.</p>
+                            </div>
                         </td>
                     </tr>
                 @endforelse
@@ -402,9 +408,18 @@
 
 @push('scripts')
 <script>
-function performSearch() {
-    const searchValue = document.getElementById('searchInput').value;
-    updateUrl({ search: searchValue, page: 1 });
+// Auto-search functionality
+let searchTimeout;
+const searchInput = document.getElementById('searchInput');
+if (searchInput) {
+    searchInput.addEventListener('input', function(e) {
+        clearTimeout(searchTimeout);
+        const searchValue = e.target.value.trim();
+        
+        searchTimeout = setTimeout(function() {
+            updateUrl({ search: searchValue, page: 1 });
+        }, 500); // 500ms debounce
+    });
 }
 
 function applyFilter() {
@@ -429,13 +444,6 @@ function updateUrl(params) {
     
     window.location.href = url.toString();
 }
-
-// Handle Enter key in search input
-document.getElementById('searchInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        performSearch();
-    }
-});
 
 // AJAX Pagination
 document.addEventListener('click', function(e) {

@@ -83,8 +83,8 @@
     }
 
     .table-header {
-        background: linear-gradient(135deg, var(--primary-maroon), var(--dark-maroon));
-        color: var(--white);
+        background: white;
+        color: var(--text-dark);
         padding: 20px;
         display: flex;
         justify-content: space-between;
@@ -302,21 +302,26 @@
         <div class="table-header">
             <h3>Users</h3>
             <div class="search-filter-section" style="display: flex; gap: 12px; align-items: center;">
-                <a href="{{ route('admin.users.create') }}" class="btn btn-primary" style="padding: 8px 16px; white-space: nowrap;">
+                <a href="{{ route('admin.users.create') }}" class="btn btn-sm" style="background: #800020; color: white; border: none; padding: 8px 16px; white-space: nowrap; font-weight: 600; height: 26px; display: inline-flex; align-items: center;">
                     Add New User
                 </a>
                 <form method="GET" action="{{ route('admin.users.index') }}" style="display: flex; gap: 10px; align-items: center;">
-                    <label style="font-size: 13px; color: rgba(255,255,255,0.9);">Search:</label>
-                    <div class="search-box">
+                    <label style="font-size: 13px; color: var(--text-gray);">Search:</label>
+                    <div style="position: relative; width: 220px;">
                         <input type="text" 
+                               id="searchInput"
                                name="search" 
                                placeholder="Search..." 
                                value="{{ request('search') }}"
-                               style="width: 180px;">
+                               class="form-control form-control-sm"
+                               style="width: 100%; height: 26px; padding: 4px 32px 4px 8px;">
+                        <svg style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
                     </div>
-                    <label style="font-size: 13px; color: rgba(255,255,255,0.9);">Role:</label>
-                    <select name="role" class="filter-select" onchange="this.form.submit()" style="width: 140px;">
-                        <option value="">All Roles ▼</option>
+                    <label style="font-size: 13px; color: var(--text-gray);">Role:</label>
+                    <select name="role" class="form-select form-select-sm" onchange="this.form.submit()" style="width: 140px; height: 26px; padding: 4px 28px 4px 8px;">
+                        <option value="">All Roles</option>
                         <option value="department-head" {{ request('role') === 'department-head' ? 'selected' : '' }}>Department Head</option>
                         <option value="administrator" {{ request('role') === 'administrator' ? 'selected' : '' }}>Administrator</option>
                         <option value="instructor" {{ request('role') === 'instructor' ? 'selected' : '' }}>Instructor</option>
@@ -325,20 +330,20 @@
             </div>
         </div>
         
-        <table class="users-table">
-            <thead>
+        <table class="table table-hover table-striped align-middle">
+            <thead style="background-color: white;">
                 <tr>
-                    <th>User</th>
-                    <th>Role</th>
-                    <th>Created</th>
-                    <th>Last Login</th>
-                    <th>Actions</th>
+                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-left">User</th>
+                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-left">Role</th>
+                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">Created</th>
+                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">Last login</th>
+                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($users as $user)
                 <tr>
-                    <td>
+                    <td class="text-left" style="font-size: 13px; font-weight: normal;">
                         <div class="user-info">
                             <div class="user-avatar">
                                 @if($user->profile_picture_url)
@@ -348,7 +353,7 @@
                                 @endif
                             </div>
                             <div class="user-details">
-                                <h4>
+                                <h4 style="font-weight: normal;">
                                     <a href="{{ route('admin.users.show', $user->user_id) }}">
                                         {{ $user->full_name }}
                                     </a>
@@ -357,8 +362,8 @@
                             </div>
                         </div>
                     </td>
-                    <td>
-                        <span class="role-badge {{ $user->role }}">
+                    <td class="text-left" style="font-size: 13px; font-weight: normal;">
+                        <span class="badge bg-secondary">
                             @if($user->role === 'department-head')
                                  Department Head
                             @elseif($user->role === 'administrator')
@@ -368,22 +373,22 @@
                             @endif
                         </span>
                     </td>
-                    <td>{{ $user->created_at->format('M d, Y') }}</td>
-                    <td>{{ $user->updated_at->diffForHumans() }}</td>
-                    <td>
-                        <div class="user-actions">
+                    <td class="text-center" style="font-size: 13px; font-weight: normal;">{{ $user->created_at->format('M d, Y') }}</td>
+                    <td class="text-center" style="font-size: 13px; font-weight: normal;">{{ $user->updated_at->diffForHumans() }}</td>
+                    <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                        <div class="d-flex gap-1">
                             @if($user->user_id === auth()->id())
                                 <a href="{{ route('admin.profile.edit') }}" 
-                                   class="btn btn-edit">
+                                   class="btn btn-sm btn-secondary">
                                     My Profile
                                 </a>
                             @else
                                 <a href="{{ route('admin.users.show', $user->user_id) }}" 
-                                   class="btn btn-edit">
+                                   class="btn btn-sm btn-secondary">
                                     View
                                 </a>
                                 <a href="{{ route('admin.users.edit', $user->user_id) }}" 
-                                   class="btn btn-edit">
+                                   class="btn btn-sm btn-secondary">
                                     Edit
                                 </a>
                             @endif
@@ -392,11 +397,15 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-gray);">
-                        No users found. 
-                        <a href="{{ route('admin.users.create') }}" style="color: var(--primary-maroon);">
-                            Add your first user
-                        </a>
+                    <td colspan="5" class="text-center py-5">
+                        <div class="text-muted">
+                            <h5>No users found</h5>
+                            <p class="mb-0">
+                                <a href="{{ route('admin.users.create') }}" class="btn btn-sm" style="background: #800020; color: white; border: none;">
+                                    Add your first user
+                                </a>
+                            </p>
+                        </div>
                     </td>
                 </tr>
                 @endforelse
@@ -411,3 +420,28 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    // Auto-search functionality
+    let searchTimeout;
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            const searchValue = e.target.value.trim();
+            
+            searchTimeout = setTimeout(function() {
+                const url = new URL(window.location);
+                if (searchValue) {
+                    url.searchParams.set('search', searchValue);
+                } else {
+                    url.searchParams.delete('search');
+                }
+                url.searchParams.delete('page'); // Reset to first page
+                window.location.href = url.toString();
+            }, 500); // 500ms debounce
+        });
+    }
+</script>
+@endpush

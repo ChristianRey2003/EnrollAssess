@@ -3,6 +3,9 @@
   Optimized JS for admin interface
 ===========================================*/
 
+// Import Bootstrap 5 JS
+import 'bootstrap/dist/js/bootstrap.bundle.min.js'
+
 // Import Alpine.js for reactive components
 import Alpine from 'alpinejs'
 

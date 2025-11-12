@@ -126,7 +126,7 @@
 
     .filter-group input,
     .filter-group select {
-        height: 40px; /* Increased from 36px for better touch targets */
+        height: 26px; /* Standardized height */
         padding: 8px 12px;
         border: 1px solid #D1D5DB;
         border-radius: 6px;
@@ -161,7 +161,7 @@
 
     .btn-filter,
     .btn-clear {
-        height: 40px; /* Match input height */
+        height: 26px; /* Match input height */
         padding: 0 20px;
         border: none;
         border-radius: 6px;
@@ -170,6 +170,8 @@
         font-size: 14px;
         transition: all 0.2s;
         white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
     }
 
     .btn-filter {
@@ -479,6 +481,7 @@
         .btn-filter,
         .btn-clear {
             flex: 1;
+            height: 26px;
         }
     }
 
@@ -529,6 +532,7 @@
         .btn-filter,
         .btn-clear {
             width: 100%;
+            height: 26px;
         }
     }
 </style>
@@ -540,16 +544,21 @@
         <!-- Left Panel: Applicants List -->
         <div class="assign-left">
             <div class="filters">
-                <div class="filter-group">
+                <div class="filter-group" style="position: relative;">
                     <input type="text" 
                            id="search" 
                            name="q" 
-                           placeholder="Name, email, or app no" 
-                           value="{{ request('q') }}">
+                           placeholder="Search..." 
+                           value="{{ request('q') }}"
+                           class="form-control form-control-sm"
+                           style="height: 26px; padding: 4px 32px 4px 8px; width: 220px;">
+                    <svg style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
                 </div>
 
                 <div class="filter-group">
-                    <select id="status" name="status">
+                    <select id="status" name="status" class="form-select form-select-sm" style="height: 26px; padding: 4px 28px 4px 8px;">
                         <option value="">All Statuses</option>
                         <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
                         <option value="exam-completed" {{ request('status') === 'exam-completed' ? 'selected' : '' }}>Exam Completed</option>
@@ -558,7 +567,7 @@
                 </div>
 
                 <div class="filter-group">
-                    <select id="assigned" name="assigned">
+                    <select id="assigned" name="assigned" class="form-select form-select-sm" style="height: 26px; padding: 4px 28px 4px 8px;">
                         <option value="">All</option>
                         <option value="unassigned" {{ request('assigned') === 'unassigned' ? 'selected' : '' }}>Unassigned Only</option>
                         <option value="assigned" {{ request('assigned') === 'assigned' ? 'selected' : '' }}>Assigned Only</option>
@@ -574,34 +583,34 @@
                 </div>
             </div>
 
-            <div class="applicants-table">
-                <table class="data-table">
-                    <thead>
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle">
+                    <thead class="table-light">
                         <tr>
-                            <th class="checkbox-cell">
-                                <input type="checkbox" id="selectAll">
+                            <th class="text-center" style="width: 50px; font-size: 0.85rem; font-weight: bold;">
+                                <input type="checkbox" id="selectAll" class="form-check-input">
                             </th>
-                            <th>Applicant No</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Status</th>
-                            <th>Assigned Instructor</th>
+                            <th style="font-size: 0.85rem; font-weight: bold;" class="text-left">Applicant no</th>
+                            <th style="font-size: 0.85rem; font-weight: bold;" class="text-left">Name</th>
+                            <th style="font-size: 0.85rem; font-weight: bold;" class="text-left">Email</th>
+                            <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">Status</th>
+                            <th style="font-size: 0.85rem; font-weight: bold;" class="text-left">Assigned instructor</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($applicants as $applicant)
                             <tr>
-                                <td class="checkbox-cell">
+                                <td class="text-center">
                                     <input type="checkbox" 
-                                           class="rowChk" 
+                                           class="form-check-input rowChk" 
                                            value="{{ $applicant->applicant_id }}"
                                            data-name="{{ $applicant->full_name }}">
                                 </td>
-                                <td>{{ $applicant->application_no ?: $applicant->formatted_applicant_no }}</td>
-                                <td>{{ $applicant->full_name }}</td>
-                                <td>{{ $applicant->email_address }}</td>
-                                <td>
-                                    <span class="status-badge status-{{ str_replace('-', '', $applicant->status) }}">
+                                <td class="text-left" style="font-size: 13px; font-weight: normal;">{{ $applicant->application_no ?: $applicant->formatted_applicant_no }}</td>
+                                <td class="text-left" style="font-size: 13px; font-weight: normal;">{{ $applicant->full_name }}</td>
+                                <td class="text-left" style="font-size: 13px; font-weight: normal;">{{ $applicant->email_address }}</td>
+                                <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                                    <span class="badge bg-secondary">
                                         {{ ucwords(str_replace('-', ' ', $applicant->status)) }}
                                     </span>
                                 </td>
@@ -615,10 +624,10 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6">
-                                    <div class="empty-state">
-                                        <h3>No applicants found</h3>
-                                        <p>Try adjusting your filters or search criteria.</p>
+                                <td colspan="6" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <h5>No applicants found</h5>
+                                        <p class="mb-0">Try adjusting your filters or search criteria.</p>
                                     </div>
                                 </td>
                             </tr>

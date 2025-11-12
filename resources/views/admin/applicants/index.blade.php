@@ -65,6 +65,19 @@
             word-break: break-word;
         }
         
+        /* Table header styling */
+        .table thead {
+            background-color: white !important;
+            color: #1F2937 !important;
+        }
+        
+        .table thead th {
+            background-color: white !important;
+            color: #1F2937 !important;
+            border-color: #E5E7EB !important;
+            font-weight: bold !important;
+        }
+        
         /* Compact toolbar responsive styles */
         @media (max-width: 1200px) {
             .applicants-toolbar {
@@ -129,17 +142,22 @@
                 <!-- Compact Toolbar -->
                 <div class="applicants-toolbar" style="display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 15px; padding: 10px 0;">
                     <div class="toolbar-left" style="display: flex; align-items: center; gap: 10px;">
-                        <input type="text" 
-                               id="searchInput" 
-                               class="form-control" 
-                               placeholder="Search..." 
-                               value="{{ request('search') }}"
-                               style="width: 180px; height: 30px; padding: 4px 8px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 4px;"
-                               aria-label="Search applicants">
+                        <div style="position: relative; width: 220px;">
+                            <input type="text" 
+                                   id="searchInput" 
+                                   class="form-control form-control-sm" 
+                                   placeholder="Search..." 
+                                   value="{{ request('search') }}"
+                                   style="width: 100%; height: 26px; padding: 4px 32px 4px 8px;"
+                                   aria-label="Search applicants">
+                            <svg style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
                         <select id="statusFilter" 
-                                class="form-control" 
+                                class="form-select form-select-sm" 
                                 onchange="applyFilter()" 
-                                style="width: 140px; height: 30px; padding: 2px 6px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 4px;"
+                                style="width: 140px; height: 26px; padding: 4px 28px 4px 8px;"
                                 aria-label="Filter by status">
                             <option value="">All Status</option>
                             <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
@@ -151,108 +169,107 @@
                         </select>
                     </div>
                     <div class="toolbar-right" style="display: flex; align-items: center; gap: 8px;">
-                        <a href="{{ route('admin.applicants.assign') }}" 
-                           class="btn btn-primary" 
-                           style="height: 30px; padding: 4px 12px; font-size: 12px; border-radius: 4px; background: #800020; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Assign</a>
+                            <a href="{{ route('admin.applicants.assign') }}" 
+                           class="btn btn-sm" 
+                           style="background: #800020; color: white; border: none; height: 26px; display: inline-flex; align-items: center;">Assign</a>
                         <a href="{{ route('admin.applicants.exam-results') }}" 
-                           class="btn btn-primary" 
-                           style="height: 30px; padding: 4px 12px; font-size: 12px; border-radius: 4px; background: #059669; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Exam Results</a>
+                           class="btn btn-success btn-sm" 
+                           style="height: 26px; display: inline-flex; align-items: center;">Exam Results</a>
                         <a href="{{ route('admin.applicants.create') }}" 
-                           class="btn btn-secondary" 
-                           style="height: 30px; padding: 4px 10px; font-size: 12px; border-radius: 4px; background: #6b7280; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Add</a>
+                           class="btn btn-secondary btn-sm" 
+                           style="height: 26px; display: inline-flex; align-items: center;">Add</a>
                         <a href="{{ route('admin.applicants.import') }}" 
-                           class="btn btn-secondary" 
-                           style="height: 30px; padding: 4px 10px; font-size: 12px; border-radius: 4px; background: #6b7280; border: none; color: white; text-decoration: none; display: inline-flex; align-items: center;">Import</a>
+                           class="btn btn-secondary btn-sm" 
+                           style="height: 26px; display: inline-flex; align-items: center;">Import</a>
+                        <button onclick="bulkExport()" 
+                                class="btn btn-sm" 
+                                style="height: 26px; display: inline-flex; align-items: center; background: #6b7280; color: white; border: none; padding: 0 12px;">
+                            Export
+                        </button>
+                        <button onclick="showGenerateAccessCodesModal()" 
+                                class="btn btn-sm" 
+                                style="height: 26px; display: inline-flex; align-items: center; background: #3b82f6; color: white; border: none; padding: 0 12px;">
+                            Generate Codes
+                        </button>
+                        <button onclick="openEmailNotificationDrawer()" 
+                                class="btn btn-sm" 
+                                style="height: 26px; display: inline-flex; align-items: center; background: #059669; color: white; border: none; padding: 0 12px;">
+                            Send Notifications
+                        </button>
                     </div>
                 </div>
 
-                <!-- Compact Bulk Actions -->
+                <!-- Compact Bulk Actions - Selected Count Only -->
                 <div id="bulkActions" class="bulk-actions" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 6px 10px; margin-bottom: 10px;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span id="selectedCount" style="font-size: 12px; font-weight: 500; color: #1e40af;">0 selected</span>
-                        <div style="display: flex; gap: 6px;">
-                            <button onclick="showGenerateAccessCodesModal()" 
-                                    class="bulk-btn" 
-                                    style="height: 26px; padding: 3px 8px; font-size: 11px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                Generate Codes
-                            </button>
-                            <button onclick="openEmailNotificationDrawer()" 
-                                    class="bulk-btn" 
-                                    style="height: 26px; padding: 3px 8px; font-size: 11px; background: #059669; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                Send Notifications
-                            </button>
-                            <button onclick="bulkExport()" 
-                                    class="bulk-btn" 
-                                    style="height: 26px; padding: 3px 8px; font-size: 11px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                Export
-                            </button>
-                        </div>
                     </div>
                 </div>
 
                 <!-- Applicants Table -->
-                <div class="applicants-table" style="overflow-x: auto;">
-                    <table class="data-table" style="width: 100%; table-layout: fixed;">
-                        <thead>
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped align-middle">
+                        <thead style="background-color: white !important; color: #1F2937 !important;">
                             <tr>
-                                <th style="width: 40px; text-align: center;">
+                                <th style="width: 40px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
                                     <input type="checkbox" 
                                            id="selectAll" 
                                            onchange="toggleSelectAll()"
+                                           class="form-check-input"
                                            style="cursor: pointer;">
                                 </th>
-                                <th style="width: 40px;">NO.</th>
-                                <th style="width: 120px;">APPLICANT NO.</th>
-                                <th style="width: 180px;">FULL NAME</th>
-                                <th style="width: 200px;">CONTACT INFORMATION</th>
-                                <th style="width: 120px;">PREFERRED COURSE</th>
-                                <th style="width: 100px;">WEIGHTED EXAM % (60%)</th>
-                                <th style="width: 120px;">VERBAL DESCRIPTION</th>
-                                <th style="width: 120px;">STATUS</th>
+                                <th style="width: 40px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">No.</th>
+                                <th style="width: 120px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-left">Applicant no.</th>
+                                <th style="width: 180px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-left">Full name</th>
+                                <th style="width: 200px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-left">Contact information</th>
+                                {{-- <th style="width: 120px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">Preferred course</th> --}}
+                                <th style="width: 100px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">Weighted exam % (60%)</th>
+                                {{-- <th style="width: 120px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">Verbal description</th> --}}
+                                <th style="width: 120px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($applicants ?? [] as $index => $applicant)
-                                <tr style="page-break-inside: avoid; position: relative;" 
+                                <tr style="position: relative;" 
                                     onmouseover="showActions({{ $applicant->applicant_id }})" 
                                     onmouseout="hideActions({{ $applicant->applicant_id }})">
                                     <td class="text-center">
                                         <input type="checkbox" 
-                                               class="applicant-checkbox" 
+                                               class="form-check-input applicant-checkbox" 
                                                value="{{ $applicant->applicant_id }}"
                                                onchange="updateBulkActions()"
                                                style="cursor: pointer;">
                                     </td>
-                                    <td class="text-center font-medium">
+                                    <td class="text-center" style="font-size: 13px; font-weight: normal;">
                                         {{ ($applicants->currentPage() - 1) * $applicants->perPage() + $index + 1 }}
                                     </td>
-                                    <td>
-                                        <div class="applicant-number">
-                                            <span class="font-mono text-sm">{{ $applicant->application_no ?: $applicant->formatted_applicant_no }}</span>
+                                    <td class="text-left" style="font-size: 13px; font-weight: normal;">
+                                        <div class="applicant-info">
+                                            <div class="applicant-name" style="font-weight: 500; color: #1F2937;">{{ $applicant->application_no ?: $applicant->formatted_applicant_no }}</div>
                                         </div>
                                     </td>
-                                    <td>
-                                        <div class="applicant-name">
-                                            <div class="font-medium text-gray-900" style="font-size: 14px;">{{ strtoupper($applicant->full_name) }}</div>
+                                    <td class="text-left" style="font-size: 13px; font-weight: normal;">
+                                        <div class="applicant-info">
+                                            <div class="applicant-name" style="font-weight: 500; color: #1F2937; margin-bottom: 4px;">{{ $applicant->full_name }}</div>
                                             @if($applicant->assignedInstructor)
-                                                <div style="font-size: 11px; color: #1e40af; font-weight: 500; margin-top: 2px;">
+                                                <div class="applicant-email" style="font-size: 12px; color: #6B7280;">
                                                     Instructor: {{ $applicant->assignedInstructor->full_name }}
                                                 </div>
                                             @else
-                                                <div style="font-size: 11px; color: #9ca3af; margin-top: 2px;">
+                                                <div class="applicant-email" style="font-size: 12px; color: #9ca3af;">
                                                     No Instructor
                                                 </div>
                                             @endif
                                             @if($applicant->accessCode)
-                                                <div style="font-size: 11px; margin-top: 2px;">
-                                                    <strong>{{ $applicant->accessCode->code }}</strong>
+                                                <div style="font-size: 12px; color: #6B7280; margin-top: 2px;">
+                                                    {{ $applicant->accessCode->code }}
                                                     @if($applicant->accessCode->exam_id)
-                                                        <div style="color: #059669; margin-top: 1px;">
+                                                        <div style="color: #059669; margin-top: 2px;">
                                                             <span style="display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: #059669; margin-right: 4px;"></span>
-                                                            {{ $applicant->accessCode->exam->title }} <span style="color: #6b7280; font-size: 10px;">(Legacy)</span>
+                                                            {{ $applicant->accessCode->exam->title }} <span style="color: #6b7280; font-size: 11px;">(Legacy)</span>
                                                         </div>
                                                     @else
-                                                        <div style="color: #3b82f6; margin-top: 1px;">
+                                                        <div style="color: #3b82f6; margin-top: 2px;">
                                                             <span style="display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: #3b82f6; margin-right: 4px;"></span>
                                                             Uses active exam
                                                         </div>
@@ -288,27 +305,29 @@
                                             </button>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td class="text-left" style="font-size: 13px; font-weight: normal;">
                                         <div class="contact-info">
-                                            <div class="email-address text-sm" style="font-size: 13px;">{{ $applicant->email_address }}</div>
+                                            <div class="applicant-name" style="font-weight: 500; color: #1F2937; margin-bottom: 4px;">{{ $applicant->email_address }}</div>
                                             @if($applicant->phone_number)
-                                                <div class="phone-number text-sm text-gray-500">{{ $applicant->phone_number }}</div>
+                                                <div class="applicant-email" style="font-size: 12px; color: #6B7280;">{{ $applicant->phone_number }}</div>
                                             @endif
                                         </div>
                                     </td>
-                                    <td class="text-center" style="font-size: 13px;">
-                                        {{ $applicant->preferred_course ?: '-' }}
-                                    </td>
-                                    <td class="text-center">
+                                    {{-- Preferred course column - hidden but data still in system --}}
+                                    {{-- <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                                        <div class="applicant-name" style="font-weight: 500; color: #1F2937;">{{ $applicant->preferred_course ?: '-' }}</div>
+                                    </td> --}}
+                                    <td class="text-center" style="font-size: 13px; font-weight: normal;">
                                         @if($applicant->score !== null)
-                                            <span class="score-value">{{ number_format((float) $applicant->score, 2) }}%</span>
+                                            <div class="applicant-name" style="font-weight: 500; color: #1F2937;">{{ number_format((float) $applicant->score, 2) }}%</div>
                                         @else
-                                            <span class="no-score">-</span>
+                                            <span class="applicant-email" style="font-size: 12px; color: #6B7280;">-</span>
                                         @endif
                                     </td>
-                                    <td class="text-center" style="font-size: 13px;">
-                                        <span class="verbal-description">{{ $applicant->computed_verbal_description ?: '-' }}</span>
-                                    </td>
+                                    {{-- Verbal description column - hidden but data still in system --}}
+                                    {{-- <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                                        <div class="applicant-name" style="font-weight: 500; color: #1F2937;">{{ $applicant->computed_verbal_description ?: '-' }}</div>
+                                    </td> --}}
                                     <td class="text-center" style="padding: 6px 4px;">
                                         <span class="status-badge status-pending" style="font-size: 9px; padding: 2px 4px; border-radius: 3px; background: #fef3c7; color: #92400e; font-weight: 500; white-space: nowrap; display: inline-block;">
                                             @php
@@ -329,16 +348,16 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="text-center py-8">
-                                        <div class="empty-state">
-                                            <div class="empty-title">No applicants found</div>
-                                            <div class="empty-message">
+                                    <td colspan="7" class="text-center py-5">
+                                        <div class="text-muted">
+                                            <h5>No applicants found</h5>
+                                            <p class="mb-0">
                                                 @if(request()->hasAny(['search', 'status']))
                                                     Try adjusting your search criteria or filters.
                                                 @else
                                                     Start by importing applicants or adding them manually.
                                                 @endif
-                                            </div>
+                                            </p>
                                         </div>
                                     </td>
                                 </tr>
@@ -725,6 +744,27 @@
         window.openGenerateCodesDrawer = openGenerateCodesDrawer;
         window.closeGenerateCodesDrawer = closeGenerateCodesDrawer;
 
+        // Auto-search functionality
+        let searchTimeout;
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                clearTimeout(searchTimeout);
+                const searchValue = e.target.value.trim();
+                
+                searchTimeout = setTimeout(function() {
+                    const url = new URL(window.location);
+                    if (searchValue) {
+                        url.searchParams.set('search', searchValue);
+                    } else {
+                        url.searchParams.delete('search');
+                    }
+                    url.searchParams.delete('page'); // Reset to first page
+                    window.location.href = url.toString();
+                }, 500); // 500ms debounce
+            });
+        }
+
         // AJAX Pagination - Use event delegation to catch all pagination links
         document.addEventListener('click', function(e) {
             // Check if click is on a pagination link (could be direct <a> or nested in <span>)
@@ -772,7 +812,7 @@
                         const from = data.pagination.from || 0;
                         
                         if (data.applicants.length === 0) {
-                            html = '<tr><td colspan="9" class="text-center py-8"><div class="empty-state"><div class="empty-title">No applicants found</div></div></td></tr>';
+                            html = '<tr><td colspan="7" class="text-center py-8"><div class="empty-state"><div class="empty-title">No applicants found</div></div></td></tr>';
                         } else {
                             data.applicants.forEach((applicant, index) => {
                                 const rowNum = (from - 1) + index + 1;
@@ -781,13 +821,15 @@
                                     onmouseover="showActions(${applicant.applicant_id})" 
                                     onmouseout="hideActions(${applicant.applicant_id})">
                                     <td class="text-center"><input type="checkbox" class="applicant-checkbox" value="${applicant.applicant_id}" onchange="updateBulkActions()" style="cursor: pointer;"></td>
-                                    <td class="text-center font-medium">${rowNum}</td>
-                                    <td><div class="applicant-number"><span class="font-mono text-sm">${applicant.application_no || applicant.formatted_applicant_no || 'N/A'}</span></div></td>
-                                    <td>${(applicant.full_name || '').toUpperCase()}</td>
-                                    <td>${applicant.email_address || ''}</td>
-                                    <td class="text-center">${applicant.preferred_course || '-'}</td>
-                                    <td class="text-center">${applicant.score !== null ? Number(applicant.score).toFixed(2) + '%' : '-'}</td>
-                                    <td class="text-center">${applicant.computed_verbal_description || '-'}</td>
+                                    <td class="text-center" style="font-size: 13px; font-weight: normal;">${rowNum}</td>
+                                    <td class="text-left" style="font-size: 13px; font-weight: normal;"><div class="applicant-info"><div class="applicant-name" style="font-weight: 500; color: #1F2937;">${applicant.application_no || applicant.formatted_applicant_no || 'N/A'}</div></div></td>
+                                    <td class="text-left" style="font-size: 13px; font-weight: normal;"><div class="applicant-info"><div class="applicant-name" style="font-weight: 500; color: #1F2937; margin-bottom: 4px;">${applicant.full_name || ''}</div></div></td>
+                                    <td class="text-left" style="font-size: 13px; font-weight: normal;"><div class="contact-info"><div class="applicant-name" style="font-weight: 500; color: #1F2937; margin-bottom: 4px;">${applicant.email_address || ''}</div></div></td>
+                                    // Preferred course column - hidden but data still in system
+                                    // <td class="text-center" style="font-size: 13px; font-weight: normal;"><div class="applicant-name" style="font-weight: 500; color: #1F2937;">${applicant.preferred_course || '-'}</div></td>
+                                    <td class="text-center" style="font-size: 13px; font-weight: normal;"><div class="applicant-name" style="font-weight: 500; color: #1F2937;">${applicant.score !== null ? Number(applicant.score).toFixed(2) + '%' : '-'}</div></td>
+                                    // Verbal description column - hidden but data still in system
+                                    // <td class="text-center" style="font-size: 13px; font-weight: normal;"><div class="applicant-name" style="font-weight: 500; color: #1F2937;">${applicant.computed_verbal_description || '-'}</div></td>
                                     <td class="text-center"><span class="status-badge">${statusBadge}</span></td>
                                 </tr>`;
                             });

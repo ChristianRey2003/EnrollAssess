@@ -197,10 +197,15 @@
         flex: 1;
     }
 
+    .toolbar-right {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
     .search-box {
         position: relative;
-        flex: 1;
-        max-width: 300px;
+        width: 220px;
     }
 
     .search-box input {
@@ -518,9 +523,6 @@
                 <button type="button" onclick="showNewSemesterDrawer()" class="btn-outline">
                     Add Question Bank
                 </button>
-                <button onclick="showAddQuestionModal()" class="btn-primary">
-                    Add Question
-                </button>
             @else
                 <button onclick="showCreateExamModal()" class="btn-primary">
                     Setup First Exam
@@ -550,9 +552,6 @@
                         Publish
                     </button>
                 @endif
-                <button onclick="openEditSettingsDrawer()" class="btn-outline" style="padding: 4px 10px; font-size: 13px;">
-                    Exam Setting
-                </button>
             </div>
         </div>
 
@@ -651,23 +650,38 @@
             <div class="toolbar">
                 <div class="toolbar-left">
                     <div class="search-box">
-                        <input type="text" name="search" id="searchInput" placeholder="Search questions..." 
-                               value="{{ request('search') }}" onkeyup="if(event.key==='Enter') this.form.submit()">
+                        <input type="text" 
+                               name="search" 
+                               id="searchInput" 
+                               class="form-control form-control-sm" 
+                               placeholder="Search..." 
+                               value="{{ request('search') }}"
+                               style="width: 100%; height: 26px; padding: 4px 32px 4px 8px;">
+                        <svg style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
                     </div>
-                    <select class="filter-select" name="type" id="typeFilter" onchange="this.form.submit()">
+                    <select class="form-select form-select-sm" name="type" id="typeFilter" onchange="this.form.submit()" style="height: 26px; width: 120px; padding: 4px 28px 4px 8px;">
                         <option value="">All Types</option>
                         <option value="multiple_choice" {{ request('type') === 'multiple_choice' ? 'selected' : '' }}>Multiple Choice</option>
                         <option value="true_false" {{ request('type') === 'true_false' ? 'selected' : '' }}>True/False</option>
                     </select>
-                    <select class="filter-select" name="status" id="statusFilter" onchange="this.form.submit()">
+                    <select class="form-select form-select-sm" name="status" id="statusFilter" onchange="this.form.submit()" style="height: 26px; width: 120px; padding: 4px 28px 4px 8px;">
                         <option value="">All Status</option>
                         <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
                         <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
                     </select>
-                    @if(request()->hasAny(['search', 'type', 'status']))
-                    <a href="{{ route('admin.sets-questions.index') }}" class="btn-outline" style="text-decoration: none; display: inline-flex; align-items: center;">Clear Filters</a>
-                    @endif
                 </div>
+                @if($currentExam)
+                <div class="toolbar-right">
+                    <button type="button" onclick="showAddQuestionModal()" class="btn-primary" style="padding: 4px 10px; font-size: 13px; height: 26px; display: inline-flex; align-items: center;">
+                        Add Question
+                    </button>
+                    <button type="button" onclick="openEditSettingsDrawer()" class="btn-outline" style="padding: 4px 10px; font-size: 13px; height: 26px; display: inline-flex; align-items: center;">
+                        Exam Setting
+                    </button>
+                </div>
+                @endif
             </div>
         </form>
 
@@ -738,9 +752,6 @@
                 <div class="empty-state">
                     <h4>No Questions Found</h4>
                     <p>@if(request()->hasAny(['search', 'type', 'status'])) No questions match your filters. @else Start building your question bank by adding your first question. @endif</p>
-                    @if(request()->hasAny(['search', 'type', 'status']))
-                        <a href="{{ route('admin.sets-questions.index') }}" class="btn-outline" style="display: inline-block; text-decoration: none; margin-right: 8px;">Clear Filters</a>
-                    @endif
                     <button onclick="showAddQuestionModal()" class="btn-primary">
                         Add First Question
                     </button>
@@ -1825,5 +1836,26 @@
             closeExamModal();
         }
     });
+
+    // Auto-search functionality
+    let searchTimeout;
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            const searchValue = e.target.value.trim();
+            
+            searchTimeout = setTimeout(function() {
+                const url = new URL(window.location);
+                if (searchValue) {
+                    url.searchParams.set('search', searchValue);
+                } else {
+                    url.searchParams.delete('search');
+                }
+                url.searchParams.delete('page'); // Reset to first page
+                window.location.href = url.toString();
+            }, 500); // 500ms debounce
+        });
+    }
 </script>
 @endpush
