@@ -82,6 +82,13 @@
     font-size: 14px;
 }
 
+/* Override global search-input to move icon to right side */
+.search-controls .search-input {
+    padding-left: 8px !important;
+    padding-right: 40px !important;
+    background-position: right 12px center !important;
+}
+
 .search-btn {
     padding: 12px 20px;
     background: var(--maroon-primary);

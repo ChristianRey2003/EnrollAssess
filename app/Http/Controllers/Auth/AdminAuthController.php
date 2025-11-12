@@ -50,8 +50,7 @@ class AdminAuthController extends Controller
                     default => 'admin.dashboard'
                 };
                 
-                return redirect()->intended(route($redirectRoute))
-                    ->with('success', 'Welcome back, ' . $user->full_name . '!');
+                return redirect()->intended(route($redirectRoute));
             } else {
                 return back()->withErrors([
                     'username' => 'Access denied. Admin privileges required.',

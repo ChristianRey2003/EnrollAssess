@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\InstructorController;
+use App\Http\Controllers\InstructorProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -75,4 +76,11 @@ Route::prefix('interviews')->name('interviews.')->middleware('role:instructor')-
     Route::post('/bulk-schedule', [InstructorController::class, 'bulkScheduleInterviews'])->name('bulk-schedule');
     Route::post('/{interview}/send-notification', [InstructorController::class, 'sendScheduleNotification'])->name('send-notification');
     Route::post('/{interview}/reschedule', [InstructorController::class, 'rescheduleInterview'])->name('reschedule');
+});
+
+// Profile Routes
+Route::middleware(['role:instructor'])->prefix('profile')->name('profile.')->group(function () {
+    Route::get('/edit', [InstructorProfileController::class, 'edit'])->name('edit');
+    Route::put('/update', [InstructorProfileController::class, 'update'])->name('update');
+    Route::post('/delete-picture', [InstructorProfileController::class, 'deleteProfilePicture'])->name('delete-picture');
 });

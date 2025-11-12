@@ -17,6 +17,7 @@
      aria-label="{{ $userRole === 'instructor' ? 'Instructor' : 'Admin' }} navigation menu">
     <div class="sidebar-header">
         <div class="sidebar-logo">
+            <img src="{{ asset('images/evsu-logo.png') }}" alt="EVSU Logo" class="logo-image">
             <div class="logo-content">
                 <h2 class="sidebar-title">EnrollAssess</h2>
                 <p class="sidebar-subtitle">{{ $userRole === 'instructor' ? 'Instructor Portal' : 'Admin Portal' }}</p>

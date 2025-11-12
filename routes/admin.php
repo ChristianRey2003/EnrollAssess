@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminProfileController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\ApplicantController;
 use App\Http\Controllers\DashboardController;
@@ -195,6 +196,13 @@ Route::middleware(['role:department-head,administrator'])->prefix('settings')->n
     Route::put('/', [\App\Http\Controllers\SettingsController::class, 'update'])->name('.update');
     Route::post('/test-email', [\App\Http\Controllers\SettingsController::class, 'testEmail'])->name('.test-email');
     Route::post('/reset', [\App\Http\Controllers\SettingsController::class, 'reset'])->name('.reset');
+});
+
+// Profile Routes
+Route::middleware(['role:department-head,administrator'])->prefix('profile')->name('profile.')->group(function () {
+    Route::get('/edit', [AdminProfileController::class, 'edit'])->name('edit');
+    Route::put('/update', [AdminProfileController::class, 'update'])->name('update');
+    Route::post('/delete-picture', [AdminProfileController::class, 'deleteProfilePicture'])->name('delete-picture');
 });
 
 // Dashboard API Routes (Real-time)

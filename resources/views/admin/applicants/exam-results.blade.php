@@ -437,6 +437,100 @@ document.getElementById('searchInput').addEventListener('keypress', function(e) 
     }
 });
 
+// AJAX Pagination
+document.addEventListener('click', function(e) {
+    const paginationLink = e.target.closest('.pagination a, .pagination-wrapper a');
+    
+    if (paginationLink && paginationLink.href) {
+        e.preventDefault();
+        e.stopPropagation();
+        const url = paginationLink.href;
+        
+        if (!url || url === '#' || url === 'javascript:void(0)') return;
+        
+        const tableBody = document.querySelector('table tbody');
+        const paginationWrapper = document.querySelector('.pagination-wrapper') || document.querySelector('[style*="margin-top: 20px"]');
+        
+        if (tableBody) {
+            tableBody.style.opacity = '0.5';
+            tableBody.style.pointerEvents = 'none';
+        }
+        if (paginationWrapper) {
+            paginationWrapper.style.opacity = '0.5';
+            paginationWrapper.style.pointerEvents = 'none';
+        }
+        
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            if (data.applicants && tableBody) {
+                let html = '';
+                const from = data.pagination.from || 0;
+                
+                if (data.applicants.length === 0) {
+                    html = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">No exam results found. Only applicants who completed the EnrollAssess exam are shown here.</td></tr>';
+                } else {
+                    data.applicants.forEach((applicant, index) => {
+                        // This is a simplified version - you may need to adjust based on your actual data structure
+                        const statusClass = (applicant.status || '').replace(/-/g, '-');
+                        const statusText = (applicant.status || '').split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+                        
+                        const score = applicant.score ? Number(applicant.score).toFixed(2) : '<span style="color: #9ca3af;">-</span>';
+                        const gwa = applicant.card_tor_gwa ? Number(applicant.card_tor_gwa).toFixed(2) : '<span style="color: #9ca3af;">-</span>';
+                        const examScore = applicant.enrollassess_score ? Number(applicant.enrollassess_score).toFixed(2) + '%' : '<span style="color: #9ca3af;">-</span>';
+                        const interviewScore = applicant.interview_score ? Number(applicant.interview_score).toFixed(2) + '%' : '<span style="color: #9ca3af;">-</span>';
+                        
+                        html += `<tr>
+                            <td>
+                                <div style="font-weight: 500;">${applicant.full_name || ''}</div>
+                                <div style="font-size: 12px; color: #6b7280;">${applicant.application_no || applicant.formatted_applicant_no || 'N/A'}</div>
+                            </td>
+                            <td>${score}</td>
+                            <td>${gwa}</td>
+                            <td>${examScore}</td>
+                            <td>${interviewScore}</td>
+                            <td>-</td>
+                            <td><span class="status-badge status-${statusClass}">${statusText}</span></td>
+                            <td>
+                                <div style="display: flex; gap: 4px;">
+                                    <a href="/admin/applicants/${applicant.applicant_id}" class="btn btn-secondary" style="padding: 2px 6px; font-size: 11px;">View</a>
+                                </div>
+                            </td>
+                        </tr>`;
+                    });
+                }
+                
+                tableBody.innerHTML = html;
+                tableBody.style.opacity = '1';
+                tableBody.style.pointerEvents = '';
+                
+                if (data.pagination_html && paginationWrapper) {
+                    paginationWrapper.innerHTML = data.pagination_html;
+                }
+                
+                if (paginationWrapper) {
+                    paginationWrapper.style.opacity = '1';
+                    paginationWrapper.style.pointerEvents = '';
+                }
+                
+                window.history.pushState({}, '', url);
+            }
+        })
+        .catch(error => {
+            console.error('Pagination error:', error);
+            window.location.href = url;
+        });
+    }
+});
+
 // Removed score filter Enter handlers as score filters were removed
 </script>
 @endpush

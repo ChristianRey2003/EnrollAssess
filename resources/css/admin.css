@@ -316,7 +316,7 @@
 /* Landscape phone adjustments */
 @media (max-width: 768px) and (orientation: landscape) {
     .admin-sidebar {
-        width: 200px;
+        width: var(--sidebar-width);
     }
     
     .main-header {

@@ -33,95 +33,7 @@
     <link rel="preload" href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet"></noscript>
 
-    <!-- Critical CSS inlined for immediate rendering -->
-    <style>
-        /* Critical above-the-fold styles */
-        :root {
-            --maroon-primary: #800020; /* Primary */
-            --white: #FFFFFF;
-            --light-gray: #F8F9FA;
-            --gray-100: #F3F4F6;
-            --gray-200: #E5E7EB;
-            --gray-400: #9CA3AF;
-            --sidebar-width: 200px;
-        }
-        
-        body.admin-page {
-            margin: 0;
-            font-family: 'Figtree', 'Segoe UI', sans-serif;
-            background: var(--light-gray);
-            min-height: 100vh;
-        }
-        
-        .admin-layout {
-            display: flex;
-            min-height: 100vh;
-        }
-        
-        .admin-sidebar {
-            width: var(--sidebar-width);
-            background: var(--maroon-primary);
-            color: var(--white);
-            position: fixed;
-            height: 100vh;
-            left: 0;
-            top: 0;
-            z-index: 1000;
-        }
-        
-        .admin-main {
-            flex: 1;
-            margin-left: var(--sidebar-width);
-            min-height: 100vh;
-            background: var(--light-gray);
-            display: flex;
-            flex-direction: column;
-            width: calc(100% - var(--sidebar-width));
-            box-sizing: border-box;
-            overflow-x: hidden;
-        }
-        
-        .admin-main.sidebar-collapsed {
-            margin-left: 0;
-            width: 100%;
-        }
-        
-        .main-header {
-            background: var(--white);
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--gray-200);
-            order: 0; /* Ensure header appears first */
-            flex-shrink: 0;
-            position: relative;
-            z-index: 10;
-        }
-        
-        .main-content {
-            flex: 1;
-            order: 1; /* Ensure content appears after header */
-        }
-        
-        /* Skip link for accessibility */
-        .skip-link {
-            position: absolute;
-            top: -40px;
-            left: 6px;
-            background: var(--maroon-primary);
-            color: var(--white);
-            padding: 8px 16px;
-            text-decoration: none;
-            border-radius: 4px;
-            z-index: 100000;
-            font-weight: 600;
-            transition: top 0.3s;
-        }
-        
-        .skip-link:focus {
-            top: 6px;
-        }
-    </style>
-
-    <!-- Non-critical CSS loaded asynchronously -->
+    <!-- Admin CSS Bundle -->
     @vite(['resources/css/admin.css'])
     
     <!-- Global Modal Fix -->
@@ -129,6 +41,31 @@
     
     <!-- Page-specific CSS -->
     @stack('styles')
+    
+    <!-- Sidebar State Initialization - Must be in head to prevent flash -->
+    <script>
+        // Initialize sidebar state immediately to prevent flash
+        // This runs synchronously before body renders
+        try {
+            const isMobile = window.innerWidth <= 768;
+            if (!isMobile) {
+                const savedState = localStorage.getItem('sidebarCollapsed');
+                if (savedState === 'true') {
+                    // Add class to html element immediately
+                    document.documentElement.classList.add('sidebar-collapsed-init');
+                }
+            }
+        } catch(e) {
+            // localStorage might not be available in some contexts
+        }
+    </script>
+    <style>
+        /* Hide sidebar immediately if collapsed state was saved */
+        html.sidebar-collapsed-init #adminSidebar,
+        html.sidebar-collapsed-init .admin-main {
+            visibility: hidden;
+        }
+    </style>
 </head>
 <body class="admin-page @stack('body-class')">
     <!-- Skip to main content link for accessibility -->
@@ -180,25 +117,43 @@
     
     <!-- Sidebar Persistence Script -->
     <script>
-        // Persist sidebar state
+        // Persist sidebar state - runs after DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
-            const sidebar = document.getElementById('adminSidebar');
-            const savedState = localStorage.getItem('sidebarCollapsed');
-            
-            if (savedState === 'true' && sidebar) {
-                sidebar.classList.add('collapsed');
-                document.querySelector('.admin-main')?.classList.add('sidebar-collapsed');
+            const isMobile = window.innerWidth <= 768;
+            if (!isMobile) {
+                const sidebar = document.getElementById('adminSidebar');
+                const mainContent = document.querySelector('.admin-main');
+                const body = document.body;
+                const toggleBtn = document.querySelector('.sidebar-toggle-btn');
+                const savedState = localStorage.getItem('sidebarCollapsed');
+                
+                if (savedState === 'true' && sidebar) {
+                    sidebar.classList.add('collapsed');
+                    if (mainContent) mainContent.classList.add('sidebar-collapsed');
+                    if (body) body.classList.add('sidebar-collapsed');
+                    if (toggleBtn) {
+                        toggleBtn.classList.add('collapsed');
+                        toggleBtn.setAttribute('aria-expanded', 'false');
+                    }
+                }
             }
         });
         
         function toggleSidebar() {
             const sidebar = document.getElementById('adminSidebar');
             const main = document.querySelector('.admin-main');
+            const body = document.body;
+            const toggleBtn = document.querySelector('.sidebar-toggle-btn');
             
             if (sidebar && main) {
                 const isCollapsed = sidebar.classList.toggle('collapsed');
                 main.classList.toggle('sidebar-collapsed');
-                localStorage.setItem('sidebarCollapsed', isCollapsed);
+                if (body) body.classList.toggle('sidebar-collapsed');
+                if (toggleBtn) {
+                    toggleBtn.classList.toggle('collapsed');
+                    toggleBtn.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+                }
+                localStorage.setItem('sidebarCollapsed', isCollapsed ? 'true' : 'false');
             }
         }
     </script>

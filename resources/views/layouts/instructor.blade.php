@@ -27,6 +27,31 @@
     <link rel="preload" href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet"></noscript>
 
+    <!-- Sidebar State Initialization - Must be in head to prevent flash -->
+    <script>
+        // Initialize sidebar state immediately to prevent flash
+        // This runs synchronously before body renders
+        try {
+            const isMobile = window.innerWidth <= 768;
+            if (!isMobile) {
+                const savedState = localStorage.getItem('instructorSidebarCollapsed');
+                if (savedState === 'true') {
+                    // Add class to html element immediately
+                    document.documentElement.classList.add('sidebar-collapsed-init');
+                }
+            }
+        } catch(e) {
+            // localStorage might not be available in some contexts
+        }
+    </script>
+    <style>
+        /* Hide sidebar immediately if collapsed state was saved */
+        html.sidebar-collapsed-init #sidebar,
+        html.sidebar-collapsed-init .main-content {
+            visibility: hidden;
+        }
+    </style>
+
     <!-- Critical CSS inlined for immediate rendering -->
     <style>
         /* Critical above-the-fold styles */
@@ -405,6 +430,12 @@
                     <span>Guidelines</span>
                 </a>
             </div>
+            
+            <div class="nav-item">
+                <a href="{{ route('instructor.profile.edit') }}" class="nav-link {{ request()->routeIs('instructor.profile.*') ? 'active' : '' }}">
+                    <span>My Profile</span>
+                </a>
+            </div>
         </nav>
     </div>
 
@@ -443,10 +474,14 @@
             <div class="user-menu">
                 <div class="user-info">
                     <div class="user-avatar">
-                        {{ substr(auth()->user()->name ?? 'I', 0, 1) }}
+                        @if(auth()->user()->profile_picture_url)
+                            <img src="{{ auth()->user()->profile_picture_url }}" alt="{{ auth()->user()->full_name }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                        @else
+                            {{ auth()->user()->initials ?? substr(auth()->user()->full_name ?? 'I', 0, 1) }}
+                        @endif
                     </div>
                     <div>
-                        <div class="user-name">{{ auth()->user()->name ?? 'Instructor' }}</div>
+                        <div class="user-name">{{ auth()->user()->full_name ?? 'Instructor' }}</div>
                         <div class="text-xs text-gray-500">{{ auth()->user()->role ?? 'instructor' }}</div>
                     </div>
                 </div>

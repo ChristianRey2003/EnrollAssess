@@ -873,6 +873,90 @@
             applyFilters();
         }
     });
+
+    // AJAX Pagination
+    document.addEventListener('click', function(e) {
+        const paginationLink = e.target.closest('.pagination a, .pagination-wrapper a');
+        
+        if (paginationLink && paginationLink.href) {
+            e.preventDefault();
+            e.stopPropagation();
+            const url = paginationLink.href;
+            
+            if (!url || url === '#' || url === 'javascript:void(0)') return;
+            
+            const tableBody = document.querySelector('table tbody');
+            const paginationWrapper = document.querySelector('.pagination-wrapper');
+            
+            if (tableBody) {
+                tableBody.style.opacity = '0.5';
+                tableBody.style.pointerEvents = 'none';
+            }
+            if (paginationWrapper) {
+                paginationWrapper.style.opacity = '0.5';
+                paginationWrapper.style.pointerEvents = 'none';
+            }
+            
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                if (data.applicants && tableBody) {
+                    let html = '';
+                    const from = data.pagination.from || 0;
+                    
+                    if (data.applicants.length === 0) {
+                        html = '<tr><td colspan="6"><div class="empty-state"><h3>No applicants found</h3><p>Try adjusting your filters or search criteria.</p></div></td></tr>';
+                    } else {
+                        data.applicants.forEach((applicant, index) => {
+                            const statusClass = (applicant.status || '').replace(/-/g, '');
+                            const statusText = (applicant.status || '').split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+                            const instructorName = applicant.assigned_instructor ? applicant.assigned_instructor.full_name : null;
+                            
+                            html += `<tr>
+                                <td class="checkbox-cell">
+                                    <input type="checkbox" class="rowChk" value="${applicant.applicant_id}" data-name="${applicant.full_name || ''}">
+                                </td>
+                                <td>${applicant.application_no || applicant.formatted_applicant_no || 'N/A'}</td>
+                                <td>${applicant.full_name || ''}</td>
+                                <td>${applicant.email_address || ''}</td>
+                                <td>
+                                    <span class="status-badge status-${statusClass}">${statusText}</span>
+                                </td>
+                                <td>${instructorName ? instructorName : '<span style="color: #9ca3af;">Not Assigned</span>'}</td>
+                            </tr>`;
+                        });
+                    }
+                    
+                    tableBody.innerHTML = html;
+                    tableBody.style.opacity = '1';
+                    tableBody.style.pointerEvents = '';
+                    
+                    if (data.pagination_html && paginationWrapper) {
+                        paginationWrapper.innerHTML = data.pagination_html;
+                    }
+                    
+                    if (paginationWrapper) {
+                        paginationWrapper.style.opacity = '1';
+                        paginationWrapper.style.pointerEvents = '';
+                    }
+                    
+                    window.history.pushState({}, '', url);
+                }
+            })
+            .catch(error => {
+                console.error('Pagination error:', error);
+                window.location.href = url;
+            });
+        }
+    });
 </script>
 @endpush
 

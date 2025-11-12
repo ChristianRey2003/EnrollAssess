@@ -11,21 +11,15 @@
                 <!-- Primary Reports Section -->
                 <div class="content-section">
                     <div class="section-header">
-                        <h2 class="section-title">📊 Primary Reports</h2>
-                        <p class="section-subtitle">Official EVSU exports for entrance examination results</p>
+                        <h2 class="section-title">Primary Reports</h2>
                     </div>
-                    <div class="section-content" style="padding: 30px;">
+                    <div class="section-content" style="padding: 20px;">
                         <div class="primary-reports-grid">
                             <!-- EVSU Entrance Results XLSX -->
                             <div class="primary-report-card">
                                 <div class="report-card-header">
-                                    <div class="report-card-icon">📊</div>
                                     <h3 class="report-card-title">EVSU Entrance Results</h3>
                                 </div>
-                                <p class="report-card-description">
-                                    Official EVSU-formatted export with applicants ranked by Overall Admission Rating
-                                    (60% UEE, 30% GWA, 10% Interview/Skill). Complete scoring breakdown included.
-                                </p>
                                 <form id="evsuResultsForm" class="export-form">
                                     <input type="hidden" name="status" value="interview-completed">
                                     <div class="form-row">
@@ -42,8 +36,8 @@
                                         </div>
                                     </div>
                                     <div style="display: flex; gap: 10px;">
-                                        <button type="button" onclick="generateEVSUResults('xlsx')" class="btn-primary-export">📥 Export XLSX</button>
-                                        <button type="button" onclick="generateEVSUResults('pdf')" class="btn-primary-export" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">📄 Export PDF</button>
+                                        <button type="button" onclick="generateEVSUResults('xlsx')" class="btn-primary-export">Export XLSX</button>
+                                        <button type="button" onclick="generateEVSUResults('pdf')" class="btn-primary-export" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">Export PDF</button>
                                     </div>
                                 </form>
                             </div>
@@ -51,16 +45,11 @@
                             <!-- Qualifiers List -->
                             <div class="primary-report-card">
                                 <div class="report-card-header">
-                                    <div class="report-card-icon">📄</div>
                                     <h3 class="report-card-title">Qualifiers List</h3>
                                 </div>
-                                <p class="report-card-description">
-                                    Official list of qualified applicants based on overall rating, sorted alphabetically.
-                                    Available in Word (editable) or PDF format for official submission.
-                                </p>
                                 <div class="export-form">
                                     <div class="form-group">
-                                        <label for="qualifiersSlots" class="filter-label">Number of Slots (Required) *</label>
+                                        <label for="qualifiersSlots" class="filter-label">Number of Slots *</label>
                                         <input type="number" 
                                                id="qualifiersSlots" 
                                                name="qualifiersSlots" 
@@ -69,11 +58,10 @@
                                                min="1"
                                                max="500"
                                                required>
-                                        <span class="help-text">Enter the number of available slots for qualified applicants</span>
                                     </div>
                                     <div style="display: flex; gap: 10px;">
-                                        <button onclick="generateQualifiersReport('docx')" class="btn-primary-export">📥 Generate DOCX</button>
-                                        <button onclick="generateQualifiersReport('pdf')" class="btn-primary-export" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">📄 Generate PDF</button>
+                                        <button onclick="generateQualifiersReport('docx')" class="btn-primary-export">Generate DOCX</button>
+                                        <button onclick="generateQualifiersReport('pdf')" class="btn-primary-export" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">Generate PDF</button>
                                     </div>
                                 </div>
                             </div>
@@ -85,14 +73,13 @@
                 <div class="content-section collapsible-section">
                     <div class="section-header" onclick="toggleSection('filtersSection')">
                         <div>
-                            <h2 class="section-title">🔍 Advanced Filters</h2>
-                            <p class="section-subtitle">Filter criteria for PDF reports (optional)</p>
+                            <h2 class="section-title">Advanced Filters</h2>
                         </div>
                         <button class="toggle-btn" id="filtersToggle">
                             <span class="toggle-icon">▼</span>
                         </button>
                     </div>
-                    <div class="section-content collapsible-content" id="filtersSection" style="display: none; padding: 24px 30px;">
+                    <div class="section-content collapsible-content" id="filtersSection" style="display: none; padding: 20px;">
                         <form id="reportFiltersForm" class="filters-form">
                             <div class="filters-grid">
                                 <div class="filter-group">
@@ -169,24 +156,18 @@
                 <div class="content-section collapsible-section">
                     <div class="section-header" onclick="toggleSection('studentInfoReportsSection')">
                         <div>
-                            <h2 class="section-title">📊 Student Information Reports</h2>
-                            <p class="section-subtitle">Reports based on student basic information data</p>
+                            <h2 class="section-title">Student Information Reports</h2>
                         </div>
                         <button class="toggle-btn" id="studentInfoReportsToggle">
                             <span class="toggle-icon">▼</span>
                         </button>
                     </div>
-                    <div class="section-content collapsible-content" id="studentInfoReportsSection" style="display: none; padding: 30px;">
+                    <div class="section-content collapsible-content" id="studentInfoReportsSection" style="display: none; padding: 20px;">
                         <div class="additional-reports-grid">
                             <!-- Geographic Performance Report -->
                             <div class="report-card">
-                                <div class="report-card-icon" aria-hidden="true">🗺️</div>
                                 <div class="report-card-content">
-                                    <h3 class="report-card-title">Geographic Performance Report</h3>
-                                    <p class="report-card-description">
-                                        Performance analysis by geographic location including applicants by province, 
-                                        average exam scores by region, and top performing areas.
-                                    </p>
+                                    <h3 class="report-card-title">Geographic Performance</h3>
                                 </div>
                                 <form class="report-filters-form">
                                     <div class="filter-group-inline">
@@ -212,19 +193,14 @@
                                     </div>
                                 </form>
                                 <div class="report-card-actions">
-                                    <button onclick="generateGeographicReport()" class="btn-report-action">📄 Generate PDF</button>
+                                    <button onclick="generateGeographicReport()" class="btn-report-action">Generate PDF</button>
                                 </div>
                             </div>
 
                             <!-- Strand Distribution Report -->
                             <div class="report-card">
-                                <div class="report-card-icon" aria-hidden="true">🎓</div>
                                 <div class="report-card-content">
-                                    <h3 class="report-card-title">Strand Distribution Report</h3>
-                                    <p class="report-card-description">
-                                        Senior High School strand analysis showing distribution across ABM, STEM, HUMSS, TVL, 
-                                        and Others with percentages and trends.
-                                    </p>
+                                    <h3 class="report-card-title">Strand Distribution</h3>
                                 </div>
                                 <form class="report-filters-form">
                                     <div class="filter-group-inline">
@@ -249,19 +225,14 @@
                                     </div>
                                 </form>
                                 <div class="report-card-actions">
-                                    <button onclick="generateStrandReport()" class="btn-report-action">📄 Generate PDF</button>
+                                    <button onclick="generateStrandReport()" class="btn-report-action">Generate PDF</button>
                                 </div>
                             </div>
 
                             <!-- Demographic Overview Report -->
                             <div class="report-card">
-                                <div class="report-card-icon" aria-hidden="true">👥</div>
                                 <div class="report-card-content">
-                                    <h3 class="report-card-title">Demographic Overview Report</h3>
-                                    <p class="report-card-description">
-                                        Comprehensive demographic breakdown including age distribution, gender, civil status, 
-                                        applicant type, and PWD representation statistics.
-                                    </p>
+                                    <h3 class="report-card-title">Demographic Overview</h3>
                                 </div>
                                 <form class="report-filters-form">
                                     <div class="filter-group-inline">
@@ -285,7 +256,7 @@
                                     </div>
                                 </form>
                                 <div class="report-card-actions">
-                                    <button onclick="generateDemographicReport()" class="btn-report-action">📄 Generate PDF</button>
+                                    <button onclick="generateDemographicReport()" class="btn-report-action">Generate PDF</button>
                                 </div>
                             </div>
                         </div>
@@ -305,14 +276,13 @@
                                     <th>Report Type</th>
                                     <th>Generated By</th>
                                     <th>Date & Time</th>
-                                    <th>Filters Applied</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td colspan="5" style="text-align: center; padding: 30px; color: #6B7280;">
-                                        <p>No reports generated yet. Generate your first report using the options above.</p>
+                                    <td colspan="4" style="text-align: center; padding: 20px; color: #6B7280;">
+                                        <p>No reports generated yet.</p>
                                     </td>
                                 </tr>
                             </tbody>
@@ -627,7 +597,7 @@
                 showNotification('Failed to generate report. Please try again.', 'error');
             } finally {
                 btn.disabled = false;
-                btn.textContent = btn.dataset.originalText || '📄 Generate PDF';
+                btn.textContent = btn.dataset.originalText || 'Generate PDF';
             }
         }
 
@@ -678,7 +648,7 @@
                 showNotification('Failed to generate report. Please try again.', 'error');
             } finally {
                 btn.disabled = false;
-                btn.textContent = btn.dataset.originalText || '📄 Generate PDF';
+                btn.textContent = btn.dataset.originalText || 'Generate PDF';
             }
         }
 
@@ -729,7 +699,7 @@
                 showNotification('Failed to generate report. Please try again.', 'error');
             } finally {
                 btn.disabled = false;
-                btn.textContent = btn.dataset.originalText || '📄 Generate PDF';
+                btn.textContent = btn.dataset.originalText || 'Generate PDF';
             }
         }
 
@@ -880,8 +850,8 @@
                         if (tbody) {
                             tbody.innerHTML = `
                                 <tr>
-                                    <td colspan="5" style="text-align: center; padding: 30px; color: #6B7280;">
-                                        <p>No reports generated yet. Generate your first report using the options above.</p>
+                                    <td colspan="4" style="text-align: center; padding: 20px; color: #6B7280;">
+                                        <p>No reports generated yet.</p>
                                     </td>
                                 </tr>
                             `;
@@ -907,9 +877,6 @@
                     </td>
                     <td>${report.generated_by}</td>
                     <td>${report.created_at}</td>
-                    <td>
-                        <span class="filter-badge">${report.file_size}</span>
-                    </td>
                     <td>
                         <div class="table-actions">
                             <button onclick="downloadReport(${report.id})" class="action-btn action-btn-download" title="Download Report">Download</button>
@@ -1055,9 +1022,17 @@
     <style>
         /* Additional styles for reports page */
 
+        /* Section Title */
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--maroon-primary);
+            margin: 0;
+        }
+
         /* Section Subtitle */
         .section-subtitle {
-            font-size: 14px;
+            font-size: 12px;
             color: var(--text-gray);
             margin: 4px 0 0 0;
             font-weight: 400;
@@ -1066,59 +1041,59 @@
         /* Primary Reports Grid */
         .primary-reports-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-            gap: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
         }
 
         .primary-report-card {
             background: linear-gradient(135deg, #FFF9E6 0%, var(--white) 100%);
-            border: 3px solid var(--yellow-primary);
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border: 2px solid var(--yellow-primary);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
             transition: var(--transition);
         }
 
         .primary-report-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .report-card-header {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
+            gap: 8px;
+            margin-bottom: 12px;
         }
 
         .report-card-header .report-card-icon {
-            font-size: 32px;
+            font-size: 24px;
         }
 
         .report-card-header .report-card-title {
-            font-size: 20px;
-            font-weight: 700;
+            font-size: 16px;
+            font-weight: 600;
             color: var(--maroon-primary);
             margin: 0;
         }
 
         .report-card-description {
-            font-size: 14px;
+            font-size: 12px;
             color: var(--text-gray);
-            line-height: 1.6;
-            margin: 0 0 20px 0;
+            line-height: 1.5;
+            margin: 0 0 16px 0;
         }
 
         .export-form {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 12px;
         }
 
         .form-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 16px;
+            gap: 12px;
         }
 
         .form-group {
@@ -1128,22 +1103,22 @@
         }
 
         .help-text {
-            font-size: 12px;
+            font-size: 11px;
             color: #666;
-            margin-top: 4px;
+            margin-top: 2px;
         }
 
         .btn-primary-export {
-            padding: 14px 28px;
+            padding: 10px 20px;
             background: linear-gradient(135deg, var(--maroon-primary) 0%, var(--maroon-light) 100%);
             color: var(--white);
             border: none;
-            border-radius: 10px;
+            border-radius: 6px;
             cursor: pointer;
-            font-weight: 700;
-            font-size: 15px;
+            font-weight: 600;
+            font-size: 13px;
             transition: var(--transition);
-            box-shadow: 0 4px 12px rgba(128, 0, 32, 0.3);
+            box-shadow: 0 2px 6px rgba(128, 0, 32, 0.2);
         }
 
         .btn-primary-export:hover:not(:disabled) {
@@ -1312,13 +1287,13 @@
         /* Filters Form */
         .filters-form {
             display: grid;
-            gap: 24px;
+            gap: 16px;
         }
 
         .filters-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+            gap: 16px;
         }
 
         .filter-group {
@@ -1328,16 +1303,16 @@
         }
 
         .filter-label {
-            font-weight: 600;
+            font-weight: 500;
             color: var(--maroon-primary);
-            font-size: 14px;
+            font-size: 12px;
         }
 
         .filter-select, .filter-input {
-            padding: 12px 16px;
-            border: 2px solid var(--border-gray);
-            border-radius: 8px;
-            font-size: 14px;
+            padding: 8px 12px;
+            border: 1px solid var(--border-gray);
+            border-radius: 6px;
+            font-size: 13px;
             transition: var(--transition);
         }
 
@@ -1362,23 +1337,23 @@
 
         .filters-actions {
             display: flex;
-            gap: 16px;
+            gap: 12px;
             justify-content: center;
-            padding-top: 20px;
+            padding-top: 16px;
             border-top: 1px solid var(--border-gray);
         }
 
         .btn-apply-filters, .btn-preview {
-            padding: 12px 24px;
-            border-radius: 8px;
+            padding: 8px 16px;
+            border-radius: 6px;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: 500;
             transition: var(--transition);
             border: none;
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 14px;
+            gap: 6px;
+            font-size: 13px;
         }
 
         .btn-apply-filters {
@@ -1405,34 +1380,34 @@
         /* Additional Reports Grid */
         .additional-reports-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
         }
 
         .report-card {
             background: var(--white);
-            border: 2px solid var(--border-gray);
-            border-radius: 12px;
-            padding: 24px;
+            border: 1px solid var(--border-gray);
+            border-radius: 8px;
+            padding: 16px;
             transition: var(--transition);
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 12px;
         }
 
         .report-card:hover {
             border-color: var(--yellow-primary);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
 
         .report-card-icon {
-            font-size: 32px;
+            font-size: 24px;
             text-align: center;
         }
 
         .report-card-title {
-            font-size: 18px;
+            font-size: 14px;
             font-weight: 600;
             color: var(--maroon-primary);
             margin: 0 0 8px 0;
@@ -1440,9 +1415,9 @@
         }
 
         .report-card-description {
-            font-size: 14px;
+            font-size: 12px;
             color: var(--text-gray);
-            line-height: 1.5;
+            line-height: 1.4;
             margin: 0;
             text-align: center;
             flex: 1;
@@ -1453,15 +1428,15 @@
         }
 
         .btn-report-action {
-            padding: 10px 20px;
+            padding: 8px 16px;
             background: var(--yellow-light);
             color: var(--maroon-primary);
-            border: 2px solid var(--yellow-primary);
-            border-radius: 8px;
+            border: 1px solid var(--yellow-primary);
+            border-radius: 6px;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: 500;
             transition: var(--transition);
-            font-size: 14px;
+            font-size: 12px;
         }
 
         .btn-report-action:hover {
@@ -1471,7 +1446,7 @@
 
         /* Report History Table */
         .reports-history-table {
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .report-type-name {
@@ -1677,13 +1652,13 @@
 
         /* Report Filters Form Styles */
         .report-filters-form {
-            margin: 16px 0;
-            padding: 16px;
+            margin: 12px 0;
+            padding: 12px;
             background: var(--light-gray);
-            border-radius: 8px;
+            border-radius: 6px;
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 10px;
         }
 
         .filter-group-inline {
@@ -1695,16 +1670,16 @@
         }
 
         .filter-group-inline .filter-label {
-            font-size: 12px;
-            font-weight: 600;
+            font-size: 11px;
+            font-weight: 500;
             color: var(--maroon-primary);
         }
 
         .filter-select-sm {
-            padding: 8px 12px;
-            border: 2px solid var(--border-gray);
-            border-radius: 6px;
-            font-size: 13px;
+            padding: 6px 10px;
+            border: 1px solid var(--border-gray);
+            border-radius: 4px;
+            font-size: 12px;
             transition: var(--transition);
             background: var(--white);
         }

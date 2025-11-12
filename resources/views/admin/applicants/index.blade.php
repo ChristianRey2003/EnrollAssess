@@ -725,18 +725,29 @@
         window.openGenerateCodesDrawer = openGenerateCodesDrawer;
         window.closeGenerateCodesDrawer = closeGenerateCodesDrawer;
 
-        // AJAX Pagination
+        // AJAX Pagination - Use event delegation to catch all pagination links
         document.addEventListener('click', function(e) {
-            if (e.target.matches('.pagination a')) {
+            // Check if click is on a pagination link (could be direct <a> or nested in <span>)
+            const paginationLink = e.target.closest('.pagination a, .pagination-wrapper a');
+            
+            if (paginationLink && paginationLink.href) {
                 e.preventDefault();
-                const url = e.target.href;
+                e.stopPropagation();
+                const url = paginationLink.href;
                 
-                if (!url) return;
+                if (!url || url === '#' || url === 'javascript:void(0)') return;
                 
                 // Show loading state
                 const tableBody = document.querySelector('.data-table tbody');
+                const paginationWrapper = document.querySelector('.pagination-wrapper');
+                
                 if (tableBody) {
                     tableBody.style.opacity = '0.5';
+                    tableBody.style.pointerEvents = 'none';
+                }
+                if (paginationWrapper) {
+                    paginationWrapper.style.opacity = '0.5';
+                    paginationWrapper.style.pointerEvents = 'none';
                 }
                 
                 // Fetch new page
@@ -746,7 +757,12 @@
                         'Accept': 'application/json'
                     }
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.applicants && tableBody) {
                         // Build new table rows
@@ -760,32 +776,50 @@
                         } else {
                             data.applicants.forEach((applicant, index) => {
                                 const rowNum = (from - 1) + index + 1;
-                                html += `<tr>
-                                    <td class="text-center"><input type="checkbox" class="applicant-checkbox" value="${applicant.applicant_id}"></td>
-                                    <td class="text-center">${rowNum}</td>
-                                    <td>${applicant.application_no || applicant.formatted_applicant_no || 'N/A'}</td>
+                                const statusBadge = (applicant.status || 'pending').replace(/-/g, ' ').toUpperCase();
+                                html += `<tr style="page-break-inside: avoid; position: relative;" 
+                                    onmouseover="showActions(${applicant.applicant_id})" 
+                                    onmouseout="hideActions(${applicant.applicant_id})">
+                                    <td class="text-center"><input type="checkbox" class="applicant-checkbox" value="${applicant.applicant_id}" onchange="updateBulkActions()" style="cursor: pointer;"></td>
+                                    <td class="text-center font-medium">${rowNum}</td>
+                                    <td><div class="applicant-number"><span class="font-mono text-sm">${applicant.application_no || applicant.formatted_applicant_no || 'N/A'}</span></div></td>
                                     <td>${(applicant.full_name || '').toUpperCase()}</td>
                                     <td>${applicant.email_address || ''}</td>
                                     <td class="text-center">${applicant.preferred_course || '-'}</td>
                                     <td class="text-center">${applicant.score !== null ? Number(applicant.score).toFixed(2) + '%' : '-'}</td>
                                     <td class="text-center">${applicant.computed_verbal_description || '-'}</td>
-                                    <td class="text-center"><span class="status-badge">${(applicant.status || 'pending').replace('-', ' ').toUpperCase()}</span></td>
+                                    <td class="text-center"><span class="status-badge">${statusBadge}</span></td>
                                 </tr>`;
                             });
                         }
                         
                         tableBody.innerHTML = html;
                         tableBody.style.opacity = '1';
+                        tableBody.style.pointerEvents = '';
+                        
+                        // Update pagination HTML if provided
+                        if (data.pagination_html && paginationWrapper) {
+                            paginationWrapper.innerHTML = data.pagination_html;
+                        }
+                        
+                        if (paginationWrapper) {
+                            paginationWrapper.style.opacity = '1';
+                            paginationWrapper.style.pointerEvents = '';
+                        }
                         
                         // Update URL without reload
                         window.history.pushState({}, '', url);
+                        
+                        // Re-initialize any event handlers that might be needed
+                        if (typeof updateBulkActions === 'function') {
+                            updateBulkActions();
+                        }
                     }
                 })
                 .catch(error => {
                     console.error('Pagination error:', error);
-                    if (tableBody) {
-                        tableBody.style.opacity = '1';
-                    }
+                    // Fallback to full page reload if AJAX fails
+                    window.location.href = url;
                 });
             }
         });

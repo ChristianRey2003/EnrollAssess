@@ -56,6 +56,15 @@
         font-weight: 700;
         font-size: 48px;
         border: 4px solid rgba(255, 255, 255, 0.2);
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .user-avatar-large img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
     }
 
     .user-profile-info {
@@ -278,7 +287,11 @@
     <!-- User Profile Card -->
     <div class="user-profile-card">
         <div class="user-avatar-large">
-            {{ strtoupper(substr($user->full_name, 0, 2)) }}
+            @if($user->profile_picture_url)
+                <img src="{{ $user->profile_picture_url }}" alt="{{ $user->full_name }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+            @else
+                {{ $user->initials }}
+            @endif
         </div>
         <div class="user-profile-info">
             <h1>{{ $user->full_name }}</h1>
@@ -289,7 +302,7 @@
                 @elseif($user->role === 'administrator')
                      Administrator
                 @else
-                    🧑‍ Instructor
+                    Instructor
                 @endif
             </span>
         </div>
@@ -298,7 +311,7 @@
     <!-- Account Information -->
     <div class="info-grid">
         <div class="info-card">
-            <h3> Account Information</h3>
+            <h3>Account Information</h3>
             <div class="info-row">
                 <span class="info-label">Username</span>
                 <span class="info-value">{{ $user->username }}</span>
@@ -320,7 +333,7 @@
         </div>
 
         <div class="info-card">
-            <h3> Activity Timeline</h3>
+            <h3>Activity Timeline</h3>
             <div class="info-row">
                 <span class="info-label">Created</span>
                 <span class="info-value">{{ $userStats['created_date']->format('M d, Y') }}</span>
@@ -339,7 +352,7 @@
     <!-- Activity Statistics (for instructors) -->
     @if($user->role === 'instructor' && isset($relatedData['assigned_interviews']))
     <div class="stats-card">
-        <h3> Interview Statistics</h3>
+        <h3>Interview Statistics</h3>
         <div class="stats-grid">
             <div class="stat-item">
                 <h4 class="stat-value">{{ $relatedData['assigned_interviews'] ?? 0 }}</h4>
@@ -366,7 +379,7 @@
 
     <!-- Role Permissions -->
     <div class="stats-card">
-        <h3> Role Permissions</h3>
+        <h3>Role Permissions</h3>
         <ul style="padding-left: 20px; color: var(--text-gray); margin: 0;">
             @if($user->role === 'department-head')
                 <li>Full system administration</li>
@@ -396,14 +409,20 @@
     <!-- Action Buttons -->
     <div class="action-buttons">
         <a href="{{ route('admin.users.index') }}" class="btn btn-secondary">
-            <span>←</span> Back to List
+            Back to List
         </a>
-        <a href="{{ route('admin.users.edit', $user->user_id) }}" class="btn btn-primary">
-            <span>️</span> Edit User
-        </a>
-        <button type="button" class="btn btn-warning" onclick="resetPassword()">
-            <span></span> Reset Password
-        </button>
+        @if($user->user_id === auth()->id())
+            <a href="{{ route('admin.profile.edit') }}" class="btn btn-primary">
+                My Profile
+            </a>
+        @else
+            <a href="{{ route('admin.users.edit', $user->user_id) }}" class="btn btn-primary">
+                Edit User
+            </a>
+            <button type="button" class="btn btn-warning" onclick="resetPassword()">
+                Reset Password
+            </button>
+        @endif
     </div>
 </div>
 @endsection

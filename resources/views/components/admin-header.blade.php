@@ -42,11 +42,23 @@
                     aria-haspopup="true"
                     aria-label="User menu for {{ auth()->user()->full_name ?? 'Dr. Admin' }}">
                 <div class="user-avatar">
-                    <span class="avatar-icon" aria-hidden="true"></span>
+                    @if(auth()->user()->profile_picture_url)
+                        <img src="{{ auth()->user()->profile_picture_url }}" alt="{{ auth()->user()->full_name }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                    @else
+                        <span class="avatar-icon" aria-hidden="true">{{ auth()->user()->initials ?? 'A' }}</span>
+                    @endif
                 </div>
                 <div class="user-info">
                     <div class="user-name">{{ auth()->user()->full_name ?? 'Dr. Admin' }}</div>
-                    <div class="user-role">Department Head</div>
+                    <div class="user-role">
+                        @if(auth()->user()->role === 'department-head')
+                            Department Head
+                        @elseif(auth()->user()->role === 'administrator')
+                            Administrator
+                        @else
+                            Instructor
+                        @endif
+                    </div>
                 </div>
                 <span class="dropdown-arrow" aria-hidden="true"></span>
             </button>
@@ -56,6 +68,16 @@
                  role="menu"
                  aria-label="User account menu"
                  style="display: none;">
+                <!-- Profile Link -->
+                <a href="{{ route('admin.profile.edit') }}" 
+                   class="dropdown-item"
+                   role="menuitem"
+                   aria-label="View profile">
+                    <span class="dropdown-text">My Profile</span>
+                </a>
+                
+                <div class="dropdown-divider" role="separator"></div>
+                
                 <!-- Department Head Features -->
                 <div class="dropdown-section">
                     <div class="dropdown-section-title" role="presentation">Department Head</div>

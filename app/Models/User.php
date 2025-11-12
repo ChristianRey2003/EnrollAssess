@@ -24,6 +24,7 @@ class User extends Authenticatable
         'full_name',
         'role',
         'email',
+        'profile_picture',
     ];
 
     /**
@@ -141,5 +142,29 @@ class User extends Authenticatable
     public function isInstructor()
     {
         return $this->role === 'instructor';
+    }
+
+    /**
+     * Get the profile picture URL or return null
+     */
+    public function getProfilePictureUrlAttribute()
+    {
+        if ($this->profile_picture) {
+            return asset('storage/' . $this->profile_picture);
+        }
+        return null;
+    }
+
+    /**
+     * Get initials for avatar display
+     */
+    public function getInitialsAttribute()
+    {
+        $name = $this->full_name;
+        $parts = explode(' ', $name);
+        if (count($parts) >= 2) {
+            return strtoupper(substr($parts[0], 0, 1) . substr($parts[count($parts) - 1], 0, 1));
+        }
+        return strtoupper(substr($name, 0, 2));
     }
 }

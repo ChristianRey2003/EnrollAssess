@@ -172,6 +172,15 @@
         color: var(--white);
         font-weight: 600;
         font-size: 16px;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .user-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
     }
 
     .user-details h4 {
@@ -332,7 +341,11 @@
                     <td>
                         <div class="user-info">
                             <div class="user-avatar">
-                                {{ strtoupper(substr($user->full_name, 0, 2)) }}
+                                @if($user->profile_picture_url)
+                                    <img src="{{ $user->profile_picture_url }}" alt="{{ $user->full_name }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                @else
+                                    {{ $user->initials }}
+                                @endif
                             </div>
                             <div class="user-details">
                                 <h4>
@@ -351,7 +364,7 @@
                             @elseif($user->role === 'administrator')
                                  Administrator
                             @else
-                                🧑‍ Instructor
+                                Instructor
                             @endif
                         </span>
                     </td>
@@ -359,14 +372,21 @@
                     <td>{{ $user->updated_at->diffForHumans() }}</td>
                     <td>
                         <div class="user-actions">
-                            <a href="{{ route('admin.users.show', $user->user_id) }}" 
-                               class="btn btn-edit">
-                                ️ View
-                            </a>
-                            <a href="{{ route('admin.users.edit', $user->user_id) }}" 
-                               class="btn btn-edit">
-                                ️ Edit
-                            </a>
+                            @if($user->user_id === auth()->id())
+                                <a href="{{ route('admin.profile.edit') }}" 
+                                   class="btn btn-edit">
+                                    My Profile
+                                </a>
+                            @else
+                                <a href="{{ route('admin.users.show', $user->user_id) }}" 
+                                   class="btn btn-edit">
+                                    View
+                                </a>
+                                <a href="{{ route('admin.users.edit', $user->user_id) }}" 
+                                   class="btn btn-edit">
+                                    Edit
+                                </a>
+                            @endif
                         </div>
                     </td>
                 </tr>

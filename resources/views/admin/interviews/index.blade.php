@@ -37,7 +37,7 @@
             <form method="GET" action="{{ route('admin.interviews.index') }}" id="interviewSearchForm" class="search-form">
                 <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
                     <input type="text" name="search" placeholder="Search..." 
-                           value="{{ request('search') }}" class="search-input" style="width: 180px; height: 30px; padding: 4px 8px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 4px; flex: none;">
+                           value="{{ request('search') }}" class="search-input" style="width: 180px; height: 30px; padding: 4px 40px 4px 8px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 4px; flex: none; background-position: right 12px center;">
                     
                     <select name="status" class="filter-select" style="width: 140px; height: 30px; padding: 2px 6px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 4px;" onchange="this.form.submit()">
                         <option value="">All Status</option>
@@ -215,5 +215,145 @@
             });
         }
     }
+
+    // AJAX Pagination
+    document.addEventListener('click', function(e) {
+        const paginationLink = e.target.closest('.pagination a, .pagination-wrapper a');
+        
+        if (paginationLink && paginationLink.href) {
+            e.preventDefault();
+            e.stopPropagation();
+            const url = paginationLink.href;
+            
+            if (!url || url === '#' || url === 'javascript:void(0)') return;
+            
+            const tableBody = document.querySelector('.data-table tbody');
+            const paginationWrapper = document.querySelector('.pagination-wrapper');
+            
+            if (tableBody) {
+                tableBody.style.opacity = '0.5';
+                tableBody.style.pointerEvents = 'none';
+            }
+            if (paginationWrapper) {
+                paginationWrapper.style.opacity = '0.5';
+                paginationWrapper.style.pointerEvents = 'none';
+            }
+            
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                if (data.interviews && tableBody) {
+                    let html = '';
+                    const from = data.pagination.from || 0;
+                    
+                    if (data.interviews.length === 0) {
+                        html = '<tr><td colspan="6" class="text-center py-8"><div class="empty-state"><h3>No Interviews Found</h3><p>No interviews match your current search criteria.</p></div></td></tr>';
+                    } else {
+                        data.interviews.forEach((interview, index) => {
+                            const rowNum = (from - 1) + index + 1;
+                            const applicant = interview.applicant || {};
+                            const interviewer = interview.interviewer || {};
+                            
+                            // Handle date formatting - schedule_date might be a string or null
+                            let dateStr = 'Not set';
+                            let timeStr = '';
+                            if (interview.schedule_date) {
+                                try {
+                                    const scheduleDate = new Date(interview.schedule_date);
+                                    if (!isNaN(scheduleDate.getTime())) {
+                                        dateStr = scheduleDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                                        timeStr = scheduleDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                                    }
+                                } catch(e) {
+                                    // If date parsing fails, use the raw value or default
+                                    dateStr = interview.schedule_date || 'Not set';
+                                }
+                            }
+                            
+                            let scoreHtml = '<span class="score-pending">Pending</span>';
+                            if (interview.status === 'completed' && interview.overall_score !== null) {
+                                const score = Number(interview.overall_score);
+                                let scoreClass = 'score-poor';
+                                if (score >= 75) scoreClass = 'score-excellent';
+                                else if (score >= 50) scoreClass = 'score-good';
+                                else if (score >= 25) scoreClass = 'score-fair';
+                                scoreHtml = `<span class="score-badge ${scoreClass}">${Math.round(score)}/100</span>`;
+                            }
+                            
+                            const statusClass = interview.status || 'scheduled';
+                            const statusText = (interview.status || 'scheduled').charAt(0).toUpperCase() + (interview.status || 'scheduled').slice(1);
+                            
+                            // Build action buttons HTML
+                            let actionsHtml = '';
+                            if (['scheduled', 'available', 'claimed'].includes(interview.status) && interview.status !== 'completed') {
+                                actionsHtml += `<a href="/admin/interviews/${interview.interview_id}/conduct" class="action-btn action-btn-conduct">I'll Conduct This</a>`;
+                            }
+                            actionsHtml += `<button onclick="editInterview(${interview.interview_id})" class="action-btn action-btn-edit">Edit</button>`;
+                            if (interview.status === 'scheduled') {
+                                actionsHtml += `<button onclick="cancelInterview(${interview.interview_id})" class="action-btn action-btn-delete">Cancel</button>`;
+                            }
+                            actionsHtml += `<a href="/admin/interviews/${interview.interview_id}" class="action-btn action-btn-view">View Details</a>`;
+                            
+                            html += `<tr>
+                                <td class="text-center">${rowNum}</td>
+                                <td style="position: relative;">
+                                    <div class="applicant-info">
+                                        <div class="applicant-name">${(applicant.full_name || applicant.first_name + ' ' + applicant.last_name || 'Unknown Applicant').trim()}</div>
+                                        <div class="applicant-email">${applicant.email_address || applicant.email || 'N/A'}</div>
+                                    </div>
+                                    <div class="floating-actions">${actionsHtml}</div>
+                                </td>
+                                <td>
+                                    <div class="interviewer-info">
+                                        <div class="interviewer-name">${interviewer.full_name || interviewer.first_name + ' ' + interviewer.last_name || 'Not Assigned'}</div>
+                                        <div class="interviewer-role">${interviewer.role ? (interviewer.role.charAt(0).toUpperCase() + interviewer.role.slice(1)) : 'Available in Pool'}</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="schedule-info">
+                                        <div class="schedule-date">${dateStr}</div>
+                                        ${timeStr ? `<div class="schedule-time">${timeStr}</div>` : ''}
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="status-badge status-${statusClass}">${statusText}</span>
+                                </td>
+                                <td>
+                                    <div class="score-display">${scoreHtml}</div>
+                                </td>
+                            </tr>`;
+                        });
+                    }
+                    
+                    tableBody.innerHTML = html;
+                    tableBody.style.opacity = '1';
+                    tableBody.style.pointerEvents = '';
+                    
+                    if (data.pagination_html && paginationWrapper) {
+                        paginationWrapper.innerHTML = data.pagination_html;
+                    }
+                    
+                    if (paginationWrapper) {
+                        paginationWrapper.style.opacity = '1';
+                        paginationWrapper.style.pointerEvents = '';
+                    }
+                    
+                    window.history.pushState({}, '', url);
+                }
+            })
+            .catch(error => {
+                console.error('Pagination error:', error);
+                window.location.href = url;
+            });
+        }
+    });
 </script>
 @endpush

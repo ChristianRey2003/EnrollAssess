@@ -49,6 +49,22 @@ class InterviewController extends Controller
 
         $interviews = $query->orderBy('schedule_date', 'desc')->paginate(20);
 
+        // Return JSON for AJAX pagination requests only
+        if ($request->ajax() && $request->header('Accept') && str_contains($request->header('Accept'), 'application/json')) {
+            return response()->json([
+                'interviews' => $interviews->items(),
+                'pagination' => [
+                    'current_page' => $interviews->currentPage(),
+                    'last_page' => $interviews->lastPage(),
+                    'per_page' => $interviews->perPage(),
+                    'total' => $interviews->total(),
+                    'from' => $interviews->firstItem(),
+                    'to' => $interviews->lastItem(),
+                ],
+                'pagination_html' => $interviews->hasPages() ? $interviews->appends($request->query())->links()->render() : '',
+            ]);
+        }
+
         // Statistics
         $stats = [
             'total' => Interview::count(),

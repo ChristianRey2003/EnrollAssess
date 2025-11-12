@@ -60,7 +60,7 @@ class InstructorController extends Controller
     /**
      * Display assigned applicants list
      */
-    public function applicants()
+    public function applicants(Request $request)
     {
         $instructor = Auth::user();
         
@@ -69,6 +69,22 @@ class InstructorController extends Controller
             ->with(['latestInterview', 'interviews'])
             ->orderBy('created_at', 'desc')
             ->paginate(15);
+
+        // Return JSON for AJAX pagination requests only
+        if ($request->ajax() && $request->header('Accept') && str_contains($request->header('Accept'), 'application/json')) {
+            return response()->json([
+                'applicants' => $assignedApplicants->items(),
+                'pagination' => [
+                    'current_page' => $assignedApplicants->currentPage(),
+                    'last_page' => $assignedApplicants->lastPage(),
+                    'per_page' => $assignedApplicants->perPage(),
+                    'total' => $assignedApplicants->total(),
+                    'from' => $assignedApplicants->firstItem(),
+                    'to' => $assignedApplicants->lastItem(),
+                ],
+                'pagination_html' => $assignedApplicants->hasPages() ? $assignedApplicants->links()->render() : '',
+            ]);
+        }
 
         return view('instructor.applicants', compact('assignedApplicants'));
     }

@@ -92,8 +92,8 @@ class ApplicantController extends BaseController
 
             $exams = Exam::where('is_active', true)->get();
             
-            // Return JSON for AJAX requests
-            if ($request->ajax() || $request->wantsJson()) {
+            // Return JSON for AJAX pagination requests only
+            if ($request->ajax() && $request->header('Accept') && str_contains($request->header('Accept'), 'application/json')) {
                 return response()->json([
                     'applicants' => $applicants->items(),
                     'pagination' => [
@@ -104,6 +104,7 @@ class ApplicantController extends BaseController
                         'from' => $applicants->firstItem(),
                         'to' => $applicants->lastItem(),
                     ],
+                    'pagination_html' => $applicants->hasPages() ? $applicants->links()->render() : '',
                 ]);
             }
             
@@ -651,6 +652,22 @@ class ApplicantController extends BaseController
         // Paginate results
         $applicants = $query->orderBy('created_at', 'desc')->paginate(20);
 
+            // Return JSON for AJAX pagination requests only
+            if ($request->ajax() && $request->header('Accept') && str_contains($request->header('Accept'), 'application/json')) {
+            return response()->json([
+                'applicants' => $applicants->items(),
+                'pagination' => [
+                    'current_page' => $applicants->currentPage(),
+                    'last_page' => $applicants->lastPage(),
+                    'per_page' => $applicants->perPage(),
+                    'total' => $applicants->total(),
+                    'from' => $applicants->firstItem(),
+                    'to' => $applicants->lastItem(),
+                ],
+                'pagination_html' => $applicants->hasPages() ? $applicants->appends($request->query())->links()->render() : '',
+            ]);
+        }
+
         return view('admin.applicants.assign', compact('applicants', 'instructors'));
     }
 
@@ -909,6 +926,22 @@ class ApplicantController extends BaseController
                 'average_uee' => round(Applicant::whereNotNull('score')->avg('score'), 2),
                 'average_gwa' => round(Applicant::whereNotNull('card_tor_gwa')->avg('card_tor_gwa'), 2),
             ];
+
+            // Return JSON for AJAX pagination requests only
+            if ($request->ajax() && $request->header('Accept') && str_contains($request->header('Accept'), 'application/json')) {
+                return response()->json([
+                    'applicants' => $applicants->items(),
+                    'pagination' => [
+                        'current_page' => $applicants->currentPage(),
+                        'last_page' => $applicants->lastPage(),
+                        'per_page' => $applicants->perPage(),
+                        'total' => $applicants->total(),
+                        'from' => $applicants->firstItem(),
+                        'to' => $applicants->lastItem(),
+                    ],
+                    'pagination_html' => $applicants->hasPages() ? $applicants->appends($request->query())->links()->render() : '',
+                ]);
+            }
 
             return view('admin.applicants.exam-results', compact(
                 'applicants',
