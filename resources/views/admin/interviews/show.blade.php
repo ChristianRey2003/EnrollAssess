@@ -770,9 +770,9 @@
 }
 
 .btn {
-    padding: 10px 20px;
+    padding: 8px 14px;
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 500;
     text-decoration: none;
     transition: all 0.2s;

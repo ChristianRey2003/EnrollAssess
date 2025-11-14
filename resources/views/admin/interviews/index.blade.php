@@ -9,27 +9,55 @@
 
 @push('styles')
     <link href="{{ asset('css/admin/interviews.css') }}" rel="stylesheet">
+    <style>
+        /* Override main-content padding for this page */
+        .main-content {
+            padding: 20px !important;
+        }
+
+        /* Center stats section at top */
+        .stats-section {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            max-width: 100%;
+        }
+
+        .stats-section .stat-card {
+            min-width: 200px;
+        }
+
+        /* Pagination spacing */
+        .pagination-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .pagination-wrapper .relative.z-0.inline-flex {
+            margin-left: 20px;
+        }
+    </style>
 @endpush
 
 @section('content')
+    <!-- Statistics Section -->
+    <section class="stats-section">
+        <div class="stat-card">
+            <div class="stat-icon" aria-hidden="true"></div>
+            <div class="stat-value">{{ $stats['scheduled'] }}</div>
+            <div class="stat-label">Scheduled</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" aria-hidden="true"></div>
+            <div class="stat-value">{{ $stats['completed'] }}</div>
+            <div class="stat-label">Completed</div>
+        </div>
+    </section>
+
     <!-- Main Content Card -->
     <div class="content-card">
-        <div class="content-header">
-            <h2 class="section-title">Interview Schedule</h2>
-            <!-- Statistics Section -->
-            <section class="stats-section">
-                <div class="stat-card">
-                    <div class="stat-icon" aria-hidden="true"></div>
-                    <div class="stat-value">{{ $stats['scheduled'] }}</div>
-                    <div class="stat-label">Scheduled</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" aria-hidden="true"></div>
-                    <div class="stat-value">{{ $stats['completed'] }}</div>
-                    <div class="stat-label">Completed</div>
-                </div>
-            </section>
-        </div>
 
         <!-- Search and Filter Bar -->
         <div class="search-controls" style="padding: 20px 24px; background: #F9FAFB; border-bottom: 1px solid #E5E7EB;">
@@ -48,7 +76,7 @@
                         </svg>
                     </div>
                     
-                    <select name="status" class="form-select form-select-sm" style="width: 140px; height: 26px; padding: 4px 28px 4px 8px;" onchange="this.form.submit()">
+                    <select name="status" class="form-select form-select-sm" style="width: 180px; min-width: 180px; height: 40px; padding: 4px 28px 4px 8px;" onchange="this.form.submit()">
                         <option value="">All Status</option>
                         <option value="scheduled" {{ request('status') == 'scheduled' ? 'selected' : '' }}>Scheduled</option>
                         <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>

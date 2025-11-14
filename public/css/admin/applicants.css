@@ -378,11 +378,24 @@
     flex-wrap: wrap;
 }
 
+/* Personal Information section header - align to left */
+.compact-form .form-section:first-of-type .section-header {
+    justify-content: flex-start;
+}
+
 .compact-form .section-header .section-title {
     font-size: 14px;
     margin: 0;
     padding: 0;
     border-bottom: none;
+}
+
+/* Personal Information heading only */
+.compact-form .form-section:first-of-type .section-header .section-title {
+    color: var(--maroon-primary);
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 15px 0;
 }
 
 .compact-form .section-header .compact-back-link {
@@ -425,6 +438,18 @@
     min-height: 32px;
 }
 
+/* Dropdown arrow for select elements in compact form */
+.compact-form select.form-control {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B7280' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+    cursor: pointer;
+}
+
 .compact-form .form-group {
     max-width: 100%;
 }
@@ -455,12 +480,22 @@
 }
 
 .compact-form .form-actions .btn-primary,
-.compact-form .form-actions .btn-secondary {
-    padding: 5px 14px;
+.compact-form .form-actions .btn-secondary,
+.compact-form .btn-primary,
+.compact-form .btn-secondary {
     font-size: 12px;
-    height: 30px;
+    padding: 8px 14px;
+    font-weight: 500;
     display: inline-flex;
     align-items: center;
+}
+
+/* Modal button styles */
+.preview-modal .modal-footer .btn-primary,
+.preview-modal .modal-footer .btn-secondary {
+    font-size: 12px;
+    padding: 8px 14px;
+    font-weight: 500;
 }
 
 .compact-form .alert {
@@ -516,6 +551,18 @@
     font-size: 14px;
     transition: border-color 0.3s ease;
     background: var(--white);
+}
+
+/* Dropdown arrow for select elements */
+select.form-control {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B7280' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 35px;
+    cursor: pointer;
 }
 
 .form-control:focus {

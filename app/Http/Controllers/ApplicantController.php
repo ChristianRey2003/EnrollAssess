@@ -104,7 +104,7 @@ class ApplicantController extends BaseController
                         'from' => $applicants->firstItem(),
                         'to' => $applicants->lastItem(),
                     ],
-                    'pagination_html' => $applicants->hasPages() ? $applicants->appends($request->query())->links()->render() : '',
+                    'pagination_html' => $applicants->hasPages() ? $applicants->onEachSide(2)->appends($request->query())->links()->render() : '',
                 ]);
             }
             
@@ -700,7 +700,7 @@ class ApplicantController extends BaseController
                     'from' => $applicants->firstItem(),
                     'to' => $applicants->lastItem(),
                 ],
-                'pagination_html' => $applicants->hasPages() ? $applicants->appends($request->query())->links()->render() : '',
+                'pagination_html' => $applicants->hasPages() ? $applicants->onEachSide(2)->appends($request->query())->links()->render() : '',
             ]);
         }
 
@@ -982,7 +982,7 @@ class ApplicantController extends BaseController
                         'from' => $applicants->firstItem(),
                         'to' => $applicants->lastItem(),
                     ],
-                    'pagination_html' => $applicants->hasPages() ? $applicants->appends($request->query())->links()->render() : '',
+                    'pagination_html' => $applicants->hasPages() ? $applicants->onEachSide(2)->appends($request->query())->links()->render() : '',
                 ]);
             }
 

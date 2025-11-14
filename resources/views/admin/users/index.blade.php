@@ -24,8 +24,15 @@
         --transition: all 0.3s ease;
     }
 
+    /* Override main-content padding for this page */
+    .main-content {
+        padding: 20px !important;
+    }
+
     .users-container {
-        padding: 15px 30px 30px 30px;
+        padding: 0;
+        max-width: 100%;
+        width: 100%;
     }
 
     .users-header {
@@ -87,7 +94,7 @@
         color: var(--text-dark);
         padding: 20px;
         display: flex;
-        justify-content: flex-end;
+        justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
         gap: 15px;
@@ -278,11 +285,11 @@
     }
 
     .btn {
-        padding: 8px 16px;
+        padding: 8px 14px;
         border-radius: 6px;
         border: none;
         cursor: pointer;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 500;
         transition: var(--transition);
         text-decoration: none;
@@ -312,10 +319,30 @@
         color: var(--white);
     }
 
-    .pagination {
+    /* Pagination spacing */
+    .pagination-wrapper {
         padding: 20px;
+    }
+
+    /* Style the pagination nav container */
+    .pagination-wrapper nav {
         display: flex;
-        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    /* Style for the "Showing X to Y of Z results" text */
+    .pagination-wrapper nav > div:first-child,
+    .pagination-wrapper nav > p:first-child {
+        color: var(--text-gray);
+        font-size: 14px;
+        margin: 0;
+    }
+
+    /* Spacing before pagination buttons */
+    .pagination-wrapper .relative.z-0.inline-flex {
+        margin-left: 20px;
     }
 
     @media (max-width: 768px) {
@@ -339,33 +366,29 @@
     <!-- Users Table -->
     <div class="users-table-container">
         <div class="table-header">
-            <div class="search-filter-section" style="display: flex; gap: 12px; align-items: center;">
-                <a href="{{ route('admin.users.create') }}" class="btn btn-sm" style="background: #800020; color: white; border: none; padding: 8px 16px; white-space: nowrap; font-weight: 600; height: 26px; display: inline-flex; align-items: center;">
-                    Add New User
-                </a>
-                <form method="GET" action="{{ route('admin.users.index') }}" style="display: flex; gap: 10px; align-items: center;">
-                    <label style="font-size: 13px; color: var(--text-gray);">Search:</label>
-                    <div style="position: relative; width: 220px;">
-                        <input type="text" 
-                               id="searchInput"
-                               name="search" 
-                               placeholder="Search..." 
-                               value="{{ request('search') }}"
-                               class="form-control form-control-sm"
-                               style="width: 100%; height: 26px; padding: 4px 32px 4px 8px;">
-                        <svg style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                    </div>
-                    <label style="font-size: 13px; color: var(--text-gray);">Role:</label>
-                    <select name="role" class="form-select form-select-sm" onchange="this.form.submit()" style="width: 140px; height: 26px; padding: 4px 28px 4px 8px;">
-                        <option value="">All Roles</option>
-                        <option value="department-head" {{ request('role') === 'department-head' ? 'selected' : '' }}>Department Head</option>
-                        <option value="administrator" {{ request('role') === 'administrator' ? 'selected' : '' }}>Administrator</option>
-                        <option value="instructor" {{ request('role') === 'instructor' ? 'selected' : '' }}>Instructor</option>
-                    </select>
-                </form>
-            </div>
+            <form method="GET" action="{{ route('admin.users.index') }}" style="display: flex; gap: 10px; align-items: center;">
+                <div style="position: relative; width: 220px;">
+                    <input type="text" 
+                           id="searchInput"
+                           name="search" 
+                           placeholder="Search..." 
+                           value="{{ request('search') }}"
+                           class="form-control form-control-sm"
+                           style="width: 100%; height: 26px; padding: 4px 32px 4px 8px;">
+                    <svg style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+                <select name="role" class="form-select form-select-sm" onchange="this.form.submit()" style="width: 180px; min-width: 180px; height: 40px; padding: 4px 28px 4px 8px;">
+                    <option value="">All Roles</option>
+                    <option value="department-head" {{ request('role') === 'department-head' ? 'selected' : '' }}>Department Head</option>
+                    <option value="administrator" {{ request('role') === 'administrator' ? 'selected' : '' }}>Administrator</option>
+                    <option value="instructor" {{ request('role') === 'instructor' ? 'selected' : '' }}>Instructor</option>
+                </select>
+            </form>
+            <a href="{{ route('admin.users.create') }}" class="btn btn-primary" style="white-space: nowrap;">
+                Add New User
+            </a>
         </div>
         
         <table class="table table-hover table-striped align-middle users-table">
@@ -447,10 +470,11 @@
             </tbody>
         </table>
 
-        @if($users->hasPages())
-        <div class="pagination">
-            {{ $users->links() }}
-        </div>
+        <!-- Pagination -->
+        @if(isset($users) && $users->hasPages())
+            <div class="pagination-wrapper" style="padding: 20px;">
+                {{ $users->appends(request()->query())->links() }}
+            </div>
         @endif
     </div>
 </div>

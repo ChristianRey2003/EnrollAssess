@@ -117,8 +117,8 @@
         
         .btn {
             height: 32px;
-            padding: 4px 12px;
-            font-size: 13px;
+            padding: 8px 14px;
+            font-size: 12px;
             border-radius: 4px;
             border: none;
             cursor: pointer;

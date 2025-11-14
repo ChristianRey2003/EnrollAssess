@@ -34,9 +34,9 @@
     }
 
     .btn-primary, .btn-outline, .btn-success, .btn-secondary {
-        padding: 7px 14px;
+        padding: 8px 14px;
         border-radius: 4px;
-        font-size: 16px;
+        font-size: 12px;
         font-weight: 500;
         cursor: pointer;
         border: none;

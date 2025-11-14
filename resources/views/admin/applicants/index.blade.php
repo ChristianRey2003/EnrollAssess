@@ -10,6 +10,75 @@
 @push('styles')
     <link href="{{ asset('css/admin/applicants.css') }}" rel="stylesheet">
     <style>
+        /* Override main-content padding for this page */
+        .main-content {
+            padding: 20px !important;
+        }
+
+        .applicants-container {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .btn {
+            font-size: 12px;
+            padding: 8px 14px;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: none;
+        }
+
+        .btn-primary {
+            background: #800020;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5C0016;
+        }
+
+        .btn-secondary {
+            background: #F8F9FA;
+            color: #1F2937;
+            border: 1px solid #E9ECEF;
+        }
+
+        .btn-secondary:hover {
+            background: #E9ECEF;
+        }
+
+        .btn-success {
+            background: #059669;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #047857;
+        }
+
+        /* Pagination spacing */
+        .pagination-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .pagination-wrapper .relative.z-0.inline-flex {
+            margin-left: 20px;
+        }
+
+        /* Limit pagination to 5 page numbers - hide pages 6 and 7 */
+        .pagination-wrapper .relative.z-0.inline-flex > a[href*="page=6"],
+        .pagination-wrapper .relative.z-0.inline-flex > a[href*="page=7"] {
+            display: none !important;
+        }
+
         .floating-actions {
             position: absolute;
             top: 50%;
@@ -139,68 +208,70 @@
                     </div>
                 </section>
 
-                <!-- Compact Toolbar -->
-                <div class="applicants-toolbar" style="display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 15px; padding: 10px 0;">
-                    <div class="toolbar-left" style="display: flex; align-items: center; gap: 10px;">
-                        <div style="position: relative; width: 220px;">
-                            <input type="text" 
-                                   id="searchInput" 
-                                   class="form-control form-control-sm" 
-                                   placeholder="Search..." 
-                                   value="{{ request('search') }}"
-                                   style="width: 100%; height: 26px; padding: 4px 32px 4px 8px;"
-                                   aria-label="Search applicants">
-                            <svg style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                            </svg>
-                        </div>
+                <!-- Applicants Container -->
+                <div class="applicants-container" style="background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); border: 1px solid #E5E7EB; overflow: hidden;">
+                    <!-- Compact Toolbar -->
+                    <div class="applicants-toolbar" style="display: flex; justify-content: space-between; align-items: center; gap: 15px; padding: 20px; border-bottom: 1px solid #E5E7EB;">
+                        <div class="toolbar-left" style="display: flex; align-items: center; gap: 10px;">
+                            <div style="position: relative; width: 220px;">
+                                <input type="text" 
+                                       id="searchInput" 
+                                       class="form-control form-control-sm" 
+                                       placeholder="Search..." 
+                                       value="{{ request('search') }}"
+                                       style="width: 100%; height: 26px; padding: 4px 32px 4px 8px;"
+                                       aria-label="Search applicants">
+                                <svg style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
                             <select id="statusFilter" 
                                     class="form-select form-select-sm" 
                                     onchange="applyFilter()" 
-                                    style="width: 140px; padding: 4px 28px 4px 8px;"
+                                    style="width: 180px; min-width: 180px; height: 40px; padding: 4px 28px 4px 8px;"
                                     aria-label="Filter by status">
-                            <option value="">All Status</option>
-                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="exam-completed" {{ request('status') == 'exam-completed' ? 'selected' : '' }}>Exam Completed</option>
-                            <option value="interview-scheduled" {{ request('status') == 'interview-scheduled' ? 'selected' : '' }}>Interview Scheduled</option>
-                            <option value="interview-completed" {{ request('status') == 'interview-completed' ? 'selected' : '' }}>Interview Completed</option>
-                        </select>
-                    </div>
-                    <div class="toolbar-right" style="display: flex; align-items: center; gap: 8px;">
+                                <option value="">All Status</option>
+                                <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                <option value="exam-completed" {{ request('status') == 'exam-completed' ? 'selected' : '' }}>Exam Completed</option>
+                                <option value="interview-scheduled" {{ request('status') == 'interview-scheduled' ? 'selected' : '' }}>Interview Scheduled</option>
+                                <option value="interview-completed" {{ request('status') == 'interview-completed' ? 'selected' : '' }}>Interview Completed</option>
+                            </select>
+                        </div>
+                        <div class="toolbar-right" style="display: flex; align-items: center; gap: 8px;">
                             <a href="{{ route('admin.applicants.assign') }}" 
-                           class="btn btn-sm" 
-                           style="background: #800020; color: white; border: none; height: 26px; display: inline-flex; align-items: center;">Assign</a>
-                        <a href="{{ route('admin.applicants.exam-results') }}" 
-                           class="btn btn-success btn-sm" 
-                           style="height: 26px; display: inline-flex; align-items: center;">Exam Results</a>
-                        <a href="{{ route('admin.applicants.create') }}" 
-                           class="btn btn-secondary btn-sm" 
-                           style="height: 26px; display: inline-flex; align-items: center;">Add</a>
-                        <a href="{{ route('admin.applicants.import') }}" 
-                           class="btn btn-secondary btn-sm" 
-                           style="height: 26px; display: inline-flex; align-items: center;">Import</a>
-                        <button onclick="showGenerateAccessCodesModal()" 
-                                class="btn btn-sm" 
-                                style="height: 26px; display: inline-flex; align-items: center; background: #3b82f6; color: white; border: none; padding: 0 12px;">
-                            Generate Codes
-                        </button>
-                        <button onclick="openEmailNotificationDrawer()" 
-                                class="btn btn-sm" 
-                                style="height: 26px; display: inline-flex; align-items: center; background: #059669; color: white; border: none; padding: 0 12px;">
-                            Send Notifications
-                        </button>
+                               class="btn btn-primary" 
+                               style="white-space: nowrap;">Assign</a>
+                            <a href="{{ route('admin.applicants.exam-results') }}" 
+                               class="btn btn-success" 
+                               style="white-space: nowrap;">Exam Results</a>
+                            <a href="{{ route('admin.applicants.create') }}" 
+                               class="btn btn-secondary" 
+                               style="white-space: nowrap;">Add</a>
+                            <a href="{{ route('admin.applicants.import') }}" 
+                               class="btn btn-secondary" 
+                               style="white-space: nowrap;">Import</a>
+                            <button onclick="showGenerateAccessCodesModal()" 
+                                    class="btn" 
+                                    style="white-space: nowrap; background: #3b82f6; color: white; border: none;">
+                                Generate Codes
+                            </button>
+                            <button onclick="openEmailNotificationDrawer()" 
+                                    class="btn" 
+                                    style="white-space: nowrap; background: #059669; color: white; border: none;">
+                                Send Notifications
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Compact Bulk Actions - Selected Count Only -->
-                <div id="bulkActions" class="bulk-actions" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 6px 10px; margin-bottom: 10px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span id="selectedCount" style="font-size: 12px; font-weight: 500; color: #1e40af;">0 selected</span>
+                    <!-- Compact Bulk Actions - Selected Count Only -->
+                    <div id="bulkActions" class="bulk-actions" style="display: none; background: #eff6ff; border-bottom: 1px solid #bfdbfe; padding: 6px 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span id="selectedCount" style="font-size: 12px; font-weight: 500; color: #1e40af;">0 selected</span>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Applicants Table -->
-                <div class="table-responsive">
+                    <!-- Applicants Table -->
+                    <div class="table-responsive">
                     <table class="table table-hover table-striped align-middle">
                         <thead style="background-color: white !important; color: #1F2937 !important;">
                             <tr>
@@ -359,12 +430,13 @@
                     </table>
                 </div>
 
-                <!-- Pagination -->
-                @if(isset($applicants) && $applicants->hasPages())
-                    <div class="pagination-wrapper">
-                        {{ $applicants->links() }}
-                    </div>
-                @endif
+                    <!-- Pagination -->
+                    @if(isset($applicants) && $applicants->hasPages())
+                        <div class="pagination-wrapper" style="padding: 20px;">
+                            {{ $applicants->onEachSide(2)->links() }}
+                        </div>
+                    @endif
+                </div>
     </div>
 
     <!-- Generate Access Codes Drawer -->
@@ -774,6 +846,31 @@
             });
         }
 
+        // Function to hide pages 6 and 7 from pagination
+        function hidePages6And7() {
+            const paginationContainer = document.querySelector('.pagination-wrapper .relative.z-0.inline-flex');
+            if (paginationContainer) {
+                const links = paginationContainer.querySelectorAll('a, span');
+                links.forEach(element => {
+                    const href = element.getAttribute('href') || '';
+                    const text = element.textContent.trim();
+                    // Hide if it's page 6 or 7 (check href or text content)
+                    if (href.includes('page=6') || href.includes('page=7') || 
+                        (text === '6' && !element.hasAttribute('aria-current')) || 
+                        (text === '7' && !element.hasAttribute('aria-current'))) {
+                        element.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        // Hide pages 6 and 7 on page load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', hidePages6And7);
+        } else {
+            hidePages6And7();
+        }
+
         // AJAX Pagination - Use event delegation to catch all pagination links
         document.addEventListener('click', function(e) {
             // Check if click is on a pagination link (could be direct <a> or nested in <span>)
@@ -941,6 +1038,8 @@
                         // Update pagination HTML if provided
                         if (data.pagination_html && paginationWrapper) {
                             paginationWrapper.innerHTML = data.pagination_html;
+                            // Hide pages 6 and 7
+                            hidePages6And7();
                         }
                         
                         if (paginationWrapper) {

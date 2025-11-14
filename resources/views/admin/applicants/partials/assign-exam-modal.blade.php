@@ -280,12 +280,12 @@
 
     /* Button styles in assign drawer */
     .assign-drawer-footer .btn {
-        padding: 10px 20px;
+        padding: 8px 14px;
         border-radius: 6px;
         font-weight: 500;
         cursor: pointer;
         border: none;
-        font-size: 14px;
+        font-size: 12px;
         transition: all 0.2s;
     }
 

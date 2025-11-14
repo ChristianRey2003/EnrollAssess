@@ -132,10 +132,10 @@
     }
 
     .btn {
-        padding: 8px 16px;
+        padding: 8px 14px;
         border-radius: 6px;
-        font-weight: 600;
-        font-size: 13px;
+        font-weight: 500;
+        font-size: 12px;
         cursor: pointer;
         transition: var(--transition);
         border: none;

@@ -161,10 +161,10 @@
     }
 
     .btn {
-        padding: 12px 24px;
+        padding: 8px 14px;
         border-radius: 8px;
-        font-weight: 600;
-        font-size: 14px;
+        font-weight: 500;
+        font-size: 12px;
         cursor: pointer;
         transition: var(--transition);
         border: none;

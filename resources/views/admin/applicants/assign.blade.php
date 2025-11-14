@@ -101,14 +101,14 @@
        FILTERS SECTION - Improved Grid Layout
        ============================================ */
     .filters {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr auto; /* Fixed columns for consistency */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         gap: 16px;
         margin-bottom: 24px; /* Increased from 20px */
         padding: 20px; /* Match panel padding */
         background: #F9FAFB;
         border-radius: 8px;
-        align-items: end;
     }
 
     .filter-group {
@@ -158,30 +158,25 @@
         flex-wrap: wrap;
     }
 
-    .btn-filter,
-    .btn-clear {
-        height: 26px; /* Match input height */
-        padding: 0 20px;
+    .btn-filter {
+        font-size: 12px;
+        padding: 8px 14px;
+        font-weight: 500;
         border: none;
         border-radius: 6px;
         cursor: pointer;
-        font-weight: 600;
-        font-size: 14px;
         transition: all 0.2s;
         white-space: nowrap;
         display: inline-flex;
         align-items: center;
-    }
-
-    .btn-filter {
-        background: #3B82F6;
+        background: #800020;
         color: white;
     }
 
     .btn-filter:hover {
-        background: #2563EB;
+        background: #5C0016;
         transform: translateY(-1px);
-        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+        box-shadow: 0 4px 6px rgba(128, 0, 32, 0.2);
     }
 
     .btn-clear {
@@ -414,6 +409,13 @@
     }
 
     /* ============================================
+       TABLE DATA FONT SIZE
+       ============================================ */
+    .table td {
+        font-size: 13px !important;
+    }
+
+    /* ============================================
        PAGINATION
        ============================================ */
     .pagination-wrapper {
@@ -421,7 +423,20 @@
         padding-top: 20px;
         border-top: 1px solid #E5E7EB;
         display: flex;
+        align-items: center;
         justify-content: center;
+        gap: 20px;
+    }
+
+    /* Spacing before pagination buttons */
+    .pagination-wrapper .relative.z-0.inline-flex {
+        margin-left: 20px;
+    }
+
+    /* Limit pagination to 5 page numbers - hide pages 6 and 7 */
+    .pagination-wrapper .relative.z-0.inline-flex > a[href*="page=6"],
+    .pagination-wrapper .relative.z-0.inline-flex > a[href*="page=7"] {
+        display: none !important;
     }
 
     /* ============================================
@@ -566,30 +581,28 @@
         <!-- Left Panel: Applicants List -->
         <div class="assign-left">
             <div class="filters">
-                <div class="filter-group" style="position: relative;">
-                    <input type="text" 
-                           id="search" 
-                           name="q" 
-                           placeholder="Search..." 
-                           value="{{ request('q') }}"
-                           class="form-control form-control-sm"
-                           style="height: 26px; padding: 4px 32px 4px 8px; width: 220px;">
-                    <svg style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                </div>
+                <div class="filter-group-left" style="display: flex; align-items: center; gap: 10px;">
+                    <div style="position: relative; width: 220px;">
+                        <input type="text" 
+                               id="search" 
+                               name="q" 
+                               placeholder="Search..." 
+                               value="{{ request('q') }}"
+                               class="form-control form-control-sm"
+                               style="width: 100%; height: 26px; padding: 4px 32px 4px 8px;">
+                        <svg style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
 
-                <div class="filter-group">
-                    <select id="status" name="status" class="form-select form-select-sm" style="width: 200px;padding: 4px 28px 4px 8px;">
+                    <select id="status" name="status" class="form-select form-select-sm" style="width: 180px; min-width: 180px; height: 40px; padding: 4px 28px 4px 8px;">
                         <option value="">All Statuses</option>
                         <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
                         <option value="exam-completed" {{ request('status') === 'exam-completed' ? 'selected' : '' }}>Exam Completed</option>
                         <option value="interview-scheduled" {{ request('status') === 'interview-scheduled' ? 'selected' : '' }}>Interview Scheduled</option>
                     </select>
-                </div>
 
-                <div class="filter-group">
-                    <select id="assigned" name="assigned" class="form-select form-select-sm" style="width: 200px; padding: 4px 28px 4px 8px;">
+                    <select id="assigned" name="assigned" class="form-select form-select-sm" style="width: 180px; min-width: 180px; height: 40px; padding: 4px 28px 4px 8px;">
                         <option value="">All</option>
                         <option value="unassigned" {{ request('assigned') === 'unassigned' ? 'selected' : '' }}>Unassigned Only</option>
                         <option value="assigned" {{ request('assigned') === 'assigned' ? 'selected' : '' }}>Assigned Only</option>
@@ -601,7 +614,6 @@
                         <span id="bulkCount">0</span> selected
                     </div>
                     <button type="button" id="openAssignDrawer" class="btn-filter" disabled>Assign Selected</button>
-                    <button type="button" class="btn-clear" onclick="clearFilters()">Clear</button>
                 </div>
             </div>
 
@@ -612,11 +624,11 @@
                             <th class="text-center" style="width: 50px; font-size: 0.85rem; font-weight: bold; padding: 12px 8px; white-space: nowrap;">
                                 <input type="checkbox" id="selectAll" class="form-check-input">
                             </th>
-                            <th style="font-size: 0.85rem; font-weight: bold; padding: 12px 8px; white-space: nowrap;" class="text-left">Applicant no</th>
-                            <th style="font-size: 0.85rem; font-weight: bold; padding: 12px 8px; white-space: nowrap; min-width: 150px;" class="text-left">Name</th>
+                            <th style="font-size: 0.85rem; font-weight: bold; padding: 12px 8px; white-space: nowrap;" class="text-left">Applicant No</th>
+                            <th style="font-size: 0.85rem; font-weight: bold; padding: 12px 8px; white-space: nowrap; min-width: 150px;" class="text-left">Fullname</th>
                             <th style="font-size: 0.85rem; font-weight: bold; padding: 12px 8px; white-space: nowrap; min-width: 200px;" class="text-left">Email</th>
                             <th style="font-size: 0.85rem; font-weight: bold; padding: 12px 8px; white-space: nowrap; text-align: center;" class="text-center">Status</th>
-                            <th style="font-size: 0.85rem; font-weight: bold; padding: 12px 8px; white-space: nowrap; min-width: 200px;" class="text-left">Assigned instructor</th>
+                            <th style="font-size: 0.85rem; font-weight: bold; padding: 12px 8px; white-space: nowrap; min-width: 200px;" class="text-left">Assigned Instructor</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -640,7 +652,7 @@
                                         {{ $statusText }}
                                     </span>
                                 </td>
-                                <td>
+                                <td class="text-left" style="font-size: 13px; font-weight: normal;">
                                     @if($applicant->assignedInstructor)
                                         {{ $applicant->assignedInstructor->full_name }}
                                     @else
@@ -664,7 +676,7 @@
 
             @if($applicants->hasPages())
                 <div class="pagination-wrapper">
-                    {{ $applicants->appends(request()->query())->links() }}
+                    {{ $applicants->onEachSide(2)->appends(request()->query())->links() }}
                 </div>
             @endif
         </div>
@@ -859,6 +871,31 @@
         }
     });
 
+    // Function to hide pages 6 and 7 from pagination
+    function hidePages6And7() {
+        const paginationContainer = document.querySelector('.pagination-wrapper .relative.z-0.inline-flex');
+        if (paginationContainer) {
+            const links = paginationContainer.querySelectorAll('a, span');
+            links.forEach(element => {
+                const href = element.getAttribute('href') || '';
+                const text = element.textContent.trim();
+                // Hide if it's page 6 or 7 (check href or text content)
+                if (href.includes('page=6') || href.includes('page=7') || 
+                    (text === '6' && !element.hasAttribute('aria-current')) || 
+                    (text === '7' && !element.hasAttribute('aria-current'))) {
+                    element.style.display = 'none';
+                }
+            });
+        }
+    }
+
+    // Hide pages 6 and 7 on page load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', hidePages6And7);
+    } else {
+        hidePages6And7();
+    }
+
     // Filter functionality
     let searchTimeout;
     
@@ -994,6 +1031,8 @@
                     
                     if (data.pagination_html && paginationWrapper) {
                         paginationWrapper.innerHTML = data.pagination_html;
+                        // Hide pages 6 and 7
+                        hidePages6And7();
                     }
                     
                     if (paginationWrapper) {

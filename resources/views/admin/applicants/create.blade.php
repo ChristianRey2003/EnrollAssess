@@ -45,13 +45,10 @@
                 @method('PUT')
             @endif
 
-            <!-- Personal Information Section -->
+            <!-- Personal Information and Application Status Section -->
             <div class="form-section">
                 <div class="section-header">
                     <h3 class="section-title">Personal Information</h3>
-                    <a href="{{ route('admin.applicants.index') }}" class="btn-secondary compact-back-link">
-                        ← Back to Applicants
-                    </a>
                 </div>
                 
                 <div class="form-row form-row-three">
@@ -94,7 +91,7 @@
                     </div>
                 </div>
 
-                <div class="form-row">
+                <div class="form-row form-row-three">
                     <div class="form-group">
                         <label for="preferred_course" class="form-label">Preferred Course</label>
                         <input type="text" 
@@ -120,9 +117,7 @@
                             <span class="error-message">{{ $message }}</span>
                         @enderror
                     </div>
-                </div>
-
-                <div class="form-row">
+                    
                     <div class="form-group">
                         <label for="phone_number" class="form-label">Contact Number</label>
                         <input type="tel" 
@@ -135,7 +130,9 @@
                             <span class="error-message">{{ $message }}</span>
                         @enderror
                     </div>
-                    
+                </div>
+
+                <div class="form-row form-row-three">
                     <div class="form-group">
                         <label for="application_no" class="form-label">Application Number</label>
                         <input type="text" 
@@ -149,17 +146,7 @@
                             <span class="error-message">{{ $message }}</span>
                         @enderror
                     </div>
-                </div>
-
-            </div>
-
-            <!-- Status Section -->
-            <div class="form-section">
-                <div class="section-header">
-                    <h3 class="section-title">Application Status</h3>
-                </div>
-
-                <div class="form-row">
+                    
                     <div class="form-group">
                         <label for="status" class="form-label">Status</label>
                         <select id="status" name="status" class="form-control">
@@ -209,10 +196,6 @@
                             <span class="error-message">{{ $message }}</span>
                         @enderror
                     </div>
-                    
-                    <div class="form-group">
-                        <!-- Empty space for grid alignment -->
-                    </div>
                 </div>
 
                 <!-- Access Code Generation Option -->
@@ -236,10 +219,13 @@
 
             <!-- Form Actions -->
             <div class="form-actions">
-                <button type="button" onclick="previewApplicant()" class="btn-secondary">
+                <a href="{{ route('admin.applicants.index') }}" class="btn btn-secondary">
+                    Cancel
+                </a>
+                <button type="button" onclick="previewApplicant()" class="btn btn-secondary">
                     Preview Information
                 </button>
-                <button type="submit" class="btn-primary" id="saveButton">
+                <button type="submit" class="btn btn-primary" id="saveButton">
                     {{ isset($applicant) ? 'Update Applicant' : 'Add Applicant' }}
                 </button>
             </div>
