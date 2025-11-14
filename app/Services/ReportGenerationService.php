@@ -7,6 +7,7 @@ use App\Models\GeneratedReport;
 use App\Models\Interview;
 use App\Models\Result;
 use App\Models\Question;
+use App\Services\AdmissionScoringService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -227,18 +228,31 @@ class ReportGenerationService
         // Apply filters
         $query = $this->applyFilters($query, $filters);
 
-        $applicants = $query->get()->map(function($applicant) {
-            // Calculate final score: 60% exam + 40% interview
-            $examScore = $applicant->enrollassess_score ?? 0;
-            $interviewScore = $applicant->interview_score ?? 0;
+        $scoringService = app(AdmissionScoringService::class);
+        
+        $applicants = $query->get()->map(function($applicant) use ($scoringService) {
+            // Calculate overall admission rating using weighted averages
+            // Formula: UEE + (GWA × 0.3) + (Interview × 0.05) + (SkillTest × 0.05)
+            // Note: UEE is already weighted (0-60), so use as-is
+            $finalScore = 0.0;
             
-            $finalScore = ($examScore * 0.6) + ($interviewScore * 0.4);
+            if ($scoringService->hasAllRequiredScores($applicant)) {
+                // Use the scoring service for consistent calculation
+                $rating = $scoringService->calculateOverallRating($applicant);
+                $finalScore = $rating['overall_rating'];
+            } else {
+                // Calculate partial score if some components are missing
+                $ueeWeighted = (float) ($applicant->score ?? 0); // Already weighted (0-60)
+                $gwaRaw = (float) ($applicant->card_tor_gwa ?? 0);
+                $skillTestRaw = (float) ($applicant->enrollassess_score ?? 0);
+                $interviewRaw = (float) ($applicant->interview_score ?? 0);
+                
+                $finalScore = $ueeWeighted + ($gwaRaw * 0.30) + ($interviewRaw * 0.05) + ($skillTestRaw * 0.05);
+            }
             
             $applicant->final_score = round($finalScore, 2);
-            $applicant->exam_score_weighted = round($examScore * 0.6, 2);
-            $applicant->interview_score_weighted = round($interviewScore * 0.4, 2);
             
-            // Determine recommendation
+            // Determine recommendation based on overall rating
             if ($finalScore >= 75) {
                 $applicant->recommendation = 'recommended';
             } elseif ($finalScore >= 70) {

@@ -326,6 +326,10 @@ class ApplicantManager {
             url.searchParams.set(key, value);
         });
         
+        // Add selected applicant IDs as comma-separated values
+        const selectedIds = Array.from(this.selectedApplicants).join(',');
+        url.searchParams.set('applicant_ids', selectedIds);
+        
         this.notifications.info('Preparing export...');
         window.open(url.toString(), '_blank');
     }

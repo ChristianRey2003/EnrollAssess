@@ -24,40 +24,59 @@
         --transition: all 0.3s ease;
     }
 
+    /* Override main-content padding for this page */
+    .main-content {
+        padding: 20px !important;
+    }
+
     .user-form-container {
-        padding: 30px;
-        max-width: 800px;
-        margin: 0 auto;
+        padding: 0;
+        max-width: 100%;
+        width: 100%;
+        margin: 0;
     }
 
     .form-card {
         background: var(--white);
-        border-radius: 12px;
-        padding: 30px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         border: 1px solid var(--border-gray);
         margin-bottom: 20px;
+        max-width: 1000px;
+        margin: 0 auto 20px auto;
     }
 
     .form-card h3 {
         color: var(--primary-maroon);
         font-size: 18px;
         font-weight: 700;
-        margin: 0 0 25px 0;
-        padding-bottom: 15px;
+        margin: 0 0 15px 0;
+        padding-bottom: 10px;
         border-bottom: 2px solid var(--border-gray);
     }
 
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 12px;
+    }
+
     .form-group {
-        margin-bottom: 20px;
+        margin-bottom: 0;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
     }
 
     .form-group label {
         display: block;
         font-weight: 600;
         color: var(--text-dark);
-        margin-bottom: 8px;
-        font-size: 14px;
+        margin-bottom: 5px;
+        font-size: 13px;
     }
 
     .form-group label .required {
@@ -70,10 +89,10 @@
     .form-group input[type="password"],
     .form-group select {
         width: 100%;
-        padding: 10px 15px;
-        border: 2px solid var(--border-gray);
-        border-radius: 8px;
-        font-size: 14px;
+        padding: 6px 10px;
+        border: 1px solid var(--border-gray);
+        border-radius: 6px;
+        font-size: 13px;
         transition: var(--transition);
     }
 
@@ -86,15 +105,15 @@
 
     .form-group .help-text {
         display: block;
-        font-size: 13px;
+        font-size: 11px;
         color: var(--text-gray);
-        margin-top: 5px;
+        margin-top: 3px;
     }
 
     .error-text {
         color: var(--danger-red);
-        font-size: 13px;
-        margin-top: 5px;
+        font-size: 11px;
+        margin-top: 3px;
         display: block;
     }
 
@@ -105,24 +124,24 @@
 
     .form-actions {
         display: flex;
-        gap: 15px;
-        justify-content: space-between;
-        margin-top: 30px;
-        padding-top: 30px;
-        border-top: 2px solid var(--border-gray);
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid var(--border-gray);
     }
 
     .btn {
-        padding: 12px 24px;
-        border-radius: 8px;
+        padding: 8px 16px;
+        border-radius: 6px;
         font-weight: 600;
-        font-size: 14px;
+        font-size: 13px;
         cursor: pointer;
         transition: var(--transition);
         border: none;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         text-decoration: none;
     }
 
@@ -172,20 +191,38 @@
 
     .password-section {
         background: var(--light-gray);
-        border-radius: 8px;
-        padding: 20px;
-        margin-top: 20px;
+        border-radius: 6px;
+        padding: 15px;
+        margin-top: 15px;
     }
 
     .password-section h4 {
-        margin: 0 0 15px 0;
+        margin: 0 0 10px 0;
         color: var(--text-dark);
-        font-size: 16px;
+        font-size: 14px;
+    }
+
+    .password-section p {
+        font-size: 12px !important;
+        margin-bottom: 12px !important;
     }
 
     @media (max-width: 768px) {
         .user-form-container {
+            padding: 0;
+        }
+
+        .form-card {
             padding: 15px;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1;
         }
 
         .form-actions {
@@ -216,105 +253,115 @@
             @csrf
             @method('PUT')
 
-            <!-- Username -->
-            <div class="form-group">
-                <label for="username">Username <span class="required">*</span></label>
-                <input type="text" 
-                       id="username" 
-                       name="username" 
-                       value="{{ old('username', $user->username) }}" 
-                       class="@error('username') error @enderror"
-                       required>
-                @error('username')
-                    <span class="error-text">{{ $message }}</span>
-                @enderror
-                <span class="help-text">Unique username for login</span>
+            <!-- Row 1: Username | Full Name -->
+            <div class="form-row">
+                <!-- Username -->
+                <div class="form-group">
+                    <label for="username">Username <span class="required">*</span></label>
+                    <input type="text" 
+                           id="username" 
+                           name="username" 
+                           value="{{ old('username', $user->username) }}" 
+                           class="@error('username') error @enderror"
+                           required>
+                    @error('username')
+                        <span class="error-text">{{ $message }}</span>
+                    @enderror
+                    <span class="help-text">Unique username for login</span>
+                </div>
+
+                <!-- Full Name -->
+                <div class="form-group">
+                    <label for="full_name">Full Name <span class="required">*</span></label>
+                    <input type="text" 
+                           id="full_name" 
+                           name="full_name" 
+                           value="{{ old('full_name', $user->full_name) }}" 
+                           class="@error('full_name') error @enderror"
+                           required>
+                    @error('full_name')
+                        <span class="error-text">{{ $message }}</span>
+                    @enderror
+                    <span class="help-text">Complete name as it should appear</span>
+                </div>
             </div>
 
-            <!-- Full Name -->
-            <div class="form-group">
-                <label for="full_name">Full Name <span class="required">*</span></label>
-                <input type="text" 
-                       id="full_name" 
-                       name="full_name" 
-                       value="{{ old('full_name', $user->full_name) }}" 
-                       class="@error('full_name') error @enderror"
-                       required>
-                @error('full_name')
-                    <span class="error-text">{{ $message }}</span>
-                @enderror
-            </div>
+            <!-- Row 2: Email Address | Role -->
+            <div class="form-row">
+                <!-- Email -->
+                <div class="form-group">
+                    <label for="email">Email Address <span class="required">*</span></label>
+                    <input type="email" 
+                           id="email" 
+                           name="email" 
+                           value="{{ old('email', $user->email) }}" 
+                           class="@error('email') error @enderror"
+                           required>
+                    @error('email')
+                        <span class="error-text">{{ $message }}</span>
+                    @enderror
+                    <span class="help-text">Valid email address</span>
+                </div>
 
-            <!-- Email -->
-            <div class="form-group">
-                <label for="email">Email Address <span class="required">*</span></label>
-                <input type="email" 
-                       id="email" 
-                       name="email" 
-                       value="{{ old('email', $user->email) }}" 
-                       class="@error('email') error @enderror"
-                       required>
-                @error('email')
-                    <span class="error-text">{{ $message }}</span>
-                @enderror
-            </div>
-
-            <!-- Role -->
-            <div class="form-group">
-                <label for="role">Role <span class="required">*</span></label>
-                <select id="role" 
-                        name="role" 
-                        class="@error('role') error @enderror" 
-                        required>
-                    <option value="department-head" {{ old('role', $user->role) === 'department-head' ? 'selected' : '' }}> Department Head</option>
-                    <option value="administrator" {{ old('role', $user->role) === 'administrator' ? 'selected' : '' }}> Administrator</option>
-                    <option value="instructor" {{ old('role', $user->role) === 'instructor' ? 'selected' : '' }}>🧑‍ Instructor</option>
-                </select>
-                @error('role')
-                    <span class="error-text">{{ $message }}</span>
-                @enderror
+                <!-- Role -->
+                <div class="form-group">
+                    <label for="role">Role <span class="required">*</span></label>
+                    <select id="role" 
+                            name="role" 
+                            class="@error('role') error @enderror" 
+                            required>
+                        <option value="department-head" {{ old('role', $user->role) === 'department-head' ? 'selected' : '' }}> Department Head</option>
+                        <option value="administrator" {{ old('role', $user->role) === 'administrator' ? 'selected' : '' }}> Administrator</option>
+                        <option value="instructor" {{ old('role', $user->role) === 'instructor' ? 'selected' : '' }}>🧑‍ Instructor</option>
+                    </select>
+                    @error('role')
+                        <span class="error-text">{{ $message }}</span>
+                    @enderror
+                    <span class="help-text">Select user role</span>
+                </div>
             </div>
 
             <!-- Password Section -->
             <div class="password-section">
                 <h4> Change Password (Optional)</h4>
-                <p style="color: var(--text-gray); font-size: 14px; margin-bottom: 15px;">
+                <p style="color: var(--text-gray); font-size: 12px; margin-bottom: 12px;">
                     Leave blank to keep the current password unchanged.
                 </p>
 
-                <!-- New Password -->
-                <div class="form-group">
-                    <label for="password">New Password</label>
-                    <input type="password" 
-                           id="password" 
-                           name="password" 
-                           class="@error('password') error @enderror">
-                    @error('password')
-                        <span class="error-text">{{ $message }}</span>
-                    @enderror
-                    <span class="help-text">Minimum 8 characters with letters and numbers</span>
-                </div>
+                <!-- Row 3: New Password | Confirm New Password -->
+                <div class="form-row">
+                    <!-- New Password -->
+                    <div class="form-group">
+                        <label for="password">New Password</label>
+                        <input type="password" 
+                               id="password" 
+                               name="password" 
+                               class="@error('password') error @enderror">
+                        @error('password')
+                            <span class="error-text">{{ $message }}</span>
+                        @enderror
+                        <span class="help-text">Min 8 characters</span>
+                    </div>
 
-                <!-- Confirm Password -->
-                <div class="form-group">
-                    <label for="password_confirmation">Confirm New Password</label>
-                    <input type="password" 
-                           id="password_confirmation" 
-                           name="password_confirmation">
-                    <span class="help-text">Re-enter the new password to confirm</span>
+                    <!-- Confirm Password -->
+                    <div class="form-group">
+                        <label for="password_confirmation">Confirm New Password</label>
+                        <input type="password" 
+                               id="password_confirmation" 
+                               name="password_confirmation">
+                        <span class="help-text">Re-enter password</span>
+                    </div>
                 </div>
             </div>
 
             <!-- Form Actions -->
             <div class="form-actions">
-                <div style="display: flex; gap: 10px;">
-                    <a href="{{ route('admin.users.index') }}" class="btn btn-secondary">
-                        <span></span> Cancel
-                    </a>
-                    <button type="button" class="btn btn-danger" onclick="confirmDelete()">
-                        <span>️</span> Delete User
-                    </button>
-                </div>
+                <a href="{{ route('admin.users.index') }}" class="btn btn-secondary">
+                    <span></span> Cancel
+                </a>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                    <span>️</span> Delete User
+                </button>
                 <button type="submit" class="btn btn-primary">
                     <span></span> Update User
                 </button>

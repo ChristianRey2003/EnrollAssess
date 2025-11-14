@@ -204,9 +204,6 @@
                         <button onclick="showGenerateAccessCodesModal()" class="bulk-btn bulk-btn-codes">
                              Generate Access Codes
                         </button>
-                        <button onclick="bulkExport()" class="bulk-btn bulk-btn-export">
-                             Export Selected
-                        </button>
                     </div>
                 </div>
 

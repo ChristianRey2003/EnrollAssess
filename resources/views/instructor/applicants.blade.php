@@ -14,48 +14,6 @@
         margin: 0 auto;
     }
 
-    .filters-section {
-        background: white;
-        padding: 20px 24px;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        border: 1px solid #E5E7EB;
-        margin-bottom: 24px;
-    }
-
-    .filters-form {
-        display: flex;
-        gap: 16px;
-        align-items: end;
-    }
-
-    .form-group {
-        flex: 1;
-    }
-
-    .form-label {
-        display: block;
-        margin-bottom: 6px;
-        font-weight: 500;
-        color: #374151;
-        font-size: 0.875rem;
-    }
-
-    .form-input, .form-select {
-        width: 100%;
-        padding: 6px 12px;
-        height: 26px;
-        border: 1px solid #D1D5DB;
-        border-radius: 6px;
-        font-size: 0.875rem;
-    }
-
-    .form-input:focus, .form-select:focus {
-        outline: none;
-        border-color: var(--maroon-primary);
-        box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1);
-    }
-
     .btn {
         padding: 10px 20px;
         border-radius: 6px;
@@ -137,8 +95,10 @@
         background: #F9FAFB;
         border-bottom: 1px solid #E5E7EB;
         display: flex;
-        justify-content: between;
+        justify-content: space-between;
         align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
     }
 
     .table-title {
@@ -148,49 +108,98 @@
         margin: 0;
     }
 
-    .applicants-table {
-        width: 100%;
-        border-collapse: collapse;
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
     }
 
-    .applicants-table th,
-    .applicants-table td {
-        padding: 16px;
-        text-align: left;
+    .form-label {
+        font-weight: 500;
+        color: #374151;
+        font-size: 0.875rem;
+    }
+
+    .form-input,
+    .form-select {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #D1D5DB;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        height: 40px;
+        background: #FFFFFF;
+        color: #1F2937;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+        outline: none;
+        border-color: var(--maroon-primary);
+        box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1);
+    }
+
+    .applicants-table-section .table-responsive {
+        margin-bottom: 0;
+    }
+
+    .table-header-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .table-header-controls .form-input,
+    .table-header-controls .form-select {
+        width: 220px;
+        padding: 6px 12px;
+        height: 36px;
+        border: 1px solid #D1D5DB;
+        border-radius: 6px;
+        font-size: 0.875rem;
+    }
+
+    .table-header-controls .form-input:focus,
+    .table-header-controls .form-select:focus {
+        outline: none;
+        border-color: var(--maroon-primary);
+        box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1);
+    }
+
+    .table-header-controls .btn-small {
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 16px;
+    }
+
+    .instructor-data-table thead th {
+        font-weight: 600;
+        font-size: 0.8125rem;
+        letter-spacing: 0.5px;
+        color: #374151;
+        background-color: #ffffff;
+        border-bottom: 1px solid #E5E7EB;
+    }
+
+    .instructor-data-table tbody td {
+        font-size: 0.875rem;
+        color: #1F2937;
+        vertical-align: middle;
         border-bottom: 1px solid #F3F4F6;
     }
 
-    .applicants-table th {
-        background: #F9FAFB;
-        font-weight: 600;
-        color: #374151;
-        font-size: 0.875rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .applicants-table tr:hover {
-        background: #F9FAFB;
+    .instructor-data-table tbody tr:hover {
+        background-color: rgba(255, 215, 0, 0.08);
     }
 
     .applicant-cell {
         display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .applicant-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: var(--maroon-primary);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        font-size: 0.875rem;
-        flex-shrink: 0;
+        flex-direction: column;
+        gap: 4px;
     }
 
     .applicant-name {
@@ -380,11 +389,18 @@
     }
 
     @media (max-width: 768px) {
-        .filters-form {
+        .table-header-controls {
             flex-direction: column;
             align-items: stretch;
+            width: 100%;
+            gap: 10px;
         }
-        
+
+        .table-header-controls .form-input,
+        .table-header-controls .form-select {
+            width: 100%;
+        }
+
         .applicants-table {
             font-size: 0.875rem;
         }
@@ -409,207 +425,7 @@
 
 @section('content')
 <div class="applicants-container">
-    <!-- Filters and Search -->
-    <div class="filters-section">
-        <form method="GET" action="{{ route('instructor.applicants') }}" class="filters-form">
-            <div class="form-group">
-                <label class="form-label">Search Applicants</label>
-                <input type="text" name="search" class="form-input" 
-                       placeholder="Search by name or email..."
-                       value="{{ request('search') }}">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Status</label>
-                <select name="status" class="form-select">
-                    <option value="">All Status</option>
-                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="exam-completed" {{ request('status') == 'exam-completed' ? 'selected' : '' }}>Exam Completed</option>
-                    <option value="interview-completed" {{ request('status') == 'interview-completed' ? 'selected' : '' }}>Interview Completed</option>
-                    <option value="admitted" {{ request('status') == 'admitted' ? 'selected' : '' }}>Admitted</option>
-                    <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <button type="submit" class="btn btn-primary">Filter</button>
-            </div>
-        </form>
-    </div>
-
-    <!-- Applicants Table -->
-    <div class="applicants-table-section">
-        <!-- Bulk Actions Bar -->
-        <div class="bulk-actions-bar" id="bulkActionsBar">
-            <div class="bulk-actions-info">
-                <span id="selectedCount">0</span> applicant(s) selected
-            </div>
-            <div class="bulk-actions-buttons">
-                <button type="button" class="btn btn-white" onclick="openBulkScheduleModal()">
-                    Schedule Selected
-                </button>
-                <button type="button" class="btn btn-outline-white" onclick="clearSelection()">
-                    Clear Selection
-                </button>
-            </div>
-        </div>
-
-        <div class="table-header">
-            <h2 class="table-title">Assigned Applicants ({{ $assignedApplicants->total() }})</h2>
-        </div>
-        
-        @if($assignedApplicants->count() > 0)
-            <table class="applicants-table">
-                <thead>
-                    <tr>
-                        <th style="width: 40px;">
-                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
-                        </th>
-                        <th>Applicant</th>
-                        <th>Application No.</th>
-                        <th>Exam Score</th>
-                        <th>Status</th>
-                        <th>Interview Date</th>
-                        <th>Interview Window</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($assignedApplicants as $applicant)
-                    <tr>
-                        <td>
-                            @php
-                                $interview = $applicant->latestInterview;
-                                $canSchedule = $interview && (!$interview->schedule_date || $interview->status === 'assigned');
-                            @endphp
-                            @if($canSchedule)
-                                <input type="checkbox" class="applicant-checkbox" 
-                                       data-interview-id="{{ $interview->interview_id }}"
-                                       data-applicant-name="{{ $applicant->first_name }} {{ $applicant->last_name }}"
-                                       onchange="updateBulkActions()">
-                            @endif
-                        </td>
-                        <td>
-                            <div class="applicant-cell">
-                                <div class="applicant-avatar">
-                                    {{ substr($applicant->first_name ?? 'A', 0, 1) }}{{ substr($applicant->last_name ?? 'A', 0, 1) }}
-                                </div>
-                                <div style="flex: 1;">
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <div>
-                                            <div class="applicant-name">{{ $applicant->first_name }} {{ $applicant->last_name }}</div>
-                                            <div class="applicant-email">{{ $applicant->email_address }}</div>
-                                        </div>
-                                        @if($interview && $interview->assignment_notes)
-                                            <button type="button" 
-                                                    onclick="toggleAssignmentInfo({{ $applicant->applicant_id }})" 
-                                                    style="background: none; border: none; cursor: pointer; padding: 4px; font-size: 1.2rem; color: #3B82F6;"
-                                                    title="View assignment message">
-                                                📋
-                                            </button>
-                                        @endif
-                                    </div>
-                                    @if($interview && $interview->assignment_notes)
-                                        <div id="assignment-info-{{ $applicant->applicant_id }}" 
-                                             style="display: none; margin-top: 8px; padding: 10px; background: #F3F4F6; border-radius: 6px; font-size: 0.875rem; color: #374151;">
-                                            <strong style="color: #1F2937;">Assignment Message:</strong><br>
-                                            <div style="margin-top: 4px;">{{ $interview->assignment_notes }}</div>
-                                        </div>
-                                    @endif
-                                </div>
-                            </div>
-                        </td>
-                        <td>{{ $applicant->application_no }}</td>
-                        <td>
-                            @php
-                                $examScore = $applicant->enrollassess_score ?? null;
-                            @endphp
-                            @if($examScore !== null)
-                                <span class="status-badge {{ $examScore >= 70 ? 'status-completed' : 'status-pending' }}">
-                                    {{ number_format($examScore, 1) }}%
-                                </span>
-                            @else
-                                <span class="status-badge status-pending">Pending</span>
-                            @endif
-                        </td>
-                        <td>
-                            <span class="status-badge status-{{ str_replace([' ', '-'], ['', ''], strtolower($applicant->status)) }}">
-                                {{ ucfirst(str_replace('-', ' ', $applicant->status)) }}
-                            </span>
-                        </td>
-                        <td>
-                            @if($interview && $interview->schedule_date)
-                                {{ $interview->schedule_date->format('M d, Y g:i A') }}
-                            @else
-                                <span style="color: #6B7280;">Not scheduled</span>
-                            @endif
-                        </td>
-                        <td>
-                            @if($interview && $interview->interview_deadline_start && $interview->interview_deadline_end)
-                                <div style="font-size: 0.875rem;">
-                                    <div style="color: #374151; font-weight: 500;">
-                                        {{ $interview->interview_deadline_start->format('M d, Y') }} - 
-                                        {{ $interview->interview_deadline_end->format('M d, Y') }}
-                                    </div>
-                                    @php
-                                        $now = now();
-                                        $daysUntilEnd = $now->diffInDays($interview->interview_deadline_end, false);
-                                    @endphp
-                                    @if($interview->interview_deadline_end->isPast())
-                                        <span style="color: #DC2626; font-size: 0.813rem; font-weight: 600;">⚠️ Deadline passed</span>
-                                    @elseif($daysUntilEnd <= 3 && $daysUntilEnd >= 0)
-                                        <span style="color: #F59E0B; font-size: 0.813rem; font-weight: 600;">⚠️ Due soon</span>
-                                    @endif
-                                </div>
-                            @else
-                                <span style="color: #9CA3AF; font-size: 0.875rem;">No deadline set</span>
-                            @endif
-                        </td>
-                        <td>
-                            @php $hasCompletedExam = method_exists($applicant, 'hasCompletedExam') ? $applicant->hasCompletedExam() : ($applicant->status === 'exam-completed'); @endphp
-                            @if($interview && $canSchedule)
-                                @if($hasCompletedExam)
-                                    <button type="button" class="btn btn-primary btn-small" 
-                                            onclick="openScheduleModal({{ $interview->interview_id }}, '{{ $applicant->first_name }} {{ $applicant->last_name }}')">
-                                        Schedule Interview
-                                    </button>
-                                @else
-                                    <span class="tooltip" data-tip="Cannot schedule: applicant must complete the exam">
-                                        <button type="button" class="btn btn-primary btn-small disabled" disabled title="Applicant must complete the exam">
-                                            Schedule Interview
-                                        </button>
-                                    </span>
-                                @endif
-                            @elseif($applicant->status === 'exam-completed' || $applicant->status === 'interview-scheduled')
-                                <a href="{{ route('instructor.interview.show', $applicant->applicant_id) }}" 
-                                   class="btn btn-primary btn-small">
-                                    Start Interview
-                                </a>
-                            @elseif($applicant->status === 'interview-completed')
-                                <a href="{{ route('instructor.interview.show', $applicant->applicant_id) }}" 
-                                   class="btn btn-secondary btn-small">
-                                    View Interview
-                                </a>
-                            @else
-                                <span style="color: #6B7280; font-size: 0.875rem;">Waiting for exam</span>
-                            @endif
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-
-            <!-- Pagination -->
-            @if($assignedApplicants->hasPages())
-            <div class="pagination-wrapper">
-                {{ $assignedApplicants->links() }}
-            </div>
-            @endif
-        @else
-            <div class="empty-state">
-                <h3>No Applicants Found</h3>
-                <p>No applicants match your current search criteria. Try adjusting your filters or check back later.</p>
-            </div>
-        @endif
-    </div>
+    @include('instructor.partials.applicants-table', ['assignedApplicants' => $assignedApplicants])
 </div>
 
 <!-- Individual Schedule Modal -->
@@ -699,6 +515,100 @@
 
 @push('scripts')
 <script>
+    function initializeApplicantFilters() {
+        const container = document.querySelector('.applicants-table-section');
+        if (!container) {
+            return;
+        }
+
+        const filterForm = document.getElementById('applicantFiltersForm');
+        if (!filterForm) {
+            return;
+        }
+
+        const searchInput = document.getElementById('searchApplicantsInput');
+        const statusSelect = filterForm.querySelector('select[name="status"]');
+        let searchDebounceTimer = null;
+
+        const buildUrlFromForm = () => {
+            const url = new URL(filterForm.action, window.location.origin);
+            const formData = new FormData(filterForm);
+            formData.forEach((value, key) => {
+                if (value) {
+                    url.searchParams.set(key, value);
+                } else {
+                    url.searchParams.delete(key);
+                }
+            });
+            return url.toString();
+        };
+
+        const loadApplicants = (targetUrl) => {
+            const finalUrl = targetUrl || buildUrlFromForm();
+
+            fetch(finalUrl, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to load applicants.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.html) {
+                    const parser = new DOMParser();
+                    const parsed = parser.parseFromString(data.html, 'text/html');
+                    const newSection = parsed.body.firstElementChild;
+                    if (newSection) {
+                        const existingSection = document.querySelector('.applicants-table-section');
+                        if (existingSection) {
+                            existingSection.replaceWith(newSection);
+                            history.replaceState({}, '', finalUrl);
+                            initializeApplicantFilters();
+                            updateBulkActions();
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error(error);
+            });
+        };
+
+        filterForm.onsubmit = function (event) {
+            event.preventDefault();
+            loadApplicants();
+        };
+
+        if (searchInput) {
+            searchInput.oninput = function () {
+                clearTimeout(searchDebounceTimer);
+                searchDebounceTimer = setTimeout(() => loadApplicants(), 350);
+            };
+        }
+
+        if (statusSelect) {
+            statusSelect.onchange = function () {
+                loadApplicants();
+            };
+        }
+
+        container.querySelectorAll('.pagination a').forEach(link => {
+            link.onclick = function (event) {
+                event.preventDefault();
+                loadApplicants(this.href);
+            };
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        initializeApplicantFilters();
+    });
+
     // Bulk selection management
     function toggleSelectAll(checkbox) {
         const checkboxes = document.querySelectorAll('.applicant-checkbox');

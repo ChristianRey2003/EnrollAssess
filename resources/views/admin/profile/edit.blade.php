@@ -9,98 +9,37 @@
 
 @push('styles')
 <style>
-    :root {
-        --primary-maroon: #800020;
-        --primary-gold: #FFD700;
-        --dark-maroon: #5C0016;
-        --light-gold: #FFF8DC;
-        --white: #FFFFFF;
-        --light-gray: #F8F9FA;
-        --border-gray: #E9ECEF;
-        --text-gray: #6B7280;
-        --text-dark: #1F2937;
-        --success-green: #059669;
-        --warning-orange: #D97706;
-        --danger-red: #DC2626;
-        --info-blue: #3B82F6;
-        --transition: all 0.3s ease;
-    }
-
     .profile-container {
-        padding: 30px;
-        max-width: 900px;
+        padding: 8px 20px 20px 20px;
+        max-width: 1200px;
         margin: 0 auto;
     }
 
-    .form-card {
-        background: var(--white);
-        border-radius: 12px;
-        padding: 30px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        border: 1px solid var(--border-gray);
-        margin-bottom: 20px;
-    }
-
-    .form-card h3 {
-        color: var(--primary-maroon);
-        font-size: 18px;
-        font-weight: 700;
-        margin: 0 0 25px 0;
-        padding-bottom: 15px;
-        border-bottom: 2px solid var(--border-gray);
-    }
-
-    .profile-picture-section {
-        display: flex;
-        align-items: center;
-        gap: 30px;
-        margin-bottom: 30px;
-        padding-bottom: 30px;
-        border-bottom: 2px solid var(--border-gray);
+    .card-body {
+        padding: 14px !important;
     }
 
     .profile-picture-preview {
         position: relative;
-        width: 150px;
-        height: 150px;
+        width: 100px;
+        height: 100px;
         border-radius: 50%;
         overflow: hidden;
-        border: 4px solid var(--primary-maroon);
-        background: linear-gradient(135deg, var(--primary-gold), #DAA520);
+        border: 2px solid #E9ECEF;
+        background: #F8F9FA;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--primary-maroon);
-        font-weight: 700;
-        font-size: 48px;
-        flex-shrink: 0;
+        color: #6B7280;
+        font-weight: 600;
+        font-size: 32px;
+        margin: 0 auto;
     }
 
     .profile-picture-preview img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-    }
-
-    .profile-picture-info {
-        flex: 1;
-    }
-
-    .profile-picture-info h4 {
-        margin: 0 0 10px 0;
-        color: var(--text-dark);
-        font-size: 16px;
-    }
-
-    .profile-picture-info p {
-        margin: 0 0 15px 0;
-        color: var(--text-gray);
-        font-size: 14px;
-    }
-
-    .file-upload-wrapper {
-        position: relative;
-        display: inline-block;
     }
 
     .file-upload-input {
@@ -111,177 +50,92 @@
     }
 
     .file-upload-label {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 20px;
-        background: var(--primary-maroon);
-        color: var(--white);
-        border-radius: 8px;
         cursor: pointer;
+    }
+
+    .card-title {
+        font-size: 14px;
         font-weight: 600;
-        font-size: 14px;
-        transition: var(--transition);
+        color: #1F2937;
+        margin-bottom: 0;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #E9ECEF;
     }
 
-    .file-upload-label:hover {
-        background: var(--dark-maroon);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(128, 0, 32, 0.3);
+    .form-label {
+        font-size: 12px;
+        font-weight: 500;
+        margin-bottom: 3px;
     }
 
-    .form-group {
-        margin-bottom: 20px;
-    }
-
-    .form-group label {
-        display: block;
-        font-weight: 600;
-        color: var(--text-dark);
-        margin-bottom: 8px;
-        font-size: 14px;
-    }
-
-    .form-group label .required {
-        color: var(--danger-red);
-        margin-left: 3px;
-    }
-
-    .form-group input[type="text"],
-    .form-group input[type="email"],
-    .form-group input[type="password"] {
-        width: 100%;
-        padding: 10px 15px;
-        border: 2px solid var(--border-gray);
-        border-radius: 8px;
-        font-size: 14px;
-        transition: var(--transition);
-    }
-
-    .form-group input:focus {
-        outline: none;
-        border-color: var(--primary-maroon);
-        box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1);
-    }
-
-    .form-group .help-text {
-        display: block;
+    .form-control {
         font-size: 13px;
-        color: var(--text-gray);
-        margin-top: 5px;
+        padding: 5px 10px;
+        height: calc(1.5em + 0.5rem + 2px);
     }
 
-    .error-text {
-        color: var(--danger-red);
-        font-size: 13px;
-        margin-top: 5px;
-        display: block;
+    .form-control:focus {
+        border-color: #800020;
+        box-shadow: 0 0 0 0.2rem rgba(128, 0, 32, 0.25);
     }
 
-    .form-group input.error {
-        border-color: var(--danger-red);
+    .form-text {
+        font-size: 11px;
     }
 
-    .form-actions {
-        display: flex;
-        gap: 15px;
-        justify-content: flex-end;
-        margin-top: 30px;
-        padding-top: 30px;
-        border-top: 2px solid var(--border-gray);
+    .invalid-feedback {
+        font-size: 11px;
     }
 
     .btn {
-        padding: 12px 24px;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 14px;
-        cursor: pointer;
-        transition: var(--transition);
-        border: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        text-decoration: none;
+        font-size: 12px;
+        padding: 8px 14px;
+        font-weight: 500;
     }
 
     .btn-primary {
-        background: var(--primary-maroon);
-        color: var(--white);
+        background-color: #800020;
+        border-color: #800020;
     }
 
     .btn-primary:hover {
-        background: var(--dark-maroon);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(128, 0, 32, 0.3);
+        background-color: #5C0016;
+        border-color: #5C0016;
     }
 
     .btn-secondary {
-        background: var(--light-gray);
-        color: var(--text-dark);
-        border: 2px solid var(--border-gray);
+        background-color: #F8F9FA;
+        border-color: #E9ECEF;
+        color: #1F2937;
     }
 
     .btn-secondary:hover {
-        background: var(--border-gray);
-    }
-
-    .btn-danger {
-        background: var(--danger-red);
-        color: var(--white);
-    }
-
-    .btn-danger:hover {
-        background: #B91C1C;
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(220, 38, 38, 0.3);
+        background-color: #E9ECEF;
+        border-color: #D1D5DB;
+        color: #1F2937;
     }
 
     .password-section {
-        background: var(--light-gray);
-        border-radius: 8px;
-        padding: 20px;
-        margin-top: 20px;
+        background: #F8F9FA;
+        border-radius: 5px;
+        padding: 10px;
     }
 
-    .password-section h4 {
-        margin: 0 0 15px 0;
-        color: var(--text-dark);
-        font-size: 16px;
+    .password-section h5 {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 6px;
     }
 
-    .alert {
-        padding: 15px 20px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .alert-success {
-        background: rgba(5, 150, 105, 0.1);
-        border: 2px solid var(--success-green);
-        color: var(--success-green);
+    @media (max-width: 968px) {
+        .profile-container {
+            padding: 16px;
+        }
     }
 
     @media (max-width: 768px) {
         .profile-container {
-            padding: 15px;
-        }
-
-        .profile-picture-section {
-            flex-direction: column;
-            text-align: center;
-        }
-
-        .form-actions {
-            flex-direction: column;
-        }
-
-        .btn {
-            width: 100%;
-            justify-content: center;
+            padding: 12px;
         }
     }
 </style>
@@ -290,138 +144,156 @@
 @section('content')
 <div class="profile-container">
     @if(session('success'))
-        <div class="alert alert-success">
-            <span>✓</span>
-            <span>{{ session('success') }}</span>
+        <div class="alert alert-success alert-dismissible fade show mb-2" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
 
-    <div class="form-card">
-        <h3>📸 Profile Picture</h3>
-
-        <div class="profile-picture-section">
-            <div class="profile-picture-preview" id="profilePreview">
-                @if($user->profile_picture_url)
-                    <img src="{{ $user->profile_picture_url }}" alt="Profile Picture" id="profileImage">
-                @else
-                    <span id="profileInitials">{{ $user->initials }}</span>
-                @endif
-            </div>
-            <div class="profile-picture-info">
-                <h4>Upload Profile Picture</h4>
-                <p>Upload a profile picture to personalize your account. Accepted formats: JPG, PNG, GIF. Maximum size: 2MB.</p>
-                <div class="file-upload-wrapper">
-                    <input type="file" 
-                           id="profile_picture_preview" 
-                           accept="image/jpeg,image/png,image/jpg,image/gif"
-                           class="file-upload-input"
-                           onchange="previewProfilePicture(this)">
-                    <label for="profile_picture_preview" class="file-upload-label">
-                        <span>📁</span> Choose File
-                    </label>
+    <div class="row g-2">
+        <!-- Profile Picture Card -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-2">Profile Picture</h5>
+                    
+                    <div class="d-flex flex-column align-items-center">
+                        <div class="profile-picture-preview mb-2" id="profilePreview">
+                            @if($user->profile_picture_url)
+                                <img src="{{ $user->profile_picture_url }}" alt="Profile Picture" id="profileImage">
+                            @else
+                                <span id="profileInitials">{{ $user->initials }}</span>
+                            @endif
+                        </div>
+                        
+                        <div class="text-center w-100">
+                            <h6 class="mb-1" style="font-size: 12px; font-weight: 600;">Upload Profile Picture</h6>
+                            <p class="text-muted mb-2" style="font-size: 11px; line-height: 1.3;">
+                                Upload a profile picture. Accepted formats: JPG, PNG, GIF. Maximum size: 2MB.
+                            </p>
+                            
+                            <div class="file-upload-wrapper d-inline-block">
+                                <input type="file" 
+                                       id="profile_picture_preview" 
+                                       accept="image/jpeg,image/png,image/jpg,image/gif"
+                                       class="file-upload-input"
+                                       onchange="previewProfilePicture(this)">
+                                <label for="profile_picture_preview" class="btn btn-primary btn-sm file-upload-label">
+                                    Choose File
+                                </label>
+                            </div>
+                            
+                            @if($user->profile_picture)
+                                <form method="POST" action="{{ route('admin.profile.delete-picture') }}" class="d-inline-block mt-1">
+                                    @csrf
+                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete your profile picture?')">
+                                        Delete Picture
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                    </div>
                 </div>
-                @if($user->profile_picture)
-                    <form method="POST" action="{{ route('admin.profile.delete-picture') }}" style="display: inline-block; margin-top: 10px;">
-                        @csrf
-                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete your profile picture?')">
-                            <span>🗑️</span> Delete Picture
-                        </button>
-                    </form>
-                @endif
             </div>
         </div>
-    </div>
 
-    <div class="form-card">
-        <h3>👤 Account Information</h3>
+        <!-- Account Information Card -->
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-2">Account Information</h5>
 
-        <form method="POST" action="{{ route('admin.profile.update') }}" enctype="multipart/form-data">
-            @csrf
-            @method('PUT')
+                    <form method="POST" action="{{ route('admin.profile.update') }}" enctype="multipart/form-data">
+                        @csrf
+                        @method('PUT')
 
-            <!-- Full Name -->
-            <div class="form-group">
-                <label for="full_name">Full Name <span class="required">*</span></label>
-                <input type="text" 
-                       id="full_name" 
-                       name="full_name" 
-                       value="{{ old('full_name', $user->full_name) }}" 
-                       class="@error('full_name') error @enderror"
-                       required>
-                @error('full_name')
-                    <span class="error-text">{{ $message }}</span>
-                @enderror
-            </div>
+                        <!-- Full Name -->
+                        <div class="mb-1">
+                            <label for="full_name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                            <input type="text" 
+                                   id="full_name" 
+                                   name="full_name" 
+                                   value="{{ old('full_name', $user->full_name) }}" 
+                                   class="form-control @error('full_name') is-invalid @enderror"
+                                   required>
+                            @error('full_name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
 
-            <!-- Email -->
-            <div class="form-group">
-                <label for="email">Email Address <span class="required">*</span></label>
-                <input type="email" 
-                       id="email" 
-                       name="email" 
-                       value="{{ old('email', $user->email) }}" 
-                       class="@error('email') error @enderror"
-                       required>
-                @error('email')
-                    <span class="error-text">{{ $message }}</span>
-                @enderror
-            </div>
+                        <!-- Email -->
+                        <div class="mb-1">
+                            <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" 
+                                   id="email" 
+                                   name="email" 
+                                   value="{{ old('email', $user->email) }}" 
+                                   class="form-control @error('email') is-invalid @enderror"
+                                   required>
+                            @error('email')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
 
-            <!-- Profile Picture Upload (hidden, synced from preview) -->
-            <input type="file" 
-                   id="profile_picture" 
-                   name="profile_picture" 
-                   accept="image/jpeg,image/png,image/jpg,image/gif"
-                   style="display: none;">
+                        <!-- Profile Picture Upload (hidden, synced from preview) -->
+                        <input type="file" 
+                               id="profile_picture" 
+                               name="profile_picture" 
+                               accept="image/jpeg,image/png,image/jpg,image/gif"
+                               style="display: none;">
 
-            <!-- Password Section -->
-            <div class="password-section">
-                <h4>🔒 Change Password (Optional)</h4>
-                <p style="color: var(--text-gray); font-size: 14px; margin-bottom: 15px;">
-                    Leave blank to keep the current password unchanged.
-                </p>
+                        <!-- Password Section -->
+                        <div class="password-section mt-1">
+                            <h5>Change Password (Optional)</h5>
 
-                <!-- Current Password -->
-                <div class="form-group">
-                    <label for="current_password">Current Password</label>
-                    <input type="password" 
-                           id="current_password" 
-                           name="current_password" 
-                           class="@error('current_password') error @enderror">
-                    @error('current_password')
-                        <span class="error-text">{{ $message }}</span>
-                    @enderror
+                            <!-- Current Password -->
+                            <div class="mb-1">
+                                <label for="current_password" class="form-label">Current Password</label>
+                                <input type="password" 
+                                       id="current_password" 
+                                       name="current_password" 
+                                       class="form-control @error('current_password') is-invalid @enderror">
+                                @error('current_password')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- New Password -->
+                            <div class="mb-1">
+                                <label for="password" class="form-label">New Password</label>
+                                <input type="password" 
+                                       id="password" 
+                                       name="password" 
+                                       class="form-control @error('password') is-invalid @enderror">
+                                @error('password')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">Minimum 8 characters</div>
+                            </div>
+
+                            <!-- Confirm Password -->
+                            <div class="mb-1">
+                                <label for="password_confirmation" class="form-label">Confirm New Password</label>
+                                <input type="password" 
+                                       id="password_confirmation" 
+                                       name="password_confirmation"
+                                       class="form-control">
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-end gap-2 mt-2 pt-2 border-top">
+                            <a href="{{ route('admin.users.index') }}" class="btn btn-secondary btn-sm">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                Update Profile
+                            </button>
+                        </div>
+                    </form>
                 </div>
-
-                <!-- New Password -->
-                <div class="form-group">
-                    <label for="password">New Password</label>
-                    <input type="password" 
-                           id="password" 
-                           name="password" 
-                           class="@error('password') error @enderror">
-                    @error('password')
-                        <span class="error-text">{{ $message }}</span>
-                    @enderror
-                    <span class="help-text">Minimum 8 characters</span>
-                </div>
-
-                <!-- Confirm Password -->
-                <div class="form-group">
-                    <label for="password_confirmation">Confirm New Password</label>
-                    <input type="password" 
-                           id="password_confirmation" 
-                           name="password_confirmation">
-                </div>
             </div>
-
-            <!-- Form Actions -->
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">
-                    <span>💾</span> Update Profile
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 @endsection
@@ -460,4 +332,3 @@
     }
 </script>
 @endpush
-

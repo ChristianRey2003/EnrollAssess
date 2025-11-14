@@ -166,44 +166,35 @@
         opacity: 0.8;
     }
 
-    .applicants-table {
-        width: 100%;
-        border-collapse: collapse;
+    .dashboard-table-wrapper .table-responsive {
+        margin-bottom: 0;
     }
 
-    .applicants-table th,
-    .applicants-table td {
-        padding: 16px;
-        text-align: left;
+    .dashboard-table thead th {
+        font-weight: 600;
+        font-size: 0.8125rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #374151;
+        background-color: #ffffff;
+        border-bottom: 1px solid #E5E7EB;
+    }
+
+    .dashboard-table tbody td {
+        font-size: 0.875rem;
+        color: #1F2937;
+        vertical-align: middle;
         border-bottom: 1px solid #F3F4F6;
     }
 
-    .applicants-table th {
-        background: #F9FAFB;
-        font-weight: 600;
-        color: #374151;
-        font-size: 0.875rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+    .dashboard-table tbody tr:hover {
+        background-color: rgba(255, 215, 0, 0.08);
     }
 
     .applicant-cell {
         display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .applicant-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: var(--maroon-primary);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        font-size: 0.875rem;
+        flex-direction: column;
+        gap: 4px;
     }
 
     .applicant-name {
@@ -331,67 +322,66 @@
             </div>
             <div class="section-content">
                 @if($assignedApplicants->count() > 0)
-                    <table class="applicants-table">
-                        <thead>
-                            <tr>
-                                <th>Applicant</th>
-                                <th>Application No.</th>
-                                <th>Exam Score</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($assignedApplicants->take(5) as $applicant)
-                            <tr>
-                                <td>
-                                    <div class="applicant-cell">
-                                        <div class="applicant-avatar">
-                                            {{ substr($applicant->first_name ?? 'A', 0, 1) }}{{ substr($applicant->last_name ?? 'A', 0, 1) }}
-                                        </div>
-                                        <div>
-                                            <div class="applicant-name">{{ $applicant->first_name }} {{ $applicant->last_name }}</div>
-                                            <div class="applicant-email">{{ $applicant->email_address }}</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>{{ $applicant->application_no }}</td>
-                                <td>
-                                    @php
-                                        $examScore = $applicant->enrollassess_score ?? null;
-                                    @endphp
-                                    @if($examScore !== null)
-                                        <span class="status-badge {{ $examScore >= 70 ? 'status-completed' : 'status-pending' }}">
-                                            {{ number_format($examScore, 1) }}%
-                                        </span>
-                                    @else
-                                        <span class="status-badge status-pending">Pending</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <span class="status-badge status-{{ str_replace([' ', '-'], ['', ''], strtolower($applicant->status)) }}">
-                                        {{ ucfirst(str_replace('-', ' ', $applicant->status)) }}
-                                    </span>
-                                </td>
-                                <td>
-                                    @if($applicant->status === 'exam-completed')
-                                        <a href="{{ route('instructor.interview.show', $applicant->applicant_id) }}" 
-                                           class="btn-small btn-primary">
-                                            Start Interview
-                                        </a>
-                                    @elseif($applicant->status === 'interview-completed')
-                                        <a href="{{ route('instructor.interview.show', $applicant->applicant_id) }}" 
-                                           class="btn-small btn-secondary">
-                                            View Interview
-                                        </a>
-                                    @else
-                                        <span style="color: #6B7280; font-size: 0.875rem;">Waiting for exam</span>
-                                    @endif
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                    <div class="dashboard-table-wrapper">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped align-middle dashboard-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col" class="text-left">Applicant</th>
+                                        <th scope="col" class="text-center" style="min-width: 140px;">Application No.</th>
+                                        <th scope="col" class="text-center">Exam Score</th>
+                                        <th scope="col" class="text-center">Status</th>
+                                        <th scope="col" class="text-center" style="min-width: 160px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($assignedApplicants->take(5) as $applicant)
+                                    <tr>
+                                        <td>
+                                            <div class="applicant-cell">
+                                                <div class="applicant-name">{{ $applicant->first_name }} {{ $applicant->last_name }}</div>
+                                                <div class="applicant-email">{{ $applicant->email_address }}</div>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">{{ $applicant->application_no }}</td>
+                                        <td class="text-center">
+                                            @php
+                                                $examScore = $applicant->enrollassess_score ?? null;
+                                            @endphp
+                                            @if($examScore !== null)
+                                                <span class="status-badge {{ $examScore >= 70 ? 'status-completed' : 'status-pending' }}">
+                                                    {{ number_format($examScore, 1) }}%
+                                                </span>
+                                            @else
+                                                <span class="status-badge status-pending">Pending</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="status-badge status-{{ str_replace([' ', '-'], ['', ''], strtolower($applicant->status)) }}">
+                                                {{ ucfirst(str_replace('-', ' ', $applicant->status)) }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            @if($applicant->status === 'exam-completed')
+                                                <a href="{{ route('instructor.interview.show', $applicant->applicant_id) }}" 
+                                                   class="btn-small btn-primary">
+                                                    Start Interview
+                                                </a>
+                                            @elseif($applicant->status === 'interview-completed')
+                                                <a href="{{ route('instructor.interview.show', $applicant->applicant_id) }}" 
+                                                   class="btn-small btn-secondary">
+                                                    View Interview
+                                                </a>
+                                            @else
+                                                <span style="color: #6B7280; font-size: 0.875rem;">Waiting for exam</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 @else
                     <div class="empty-state">
                         <h3>No Applicants Assigned Yet</h3>

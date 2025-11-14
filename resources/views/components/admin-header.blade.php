@@ -69,7 +69,7 @@
                  aria-label="User account menu"
                  style="display: none;">
                 <!-- Profile Link -->
-                <a href="{{ route('admin.profile.edit') }}" 
+                <a href="{{ auth()->user()->role === 'instructor' ? route('instructor.profile.edit') : route('admin.profile.edit') }}" 
                    class="dropdown-item"
                    role="menuitem"
                    aria-label="View profile">
@@ -78,7 +78,8 @@
                 
                 <div class="dropdown-divider" role="separator"></div>
                 
-                <!-- Department Head Features -->
+                <!-- Department Head Features (not for instructors) -->
+                @if(auth()->user()->role !== 'instructor')
                 <div class="dropdown-section">
                     <a href="{{ route('admin.settings') }}" 
                        class="dropdown-item"
@@ -89,13 +90,14 @@
                 </div>
                 
                 <div class="dropdown-divider" role="separator"></div>
+                @endif
                 
-                <form method="POST" action="{{ route('admin.logout') }}">
+                <form method="POST" action="{{ auth()->user()->role === 'instructor' ? route('logout') : route('admin.logout') }}">
                     @csrf
                     <button type="submit" 
                             class="dropdown-item logout-item"
                             role="menuitem"
-                            aria-label="Logout from admin panel">
+                            aria-label="Logout from {{ auth()->user()->role === 'instructor' ? 'instructor' : 'admin' }} panel">
                         <span class="dropdown-text">Logout</span>
                     </button>
                 </form>

@@ -104,7 +104,7 @@ class ApplicantController extends BaseController
                         'from' => $applicants->firstItem(),
                         'to' => $applicants->lastItem(),
                     ],
-                    'pagination_html' => $applicants->hasPages() ? $applicants->links()->render() : '',
+                    'pagination_html' => $applicants->hasPages() ? $applicants->appends($request->query())->links()->render() : '',
                 ]);
             }
             
@@ -558,20 +558,40 @@ class ApplicantController extends BaseController
         DB::transaction(function () use ($request, &$generated, &$emailsSent, &$errors, $sendEmail) {
             foreach ($request->applicant_ids as $applicantId) {
                 try {
-                    $applicant = Applicant::with('assignedInstructor')->find($applicantId);
+                    $applicant = Applicant::with(['assignedInstructor', 'accessCode'])->find($applicantId);
+                    
+                    if (!$applicant) {
+                        $errors[] = "Applicant with ID {$applicantId} not found";
+                        continue;
+                    }
                     
                     // Check if applicant already has an access code
                     if ($applicant->accessCode) {
-                        $errors[] = "Applicant {$applicant->full_name} already has an access code";
-                        continue;
+                        $existingCode = $applicant->accessCode;
+                        
+                        // Check if the code is expired (expires_at is in the past and not used)
+                        $isExpired = false;
+                        if ($existingCode->expires_at !== null) {
+                            $isExpired = $existingCode->expires_at->isPast() && !$existingCode->is_used;
+                        }
+                        
+                        if ($isExpired) {
+                            // Delete expired code and generate a new one
+                            $existingCode->delete();
+                        } else {
+                            // Code is still valid (not expired or already used), skip this applicant
+                            $errors[] = "Applicant {$applicant->full_name} already has a valid access code";
+                            continue;
+                        }
                     }
 
                     // Create access code
+                    $expiryHours = $request->expiry_hours ? (int)$request->expiry_hours : 72;
                     $accessCode = AccessCode::createForApplicant(
                         $applicantId,
                         'BSIT',
                         8,
-                        $request->expiry_hours ?? 72
+                        $expiryHours
                     );
 
                     $generated++;
@@ -654,8 +674,24 @@ class ApplicantController extends BaseController
 
             // Return JSON for AJAX pagination requests only
             if ($request->ajax() && $request->header('Accept') && str_contains($request->header('Accept'), 'application/json')) {
+            // Map applicants to include full_name and other accessors
+            $applicantsData = $applicants->map(function($applicant) {
+                return [
+                    'applicant_id' => $applicant->applicant_id,
+                    'application_no' => $applicant->application_no,
+                    'formatted_applicant_no' => $applicant->formatted_applicant_no,
+                    'full_name' => $applicant->full_name,
+                    'email_address' => $applicant->email_address,
+                    'status' => $applicant->status,
+                    'assigned_instructor' => $applicant->assignedInstructor ? [
+                        'user_id' => $applicant->assignedInstructor->user_id,
+                        'full_name' => $applicant->assignedInstructor->full_name,
+                    ] : null,
+                ];
+            });
+            
             return response()->json([
-                'applicants' => $applicants->items(),
+                'applicants' => $applicantsData,
                 'pagination' => [
                     'current_page' => $applicants->currentPage(),
                     'last_page' => $applicants->lastPage(),
@@ -772,6 +808,15 @@ class ApplicantController extends BaseController
     public function exportWithAccessCodes(Request $request)
     {
         $query = Applicant::with(['assignedInstructor', 'accessCode', 'accessCode.exam']);
+
+        // If specific applicant IDs are provided, filter by those IDs first
+        if ($request->has('applicant_ids') && $request->applicant_ids) {
+            $applicantIds = explode(',', $request->applicant_ids);
+            $applicantIds = array_filter(array_map('trim', $applicantIds));
+            if (!empty($applicantIds)) {
+                $query->whereIn('id', $applicantIds);
+            }
+        }
 
         // Apply filters if provided
         if ($request->has('instructor_id') && $request->instructor_id) {
@@ -902,9 +947,7 @@ class ApplicantController extends BaseController
                 'interview-available',
                 'interview-claimed',
                 'interview-scheduled',
-                'interview-completed',
-                'admitted',
-                'rejected'
+                'interview-completed'
             ];
 
             // Statistics - 4 most important metrics

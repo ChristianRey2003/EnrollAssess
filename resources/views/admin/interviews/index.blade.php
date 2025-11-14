@@ -255,7 +255,7 @@
             
             if (!url || url === '#' || url === 'javascript:void(0)') return;
             
-            const tableBody = document.querySelector('.data-table tbody');
+            const tableBody = document.querySelector('.table-responsive .table tbody');
             const paginationWrapper = document.querySelector('.pagination-wrapper');
             
             if (tableBody) {
@@ -331,30 +331,30 @@
                             actionsHtml += `<a href="/admin/interviews/${interview.interview_id}" class="action-btn action-btn-view">View Details</a>`;
                             
                             html += `<tr>
-                                <td class="text-center">${rowNum}</td>
-                                <td style="position: relative;">
+                                <td class="text-center" style="font-size: 13px; font-weight: normal;">${rowNum}</td>
+                                <td class="text-left" style="font-size: 13px; font-weight: normal; position: relative;">
                                     <div class="applicant-info">
                                         <div class="applicant-name">${(applicant.full_name || applicant.first_name + ' ' + applicant.last_name || 'Unknown Applicant').trim()}</div>
                                         <div class="applicant-email">${applicant.email_address || applicant.email || 'N/A'}</div>
                                     </div>
                                     <div class="floating-actions">${actionsHtml}</div>
                                 </td>
-                                <td>
+                                <td class="text-left" style="font-size: 13px; font-weight: normal;">
                                     <div class="interviewer-info">
                                         <div class="interviewer-name">${interviewer.full_name || interviewer.first_name + ' ' + interviewer.last_name || 'Not Assigned'}</div>
                                         <div class="interviewer-role">${interviewer.role ? (interviewer.role.charAt(0).toUpperCase() + interviewer.role.slice(1)) : 'Available in Pool'}</div>
                                     </div>
                                 </td>
-                                <td>
+                                <td class="text-center" style="font-size: 13px; font-weight: normal;">
                                     <div class="schedule-info">
                                         <div class="schedule-date">${dateStr}</div>
                                         ${timeStr ? `<div class="schedule-time">${timeStr}</div>` : ''}
                                     </div>
                                 </td>
-                                <td class="text-center">
-                                    <span class="status-badge status-${statusClass}">${statusText}</span>
+                                <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                                    <span class="badge bg-secondary">${statusText}</span>
                                 </td>
-                                <td>
+                                <td class="text-center" style="font-size: 13px; font-weight: normal;">
                                     <div class="score-display">${scoreHtml}</div>
                                 </td>
                             </tr>`;

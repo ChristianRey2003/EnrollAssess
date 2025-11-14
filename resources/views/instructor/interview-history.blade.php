@@ -7,6 +7,187 @@
     $pageSubtitle = 'Review your completed interview evaluations and performance statistics';
 @endphp
 
+@push('styles')
+<style>
+    .history-card {
+        background: #FFFFFF;
+        border-radius: 16px;
+        border: 1px solid #E5E7EB;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+
+    .history-card-header {
+        padding: 24px;
+        background: #F9FAFB;
+        border-bottom: 1px solid #E5E7EB;
+    }
+
+    .history-card-header h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1F2937;
+    }
+
+    .history-card-footer {
+        padding: 16px 24px;
+        border-top: 1px solid #E5E7EB;
+        background: #F9FAFB;
+    }
+
+    .interview-history-table-wrapper .table-responsive {
+        margin-bottom: 0;
+    }
+
+    .interview-history-table thead th {
+        font-weight: 600;
+        font-size: 0.8125rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #374151;
+        background-color: #ffffff;
+        border-bottom: 1px solid #E5E7EB;
+    }
+
+    .interview-history-table tbody td {
+        font-size: 0.875rem;
+        color: #1F2937;
+        vertical-align: middle;
+        border-bottom: 1px solid #F3F4F6;
+    }
+
+    .interview-history-table tbody tr:hover {
+        background-color: rgba(255, 215, 0, 0.08);
+    }
+
+    .interview-history-table .applicant-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .interview-history-table .applicant-details .name {
+        font-weight: 600;
+        color: #1F2937;
+    }
+
+    .interview-history-table .applicant-details .email {
+        font-size: 0.8125rem;
+        color: #6B7280;
+    }
+
+    .score-progress {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .score-progress-value {
+        font-weight: 600;
+        color: #1F2937;
+    }
+
+    .score-progress-bar {
+        flex: 1;
+        height: 6px;
+        background: #E5E7EB;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .score-progress-bar span {
+        display: block;
+        height: 100%;
+        background: var(--maroon-primary);
+        border-radius: inherit;
+    }
+
+    .badge-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-success {
+        background: #D1FAE5;
+        color: #047857;
+    }
+
+    .badge-info {
+        background: #DBEAFE;
+        color: #1D4ED8;
+    }
+
+    .badge-warning {
+        background: #FEF3C7;
+        color: #B45309;
+    }
+
+    .badge-danger {
+        background: #FEE2E2;
+        color: #B91C1C;
+    }
+
+    .badge-neutral {
+        background: #E5E7EB;
+        color: #374151;
+    }
+
+    .history-action-button {
+        border: none;
+        background: none;
+        color: var(--maroon-primary);
+        font-weight: 600;
+        cursor: pointer;
+        transition: color 0.2s ease, text-decoration 0.2s ease;
+        padding: 0;
+    }
+
+    .history-action-button:hover {
+        color: #5C0016;
+        text-decoration: underline;
+    }
+
+    .history-empty-state {
+        padding: 48px 24px;
+        text-align: center;
+    }
+
+    .history-empty-state h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1F2937;
+        margin-bottom: 8px;
+    }
+
+    .history-empty-state p {
+        color: #6B7280;
+        font-size: 0.9375rem;
+        margin-bottom: 16px;
+    }
+
+    .history-empty-state-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #F3F4F6;
+        color: var(--maroon-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+        font-size: 1.5rem;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="max-w-7xl mx-auto">
     <!-- Statistics Cards -->
@@ -69,131 +250,116 @@
     </div>
 
     <!-- Interview History Table -->
-    <div class="bg-white shadow rounded-lg">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Completed Interviews</h3>
+    <div class="history-card">
+        <div class="history-card-header">
+            <h3>Completed Interviews</h3>
         </div>
         
         @if($completedInterviews->count() > 0)
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applicant</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Interview Date</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Overall Score</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recommendation</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach($completedInterviews as $interview)
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center">
-                                        <div class="flex-shrink-0 h-10 w-10">
-                                            <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                                <span class="text-sm font-medium text-gray-700">
-                                                    {{ substr($interview->applicant->full_name ?? 'A', 0, 1) }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="ml-4">
-                                            <div class="text-sm font-medium text-gray-900">
-                                                {{ $interview->applicant->full_name ?? 'N/A' }}
-                                            </div>
-                                            <div class="text-sm text-gray-500">
-                                                {{ $interview->applicant->email_address ?? 'N/A' }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ $interview->interview_date ? $interview->interview_date->format('M d, Y g:i A') : 'N/A' }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center">
-                                        <span class="text-sm font-medium text-gray-900">
-                                            {{ $interview->overall_score ?? 0 }}%
-                                        </span>
-                                        <div class="ml-2 w-16 bg-gray-200 rounded-full h-2">
-                                            <div class="h-2 rounded-full" style="background-color: #800020; width: {{ $interview->overall_score ?? 0 }}%"></div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    @php
-                                        $ratingClass = match($interview->overall_rating ?? '') {
-                                            'excellent' => 'bg-green-100 text-green-800',
-                                            'very_good' => 'text-blue-800',
-                                            'good' => 'bg-yellow-100 text-yellow-800',
-                                            'satisfactory' => 'bg-orange-100 text-orange-800',
-                                            'needs_improvement' => 'bg-red-100 text-red-800',
-                                            default => 'bg-gray-100 text-gray-800'
-                                        };
-                                    @endphp
-                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $ratingClass }}">
-                                        {{ ucfirst(str_replace('_', ' ', $interview->overall_rating ?? 'N/A')) }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    @php
-                                        $recommendationClass = match($interview->recommendation ?? '') {
-                                            'highly_recommended' => 'bg-green-100 text-green-800',
-                                            'recommended' => 'text-blue-800',
-                                            'conditional' => 'bg-yellow-100 text-yellow-800',
-                                            'not_recommended' => 'bg-red-100 text-red-800',
-                                            default => 'bg-gray-100 text-gray-800'
-                                        };
-                                    @endphp
-                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $recommendationClass }}">
-                                        {{ ucfirst(str_replace('_', ' ', $interview->recommendation ?? 'N/A')) }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    @php
-                                        $statusClass = match($interview->applicant->status ?? '') {
-                                            'admitted' => 'bg-green-100 text-green-800',
-                                            'rejected' => 'bg-red-100 text-red-800',
-                                            'interview-completed' => 'bg-yellow-100 text-yellow-800',
-                                            default => 'bg-gray-100 text-gray-800'
-                                        };
-                                    @endphp
-                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $statusClass }}">
-                                        {{ ucfirst(str_replace('-', ' ', $interview->applicant->status ?? 'N/A')) }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <button class="hover:text-blue-900" style="color: #800020;" onclick="viewInterviewDetails({{ $interview->interview_id }})">
-                                        View Details
-                                    </button>
-                                </td>
+            <div class="interview-history-table-wrapper">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped align-middle interview-history-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col" class="text-left" style="min-width: 220px;">Applicant</th>
+                                <th scope="col" class="text-center" style="min-width: 160px;">Interview Date</th>
+                                <th scope="col" class="text-center" style="min-width: 200px;">Overall Score</th>
+                                <th scope="col" class="text-center">Rating</th>
+                                <th scope="col" class="text-center">Recommendation</th>
+                                <th scope="col" class="text-center">Status</th>
+                                <th scope="col" class="text-center" style="min-width: 140px;">Actions</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach($completedInterviews as $interview)
+                                @php
+                                    $ratingClass = match($interview->overall_rating ?? '') {
+                                        'excellent' => 'badge-success',
+                                        'very_good' => 'badge-info',
+                                        'good' => 'badge-info',
+                                        'satisfactory' => 'badge-warning',
+                                        'needs_improvement' => 'badge-danger',
+                                        default => 'badge-neutral'
+                                    };
+                                
+                                    $recommendationClass = match($interview->recommendation ?? '') {
+                                        'highly_recommended' => 'badge-success',
+                                        'recommended' => 'badge-info',
+                                        'conditional' => 'badge-warning',
+                                        'not_recommended' => 'badge-danger',
+                                        default => 'badge-neutral'
+                                    };
+                                
+                                    $statusClass = match($interview->applicant->status ?? '') {
+                                        'admitted' => 'badge-success',
+                                        'rejected' => 'badge-danger',
+                                        'interview-completed' => 'badge-warning',
+                                        default => 'badge-neutral'
+                                    };
+                                
+                                    $scoreValue = (int) ($interview->overall_score ?? 0);
+                                    $scoreWidth = max(0, min(100, $scoreValue));
+                                @endphp
+                                <tr>
+                                    <td>
+                                        <div class="applicant-info">
+                                            <div class="applicant-details">
+                                                <div class="name">{{ $interview->applicant->full_name ?? 'N/A' }}</div>
+                                                <div class="email">{{ $interview->applicant->email_address ?? 'N/A' }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        {{ $interview->interview_date ? $interview->interview_date->format('M d, Y g:i A') : 'N/A' }}
+                                    </td>
+                                    <td>
+                                        <div class="score-progress">
+                                            <span class="score-progress-value">{{ $scoreValue }}%</span>
+                                            <div class="score-progress-bar">
+                                                <span style="width: {{ $scoreWidth }}%;"></span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge-pill {{ $ratingClass }}">
+                                            {{ ucfirst(str_replace('_', ' ', $interview->overall_rating ?? 'N/A')) }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge-pill {{ $recommendationClass }}">
+                                            {{ ucfirst(str_replace('_', ' ', $interview->recommendation ?? 'N/A')) }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge-pill {{ $statusClass }}">
+                                            {{ ucfirst(str_replace('-', ' ', $interview->applicant->status ?? 'N/A')) }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button"
+                                                class="history-action-button"
+                                                onclick="viewInterviewDetails({{ $interview->interview_id }})">
+                                            View Details
+                                        </button>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            <!-- Pagination -->
-            <div class="px-6 py-4 border-t border-gray-200">
+            <div class="history-card-footer">
                 {{ $completedInterviews->links() }}
             </div>
         @else
-            <div class="px-6 py-8 text-center">
-                <div class="text-gray-400 mb-4">
-                    <svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-lg font-medium text-gray-900 mb-2">No completed interviews yet</h3>
-                <p class="text-gray-500">You haven't completed any interviews yet. Start by scheduling interviews with your assigned applicants.</p>
-                <div class="mt-4">
-                    <a href="{{ route('instructor.applicants') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white" style="background-color: #800020; hover:background-color: #5c0017;">
-                        View Assigned Applicants
-                    </a>
-                </div>
+            <div class="history-empty-state">
+                <div class="history-empty-state-icon">📄</div>
+                <h3>No completed interviews yet</h3>
+                <p>You haven't completed any interviews yet. Start by scheduling interviews with your assigned applicants.</p>
+                <a href="{{ route('instructor.applicants') }}" class="btn btn-primary">
+                    View Assigned Applicants
+                </a>
             </div>
         @endif
     </div>

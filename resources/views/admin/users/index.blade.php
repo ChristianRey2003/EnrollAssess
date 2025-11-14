@@ -25,7 +25,7 @@
     }
 
     .users-container {
-        padding: 30px;
+        padding: 15px 30px 30px 30px;
     }
 
     .users-header {
@@ -87,7 +87,7 @@
         color: var(--text-dark);
         padding: 20px;
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-end;
         align-items: center;
         flex-wrap: wrap;
         gap: 15px;
@@ -149,10 +149,16 @@
 
     .users-table tbody tr {
         transition: var(--transition);
+        position: relative;
     }
 
     .users-table tbody tr:hover {
         background: rgba(128, 0, 32, 0.02);
+    }
+
+    .users-table tbody tr:hover .floating-actions {
+        opacity: 1 !important;
+        visibility: visible !important;
     }
 
     .user-info {
@@ -238,6 +244,39 @@
         gap: 8px;
     }
 
+    .users-table tbody tr td:first-child {
+        padding-right: 200px;
+    }
+
+    .floating-actions {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        gap: 6px;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.2s ease, visibility 0.2s ease;
+        z-index: 10;
+        pointer-events: none;
+    }
+
+    .users-table tbody tr:hover .floating-actions {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+
+    .floating-actions .btn {
+        padding: 6px 12px;
+        font-size: 12px;
+        border-radius: 6px;
+        white-space: nowrap;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        pointer-events: auto;
+    }
+
     .btn {
         padding: 8px 16px;
         border-radius: 6px;
@@ -300,7 +339,6 @@
     <!-- Users Table -->
     <div class="users-table-container">
         <div class="table-header">
-            <h3>Users</h3>
             <div class="search-filter-section" style="display: flex; gap: 12px; align-items: center;">
                 <a href="{{ route('admin.users.create') }}" class="btn btn-sm" style="background: #800020; color: white; border: none; padding: 8px 16px; white-space: nowrap; font-weight: 600; height: 26px; display: inline-flex; align-items: center;">
                     Add New User
@@ -330,14 +368,13 @@
             </div>
         </div>
         
-        <table class="table table-hover table-striped align-middle">
+        <table class="table table-hover table-striped align-middle users-table">
             <thead style="background-color: white;">
                 <tr>
                     <th style="font-size: 0.85rem; font-weight: bold;" class="text-left">User</th>
                     <th style="font-size: 0.85rem; font-weight: bold;" class="text-left">Role</th>
                     <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">Created</th>
                     <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">Last login</th>
-                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -361,22 +398,7 @@
                                 <p>{{ $user->email }}</p>
                             </div>
                         </div>
-                    </td>
-                    <td class="text-left" style="font-size: 13px; font-weight: normal;">
-                        <span class="badge bg-secondary">
-                            @if($user->role === 'department-head')
-                                 Department Head
-                            @elseif($user->role === 'administrator')
-                                 Administrator
-                            @else
-                                Instructor
-                            @endif
-                        </span>
-                    </td>
-                    <td class="text-center" style="font-size: 13px; font-weight: normal;">{{ $user->created_at->format('M d, Y') }}</td>
-                    <td class="text-center" style="font-size: 13px; font-weight: normal;">{{ $user->updated_at->diffForHumans() }}</td>
-                    <td class="text-center" style="font-size: 13px; font-weight: normal;">
-                        <div class="d-flex gap-1">
+                        <div class="floating-actions">
                             @if($user->user_id === auth()->id())
                                 <a href="{{ route('admin.profile.edit') }}" 
                                    class="btn btn-sm btn-secondary">
@@ -394,6 +416,19 @@
                             @endif
                         </div>
                     </td>
+                    <td class="text-left" style="font-size: 13px; font-weight: normal;">
+                        <span class="badge bg-secondary">
+                            @if($user->role === 'department-head')
+                                 Department Head
+                            @elseif($user->role === 'administrator')
+                                 Administrator
+                            @else
+                                Instructor
+                            @endif
+                        </span>
+                    </td>
+                    <td class="text-center" style="font-size: 13px; font-weight: normal;">{{ $user->created_at->format('M d, Y') }}</td>
+                    <td class="text-center" style="font-size: 13px; font-weight: normal;">{{ $user->updated_at->diffForHumans() }}</td>
                 </tr>
                 @empty
                 <tr>

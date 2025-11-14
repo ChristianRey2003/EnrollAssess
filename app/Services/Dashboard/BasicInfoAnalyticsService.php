@@ -41,7 +41,6 @@ class BasicInfoAnalyticsService
         }
         
         $totalCompleted = (clone $baseQuery)->whereNotNull('completed_at')->count();
-        $avgAge = (clone $baseQuery)->avg('age') ?? 0;
         
         // Top city/municipality - create fresh query
         $topCity = (clone $baseQuery)
@@ -51,15 +50,21 @@ class BasicInfoAnalyticsService
             ->orderByRaw('COUNT(*) DESC')
             ->first();
         
-        // Female percentage - create fresh query
-        $femaleCount = (clone $baseQuery)->where('sex', 'Female')->count();
-        $femalePercentage = $totalCompleted > 0 ? round(($femaleCount / $totalCompleted) * 100, 1) : 0;
+        // Male and Female counts - count ALL applicants in the system (not filtered by date)
+        // Join with applicants table to ensure we're counting actual applicants
+        $maleCount = ApplicantBasicInfo::join('applicants', 'applicant_basic_infos.applicant_id', '=', 'applicants.applicant_id')
+            ->where('applicant_basic_infos.sex', 'Male')
+            ->count();
+        
+        $femaleCount = ApplicantBasicInfo::join('applicants', 'applicant_basic_infos.applicant_id', '=', 'applicants.applicant_id')
+            ->where('applicant_basic_infos.sex', 'Female')
+            ->count();
         
         return [
             'total_completed' => $totalCompleted,
-            'avg_age' => round($avgAge, 1),
+            'male_count' => $maleCount,
             'top_city' => $topCity->city_municipality ?? 'N/A',
-            'female_percentage' => $femalePercentage,
+            'female_count' => $femaleCount,
         ];
     }
 

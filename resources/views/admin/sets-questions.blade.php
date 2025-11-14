@@ -661,12 +661,12 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
                     </div>
-                    <select class="form-select form-select-sm" name="type" id="typeFilter" onchange="this.form.submit()" style="height: 26px; width: 120px; padding: 4px 28px 4px 8px;">
+                    <select class="form-select form-select-sm" name="type" id="typeFilter" onchange="this.form.submit()" style=" width: 150px; padding: 4px 28px 4px 8px;">
                         <option value="">All Types</option>
                         <option value="multiple_choice" {{ request('type') === 'multiple_choice' ? 'selected' : '' }}>Multiple Choice</option>
                         <option value="true_false" {{ request('type') === 'true_false' ? 'selected' : '' }}>True/False</option>
                     </select>
-                    <select class="form-select form-select-sm" name="status" id="statusFilter" onchange="this.form.submit()" style="height: 26px; width: 120px; padding: 4px 28px 4px 8px;">
+                    <select class="form-select form-select-sm" name="status" id="statusFilter" onchange="this.form.submit()" style=" width: 120px; padding: 4px 28px 4px 8px;">
                         <option value="">All Status</option>
                         <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
                         <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>

@@ -65,25 +65,37 @@ class InstructorController extends Controller
         $instructor = Auth::user();
         
         // Filter applicants by assigned_instructor_id for direct assignment
-        $assignedApplicants = Applicant::where('assigned_instructor_id', $instructor->user_id)
-            ->with(['latestInterview', 'interviews'])
+        $assignedApplicantsQuery = Applicant::where('assigned_instructor_id', $instructor->user_id)
+            ->with(['latestInterview', 'interviews']);
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $assignedApplicantsQuery->where(function ($query) use ($search) {
+                $query->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('middle_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhere('email_address', 'like', "%{$search}%")
+                      ->orWhere('application_no', 'like', "%{$search}%")
+                      ->orWhereRaw("CONCAT(first_name, ' ', last_name) like ?", ["%{$search}%"]);
+            });
+        }
+
+        if ($request->filled('status')) {
+            $assignedApplicantsQuery->where('status', $request->input('status'));
+        }
+
+        $assignedApplicants = $assignedApplicantsQuery
             ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->paginate(15)
+            ->appends($request->only(['search', 'status']));
 
         // Return JSON for AJAX pagination requests only
-        if ($request->ajax() && $request->header('Accept') && str_contains($request->header('Accept'), 'application/json')) {
-            return response()->json([
-                'applicants' => $assignedApplicants->items(),
-                'pagination' => [
-                    'current_page' => $assignedApplicants->currentPage(),
-                    'last_page' => $assignedApplicants->lastPage(),
-                    'per_page' => $assignedApplicants->perPage(),
-                    'total' => $assignedApplicants->total(),
-                    'from' => $assignedApplicants->firstItem(),
-                    'to' => $assignedApplicants->lastItem(),
-                ],
-                'pagination_html' => $assignedApplicants->hasPages() ? $assignedApplicants->links()->render() : '',
-            ]);
+        if ($request->ajax()) {
+            $html = view('instructor.partials.applicants-table', [
+                'assignedApplicants' => $assignedApplicants
+            ])->render();
+
+            return response()->json(['html' => $html]);
         }
 
         return view('instructor.applicants', compact('assignedApplicants'));

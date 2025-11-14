@@ -283,20 +283,35 @@ class EVSUResultsExport
         }
 
         foreach ($this->applicants as $index => $applicant) {
-            // Calculate overall rating if all scores available
-            // UEE and GWA are already weighted: UEE (0–60), GWA (0–30)
-            $ueeScore = (float) ($applicant->score ?? 0);
-            $gwaScore = (float) ($applicant->card_tor_gwa ?? 0);
-            $interviewSkillWeighted = 0.0; // 0–10
-
+            // Calculate overall rating using weighted averages
+            // Formula: UEE + (GWA × 0.3) + (Interview × 0.05) + (SkillTest × 0.05)
+            // Note: UEE is already weighted (0-60), so use as-is
+            
+            // Get UEE (already weighted 0-60)
+            $ueeWeighted = (float) ($applicant->score ?? 0);
+            
+            // Get GWA, Interview, and SkillTest (raw percentages)
+            $gwaRaw = (float) ($applicant->card_tor_gwa ?? 0);
+            $skillTestRaw = (float) ($applicant->enrollassess_score ?? 0);
+            $interviewRaw = (float) ($applicant->interview_score ?? 0);
+            
+            // Calculate weighted components
+            $gwaWeighted = $gwaRaw * 0.30;
+            $interviewWeighted = $interviewRaw * 0.05;
+            $skillTestWeighted = $skillTestRaw * 0.05;
+            $interviewSkillWeighted = $interviewWeighted + $skillTestWeighted; // Combined 10%
+            
+            // Calculate overall rating
+            $overall = 0.0;
+            
             if ($this->scoringService->hasAllRequiredScores($applicant)) {
-                // Interview/Skill (10%) = average(EnrollAssess, Interview) × 0.10
-                $enrollAssessScore = (float) ($applicant->enrollassess_score ?? 0);
-                $interviewScore = (float) ($applicant->interview_score ?? 0);
-                $interviewSkillWeighted = (($enrollAssessScore + $interviewScore) / 2.0) * 0.10;
+                // Use the scoring service for consistent calculation
+                $rating = $this->scoringService->calculateOverallRating($applicant);
+                $overall = $rating['overall_rating'];
+            } else {
+                // Calculate partial score if some components are missing
+                $overall = $ueeWeighted + $gwaWeighted + $interviewWeighted + $skillTestWeighted;
             }
-
-            $overall = $ueeScore + $gwaScore + $interviewSkillWeighted;
 
             // Column mapping based on template header:
             // A: No.
@@ -348,8 +363,8 @@ class EVSUResultsExport
             $sheet->setCellValue('F' . $currentRow, strtoupper($applicant->middle_name ?? ''));
             $sheet->setCellValue('G' . $currentRow, $applicant->email_address);
             $sheet->setCellValue('H' . $currentRow, $applicant->phone_number);
-            $sheet->setCellValue('I' . $currentRow, number_format($ueeScore, 2));
-            $sheet->setCellValue('J' . $currentRow, number_format($gwaScore, 2));
+            $sheet->setCellValue('I' . $currentRow, number_format($ueeWeighted, 2));
+            $sheet->setCellValue('J' . $currentRow, number_format($gwaWeighted, 2));
             // Column K expects the 10% contribution (0–10)
             $sheet->setCellValue('K' . $currentRow, number_format($interviewSkillWeighted, 2));
             // Column L is the overall sum 0–100

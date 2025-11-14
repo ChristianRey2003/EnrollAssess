@@ -368,10 +368,16 @@
         border-radius: 12px;
         padding: 24px;
         margin-bottom: 32px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
     }
 
     .bulk-schedule-header {
-        margin-bottom: 20px;
+        margin: 0;
+        flex: 1 1 240px;
     }
 
     .bulk-title {
@@ -385,6 +391,20 @@
         color: #6B7280;
         font-size: 0.875rem;
         margin: 0;
+    }
+
+    .bulk-trigger-actions {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .bulk-selected-counter {
+        font-size: 0.875rem;
+        color: #1F2937;
+        font-weight: 500;
     }
 
     .bulk-form-grid {
@@ -427,6 +447,95 @@
         box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1);
     }
 
+    .bulk-drawer-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(17, 24, 39, 0.45);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.2s ease, visibility 0.2s ease;
+        z-index: 1200;
+    }
+
+    .bulk-drawer-overlay.active {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+
+    .bulk-drawer {
+        position: fixed;
+        top: 0;
+        right: -520px;
+        width: min(520px, 92vw);
+        height: 100%;
+        background: white;
+        box-shadow: -4px 0 12px rgba(15, 23, 42, 0.15);
+        transition: right 0.3s ease;
+        z-index: 1201;
+        display: flex;
+        flex-direction: column;
+        pointer-events: none;
+    }
+
+    .bulk-drawer.active {
+        right: 0;
+        pointer-events: auto;
+    }
+
+    .bulk-drawer-header {
+        padding: 24px;
+        border-bottom: 1px solid #E5E7EB;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .bulk-drawer-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1F2937;
+        margin: 0;
+    }
+
+    .bulk-drawer-close {
+        background: none;
+        border: none;
+        font-size: 1.75rem;
+        line-height: 1;
+        cursor: pointer;
+        color: #6B7280;
+        padding: 0;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .bulk-drawer-close:hover {
+        background: #F3F4F6;
+        color: #374151;
+    }
+
+    .bulk-drawer-body {
+        padding: 24px;
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .bulk-drawer-footer {
+        padding: 20px 24px;
+        border-top: 1px solid #E5E7EB;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
     @media (max-width: 768px) {
         .schedule-sections {
             grid-template-columns: 1fr;
@@ -454,6 +563,10 @@
 
         .bulk-form-grid {
             grid-template-columns: 1fr;
+        }
+
+        .bulk-drawer {
+            width: 100%;
         }
     }
 </style>
@@ -488,39 +601,20 @@
             <h3 class="bulk-title"> Bulk Scheduling</h3>
             <p class="bulk-subtitle">Schedule multiple interviews with automatic time distribution</p>
         </div>
-        <div class="bulk-schedule-form">
-            <div class="bulk-form-grid">
-                <div class="bulk-form-item">
-                    <label class="bulk-label">
-                        <input type="checkbox" id="selectAllPending" onchange="toggleAllPending()">
-                        Select All (<span id="selectedCount">0</span> selected)
-                    </label>
-                </div>
-                <div class="bulk-form-item">
-                    <label class="bulk-label">Start Date & Time *</label>
-                    <input type="datetime-local" id="bulkStartTime" class="bulk-input" required>
-                </div>
-                <div class="bulk-form-item">
-                    <label class="bulk-label">Time Interval *</label>
-                    <select id="bulkInterval" class="bulk-input">
-                        <option value="15">15 minutes</option>
-                        <option value="30" selected>30 minutes</option>
-                        <option value="45">45 minutes</option>
-                        <option value="60">60 minutes</option>
-                    </select>
-                </div>
-                <div class="bulk-form-item">
-                    <label class="bulk-label">
-                        <input type="checkbox" id="bulkNotifyEmail" checked>
-                        Send email notifications
-                    </label>
-                </div>
-                <div class="bulk-form-item bulk-action-item">
-                    <button type="button" onclick="submitBulkSchedule()" class="btn btn-primary" id="bulkScheduleBtn" disabled>
-                         Bulk Schedule
-                    </button>
-                </div>
+        <div class="bulk-trigger-actions">
+            <div class="bulk-selected-counter">
+                <span data-bulk-selected-count>0</span> selected
             </div>
+            <button
+                type="button"
+                class="btn btn-primary"
+                data-bulk-drawer-trigger
+                aria-haspopup="dialog"
+                aria-controls="bulkScheduleDrawer"
+                aria-expanded="false"
+                onclick="openBulkScheduleDrawer()">
+                Open Bulk Scheduling
+            </button>
         </div>
     </div>
     @endif
@@ -660,6 +754,64 @@
     </div>
 </div>
 
+@if($pendingScheduling->count() > 0)
+<div id="bulkScheduleDrawerOverlay" class="bulk-drawer-overlay" onclick="closeBulkScheduleDrawer()" aria-hidden="true"></div>
+<aside id="bulkScheduleDrawer" class="bulk-drawer" role="dialog" aria-modal="true" aria-labelledby="bulkScheduleTitle" aria-hidden="true">
+    <div class="bulk-drawer-header">
+        <div>
+            <h3 class="bulk-drawer-title" id="bulkScheduleTitle">Bulk Scheduling</h3>
+            <p class="bulk-subtitle">Schedule multiple interviews with automatic time distribution</p>
+        </div>
+        <button type="button" class="bulk-drawer-close" onclick="closeBulkScheduleDrawer()" aria-label="Close bulk scheduling drawer">&times;</button>
+    </div>
+    <div class="bulk-drawer-body">
+        <div style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+            <div style="font-weight: 600; color: #1F2937; margin-bottom: 4px;">How bulk scheduling works</div>
+            <ul style="margin: 0; padding-left: 20px; font-size: 0.875rem; color: #4B5563;">
+                <li>The selected applicants will be scheduled sequentially starting from your chosen date and time.</li>
+                <li>Time intervals are applied between each interview in the order they appear in the pending list.</li>
+                <li>Enable email notifications to automatically inform applicants of their scheduled interview.</li>
+            </ul>
+        </div>
+        <div class="bulk-schedule-form">
+            <div class="bulk-form-grid">
+                <div class="bulk-form-item">
+                    <label class="bulk-label">
+                        <input type="checkbox" id="selectAllPending" onchange="toggleAllPending()">
+                        Select All (<span data-bulk-selected-count>0</span> selected)
+                    </label>
+                </div>
+                <div class="bulk-form-item">
+                    <label class="bulk-label">Start Date & Time *</label>
+                    <input type="datetime-local" id="bulkStartTime" class="bulk-input" required>
+                </div>
+                <div class="bulk-form-item">
+                    <label class="bulk-label">Time Interval *</label>
+                    <select id="bulkInterval" class="bulk-input">
+                        <option value="15">15 minutes</option>
+                        <option value="30" selected>30 minutes</option>
+                        <option value="45">45 minutes</option>
+                        <option value="60">60 minutes</option>
+                    </select>
+                </div>
+                <div class="bulk-form-item">
+                    <label class="bulk-label">
+                        <input type="checkbox" id="bulkNotifyEmail" checked>
+                        Send email notifications
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="bulk-drawer-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeBulkScheduleDrawer()">Cancel</button>
+        <button type="button" onclick="submitBulkSchedule()" class="btn btn-primary" id="bulkScheduleBtn" disabled>
+            Bulk Schedule
+        </button>
+    </div>
+</aside>
+@endif
+
 <!-- Schedule Modal -->
 <div id="scheduleModal" class="schedule-modal">
     <div class="modal-content">
@@ -699,6 +851,9 @@
 
 @push('scripts')
 <script>
+    let bulkDrawerRestoreFocusTo = null;
+    let bulkDrawerKeydownCleanup = null;
+
     // Initialize minimum date for bulk scheduling
     document.addEventListener('DOMContentLoaded', function() {
         const now = new Date();
@@ -707,7 +862,108 @@
         if (bulkStartTime) {
             bulkStartTime.min = now.toISOString().slice(0, 16);
         }
+        updateBulkSelection();
     });
+
+    function openBulkScheduleDrawer() {
+        const overlay = document.getElementById('bulkScheduleDrawerOverlay');
+        const drawer = document.getElementById('bulkScheduleDrawer');
+        const triggerButton = document.querySelector('[data-bulk-drawer-trigger]');
+        if (!overlay || !drawer) {
+            console.error('Bulk scheduling drawer elements not found');
+            return;
+        }
+
+        bulkDrawerRestoreFocusTo = document.activeElement;
+
+        if (!document.body.dataset.bulkDrawerOverflow) {
+            document.body.dataset.bulkDrawerOverflow = document.body.style.overflow || '';
+        }
+
+        overlay.classList.add('active');
+        drawer.classList.add('active');
+        overlay.setAttribute('aria-hidden', 'false');
+        drawer.setAttribute('aria-hidden', 'false');
+        if (triggerButton) {
+            triggerButton.setAttribute('aria-expanded', 'true');
+        }
+        document.body.style.overflow = 'hidden';
+
+        const focusableSelectors = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+        const focusableElements = Array.from(drawer.querySelectorAll(focusableSelectors));
+        const focusTarget = drawer.querySelector('#bulkStartTime') || focusableElements[0];
+        if (focusTarget) {
+            setTimeout(() => focusTarget.focus(), 150);
+        }
+
+        const handleKeydown = (event) => {
+            if (event.key !== 'Tab') {
+                return;
+            }
+
+            if (focusableElements.length === 0) {
+                event.preventDefault();
+                return;
+            }
+
+            const first = focusableElements[0];
+            const last = focusableElements[focusableElements.length - 1];
+            if (event.shiftKey) {
+                if (document.activeElement === first) {
+                    event.preventDefault();
+                    last.focus();
+                }
+            } else {
+                if (document.activeElement === last) {
+                    event.preventDefault();
+                    first.focus();
+                }
+            }
+        };
+
+        drawer.addEventListener('keydown', handleKeydown);
+        bulkDrawerKeydownCleanup = () => {
+            drawer.removeEventListener('keydown', handleKeydown);
+            bulkDrawerKeydownCleanup = null;
+        };
+    }
+
+    function closeBulkScheduleDrawer() {
+        const overlay = document.getElementById('bulkScheduleDrawerOverlay');
+        const drawer = document.getElementById('bulkScheduleDrawer');
+        const triggerButton = document.querySelector('[data-bulk-drawer-trigger]');
+        if (overlay) {
+            overlay.classList.remove('active');
+            overlay.setAttribute('aria-hidden', 'true');
+        }
+        if (drawer) {
+            drawer.classList.remove('active');
+            drawer.setAttribute('aria-hidden', 'true');
+        }
+        if (triggerButton) {
+            triggerButton.setAttribute('aria-expanded', 'false');
+        }
+
+        if (bulkDrawerKeydownCleanup) {
+            bulkDrawerKeydownCleanup();
+        }
+        if (bulkDrawerRestoreFocusTo && typeof bulkDrawerRestoreFocusTo.focus === 'function') {
+            bulkDrawerRestoreFocusTo.focus();
+        }
+        bulkDrawerRestoreFocusTo = null;
+
+        if (document.body.dataset.bulkDrawerOverflow !== undefined) {
+            document.body.style.overflow = document.body.dataset.bulkDrawerOverflow;
+            delete document.body.dataset.bulkDrawerOverflow;
+        }
+
+        const bulkBtn = document.getElementById('bulkScheduleBtn');
+        if (bulkBtn && bulkBtn.dataset.loading !== 'true') {
+            bulkBtn.textContent = 'Bulk Schedule';
+        }
+
+        updateBulkSelection();
+    }
 
     // Toggle all pending interview checkboxes
     function toggleAllPending() {
@@ -721,8 +977,14 @@
     function updateBulkSelection() {
         const checkedBoxes = document.querySelectorAll('.interview-checkbox:checked');
         const count = checkedBoxes.length;
-        document.getElementById('selectedCount').textContent = count;
-        document.getElementById('bulkScheduleBtn').disabled = count === 0;
+        document.querySelectorAll('[data-bulk-selected-count]').forEach(el => {
+            el.textContent = count;
+        });
+
+        const bulkBtn = document.getElementById('bulkScheduleBtn');
+        if (bulkBtn && bulkBtn.dataset.loading !== 'true') {
+            bulkBtn.disabled = count === 0;
+        }
         
         // Update "Select All" checkbox state
         const allCheckboxes = document.querySelectorAll('.interview-checkbox');
@@ -758,8 +1020,11 @@
         }
 
         const bulkBtn = document.getElementById('bulkScheduleBtn');
-        bulkBtn.disabled = true;
-        bulkBtn.textContent = '⏳ Scheduling...';
+        if (bulkBtn) {
+            bulkBtn.disabled = true;
+            bulkBtn.dataset.loading = 'true';
+            bulkBtn.textContent = '⏳ Scheduling...';
+        }
 
         fetch('/instructor/interviews/bulk-schedule', {
             method: 'POST',
@@ -789,15 +1054,21 @@
                 location.reload();
             } else {
                 alert(data.message || 'Failed to schedule interviews');
-                bulkBtn.disabled = false;
-                bulkBtn.textContent = ' Bulk Schedule';
+                if (bulkBtn) {
+                    bulkBtn.disabled = interviewIds.length === 0;
+                    delete bulkBtn.dataset.loading;
+                    bulkBtn.textContent = 'Bulk Schedule';
+                }
             }
         })
         .catch(error => {
             console.error('Error:', error);
             alert('An error occurred. Please try again.');
-            bulkBtn.disabled = false;
-            bulkBtn.textContent = ' Bulk Schedule';
+            if (bulkBtn) {
+                bulkBtn.disabled = interviewIds.length === 0;
+                delete bulkBtn.dataset.loading;
+                bulkBtn.textContent = 'Bulk Schedule';
+            }
         });
     }
 
@@ -885,6 +1156,15 @@
     document.getElementById('scheduleModal').addEventListener('click', function(e) {
         if (e.target === this) {
             closeScheduleModal();
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            const drawer = document.getElementById('bulkScheduleDrawer');
+            if (drawer && drawer.classList.contains('active')) {
+                closeBulkScheduleDrawer();
+            }
         }
     });
 </script>

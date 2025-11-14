@@ -154,18 +154,16 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </div>
-                        <select id="statusFilter" 
-                                class="form-select form-select-sm" 
-                                onchange="applyFilter()" 
-                                style="width: 140px; height: 26px; padding: 4px 28px 4px 8px;"
-                                aria-label="Filter by status">
+                            <select id="statusFilter" 
+                                    class="form-select form-select-sm" 
+                                    onchange="applyFilter()" 
+                                    style="width: 140px; padding: 4px 28px 4px 8px;"
+                                    aria-label="Filter by status">
                             <option value="">All Status</option>
                             <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="exam_completed" {{ request('status') == 'exam_completed' ? 'selected' : '' }}>Exam Completed</option>
-                            <option value="interview_scheduled" {{ request('status') == 'interview_scheduled' ? 'selected' : '' }}>Interview Scheduled</option>
-                            <option value="interview_completed" {{ request('status') == 'interview_completed' ? 'selected' : '' }}>Interview Completed</option>
-                            <option value="admitted" {{ request('status') == 'admitted' ? 'selected' : '' }}>Admitted</option>
-                            <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                            <option value="exam-completed" {{ request('status') == 'exam-completed' ? 'selected' : '' }}>Exam Completed</option>
+                            <option value="interview-scheduled" {{ request('status') == 'interview-scheduled' ? 'selected' : '' }}>Interview Scheduled</option>
+                            <option value="interview-completed" {{ request('status') == 'interview-completed' ? 'selected' : '' }}>Interview Completed</option>
                         </select>
                     </div>
                     <div class="toolbar-right" style="display: flex; align-items: center; gap: 8px;">
@@ -181,11 +179,6 @@
                         <a href="{{ route('admin.applicants.import') }}" 
                            class="btn btn-secondary btn-sm" 
                            style="height: 26px; display: inline-flex; align-items: center;">Import</a>
-                        <button onclick="bulkExport()" 
-                                class="btn btn-sm" 
-                                style="height: 26px; display: inline-flex; align-items: center; background: #6b7280; color: white; border: none; padding: 0 12px;">
-                            Export
-                        </button>
                         <button onclick="showGenerateAccessCodesModal()" 
                                 class="btn btn-sm" 
                                 style="height: 26px; display: inline-flex; align-items: center; background: #3b82f6; color: white; border: none; padding: 0 12px;">
@@ -465,6 +458,22 @@
 @push('scripts')
     <script src="{{ asset('js/modules/applicant-manager.js') }}" defer></script>
     <script>
+        function applyFilter() {
+            const status = document.getElementById('statusFilter').value;
+            const url = new URL(window.location);
+            
+            if (status) {
+                url.searchParams.set('status', status);
+            } else {
+                url.searchParams.delete('status');
+            }
+            
+            // Reset to first page when filtering
+            url.searchParams.delete('page');
+            
+            window.location.href = url.toString();
+        }
+
         function showActions(applicantId) {
             document.getElementById('actions-' + applicantId).style.display = 'flex';
         }
@@ -768,7 +777,12 @@
         // AJAX Pagination - Use event delegation to catch all pagination links
         document.addEventListener('click', function(e) {
             // Check if click is on a pagination link (could be direct <a> or nested in <span>)
-            const paginationLink = e.target.closest('.pagination a, .pagination-wrapper a');
+            let paginationLink = e.target.closest('.pagination a, .pagination-wrapper a');
+            
+            // Also check if the clicked element itself is a pagination link
+            if (!paginationLink && (e.target.classList.contains('pagination') || e.target.closest('.pagination'))) {
+                paginationLink = e.target.tagName === 'A' ? e.target : e.target.closest('a');
+            }
             
             if (paginationLink && paginationLink.href) {
                 e.preventDefault();
@@ -778,7 +792,7 @@
                 if (!url || url === '#' || url === 'javascript:void(0)') return;
                 
                 // Show loading state
-                const tableBody = document.querySelector('.data-table tbody');
+                const tableBody = document.querySelector('.table-responsive tbody, .table tbody');
                 const paginationWrapper = document.querySelector('.pagination-wrapper');
                 
                 if (tableBody) {
@@ -816,21 +830,106 @@
                         } else {
                             data.applicants.forEach((applicant, index) => {
                                 const rowNum = (from - 1) + index + 1;
-                                const statusBadge = (applicant.status || 'pending').replace(/-/g, ' ').toUpperCase();
-                                html += `<tr style="page-break-inside: avoid; position: relative;" 
+                                
+                                // Status badge mapping
+                                const statusMap = {
+                                    'exam-completed': 'EXAM DONE',
+                                    'interview-available': 'INTERVIEW READY',
+                                    'interview-scheduled': 'INTERVIEW SET',
+                                    'interview-completed': 'INTERVIEW DONE',
+                                    'admitted': 'ADMITTED',
+                                    'rejected': 'REJECTED',
+                                    'pending': 'PENDING'
+                                };
+                                const status = applicant.status || 'pending';
+                                const statusText = statusMap[status] || status.replace(/-/g, ' ').toUpperCase();
+                                
+                                // Build instructor info
+                                let instructorName = '';
+                                if (applicant.assigned_instructor) {
+                                    instructorName = applicant.assigned_instructor.full_name || 
+                                        ((applicant.assigned_instructor.first_name || '') + ' ' + 
+                                         (applicant.assigned_instructor.middle_name || '') + ' ' + 
+                                         (applicant.assigned_instructor.last_name || '')).trim();
+                                }
+                                const instructorInfo = applicant.assigned_instructor 
+                                    ? `<div class="applicant-email" style="font-size: 12px; color: #6B7280;">Instructor: ${instructorName}</div>`
+                                    : `<div class="applicant-email" style="font-size: 12px; color: #9ca3af;">No Instructor</div>`;
+                                
+                                // Build access code info
+                                let accessCodeInfo = '';
+                                if (applicant.access_code) {
+                                    accessCodeInfo = `<div style="font-size: 12px; color: #6B7280; margin-top: 2px;">${applicant.access_code.code || ''}`;
+                                    if (applicant.access_code.exam_id && applicant.access_code.exam) {
+                                        accessCodeInfo += `<div style="color: #059669; margin-top: 2px;"><span style="display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: #059669; margin-right: 4px;"></span>${applicant.access_code.exam.title} <span style="color: #6b7280; font-size: 11px;">(Legacy)</span></div>`;
+                                    } else {
+                                        accessCodeInfo += `<div style="color: #3b82f6; margin-top: 2px;"><span style="display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: #3b82f6; margin-right: 4px;"></span>Uses active exam</div>`;
+                                    }
+                                    accessCodeInfo += '</div>';
+                                }
+                                
+                                // Build phone number info
+                                const phoneInfo = applicant.phone_number 
+                                    ? `<div class="applicant-email" style="font-size: 12px; color: #6B7280;">${applicant.phone_number}</div>`
+                                    : '';
+                                
+                                // Build score display
+                                const scoreDisplay = applicant.score !== null 
+                                    ? `<div class="applicant-name" style="font-weight: 500; color: #1F2937;">${Number(applicant.score).toFixed(2)}%</div>`
+                                    : `<span class="applicant-email" style="font-size: 12px; color: #6B7280;">-</span>`;
+                                
+                                html += `<tr style="position: relative;" 
                                     onmouseover="showActions(${applicant.applicant_id})" 
                                     onmouseout="hideActions(${applicant.applicant_id})">
-                                    <td class="text-center"><input type="checkbox" class="applicant-checkbox" value="${applicant.applicant_id}" onchange="updateBulkActions()" style="cursor: pointer;"></td>
+                                    <td class="text-center">
+                                        <input type="checkbox" 
+                                               class="form-check-input applicant-checkbox" 
+                                               value="${applicant.applicant_id}"
+                                               onchange="updateBulkActions()"
+                                               style="cursor: pointer;">
+                                    </td>
                                     <td class="text-center" style="font-size: 13px; font-weight: normal;">${rowNum}</td>
-                                    <td class="text-left" style="font-size: 13px; font-weight: normal;"><div class="applicant-info"><div class="applicant-name" style="font-weight: 500; color: #1F2937;">${applicant.application_no || applicant.formatted_applicant_no || 'N/A'}</div></div></td>
-                                    <td class="text-left" style="font-size: 13px; font-weight: normal;"><div class="applicant-info"><div class="applicant-name" style="font-weight: 500; color: #1F2937; margin-bottom: 4px;">${applicant.full_name || ''}</div></div></td>
-                                    <td class="text-left" style="font-size: 13px; font-weight: normal;"><div class="contact-info"><div class="applicant-name" style="font-weight: 500; color: #1F2937; margin-bottom: 4px;">${applicant.email_address || ''}</div></div></td>
-                                    // Preferred course column - hidden but data still in system
-                                    // <td class="text-center" style="font-size: 13px; font-weight: normal;"><div class="applicant-name" style="font-weight: 500; color: #1F2937;">${applicant.preferred_course || '-'}</div></td>
-                                    <td class="text-center" style="font-size: 13px; font-weight: normal;"><div class="applicant-name" style="font-weight: 500; color: #1F2937;">${applicant.score !== null ? Number(applicant.score).toFixed(2) + '%' : '-'}</div></td>
-                                    // Verbal description column - hidden but data still in system
-                                    // <td class="text-center" style="font-size: 13px; font-weight: normal;"><div class="applicant-name" style="font-weight: 500; color: #1F2937;">${applicant.computed_verbal_description || '-'}</div></td>
-                                    <td class="text-center"><span class="status-badge">${statusBadge}</span></td>
+                                    <td class="text-left" style="font-size: 13px; font-weight: normal;">
+                                        <div class="applicant-info">
+                                            <div class="applicant-name" style="font-weight: 500; color: #1F2937;">${applicant.application_no || applicant.formatted_applicant_no || 'N/A'}</div>
+                                        </div>
+                                    </td>
+                                    <td class="text-left" style="font-size: 13px; font-weight: normal;">
+                                        <div class="applicant-info">
+                                            <div class="applicant-name" style="font-weight: 500; color: #1F2937; margin-bottom: 4px;">${applicant.full_name || ((applicant.first_name || '') + ' ' + (applicant.middle_name || '') + ' ' + (applicant.last_name || '')).trim() || 'N/A'}</div>
+                                            ${instructorInfo}
+                                            ${accessCodeInfo}
+                                        </div>
+                                        <div id="actions-${applicant.applicant_id}" class="floating-actions" style="display: none;">
+                                            <a href="/admin/applicants/${applicant.applicant_id}/edit"
+                                               class="action-btn action-btn-edit"
+                                               title="Edit applicant">
+                                                Edit
+                                            </a>
+                                            <button onclick="sendIndividualNotification(${applicant.applicant_id})"
+                                                    class="action-btn action-btn-notify"
+                                                    title="Send exam notification">
+                                                Email
+                                            </button>
+                                            <button onclick="deleteApplicant(${applicant.applicant_id})"
+                                                    class="action-btn action-btn-delete"
+                                                    title="Delete applicant">
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td class="text-left" style="font-size: 13px; font-weight: normal;">
+                                        <div class="contact-info">
+                                            <div class="applicant-name" style="font-weight: 500; color: #1F2937; margin-bottom: 4px;">${applicant.email_address || ''}</div>
+                                            ${phoneInfo}
+                                        </div>
+                                    </td>
+                                    <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                                        ${scoreDisplay}
+                                    </td>
+                                    <td class="text-center" style="padding: 6px 4px;">
+                                        <span class="status-badge status-pending" style="font-size: 9px; padding: 2px 4px; border-radius: 3px; background: #fef3c7; color: #92400e; font-weight: 500; white-space: nowrap; display: inline-block;">${statusText}</span>
+                                    </td>
                                 </tr>`;
                             });
                         }

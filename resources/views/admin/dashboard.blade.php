@@ -185,12 +185,12 @@ dashboard-page
             <div class="kpi-value">{{ number_format($analytics['kpis']['total_completed']) }}</div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-label">Average Age</div>
-            <div class="kpi-value">{{ $analytics['kpis']['avg_age'] }}</div>
+            <div class="kpi-label">Male Applicant Count</div>
+            <div class="kpi-value">{{ number_format($analytics['kpis']['male_count'] ?? 0) }}</div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-label">Female %</div>
-            <div class="kpi-value">{{ $analytics['kpis']['female_percentage'] ?? 0 }}%</div>
+            <div class="kpi-label">Female Applicant Count</div>
+            <div class="kpi-value">{{ number_format($analytics['kpis']['female_count'] ?? 0) }}</div>
         </div>
         <div class="kpi-card">
             <div class="kpi-label">Top City / Municipality</div>

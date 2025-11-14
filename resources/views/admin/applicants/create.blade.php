@@ -101,7 +101,7 @@
                                id="preferred_course" 
                                name="preferred_course" 
                                class="form-control" 
-                               value="{{ old('preferred_course', $applicant->preferred_course ?? '') }}"
+                               value="{{ old('preferred_course', $applicant->preferred_course ?? 'BSIT') }}"
                                placeholder="e.g., Bachelor of Science in Information Technology">
                         @error('preferred_course')
                             <span class="error-message">{{ $message }}</span>
@@ -248,11 +248,11 @@
 </div>
 
 <!-- Preview Modal -->
-<div id="previewModal" class="modal-overlay" style="display: none;">
+<div id="previewModal" class="modal-overlay preview-modal-overlay">
     <div class="modal-content preview-modal">
         <div class="modal-header">
             <h3>Applicant Information Preview</h3>
-            <button onclick="closePreviewModal()" class="modal-close">×</button>
+            <button onclick="closePreviewModal()" class="modal-close" type="button">×</button>
         </div>
         <div class="modal-body">
             <div class="preview-applicant">
@@ -261,14 +261,14 @@
                     <div id="previewPersonal"></div>
                 </div>
                 <div class="preview-section">
-                    <h4>Exam Assignment</h4>
+                    <h4>Application Status</h4>
                     <div id="previewExam"></div>
                 </div>
             </div>
         </div>
         <div class="modal-footer">
-            <button onclick="closePreviewModal()" class="btn-secondary">Close Preview</button>
-            <button onclick="submitForm()" class="btn-primary">Looks Good - {{ isset($applicant) ? 'Update' : 'Add' }} Applicant</button>
+            <button onclick="closePreviewModal()" class="btn-secondary" type="button">Close Preview</button>
+            <button onclick="submitForm()" class="btn-primary" type="button">Looks Good - {{ isset($applicant) ? 'Update' : 'Add' }} Applicant</button>
         </div>
     </div>
 </div>
@@ -282,10 +282,36 @@
         const form = document.getElementById('applicantForm');
         const formData = new FormData(form);
         
+        // Basic validation before showing preview
+        const requiredFields = ['first_name', 'last_name', 'email_address'];
+        let isValid = true;
+        let missingFields = [];
+        
+        requiredFields.forEach(field => {
+            const input = document.getElementById(field);
+            if (!input.value.trim()) {
+                input.classList.add('error');
+                isValid = false;
+                missingFields.push(field.replace('_', ' '));
+            } else {
+                input.classList.remove('error');
+            }
+        });
+        
+        if (!isValid) {
+            alert('Please fill in all required fields: ' + missingFields.join(', '));
+            return;
+        }
+        
         // Personal Information Preview
+        const firstName = formData.get('first_name') || '';
+        const middleName = formData.get('middle_name') || '';
+        const lastName = formData.get('last_name') || '';
+        const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
+        
         const personalInfo = `
             <div class="preview-item">
-                <strong>Name:</strong> ${formData.get('first_name') || ''} ${formData.get('middle_name') || ''} ${formData.get('last_name') || ''}
+                <strong>Name:</strong> ${fullName || 'Not provided'}
             </div>
             <div class="preview-item">
                 <strong>Preferred Course:</strong> ${formData.get('preferred_course') || 'Not specified'}
@@ -303,8 +329,8 @@
         
         // Status Preview
         const verbalDescSelect = document.getElementById('verbal_description');
-        const verbalDescOption = verbalDescSelect.options[verbalDescSelect.selectedIndex];
-        const generateAccessCode = document.getElementById('generate_access_code').checked;
+        const verbalDescOption = verbalDescSelect ? verbalDescSelect.options[verbalDescSelect.selectedIndex] : null;
+        const generateAccessCode = document.getElementById('generate_access_code') ? document.getElementById('generate_access_code').checked : false;
         
         const examInfo = `
             <div class="preview-item">
@@ -314,7 +340,7 @@
                 <strong>Status:</strong> ${formData.get('status') || 'Pending'}
             </div>
             <div class="preview-item">
-                <strong>Verbal Description:</strong> ${verbalDescOption.text || 'Auto-compute from exam score'}
+                <strong>Verbal Description:</strong> ${verbalDescOption ? verbalDescOption.text : 'Auto-compute from exam score'}
             </div>
             <div class="preview-item">
                 <strong>Access Code:</strong> ${generateAccessCode ? 'Will be generated' : 'Not requested'}
@@ -325,11 +351,15 @@
         document.getElementById('previewExam').innerHTML = examInfo;
         
         // Show modal
-        document.getElementById('previewModal').style.display = 'flex';
+        const modal = document.getElementById('previewModal');
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
     }
     
     function closePreviewModal() {
-        document.getElementById('previewModal').style.display = 'none';
+        const modal = document.getElementById('previewModal');
+        modal.classList.remove('show');
+        document.body.style.overflow = ''; // Restore scrolling
     }
     
     function submitForm() {
@@ -358,10 +388,19 @@
     });
     
     // Close modal when clicking outside
-    window.addEventListener('click', function(e) {
-        const modal = document.getElementById('previewModal');
-        if (e.target === modal) {
+    document.getElementById('previewModal').addEventListener('click', function(e) {
+        if (e.target === this) {
             closePreviewModal();
+        }
+    });
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('previewModal');
+            if (modal.classList.contains('show')) {
+                closePreviewModal();
+            }
         }
     });
 </script>

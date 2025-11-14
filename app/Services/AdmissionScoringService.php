@@ -7,61 +7,77 @@ use App\Models\Applicant;
 /**
  * AdmissionScoringService
  * 
- * Centralized service for calculating admission scores based on:
- * - University Entrance Examination (UEE): 60%
- * - CARD/TOR GWA: 30%
- * - Interview/Skill Test (EnrollAssess Exam + Interview): 10%
+ * Centralized service for calculating admission scores using weighted averages.
+ * 
+ * Formula: FinalGrade = UEE + (GWA × 0.3) + (Interview × 0.05) + (SkillTest × 0.05)
+ * 
+ * Components:
+ * - University Entrance Examination (UEE): already weighted (0-60), use as-is
+ * - CARD/TOR GWA: raw percentage (0-100) × 0.3
+ * - Interview: raw percentage (0-100) × 0.05
+ * - Skill Test (EnrollAssess Exam): raw percentage (0-100) × 0.05
  */
 class AdmissionScoringService
 {
     /**
      * Calculate the overall admission rating for an applicant
      * 
-     * Formula: Overall = (0.60 × UEE%) + (0.30 × GWA%) + (0.10 × Interview/Skill%)
+     * Formula: Overall = UEE + (0.30 × GWA%) + (0.05 × Interview%) + (0.05 × SkillTest%)
+     * 
+     * Note: UEE is already weighted (0-60 range), so it's used as-is without multiplication.
      * 
      * @param Applicant $applicant
      * @return array ['overall_rating' => float, 'components' => array]
      */
     public function calculateOverallRating(Applicant $applicant): array
     {
-        // UEE and GWA are ALREADY weighted:
-        // - UEE: 0–60 (already the 60% contribution)
-        // - GWA: 0–30 (already the 30% contribution)
+        // UEE is already weighted (0-60 range), use as-is
         $ueeWeighted = (float) ($applicant->score ?? 0);
-        $gwaWeighted = (float) ($applicant->card_tor_gwa ?? 0);
+        
+        // GWA, Interview, and SkillTest are raw percentages (0-100)
+        $gwaRaw = (float) ($applicant->card_tor_gwa ?? 0);
+        $skillTestRaw = (float) ($applicant->enrollassess_score ?? 0);  // EnrollAssess Exam
+        $interviewRaw = (float) ($applicant->interview_score ?? 0);
 
-        // EnrollAssess and Interview are raw percentages (0–100)
-        $examPercentage = (float) ($applicant->enrollassess_score ?? 0);
-        $interviewPercentage = (float) ($applicant->interview_score ?? 0);
+        // Apply weights: GWA (30%), Interview (5%), SkillTest (5%)
+        // UEE is already weighted, so no multiplication needed
+        $gwaWeighted = $gwaRaw * 0.30;
+        $interviewWeighted = $interviewRaw * 0.05;
+        $skillTestWeighted = $skillTestRaw * 0.05;
 
-        // Interview/Skill (10%) = average(exam%, interview%) × 0.10 (0–10)
-        $interviewSkillPercentage = ($examPercentage + $interviewPercentage) / 2.0;
-        $interviewSkillWeighted = $interviewSkillPercentage * 0.10;
-
-        // Overall = UEE(0–60) + GWA(0–30) + Interview/Skill(0–10)
-        $overallRating = $ueeWeighted + $gwaWeighted + $interviewSkillWeighted;
+        // Overall = UEE(already weighted 0-60) + GWA(30%) + Interview(5%) + SkillTest(5%)
+        $overallRating = $ueeWeighted + $gwaWeighted + $interviewWeighted + $skillTestWeighted;
+        
+        // Calculate UEE raw percentage for display (reverse calculation: weighted / 0.6)
+        $ueeRaw = $ueeWeighted > 0 ? ($ueeWeighted / 0.60) : 0;
         
         return [
             'overall_rating' => round($overallRating, 2),
             'components' => [
                 'uee' => [
-                    'raw' => round($ueeWeighted, 2),   // already weighted
-                    'weighted' => round($ueeWeighted, 2),
+                    'raw' => round($ueeRaw, 2),         // Calculated for display (0-100)
+                    'weighted' => round($ueeWeighted, 2),   // Already weighted (0-60)
                     'weight' => 60,
                 ],
                 'gwa' => [
-                    'raw' => round($gwaWeighted, 2),    // already weighted
-                    'weighted' => round($gwaWeighted, 2),
+                    'raw' => round($gwaRaw, 2),         // 0-100
+                    'weighted' => round($gwaWeighted, 2),   // 0-30
                     'weight' => 30,
                 ],
-                'interview_skill' => [
-                    'raw' => round($interviewSkillPercentage, 2), // 0–100
-                    'weighted' => round($interviewSkillWeighted, 2),
+                'interview' => [
+                    'raw' => round($interviewRaw, 2),      // 0-100
+                    'weighted' => round($interviewWeighted, 2), // 0-5
+                    'weight' => 5,
+                ],
+                'skill_test' => [
+                    'raw' => round($skillTestRaw, 2),      // 0-100
+                    'weighted' => round($skillTestWeighted, 2), // 0-5
+                    'weight' => 5,
+                ],
+                'interview_skill_combined' => [
+                    'raw' => round(($interviewRaw + $skillTestRaw) / 2.0, 2), // Average for display
+                    'weighted' => round($interviewWeighted + $skillTestWeighted, 2), // 0-10
                     'weight' => 10,
-                    'breakdown' => [
-                        'exam' => round($examPercentage, 2),        // 0–100
-                        'interview' => round($interviewPercentage, 2),
-                    ],
                 ],
             ],
         ];

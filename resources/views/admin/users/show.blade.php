@@ -26,27 +26,33 @@
         --transition: all 0.3s ease;
     }
 
+    /* Override main-content padding for this page */
+    .main-content {
+        padding: 20px !important;
+    }
+
     .user-detail-container {
-        padding: 30px;
+        padding: 0;
         max-width: 1000px;
+        width: 100%;
         margin: 0 auto;
     }
 
     .user-profile-card {
         background: linear-gradient(135deg, var(--primary-maroon), var(--dark-maroon));
-        border-radius: 12px;
-        padding: 40px;
+        border-radius: 8px;
+        padding: 20px;
         color: var(--white);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        margin-bottom: 30px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
         display: flex;
         align-items: center;
-        gap: 30px;
+        gap: 20px;
     }
 
     .user-avatar-large {
-        width: 120px;
-        height: 120px;
+        width: 80px;
+        height: 80px;
         border-radius: 50%;
         background: linear-gradient(135deg, var(--primary-gold), #DAA520);
         display: flex;
@@ -54,8 +60,8 @@
         justify-content: center;
         color: var(--primary-maroon);
         font-weight: 700;
-        font-size: 48px;
-        border: 4px solid rgba(255, 255, 255, 0.2);
+        font-size: 32px;
+        border: 3px solid rgba(255, 255, 255, 0.2);
         overflow: hidden;
         flex-shrink: 0;
     }
@@ -72,24 +78,24 @@
     }
 
     .user-profile-info h1 {
-        margin: 0 0 10px 0;
-        font-size: 32px;
+        margin: 0 0 6px 0;
+        font-size: 20px;
         font-weight: 700;
     }
 
     .user-profile-info .user-email {
-        margin: 0 0 15px 0;
-        font-size: 16px;
+        margin: 0 0 10px 0;
+        font-size: 13px;
         opacity: 0.9;
     }
 
     .role-badge {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        padding: 8px 16px;
-        border-radius: 20px;
-        font-size: 14px;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 16px;
+        font-size: 11px;
         font-weight: 600;
         background: rgba(255, 255, 255, 0.2);
         text-transform: uppercase;
@@ -99,34 +105,34 @@
     .info-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
+        gap: 15px;
+        margin-bottom: 20px;
     }
 
     .info-card {
         background: var(--white);
-        border-radius: 12px;
-        padding: 25px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         border: 1px solid var(--border-gray);
     }
 
     .info-card h3 {
         color: var(--primary-maroon);
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 700;
-        margin: 0 0 20px 0;
-        padding-bottom: 10px;
-        border-bottom: 2px solid var(--border-gray);
+        margin: 0 0 12px 0;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-gray);
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
     }
 
     .info-row {
         display: flex;
         justify-content: space-between;
-        padding: 10px 0;
+        padding: 6px 0;
         border-bottom: 1px solid var(--border-gray);
     }
 
@@ -137,77 +143,78 @@
     .info-label {
         font-weight: 600;
         color: var(--text-gray);
-        font-size: 14px;
+        font-size: 12px;
     }
 
     .info-value {
         color: var(--text-dark);
         font-weight: 500;
-        font-size: 14px;
+        font-size: 12px;
         text-align: right;
     }
 
     .stats-card {
         background: var(--white);
-        border-radius: 12px;
-        padding: 25px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         border: 1px solid var(--border-gray);
-        margin-bottom: 20px;
+        margin-bottom: 15px;
     }
 
     .stats-card h3 {
         color: var(--primary-maroon);
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 700;
-        margin: 0 0 20px 0;
-        padding-bottom: 10px;
-        border-bottom: 2px solid var(--border-gray);
+        margin: 0 0 12px 0;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-gray);
     }
 
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 15px;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 10px;
     }
 
     .stat-item {
         text-align: center;
-        padding: 15px;
+        padding: 10px;
         background: var(--light-gray);
-        border-radius: 8px;
+        border-radius: 6px;
     }
 
     .stat-value {
-        font-size: 28px;
+        font-size: 20px;
         font-weight: 700;
         color: var(--primary-maroon);
-        margin: 0 0 5px 0;
+        margin: 0 0 4px 0;
     }
 
     .stat-label {
-        font-size: 13px;
+        font-size: 11px;
         color: var(--text-gray);
         margin: 0;
     }
 
     .action-buttons {
         display: flex;
-        gap: 15px;
+        gap: 10px;
         flex-wrap: wrap;
+        justify-content: flex-end;
     }
 
     .btn {
-        padding: 12px 24px;
-        border-radius: 8px;
+        padding: 8px 16px;
+        border-radius: 6px;
         font-weight: 600;
-        font-size: 14px;
+        font-size: 13px;
         cursor: pointer;
         transition: var(--transition);
         border: none;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         text-decoration: none;
     }
 
@@ -244,9 +251,9 @@
     }
 
     .badge {
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 12px;
+        padding: 3px 10px;
+        border-radius: 10px;
+        font-size: 10px;
         font-weight: 600;
     }
 
@@ -262,12 +269,13 @@
 
     @media (max-width: 768px) {
         .user-detail-container {
-            padding: 15px;
+            padding: 0;
         }
 
         .user-profile-card {
             flex-direction: column;
             text-align: center;
+            padding: 15px;
         }
 
         .action-buttons {
@@ -377,39 +385,10 @@
     </div>
     @endif
 
-    <!-- Role Permissions -->
-    <div class="stats-card">
-        <h3>Role Permissions</h3>
-        <ul style="padding-left: 20px; color: var(--text-gray); margin: 0;">
-            @if($user->role === 'department-head')
-                <li>Full system administration</li>
-                <li>Manage all users and roles</li>
-                <li>Generate final reports</li>
-                <li>Configure system settings</li>
-                <li>Access all applicant data</li>
-                <li>Override exam and interview scores</li>
-            @elseif($user->role === 'administrator')
-                <li>Manage exam questions</li>
-                <li>View and manage applicants</li>
-                <li>Generate access codes</li>
-                <li>Schedule interviews</li>
-                <li>Update applicant status</li>
-                <li>Export applicant data</li>
-            @else
-                <li>View assigned applicants</li>
-                <li>Conduct interviews</li>
-                <li>Submit interview scores</li>
-                <li>Add interview notes</li>
-                <li>View exam results</li>
-                <li>Generate basic reports</li>
-            @endif
-        </ul>
-    </div>
-
     <!-- Action Buttons -->
     <div class="action-buttons">
         <a href="{{ route('admin.users.index') }}" class="btn btn-secondary">
-            Back to List
+            Cancel
         </a>
         @if($user->user_id === auth()->id())
             <a href="{{ route('admin.profile.edit') }}" class="btn btn-primary">

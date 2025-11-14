@@ -77,6 +77,15 @@ class AccessCode extends Model
     }
 
     /**
+     * Scope to get expired codes
+     */
+    public function scopeExpired($query)
+    {
+        return $query->whereNotNull('expires_at')
+                     ->where('expires_at', '<=', now());
+    }
+
+    /**
      * Check if code is valid (not used and not expired)
      */
     public function isValid()
@@ -129,10 +138,16 @@ class AccessCode extends Model
     {
         $code = self::generateUniqueCode($prefix, $length);
         
+        // Ensure expiresInHours is an integer if provided
+        $expiresAt = null;
+        if ($expiresInHours !== null) {
+            $expiresAt = now()->addHours((int)$expiresInHours);
+        }
+        
         return self::create([
             'code' => $code,
             'applicant_id' => $applicantId,
-            'expires_at' => $expiresInHours ? now()->addHours($expiresInHours) : null,
+            'expires_at' => $expiresAt,
         ]);
     }
 

@@ -25,6 +25,43 @@
         .score-fair { background: #fecaca; color: #991b1b; }
         .score-needs-improvement { background: #f3f4f6; color: #374151; }
         
+        .floating-actions {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+            display: flex;
+            flex-direction: row;
+        }
+        
+        .floating-actions .action-btn {
+            padding: 6px 8px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: background-color 0.2s;
+            text-decoration: none;
+            color: #374151;
+            white-space: nowrap;
+        }
+        
+        .floating-actions .action-btn:hover {
+            background: #f3f4f6;
+        }
+        
+        .floating-actions .action-btn-delete:hover {
+            background: #fee2e2;
+        }
+        
         .stats-section {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -210,7 +247,6 @@
                     </option>
                 @endforeach
             </select>
-            <button onclick="applyFilter()" class="btn btn-sm" style="background: #800020; color: white; border: none; height: 26px; display: inline-flex; align-items: center;">Filter</button>
             <a href="{{ route('admin.applicants.index') }}" class="btn btn-secondary btn-sm" style="height: 26px; display: inline-flex; align-items: center;">Back to Applicants</a>
         </div>
     </div>
@@ -283,7 +319,6 @@
                             @endif
                         </a>
                     </th>
-                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -292,7 +327,9 @@
                         $overallRating = $applicant->getOverallRating();
                         $hasAllScores = $applicant->hasAllRequiredScores();
                     @endphp
-                    <tr>
+                    <tr style="position: relative;" 
+                        onmouseover="showActions({{ $applicant->applicant_id }})" 
+                        onmouseout="hideActions({{ $applicant->applicant_id }})">
                         <td class="text-left" style="font-size: 13px; font-weight: normal;">
                             <div>{{ $applicant->full_name }}</div>
                             <div style="font-size: 12px; color: #6b7280;">{{ $applicant->application_no }}</div>
@@ -365,18 +402,17 @@
                             <span class="badge bg-secondary">
                                 {{ ucwords(str_replace('-', ' ', $applicant->status)) }}
                             </span>
-                        </td>
-                        <td class="text-center" style="font-size: 13px; font-weight: normal;">
-                            <div class="d-flex gap-1">
+                            <!-- Floating Actions -->
+                            <div id="actions-{{ $applicant->applicant_id }}" class="floating-actions" style="display: none;">
                                 <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}" 
-                                   class="btn btn-secondary btn-sm"
+                                   class="action-btn"
                                    title="View Details">
                                     View
                                 </a>
                                 @if($applicant->latestInterview)
                                     <a href="{{ route('admin.interviews.show', $applicant->latestInterview->interview_id) }}" 
-                                       class="btn btn-sm"
-                                       style="background: #800020; color: white; border: none;"
+                                       class="action-btn"
+                                       style="color: #800020;"
                                        title="View Interview">
                                         Interview
                                     </a>
@@ -386,7 +422,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="text-center py-5">
+                        <td colspan="7" class="text-center py-5">
                             <div class="text-muted">
                                 <h5>No exam results found</h5>
                                 <p class="mb-0">Only applicants who completed the EnrollAssess exam are shown here.</p>
@@ -408,6 +444,21 @@
 
 @push('scripts')
 <script>
+// Floating actions show/hide functions
+function showActions(applicantId) {
+    const actionsDiv = document.getElementById('actions-' + applicantId);
+    if (actionsDiv) {
+        actionsDiv.style.display = 'flex';
+    }
+}
+
+function hideActions(applicantId) {
+    const actionsDiv = document.getElementById('actions-' + applicantId);
+    if (actionsDiv) {
+        actionsDiv.style.display = 'none';
+    }
+}
+
 // Auto-search functionality
 let searchTimeout;
 const searchInput = document.getElementById('searchInput');
@@ -484,7 +535,7 @@ document.addEventListener('click', function(e) {
                 const from = data.pagination.from || 0;
                 
                 if (data.applicants.length === 0) {
-                    html = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">No exam results found. Only applicants who completed the EnrollAssess exam are shown here.</td></tr>';
+                    html = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #6b7280;">No exam results found. Only applicants who completed the EnrollAssess exam are shown here.</td></tr>';
                 } else {
                     data.applicants.forEach((applicant, index) => {
                         // This is a simplified version - you may need to adjust based on your actual data structure
@@ -496,20 +547,43 @@ document.addEventListener('click', function(e) {
                         const examScore = applicant.enrollassess_score ? Number(applicant.enrollassess_score).toFixed(2) + '%' : '<span style="color: #9ca3af;">-</span>';
                         const interviewScore = applicant.interview_score ? Number(applicant.interview_score).toFixed(2) + '%' : '<span style="color: #9ca3af;">-</span>';
                         
-                        html += `<tr>
+                        // Build overall rating display
+                        let overallRatingHtml = '<span style="color: #9ca3af;">-</span>';
+                        if (applicant.overall_rating !== null && applicant.overall_rating !== undefined) {
+                            const rating = Number(applicant.overall_rating);
+                            let ratingClass = 'score-needs-improvement';
+                            if (rating >= 95) ratingClass = 'score-excellent';
+                            else if (rating >= 90) ratingClass = 'score-very-good';
+                            else if (rating >= 85) ratingClass = 'score-good';
+                            else if (rating >= 75) ratingClass = 'score-satisfactory';
+                            else if (rating >= 70) ratingClass = 'score-fair';
+                            
+                            overallRatingHtml = `<div class="score-badge ${ratingClass}" style="display: block; margin-bottom: 2px;">${rating.toFixed(2)}</div>`;
+                        }
+                        
+                        // Build floating actions
+                        let interviewLink = '';
+                        if (applicant.latest_interview && applicant.latest_interview.interview_id) {
+                            interviewLink = `<a href="/admin/interviews/${applicant.latest_interview.interview_id}" class="action-btn" style="color: #800020;" title="View Interview">Interview</a>`;
+                        }
+                        
+                        html += `<tr style="position: relative;" 
+                            onmouseover="showActions(${applicant.applicant_id})" 
+                            onmouseout="hideActions(${applicant.applicant_id})">
                             <td>
                                 <div style="font-weight: 500;">${applicant.full_name || ''}</div>
                                 <div style="font-size: 12px; color: #6b7280;">${applicant.application_no || applicant.formatted_applicant_no || 'N/A'}</div>
                             </td>
-                            <td>${score}</td>
-                            <td>${gwa}</td>
-                            <td>${examScore}</td>
-                            <td>${interviewScore}</td>
-                            <td>-</td>
-                            <td><span class="status-badge status-${statusClass}">${statusText}</span></td>
-                            <td>
-                                <div style="display: flex; gap: 4px;">
-                                    <a href="/admin/applicants/${applicant.applicant_id}" class="btn btn-secondary" style="padding: 2px 6px; font-size: 11px;">View</a>
+                            <td style="text-align: center;">${score}</td>
+                            <td style="text-align: center;">${gwa}</td>
+                            <td style="text-align: center;">${examScore}</td>
+                            <td style="text-align: center;">${interviewScore}</td>
+                            <td>${overallRatingHtml}</td>
+                            <td style="text-align: center;">
+                                <span class="badge bg-secondary">${statusText}</span>
+                                <div id="actions-${applicant.applicant_id}" class="floating-actions" style="display: none;">
+                                    <a href="/admin/applicants/${applicant.applicant_id}" class="action-btn" title="View Details">View</a>
+                                    ${interviewLink}
                                 </div>
                             </td>
                         </tr>`;

@@ -126,7 +126,6 @@
 
     .filter-group input,
     .filter-group select {
-        height: 26px; /* Standardized height */
         padding: 8px 12px;
         border: 1px solid #D1D5DB;
         border-radius: 6px;
@@ -222,6 +221,9 @@
         color: #6B7280;
         text-transform: uppercase;
         letter-spacing: 0.05em;
+        white-space: nowrap;
+        overflow: visible;
+        text-overflow: clip;
     }
 
     .data-table td {
@@ -262,6 +264,8 @@
         font-weight: 600;
         letter-spacing: 0.025em;
         text-transform: none !important; /* Override global uppercase transform */
+        white-space: nowrap;
+        text-align: center;
     }
 
     .status-pending { 
@@ -286,6 +290,24 @@
         background: #E0E7FF;
         color: #3730A3;
         border: 1px solid #C7D2FE;
+    }
+    
+    .status-interviewcompleted {
+        background: #E5E7EB;
+        color: #374151;
+        border: 1px solid #D1D5DB;
+    }
+    
+    .status-admitted {
+        background: #D1FAE5;
+        color: #065F46;
+        border: 1px solid #A7F3D0;
+    }
+    
+    .status-rejected {
+        background: #FEE2E2;
+        color: #991B1B;
+        border: 1px solid #FECACA;
     }
 
     /* ============================================
@@ -558,7 +580,7 @@
                 </div>
 
                 <div class="filter-group">
-                    <select id="status" name="status" class="form-select form-select-sm" style="height: 26px; padding: 4px 28px 4px 8px;">
+                    <select id="status" name="status" class="form-select form-select-sm" style="width: 200px;padding: 4px 28px 4px 8px;">
                         <option value="">All Statuses</option>
                         <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
                         <option value="exam-completed" {{ request('status') === 'exam-completed' ? 'selected' : '' }}>Exam Completed</option>
@@ -567,7 +589,7 @@
                 </div>
 
                 <div class="filter-group">
-                    <select id="assigned" name="assigned" class="form-select form-select-sm" style="height: 26px; padding: 4px 28px 4px 8px;">
+                    <select id="assigned" name="assigned" class="form-select form-select-sm" style="width: 200px; padding: 4px 28px 4px 8px;">
                         <option value="">All</option>
                         <option value="unassigned" {{ request('assigned') === 'unassigned' ? 'selected' : '' }}>Unassigned Only</option>
                         <option value="assigned" {{ request('assigned') === 'assigned' ? 'selected' : '' }}>Assigned Only</option>
@@ -587,14 +609,14 @@
                 <table class="table table-hover table-striped align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th class="text-center" style="width: 50px; font-size: 0.85rem; font-weight: bold;">
+                            <th class="text-center" style="width: 50px; font-size: 0.85rem; font-weight: bold; padding: 12px 8px; white-space: nowrap;">
                                 <input type="checkbox" id="selectAll" class="form-check-input">
                             </th>
-                            <th style="font-size: 0.85rem; font-weight: bold;" class="text-left">Applicant no</th>
-                            <th style="font-size: 0.85rem; font-weight: bold;" class="text-left">Name</th>
-                            <th style="font-size: 0.85rem; font-weight: bold;" class="text-left">Email</th>
-                            <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">Status</th>
-                            <th style="font-size: 0.85rem; font-weight: bold;" class="text-left">Assigned instructor</th>
+                            <th style="font-size: 0.85rem; font-weight: bold; padding: 12px 8px; white-space: nowrap;" class="text-left">Applicant no</th>
+                            <th style="font-size: 0.85rem; font-weight: bold; padding: 12px 8px; white-space: nowrap; min-width: 150px;" class="text-left">Name</th>
+                            <th style="font-size: 0.85rem; font-weight: bold; padding: 12px 8px; white-space: nowrap; min-width: 200px;" class="text-left">Email</th>
+                            <th style="font-size: 0.85rem; font-weight: bold; padding: 12px 8px; white-space: nowrap; text-align: center;" class="text-center">Status</th>
+                            <th style="font-size: 0.85rem; font-weight: bold; padding: 12px 8px; white-space: nowrap; min-width: 200px;" class="text-left">Assigned instructor</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -610,8 +632,12 @@
                                 <td class="text-left" style="font-size: 13px; font-weight: normal;">{{ $applicant->full_name }}</td>
                                 <td class="text-left" style="font-size: 13px; font-weight: normal;">{{ $applicant->email_address }}</td>
                                 <td class="text-center" style="font-size: 13px; font-weight: normal;">
-                                    <span class="badge bg-secondary">
-                                        {{ ucwords(str_replace('-', ' ', $applicant->status)) }}
+                                    @php
+                                        $statusClass = str_replace('-', '', $applicant->status ?? 'pending');
+                                        $statusText = ucwords(str_replace('-', ' ', $applicant->status ?? 'pending'));
+                                    @endphp
+                                    <span class="status-badge status-{{ $statusClass }}">
+                                        {{ $statusText }}
                                     </span>
                                 </td>
                                 <td>
@@ -930,16 +956,18 @@
                             const instructorName = applicant.assigned_instructor ? applicant.assigned_instructor.full_name : null;
                             
                             html += `<tr>
-                                <td class="checkbox-cell">
-                                    <input type="checkbox" class="rowChk" value="${applicant.applicant_id}" data-name="${applicant.full_name || ''}">
+                                <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                                    <input type="checkbox" class="form-check-input rowChk" value="${applicant.applicant_id}" data-name="${applicant.full_name || ''}">
                                 </td>
-                                <td>${applicant.application_no || applicant.formatted_applicant_no || 'N/A'}</td>
-                                <td>${applicant.full_name || ''}</td>
-                                <td>${applicant.email_address || ''}</td>
-                                <td>
+                                <td class="text-left" style="font-size: 13px; font-weight: normal;">${applicant.application_no || applicant.formatted_applicant_no || 'N/A'}</td>
+                                <td class="text-left" style="font-size: 13px; font-weight: normal;">${applicant.full_name || ''}</td>
+                                <td class="text-left" style="font-size: 13px; font-weight: normal;">${applicant.email_address || ''}</td>
+                                <td class="text-center" style="font-size: 13px; font-weight: normal;">
                                     <span class="status-badge status-${statusClass}">${statusText}</span>
                                 </td>
-                                <td>${instructorName ? instructorName : '<span style="color: #9ca3af;">Not Assigned</span>'}</td>
+                                <td style="font-size: 13px; font-weight: normal;">
+                                    ${instructorName ? instructorName : '<span style="color: #9ca3af;">Not Assigned</span>'}
+                                </td>
                             </tr>`;
                         });
                     }
@@ -947,6 +975,22 @@
                     tableBody.innerHTML = html;
                     tableBody.style.opacity = '1';
                     tableBody.style.pointerEvents = '';
+                    
+                    // Reattach checkbox event listeners after AJAX update
+                    document.querySelectorAll('.rowChk').forEach(checkbox => {
+                        checkbox.addEventListener('change', function(e) {
+                            toggleSelection(e.target.value, e.target.checked);
+                            refreshUI();
+                            
+                            // Update select all checkbox
+                            const allCheckboxes = document.querySelectorAll('.rowChk');
+                            const checkedCheckboxes = document.querySelectorAll('.rowChk:checked');
+                            const selectAllCheckbox = document.getElementById('selectAll');
+                            if (selectAllCheckbox) {
+                                selectAllCheckbox.checked = allCheckboxes.length > 0 && allCheckboxes.length === checkedCheckboxes.length;
+                            }
+                        });
+                    });
                     
                     if (data.pagination_html && paginationWrapper) {
                         paginationWrapper.innerHTML = data.pagination_html;

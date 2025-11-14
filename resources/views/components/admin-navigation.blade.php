@@ -87,7 +87,9 @@
         @elseif($userRole === 'instructor')
             <div class="nav-item">
                 <a href="{{ route('instructor.dashboard') }}" 
-                   class="nav-link {{ str_starts_with($currentRoute, 'instructor.dashboard') ? 'active' : '' }}">
+                   class="nav-link {{ str_starts_with($currentRoute, 'instructor.dashboard') ? 'active' : '' }}"
+                   @if(str_starts_with($currentRoute, 'instructor.dashboard')) aria-current="page" @endif
+                   aria-label="Dashboard - Instructor overview">
                     <span class="nav-icon"></span>
                     <span class="nav-text">Dashboard</span>
                 </a>
@@ -95,30 +97,47 @@
             
             <div class="nav-item">
                 <a href="{{ route('instructor.applicants') }}" 
-                   class="nav-link {{ str_starts_with($currentRoute, 'instructor.applicants') ? 'active' : '' }}">
+                   class="nav-link {{ str_starts_with($currentRoute, 'instructor.applicants') ? 'active' : '' }}"
+                   @if(str_starts_with($currentRoute, 'instructor.applicants')) aria-current="page" @endif
+                   aria-label="My assigned applicants">
                     <span class="nav-icon"></span>
                     <span class="nav-text">My Applicants</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="{{ route('instructor.schedule') }}" 
-                   class="nav-link {{ str_starts_with($currentRoute, 'instructor.schedule') ? 'active' : '' }}">
+                   class="nav-link {{ str_starts_with($currentRoute, 'instructor.schedule') ? 'active' : '' }}"
+                   @if(str_starts_with($currentRoute, 'instructor.schedule')) aria-current="page" @endif
+                   aria-label="Interview schedule">
                     <span class="nav-icon"></span>
                     <span class="nav-text">Schedule</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="{{ route('instructor.interview-history') }}" 
-                   class="nav-link {{ str_starts_with($currentRoute, 'instructor.interview-history') ? 'active' : '' }}">
+                   class="nav-link {{ str_starts_with($currentRoute, 'instructor.interview-history') ? 'active' : '' }}"
+                   @if(str_starts_with($currentRoute, 'instructor.interview-history')) aria-current="page" @endif
+                   aria-label="Interview history and records">
                     <span class="nav-icon"></span>
                     <span class="nav-text">Interview History</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="{{ route('instructor.guidelines') }}" 
-                   class="nav-link {{ str_starts_with($currentRoute, 'instructor.guidelines') ? 'active' : '' }}">
+                   class="nav-link {{ str_starts_with($currentRoute, 'instructor.guidelines') ? 'active' : '' }}"
+                   @if(str_starts_with($currentRoute, 'instructor.guidelines')) aria-current="page" @endif
+                   aria-label="Interview guidelines and standards">
                     <span class="nav-icon"></span>
                     <span class="nav-text">Guidelines</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="{{ route('instructor.profile.edit') }}" 
+                   class="nav-link {{ str_starts_with($currentRoute, 'instructor.profile') ? 'active' : '' }}"
+                   @if(str_starts_with($currentRoute, 'instructor.profile')) aria-current="page" @endif
+                   aria-label="My profile settings">
+                    <span class="nav-icon"></span>
+                    <span class="nav-text">My Profile</span>
                 </a>
             </div>
         @endif
