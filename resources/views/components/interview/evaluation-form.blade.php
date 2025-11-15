@@ -88,18 +88,18 @@
 
     .interview-container {
         display: grid;
-        grid-template-columns: 340px 1fr;
-        gap: 24px;
+        grid-template-columns: 280px 1fr;
+        gap: 16px;
         max-width: 1600px;
         margin: 0 auto;
-        padding-bottom: 120px;
+        padding-bottom: 80px;
     }
 
     /* Scoped sidebar for interview component to avoid clashing with layout sidebar */
     .interview-sidebar {
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 12px;
         position: sticky;
         top: 20px;
         align-self: start;
@@ -108,19 +108,19 @@
     .card {
         background: white;
         border: 1px solid var(--border);
-        border-radius: 8px;
+        border-radius: 6px;
         overflow: hidden;
     }
 
     .card-header {
         background: var(--bg-light);
-        padding: 14px 18px;
+        padding: 10px 14px;
         border-bottom: 1px solid var(--border);
     }
 
     .card-header h3 {
         margin: 0;
-        font-size: 0.875rem;
+        font-size: 0.8125rem;
         font-weight: 600;
         color: var(--text-primary);
         text-transform: uppercase;
@@ -128,49 +128,49 @@
     }
 
     .card-body {
-        padding: 20px;
+        padding: 14px;
     }
 
     .applicant-info {
         display: flex;
         align-items: center;
-        gap: 12px;
-        margin-bottom: 16px;
-        padding-bottom: 16px;
+        gap: 10px;
+        margin-bottom: 12px;
+        padding-bottom: 12px;
         border-bottom: 1px solid #F3F4F6;
     }
 
     .avatar {
-        width: 48px;
-        height: 48px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         background: var(--primary);
         color: white;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.875rem;
+        font-size: 0.8125rem;
         font-weight: 600;
         flex-shrink: 0;
     }
 
     .applicant-details h4 {
-        margin: 0 0 4px 0;
-        font-size: 0.9375rem;
+        margin: 0 0 2px 0;
+        font-size: 0.875rem;
         font-weight: 600;
         color: var(--text-primary);
     }
 
     .applicant-details p {
         margin: 0;
-        font-size: 0.8125rem;
+        font-size: 0.75rem;
         color: var(--text-secondary);
     }
 
     .info-list {
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
     }
 
     .info-item {
@@ -223,7 +223,7 @@
 
     .form-header {
         background: var(--bg-light);
-        padding: 20px 24px;
+        padding: 12px 16px;
         border-bottom: 1px solid var(--border);
         display: flex;
         justify-content: space-between;
@@ -232,7 +232,7 @@
 
     .form-header h2 {
         margin: 0;
-        font-size: 1.125rem;
+        font-size: 1rem;
         font-weight: 700;
         color: var(--text-primary);
     }
@@ -240,42 +240,42 @@
     .score-display {
         display: flex;
         align-items: baseline;
-        gap: 6px;
-        padding: 8px 16px;
+        gap: 4px;
+        padding: 6px 12px;
         background: white;
-        border: 2px solid var(--border);
-        border-radius: 6px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
     }
 
     .score-label {
-        font-size: 0.75rem;
+        font-size: 0.6875rem;
         color: var(--text-secondary);
         font-weight: 500;
-        margin-right: 4px;
+        margin-right: 2px;
     }
 
     .score-value {
-        font-size: 1.875rem;
+        font-size: 1.5rem;
         font-weight: 700;
         color: var(--primary);
         line-height: 1;
     }
 
     .score-max {
-        font-size: 1rem;
+        font-size: 0.875rem;
         color: var(--text-secondary);
         font-weight: 500;
     }
 
     .form-body {
-        padding: 28px;
+        padding: 16px;
     }
 
     .section {
-        margin-bottom: 28px;
+        margin-bottom: 16px;
         background: white;
         border: 1px solid var(--border);
-        border-radius: 8px;
+        border-radius: 6px;
         overflow: hidden;
     }
 
@@ -287,7 +287,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 16px 20px;
+        padding: 10px 14px;
         background: var(--bg-light);
         cursor: pointer;
         user-select: none;
@@ -299,16 +299,16 @@
 
     .section-header h3 {
         margin: 0;
-        font-size: 1rem;
+        font-size: 0.875rem;
         font-weight: 600;
         color: var(--text-primary);
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
     }
 
     .section-count {
-        font-size: 0.8125rem;
+        font-size: 0.75rem;
         font-weight: 500;
         color: var(--text-secondary);
     }
@@ -325,7 +325,7 @@
     }
 
     .section-body {
-        padding: 20px;
+        padding: 14px;
     }
 
     .section.collapsed .section-body {
@@ -333,7 +333,7 @@
     }
 
     .criterion {
-        margin-bottom: 28px;
+        margin-bottom: 16px;
     }
 
     .criterion:last-child {
@@ -344,11 +344,11 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 12px;
+        margin-bottom: 8px;
     }
 
     .criterion-label {
-        font-size: 0.9375rem;
+        font-size: 0.8125rem;
         font-weight: 600;
         color: var(--text-primary);
     }
@@ -387,15 +387,15 @@
 
     .rating-options {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 8px;
     }
 
     .rating-option {
         background: white;
-        border: 2px solid var(--border);
-        border-radius: 6px;
-        padding: 14px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 10px;
         cursor: pointer;
         transition: all 0.2s;
         position: relative;
@@ -408,7 +408,6 @@
 
     .rating-option.selected {
         border-width: 2px;
-        transform: translateY(-1px);
     }
 
     .rating-option.excellent {
@@ -458,9 +457,9 @@
     }
 
     .rating-title {
-        font-size: 0.9375rem;
+        font-size: 0.8125rem;
         font-weight: 600;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -488,8 +487,8 @@
     }
 
     .rating-desc {
-        font-size: 0.8125rem;
-        line-height: 1.5;
+        font-size: 0.75rem;
+        line-height: 1.4;
         color: #374151;
         margin: 0;
     }
@@ -503,26 +502,26 @@
     .comments-section {
         background: white;
         border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 24px;
-        margin-bottom: 24px;
+        border-radius: 6px;
+        padding: 14px;
+        margin-bottom: 16px;
     }
 
     .section-label {
-        font-size: 0.9375rem;
+        font-size: 0.8125rem;
         font-weight: 600;
         color: var(--text-primary);
-        margin-bottom: 12px;
+        margin-bottom: 8px;
         display: block;
     }
 
     .form-select,
     .form-textarea {
         width: 100%;
-        padding: 12px 14px;
-        border: 2px solid var(--border);
-        border-radius: 6px;
-        font-size: 0.875rem;
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 0.8125rem;
         transition: all 0.2s;
         background: white;
     }
@@ -536,8 +535,8 @@
 
     .form-textarea {
         resize: vertical;
-        min-height: 120px;
-        line-height: 1.6;
+        min-height: 80px;
+        line-height: 1.5;
         font-family: inherit;
     }
 
@@ -548,14 +547,106 @@
         margin-top: 6px;
     }
 
+    /* Sentence choices styles */
+    .sentence-choices {
+        margin-bottom: 12px;
+    }
+
+    .choices-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+
+    .choices-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+
+    .choices-toggle {
+        background: var(--bg-light);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 4px 10px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .choices-toggle:hover {
+        background: var(--border);
+    }
+
+    .choices-container {
+        background: var(--bg-light);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .choice-group {
+        margin-bottom: 10px;
+    }
+
+    .choice-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .choice-group-label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+    }
+
+    .choice-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .choice-btn {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 6px 10px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+
+    .choice-btn:hover {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+
     .actions {
         position: fixed;
         bottom: 20px;
         right: 20px;
         display: flex;
         flex-direction: column;
+        align-items: flex-end;
         gap: 10px;
         z-index: 1000;
+        max-width: calc(100vw - 40px);
+    }
+    
+    .actions .buttons-row {
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+        align-items: center;
     }
 
     .warning-message {
@@ -567,7 +658,19 @@
         font-size: 0.8125rem;
         font-weight: 500;
         display: none;
-        max-width: 300px;
+        white-space: normal;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        flex-shrink: 0;
+        max-width: 400px;
+        min-width: 200px;
+        order: -1;
+        text-align: left;
+        line-height: 1.4;
+    }
+    
+    .actions .btn {
+        flex-shrink: 0;
     }
 
     .warning-message.show {
@@ -575,10 +678,10 @@
     }
 
     .btn {
-        padding: 12px 24px;
+        padding: 8px 14px;
         border-radius: 6px;
-        font-size: 0.875rem;
-        font-weight: 600;
+        font-size: 12px;
+        font-weight: 500;
         border: none;
         cursor: pointer;
         transition: all 0.2s;
@@ -595,21 +698,28 @@
     }
 
     .btn-primary {
-        background: var(--primary);
-        color: white;
+        background: #800020 !important;
+        color: white !important;
+        box-shadow: none !important;
     }
 
     .btn-primary:hover:not(:disabled) {
-        background: #5C0016;
+        background: #5C0016 !important;
+        transform: none !important;
+        box-shadow: none !important;
     }
 
     .btn-secondary {
-        background: #6B7280;
-        color: white;
+        background: #F8F9FA !important;
+        color: #1F2937 !important;
+        border: 1px solid #E9ECEF !important;
+        box-shadow: none !important;
     }
 
     .btn-secondary:hover {
-        background: #4B5563;
+        background: #E9ECEF !important;
+        transform: none !important;
+        box-shadow: none !important;
     }
 
     @media (max-width: 1024px) {
@@ -636,10 +746,26 @@
         .actions {
             left: 16px;
             right: 16px;
+            flex-direction: column;
+            align-items: stretch;
+            max-width: calc(100vw - 32px);
+        }
+        
+        .actions .warning-message {
+            max-width: 100%;
+            white-space: normal;
+            order: -1;
+        }
+        
+        .actions .buttons-row {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            width: 100%;
         }
 
         .btn {
-            width: 100%;
+            flex: 1;
         }
     }
 </style>
@@ -738,40 +864,6 @@
                 @endif
             </div>
         </div>
-
-        <!-- Updated Grading Guide -->
-        <div class="card">
-            <div class="card-header">
-                <h3>Scoring Guide</h3>
-            </div>
-            <div class="card-body">
-                <div style="margin-bottom: 16px;">
-                    <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; margin-bottom: 8px; letter-spacing: 0.025em;">Criteria Score Scale</div>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
-                        <div style="padding: 8px; background: #F0FDF4; border: 1px solid #D1FAE5; border-radius: 4px; text-align: center;">
-                            <div style="font-weight: 600; color: #065F46; font-size: 0.875rem;">10</div>
-                            <div style="font-size: 0.6875rem; color: #065F46;">Excellent</div>
-                        </div>
-                        <div style="padding: 8px; background: #EFF6FF; border: 1px solid #DBEAFE; border-radius: 4px; text-align: center;">
-                            <div style="font-weight: 600; color: #1E40AF; font-size: 0.875rem;">8</div>
-                            <div style="font-size: 0.6875rem; color: #1E40AF;">Good</div>
-                        </div>
-                        <div style="padding: 8px; background: #FFFBEB; border: 1px solid #FEF3C7; border-radius: 4px; text-align: center;">
-                            <div style="font-weight: 600; color: #92400E; font-size: 0.875rem;">6</div>
-                            <div style="font-size: 0.6875rem; color: #92400E;">Fair</div>
-                        </div>
-                        <div style="padding: 8px; background: #FEF2F2; border: 1px solid #FEE2E2; border-radius: 4px; text-align: center;">
-                            <div style="font-weight: 600; color: #991B1B; font-size: 0.875rem;">4</div>
-                            <div style="font-size: 0.6875rem; color: #991B1B;">Needs Improvement</div>
-                        </div>
-                    </div>
-                </div>
-                <div style="padding: 12px; background: #F9FAFB; border: 1px solid var(--border); border-radius: 4px;">
-                    <div style="font-weight: 600; color: var(--text-primary); font-size: 0.8125rem; margin-bottom: 4px;">Total: 100 points (scaled)</div>
-                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Passing: 70% (equivalent to 56/80)</div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Evaluation Form -->
@@ -868,6 +960,47 @@
                 <!-- Comments -->
                 <div class="comments-section">
                     <label class="section-label" for="final_comments">Overall Notes</label>
+                    
+                    <!-- Auto-generated sentence choices -->
+                    <div class="sentence-choices">
+                        <div class="choices-header">
+                            <span class="choices-label">Quick Add:</span>
+                            <button type="button" class="choices-toggle" onclick="toggleChoices()">Show Options</button>
+                        </div>
+                        <div class="choices-container" id="choicesContainer" style="display: none;">
+                            <div class="choice-group">
+                                <span class="choice-group-label">Strengths:</span>
+                                <div class="choice-buttons">
+                                    <button type="button" class="choice-btn" onclick="addSentence('The applicant demonstrates strong communication skills and expresses ideas clearly.')">Strong communication skills</button>
+                                    <button type="button" class="choice-btn" onclick="addSentence('The applicant shows excellent motivation and clear interest in pursuing IT.')">Excellent motivation</button>
+                                    <button type="button" class="choice-btn" onclick="addSentence('The applicant displays good problem-solving abilities and analytical thinking.')">Good problem-solving</button>
+                                    <button type="button" class="choice-btn" onclick="addSentence('The applicant has a solid understanding of the BSIT program and its requirements.')">Solid program understanding</button>
+                                    <button type="button" class="choice-btn" onclick="addSentence('The applicant demonstrates a positive attitude and professional demeanor.')">Positive attitude</button>
+                                    <button type="button" class="choice-btn" onclick="addSentence('The applicant shows relevant IT background and technical knowledge.')">Relevant IT background</button>
+                                </div>
+                            </div>
+                            <div class="choice-group">
+                                <span class="choice-group-label">Areas for Improvement:</span>
+                                <div class="choice-buttons">
+                                    <button type="button" class="choice-btn" onclick="addSentence('The applicant may benefit from improving communication clarity and confidence.')">Needs communication improvement</button>
+                                    <button type="button" class="choice-btn" onclick="addSentence('The applicant would benefit from gaining more IT exposure and technical experience.')">Needs more IT exposure</button>
+                                    <button type="button" class="choice-btn" onclick="addSentence('The applicant should develop stronger problem-solving and critical thinking skills.')">Needs problem-solving development</button>
+                                    <button type="button" class="choice-btn" onclick="addSentence('The applicant needs to better understand the program expectations and curriculum.')">Needs program understanding</button>
+                                </div>
+                            </div>
+                            <div class="choice-group">
+                                <span class="choice-group-label">Overall Assessment:</span>
+                                <div class="choice-buttons">
+                                    <button type="button" class="choice-btn" onclick="addSentence('Overall, the applicant shows great potential and is well-suited for the BSIT program.')">Great potential</button>
+                                    <button type="button" class="choice-btn" onclick="addSentence('The applicant meets the requirements and demonstrates readiness for the program.')">Meets requirements</button>
+                                    <button type="button" class="choice-btn" onclick="addSentence('The applicant shows promise but may need additional support and guidance.')">Shows promise</button>
+                                    <button type="button" class="choice-btn" onclick="addSentence('The applicant demonstrates commitment and willingness to learn new concepts.')">Commitment to learn</button>
+                                    <button type="button" class="choice-btn" onclick="addSentence('The applicant would be a valuable addition to the BSIT program.')">Valuable addition</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <textarea name="final_comments" id="final_comments" class="form-textarea" required 
                               placeholder="Provide your overall assessment, key observations, strengths, areas for improvement, and any additional notes about the applicant..." 
                               maxlength="5000">{{ old('final_comments', $interview->final_comments) }}</textarea>
@@ -889,13 +1022,15 @@
     <div class="warning-message" id="completionWarning">
         Please complete all criteria and recommendation before submitting.
     </div>
-    <a href="{{ $back_url }}" class="btn btn-secondary">Cancel</a>
-    @if($mode === 'admin')
-    <button type="button" onclick="submitForm('save_draft')" class="btn btn-secondary">Save Draft</button>
-    <button type="button" onclick="submitForm('submit_final')" class="btn btn-primary" id="submitBtn" disabled>Submit Evaluation</button>
-    @else
-    <button type="submit" form="evaluationForm" class="btn btn-primary" id="submitBtn" disabled>Submit Evaluation</button>
-    @endif
+    <div class="buttons-row">
+        <a href="{{ $back_url }}" class="btn btn-secondary">Cancel</a>
+        @if($mode === 'admin')
+        <button type="button" onclick="submitForm('save_draft')" class="btn btn-secondary">Save Draft</button>
+        <button type="button" onclick="submitForm('submit_final')" class="btn btn-primary" id="submitBtn" disabled>Submit Evaluation</button>
+        @else
+        <button type="submit" form="evaluationForm" class="btn btn-primary" id="submitBtn" disabled>Submit Evaluation</button>
+        @endif
+    </div>
 </div>
 
 @push('scripts')
@@ -924,6 +1059,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSelection(radio);
         updateBadge(radio);
     });
+    
 
     // Rating selection
     document.querySelectorAll('.rating-option').forEach(option => {
@@ -1046,6 +1182,43 @@ document.addEventListener('DOMContentLoaded', function() {
 
     calculateScore();
     checkCompletion();
+    
+    // Toggle choices container
+    window.toggleChoices = function() {
+        const container = document.getElementById('choicesContainer');
+        const toggle = document.querySelector('.choices-toggle');
+        if (container.style.display === 'none') {
+            container.style.display = 'block';
+            toggle.textContent = 'Hide Options';
+        } else {
+            container.style.display = 'none';
+            toggle.textContent = 'Show Options';
+        }
+    };
+    
+    // Add sentence to textarea
+    window.addSentence = function(sentence) {
+        const textarea = document.getElementById('final_comments');
+        const currentText = textarea.value.trim();
+        const newText = currentText 
+            ? currentText + ' ' + sentence
+            : sentence;
+        
+        // Check if adding would exceed max length
+        if (newText.length <= 5000) {
+            textarea.value = newText;
+            // Update character count
+            if (charCountEl) {
+                charCountEl.textContent = newText.length;
+            }
+            // Focus textarea
+            textarea.focus();
+            // Move cursor to end
+            textarea.setSelectionRange(newText.length, newText.length);
+        } else {
+            alert('Adding this sentence would exceed the maximum character limit.');
+        }
+    };
 });
 </script>
 @endpush

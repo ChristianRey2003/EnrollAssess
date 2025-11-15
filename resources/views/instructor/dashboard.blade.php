@@ -8,51 +8,24 @@
 @endphp
 
 @push('styles')
+<link href="{{ asset('css/admin/interviews.css') }}" rel="stylesheet">
 <style>
     .dashboard-container {
         max-width: 1400px;
         margin: 0 auto;
     }
 
-    .dashboard-stats {
-        display: flex;
-        gap: 32px;
-        margin-bottom: 32px;
-        background: white;
-        padding: 20px 24px;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        border: 1px solid #E5E7EB;
-    }
-
-    .stat-item {
-        flex: 1;
-        text-align: center;
-        padding: 0 16px;
-        border-right: 1px solid #E5E7EB;
-    }
-
-    .stat-item:last-child {
-        border-right: none;
-    }
-
-    .stat-value {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: var(--maroon-primary);
-        margin-bottom: 4px;
-    }
-
-    .stat-label {
-        color: #6B7280;
-        font-size: 0.875rem;
-        font-weight: 500;
+    /* Statistics Section - using interview-history style */
+    .stats-section {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-bottom: 30px;
+        max-width: 100%;
     }
 
     .dashboard-sections {
-        display: grid;
-        grid-template-columns: 2fr 1fr;
-        gap: 32px;
+        display: block;
     }
 
     .dashboard-section {
@@ -104,6 +77,11 @@
     .status-examcompleted {
         background: #FEE2E2;
         color: #DC2626;
+    }
+
+    .status-scheduled {
+        background: #DBEAFE;
+        color: #3B82F6;
     }
 
     .quick-actions {
@@ -283,8 +261,9 @@
             grid-template-columns: 1fr;
         }
         
-        .dashboard-stats {
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        .stats-section {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
         }
     }
 </style>
@@ -293,35 +272,34 @@
 @section('content')
 <div class="dashboard-container">
     <!-- Statistics -->
-    <div class="dashboard-stats">
-        <div class="stat-item">
+    <section class="stats-section">
+        <div class="stat-card">
+            <div class="stat-icon" aria-hidden="true"></div>
             <div class="stat-value">{{ $stats['total_assigned'] }}</div>
             <div class="stat-label">Total Assigned</div>
         </div>
-        <div class="stat-item">
+        <div class="stat-card">
+            <div class="stat-icon" aria-hidden="true"></div>
             <div class="stat-value">{{ $stats['pending_interviews'] }}</div>
             <div class="stat-label">Pending Interviews</div>
         </div>
-        <div class="stat-item">
+        <div class="stat-card">
+            <div class="stat-icon" aria-hidden="true"></div>
             <div class="stat-value">{{ $stats['completed_interviews'] }}</div>
             <div class="stat-label">Completed</div>
         </div>
-        <div class="stat-item">
-            <div class="stat-value">{{ $stats['recommended'] }}</div>
-            <div class="stat-label">Recommended</div>
-        </div>
-    </div>
+    </section>
 
     <!-- Main Dashboard Content -->
     <div class="dashboard-sections">
-        <!-- Left Column - Recent Applicants -->
+        <!-- Left Column - Upcoming Interviews -->
         <div class="dashboard-section">
             <div class="section-header">
-                <h2 class="section-title">Recent Assigned Applicants</h2>
-                <a href="{{ route('instructor.applicants') }}" class="btn-small btn-primary">View All</a>
+                <h2 class="section-title">Upcoming Interviews</h2>
+                <a href="{{ route('instructor.schedule') }}" class="btn-small btn-primary">View Schedule</a>
             </div>
             <div class="section-content">
-                @if($assignedApplicants->count() > 0)
+                @if($upcomingInterviews->count() > 0)
                     <div class="dashboard-table-wrapper">
                         <div class="table-responsive">
                             <table class="table table-hover table-striped align-middle dashboard-table">
@@ -329,52 +307,44 @@
                                     <tr>
                                         <th scope="col" class="text-left">Applicant</th>
                                         <th scope="col" class="text-center" style="min-width: 140px;">Application No.</th>
+                                        <th scope="col" class="text-center">Date & Time</th>
                                         <th scope="col" class="text-center">Exam Score</th>
-                                        <th scope="col" class="text-center">Status</th>
                                         <th scope="col" class="text-center" style="min-width: 160px;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($assignedApplicants->take(5) as $applicant)
+                                    @foreach($upcomingInterviews->take(10) as $interview)
                                     <tr>
                                         <td>
                                             <div class="applicant-cell">
-                                                <div class="applicant-name">{{ $applicant->first_name }} {{ $applicant->last_name }}</div>
-                                                <div class="applicant-email">{{ $applicant->email_address }}</div>
+                                                <div class="applicant-name">{{ $interview->applicant->first_name }} {{ $interview->applicant->last_name }}</div>
+                                                <div class="applicant-email">{{ $interview->applicant->email_address }}</div>
                                             </div>
                                         </td>
-                                        <td class="text-center">{{ $applicant->application_no }}</td>
+                                        <td class="text-center">{{ $interview->applicant->application_no }}</td>
+                                        <td class="text-center">
+                                            <div>{{ $interview->schedule_date->format('M d, Y') }}</div>
+                                            <div style="font-size: 0.875rem; color: #6B7280;">{{ $interview->schedule_date->format('g:i A') }}</div>
+                                        </td>
                                         <td class="text-center">
                                             @php
-                                                $examScore = $applicant->enrollassess_score ?? null;
+                                                $examScore = $interview->applicant->enrollassess_score ?? null;
                                             @endphp
                                             @if($examScore !== null)
                                                 <span class="status-badge {{ $examScore >= 70 ? 'status-completed' : 'status-pending' }}">
                                                     {{ number_format($examScore, 1) }}%
                                                 </span>
                                             @else
-                                                <span class="status-badge status-pending">Pending</span>
+                                                <span class="status-badge status-pending">N/A</span>
                                             @endif
                                         </td>
                                         <td class="text-center">
-                                            <span class="status-badge status-{{ str_replace([' ', '-'], ['', ''], strtolower($applicant->status)) }}">
-                                                {{ ucfirst(str_replace('-', ' ', $applicant->status)) }}
-                                            </span>
-                                        </td>
-                                        <td class="text-center">
-                                            @if($applicant->status === 'exam-completed')
-                                                <a href="{{ route('instructor.interview.show', $applicant->applicant_id) }}" 
-                                                   class="btn-small btn-primary">
-                                                    Start Interview
-                                                </a>
-                                            @elseif($applicant->status === 'interview-completed')
-                                                <a href="{{ route('instructor.interview.show', $applicant->applicant_id) }}" 
-                                                   class="btn-small btn-secondary">
-                                                    View Interview
-                                                </a>
-                                            @else
-                                                <span style="color: #6B7280; font-size: 0.875rem;">Waiting for exam</span>
-                                            @endif
+                                            @php $canConduct = $interview->applicant->hasCompletedExam(); @endphp
+                                            <a href="{{ route('instructor.interview.show', $interview->applicant->applicant_id) }}" 
+                                               class="btn-small btn-primary{{ !$canConduct ? ' disabled' : '' }}"
+                                               @if(!$canConduct) aria-disabled="true" tabindex="-1" title="Applicant must complete exam first" @endif>
+                                                Conduct Interview
+                                            </a>
                                         </td>
                                     </tr>
                                     @endforeach
@@ -384,73 +354,13 @@
                     </div>
                 @else
                     <div class="empty-state">
-                        <h3>No Applicants Assigned Yet</h3>
-                        <p>You don't have any applicants assigned for interviews yet. Check the Interview Pool for available interviews or contact the administrator.</p>
+                        <h3>No Upcoming Interviews</h3>
+                        <p>You don't have any interviews scheduled for the coming days.</p>
                     </div>
                 @endif
             </div>
         </div>
 
-        <!-- Right Column - Quick Actions & Recent Activity -->
-        <div>
-            <!-- Quick Actions -->
-            <div class="dashboard-section" style="margin-bottom: 32px;">
-                <div class="section-header">
-                    <h2 class="section-title">Quick Actions</h2>
-                </div>
-                <div class="section-content">
-                    <div class="quick-actions">
-                        <!-- Interview Pool retired -->
-                        
-                        <a href="{{ route('instructor.applicants') }}" class="action-card">
-                            <div class="action-icon">MA</div>
-                            <div class="action-content">
-                                <h3>My Applicants</h3>
-                                <p>View all assigned applicants</p>
-                            </div>
-                        </a>
-
-                        @if($stats['pending_interviews'] > 0)
-                        <a href="{{ route('instructor.applicants') }}?filter=pending" class="action-card">
-                            <div class="action-icon">PI</div>
-                            <div class="action-content">
-                                <h3>Pending Interviews</h3>
-                                <p>{{ $stats['pending_interviews'] }} interviews awaiting completion</p>
-                            </div>
-                        </a>
-                        @endif
-
-                        <a href="{{ route('instructor.guidelines') }}" class="action-card">
-                            <div class="action-icon">GL</div>
-                            <div class="action-content">
-                                <h3>Guidelines</h3>
-                                <p>Review evaluation criteria</p>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent Activity -->
-            @if($recentInterviews->count() > 0)
-            <div class="dashboard-section">
-                <div class="section-header">
-                    <h2 class="section-title">Recent Activity</h2>
-                </div>
-                <div class="section-content">
-                    @foreach($recentInterviews as $interview)
-                    <div class="activity-item">
-                        <div class="activity-icon"></div>
-                        <div class="activity-content">
-                            <h4>Interview Completed</h4>
-                            <p>{{ $interview->applicant->first_name }} {{ $interview->applicant->last_name }} • {{ $interview->created_at->diffForHumans() }}</p>
-                        </div>
-                    </div>
-                    @endforeach
-                </div>
-            </div>
-            @endif
-        </div>
     </div>
 </div>
 @endsection

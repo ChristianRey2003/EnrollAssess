@@ -10,42 +10,46 @@
 @push('styles')
 <style>
     .applicants-container {
-        max-width: 1400px;
-        margin: 0 auto;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* Override main-content padding for this page */
+    .main-content {
+        padding: 20px !important;
     }
 
     .btn {
-        padding: 10px 20px;
-        border-radius: 6px;
-        font-size: 0.875rem;
+        font-size: 12px;
+        padding: 8px 14px;
         font-weight: 500;
-        border: none;
+        border-radius: 6px;
         cursor: pointer;
-        text-decoration: none;
         transition: all 0.3s ease;
+        text-decoration: none;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
+        border: none;
     }
 
     .btn-primary {
-        background: var(--maroon-primary);
+        background: #800020;
         color: white;
     }
 
     .btn-primary:hover {
         background: #5C0016;
-        color: white;
     }
 
     .btn-secondary {
-        background: #6B7280;
-        color: white;
+        background: #F8F9FA;
+        color: #1F2937;
+        border: 1px solid #E9ECEF;
     }
 
     .btn-secondary:hover {
-        background: #4B5563;
-        color: white;
+        background: #E9ECEF;
     }
 
     .btn-primary.disabled {
@@ -54,32 +58,13 @@
         pointer-events: none;
     }
 
-    /* Tooltip */
+    /* Tooltip - CSS tooltips hidden, using JavaScript tooltips instead */
     .tooltip { position: relative; display: inline-block; }
     .tooltip[data-tip]:hover::after {
-        content: attr(data-tip);
-        position: absolute;
-        bottom: 125%;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #111827;
-        color: #fff;
-        padding: 6px 8px;
-        border-radius: 4px;
-        font-size: 12px;
-        white-space: nowrap;
-        z-index: 1000;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        display: none; /* Hidden, using JavaScript tooltip instead */
     }
     .tooltip[data-tip]:hover::before {
-        content: '';
-        position: absolute;
-        bottom: calc(125% - 6px);
-        left: 50%;
-        transform: translateX(-50%);
-        border-width: 6px;
-        border-style: solid;
-        border-color: #111827 transparent transparent transparent;
+        display: none; /* Hidden, using JavaScript tooltip instead */
     }
 
     .applicants-table-section {
@@ -142,6 +127,16 @@
 
     .applicants-table-section .table-responsive {
         margin-bottom: 0;
+        overflow: visible;
+    }
+    
+    /* Allow tooltips to overflow table cells */
+    .table tbody td {
+        overflow: visible !important;
+    }
+    
+    .table tbody tr {
+        overflow: visible !important;
     }
 
     .table-header-controls {
@@ -176,24 +171,92 @@
         padding: 0 16px;
     }
 
-    .instructor-data-table thead th {
-        font-weight: 600;
-        font-size: 0.8125rem;
-        letter-spacing: 0.5px;
-        color: #374151;
-        background-color: #ffffff;
-        border-bottom: 1px solid #E5E7EB;
+    /* Table styling matches admin design */
+    .table thead th {
+        background-color: white !important;
+        color: #1F2937 !important;
     }
 
-    .instructor-data-table tbody td {
-        font-size: 0.875rem;
-        color: #1F2937;
+    .table tbody td {
+        font-size: 13px;
+        font-weight: normal;
         vertical-align: middle;
-        border-bottom: 1px solid #F3F4F6;
     }
 
-    .instructor-data-table tbody tr:hover {
-        background-color: rgba(255, 215, 0, 0.08);
+    .table tbody tr:hover {
+        background-color: rgba(255, 215, 0, 0.05);
+    }
+
+    /* Disabled checkbox styling */
+    .applicant-checkbox:disabled {
+        opacity: 0.4;
+        cursor: not-allowed !important;
+    }
+
+    .applicant-checkbox:disabled:hover {
+        opacity: 0.5;
+    }
+
+    .floating-actions {
+        position: absolute;
+        top: 50%;
+        right: 10px;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 6px 8px;
+        gap: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        flex-direction: row;
+        overflow: visible;
+    }
+    
+    .floating-actions .action-btn {
+        padding: 6px 12px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        transition: background-color 0.2s;
+        color: #1F2937;
+        text-decoration: none;
+        white-space: nowrap;
+        margin: 0 2px;
+    }
+    
+    .floating-actions .action-btn:hover {
+        background: #f3f4f6;
+    }
+    
+    .floating-actions .action-btn-primary {
+        color: #800020;
+    }
+    
+    .floating-actions .action-btn-primary:hover {
+        background: rgba(128, 0, 32, 0.1);
+    }
+    
+    .floating-actions .action-btn-secondary {
+        color: #6B7280;
+    }
+    
+    .floating-actions .action-btn-secondary:hover {
+        background: #f3f4f6;
+    }
+    
+    .floating-actions .action-btn-disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .floating-actions .action-btn-disabled:hover {
+        background: transparent;
     }
 
     .applicant-cell {
@@ -241,23 +304,24 @@
         color: #3B82F6;
     }
 
-    .empty-state {
-        text-align: center;
-        padding: 48px 24px;
-        color: #6B7280;
-    }
-
-    .empty-state h3 {
-        font-size: 1.125rem;
-        font-weight: 600;
-        color: #374151;
-        margin-bottom: 8px;
-    }
 
     .pagination-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 20px;
         padding: 20px 24px;
         background: #F9FAFB;
         border-top: 1px solid #E5E7EB;
+    }
+
+    .pagination-wrapper .relative.z-0.inline-flex {
+        margin-left: 20px;
+    }
+
+    /* Limit pagination to 5 page numbers - hide pages 6 and 7 */
+    .pagination-wrapper .relative.z-0.inline-flex > a[href*="page=6"],
+    .pagination-wrapper .relative.z-0.inline-flex > a[href*="page=7"] {
+        display: none !important;
     }
 
     .bulk-actions-bar {
@@ -570,6 +634,7 @@
                             history.replaceState({}, '', finalUrl);
                             initializeApplicantFilters();
                             updateBulkActions();
+                            reinitializeTooltips();
                         }
                     }
                 }
@@ -597,27 +662,98 @@
             };
         }
 
-        container.querySelectorAll('.pagination a').forEach(link => {
-            link.onclick = function (event) {
-                event.preventDefault();
-                loadApplicants(this.href);
-            };
+        // Pagination is handled by the global event listener below
+        // No need to attach handlers here as they'll be handled by event delegation
+    }
+
+    // Tooltip positioning to prevent clipping
+    function initializeTooltips() {
+        const tooltips = document.querySelectorAll('.tooltip[data-tip]');
+        
+        tooltips.forEach(tooltip => {
+            tooltip.addEventListener('mouseenter', function(e) {
+                const tooltipElement = this;
+                const rect = tooltipElement.getBoundingClientRect();
+                
+                // Create a custom tooltip element
+                let customTooltip = document.getElementById('custom-tooltip');
+                if (!customTooltip) {
+                    customTooltip = document.createElement('div');
+                    customTooltip.id = 'custom-tooltip';
+                    customTooltip.style.cssText = 'position: fixed; background: #111827; color: #fff; padding: 6px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap; z-index: 99999; pointer-events: none; box-shadow: 0 2px 6px rgba(0,0,0,0.2); display: none;';
+                    document.body.appendChild(customTooltip);
+                }
+                
+                customTooltip.textContent = tooltipElement.getAttribute('data-tip');
+                customTooltip.style.display = 'block';
+                
+                // Get tooltip dimensions
+                const tooltipRect = customTooltip.getBoundingClientRect();
+                const tooltipWidth = tooltipRect.width;
+                const tooltipHeight = tooltipRect.height;
+                const spacing = 12; // Space between button and tooltip
+                const viewportPadding = 10; // Padding from viewport edges
+                
+                // Calculate initial position (centered above button)
+                let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
+                let top = rect.top - tooltipHeight - spacing;
+                
+                // Check if tooltip would go off the top of viewport
+                if (top < viewportPadding) {
+                    // Position below button instead
+                    top = rect.bottom + spacing;
+                }
+                
+                // Check if tooltip would go off the left edge
+                if (left < viewportPadding) {
+                    left = viewportPadding;
+                }
+                
+                // Check if tooltip would go off the right edge
+                const rightEdge = left + tooltipWidth;
+                if (rightEdge > window.innerWidth - viewportPadding) {
+                    left = window.innerWidth - tooltipWidth - viewportPadding;
+                }
+                
+                // Ensure tooltip doesn't go below viewport
+                const bottomEdge = top + tooltipHeight;
+                if (bottomEdge > window.innerHeight - viewportPadding) {
+                    top = window.innerHeight - tooltipHeight - viewportPadding;
+                }
+                
+                customTooltip.style.left = left + 'px';
+                customTooltip.style.top = top + 'px';
+            });
+            
+            tooltip.addEventListener('mouseleave', function() {
+                const customTooltip = document.getElementById('custom-tooltip');
+                if (customTooltip) {
+                    customTooltip.style.display = 'none';
+                }
+            });
         });
     }
 
     document.addEventListener('DOMContentLoaded', function () {
         initializeApplicantFilters();
+        initializeTooltips();
     });
+    
+    // Re-initialize tooltips after AJAX content loads
+    function reinitializeTooltips() {
+        initializeTooltips();
+    }
 
     // Bulk selection management
     function toggleSelectAll(checkbox) {
-        const checkboxes = document.querySelectorAll('.applicant-checkbox');
+        const checkboxes = document.querySelectorAll('.applicant-checkbox:not(:disabled)');
         checkboxes.forEach(cb => cb.checked = checkbox.checked);
         updateBulkActions();
     }
 
     function updateBulkActions() {
-        const checkboxes = document.querySelectorAll('.applicant-checkbox:checked');
+        // Only count enabled checkboxes that are checked
+        const checkboxes = document.querySelectorAll('.applicant-checkbox:not(:disabled):checked');
         const count = checkboxes.length;
         const bulkBar = document.getElementById('bulkActionsBar');
         const selectAll = document.getElementById('selectAll');
@@ -630,15 +766,18 @@
             bulkBar.classList.remove('show');
         }
         
-        // Update select all checkbox
-        const allCheckboxes = document.querySelectorAll('.applicant-checkbox');
-        selectAll.checked = allCheckboxes.length > 0 && count === allCheckboxes.length;
+        // Update select all checkbox - only consider enabled checkboxes
+        const allEnabledCheckboxes = document.querySelectorAll('.applicant-checkbox:not(:disabled)');
+        const checkedEnabledCheckboxes = document.querySelectorAll('.applicant-checkbox:not(:disabled):checked');
+        selectAll.checked = allEnabledCheckboxes.length > 0 && checkedEnabledCheckboxes.length === allEnabledCheckboxes.length;
+        selectAll.indeterminate = checkedEnabledCheckboxes.length > 0 && checkedEnabledCheckboxes.length < allEnabledCheckboxes.length;
     }
 
     function clearSelection() {
-        const checkboxes = document.querySelectorAll('.applicant-checkbox');
+        const checkboxes = document.querySelectorAll('.applicant-checkbox:not(:disabled)');
         checkboxes.forEach(cb => cb.checked = false);
         document.getElementById('selectAll').checked = false;
+        document.getElementById('selectAll').indeterminate = false;
         updateBulkActions();
     }
 
@@ -648,6 +787,21 @@
             infoDiv.style.display = infoDiv.style.display === 'none' ? 'block' : 'none';
         }
     }
+
+    function showActions(applicantId) {
+        const actionsDiv = document.getElementById('actions-' + applicantId);
+        if (actionsDiv) {
+            actionsDiv.style.display = 'flex';
+        }
+    }
+
+    function hideActions(applicantId) {
+        const actionsDiv = document.getElementById('actions-' + applicantId);
+        if (actionsDiv) {
+            actionsDiv.style.display = 'none';
+        }
+    }
+
 
     // Individual schedule modal
     function openScheduleModal(interviewId, applicantName) {
@@ -710,7 +864,7 @@
 
     // Bulk schedule modal
     function openBulkScheduleModal() {
-        const checkboxes = document.querySelectorAll('.applicant-checkbox:checked');
+        const checkboxes = document.querySelectorAll('.applicant-checkbox:not(:disabled):checked');
         
         if (checkboxes.length === 0) {
             alert('Please select at least one applicant to schedule.');
@@ -718,7 +872,7 @@
         }
         
         // Show selected applicants
-        const names = Array.from(checkboxes).map(cb => cb.dataset.applicantName);
+        const names = Array.from(checkboxes).map(cb => cb.dataset.applicantName).filter(name => name);
         document.getElementById('selectedApplicantsList').innerHTML = names.join(', ');
         
         document.getElementById('bulkScheduleModal').classList.add('show');
@@ -737,8 +891,10 @@
     function submitBulkSchedule(event) {
         event.preventDefault();
         
-        const checkboxes = document.querySelectorAll('.applicant-checkbox:checked');
-        const interviewIds = Array.from(checkboxes).map(cb => cb.dataset.interviewId);
+        const checkboxes = document.querySelectorAll('.applicant-checkbox:not(:disabled):checked');
+        const interviewIds = Array.from(checkboxes)
+            .map(cb => cb.dataset.interviewId)
+            .filter(id => id); // Filter out undefined/null values
         
         if (interviewIds.length === 0) {
             alert('No applicants selected');
@@ -797,29 +953,37 @@
         if (e.target === this) closeBulkScheduleModal();
     });
 
-    // AJAX Pagination
+    // AJAX Pagination - Use event delegation for dynamically added pagination links
     document.addEventListener('click', function(e) {
-        const paginationLink = e.target.closest('.pagination a, .pagination-wrapper a');
+        // Check if click is on a pagination link
+        let paginationLink = e.target.closest('.pagination a, .pagination-wrapper a');
         
-        if (paginationLink && paginationLink.href) {
+        // Also check if clicked element is itself a link within pagination
+        if (!paginationLink && e.target.tagName === 'A' && e.target.closest('.pagination, .pagination-wrapper')) {
+            paginationLink = e.target;
+        }
+        
+        if (paginationLink && paginationLink.href && paginationLink.href !== window.location.href) {
             e.preventDefault();
             e.stopPropagation();
             const url = paginationLink.href;
             
             if (!url || url === '#' || url === 'javascript:void(0)') return;
             
-            const tableBody = document.querySelector('table tbody');
+            // Show loading state
+            const tableSection = document.querySelector('.applicants-table-section');
             const paginationWrapper = document.querySelector('.pagination-wrapper');
             
-            if (tableBody) {
-                tableBody.style.opacity = '0.5';
-                tableBody.style.pointerEvents = 'none';
+            if (tableSection) {
+                tableSection.style.opacity = '0.5';
+                tableSection.style.pointerEvents = 'none';
             }
             if (paginationWrapper) {
                 paginationWrapper.style.opacity = '0.5';
                 paginationWrapper.style.pointerEvents = 'none';
             }
             
+            // Load applicants with AJAX
             fetch(url, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -827,19 +991,52 @@
                 }
             })
             .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
+                if (!response.ok) {
+                    throw new Error('Failed to load applicants.');
+                }
                 return response.json();
             })
             .then(data => {
-                if (data.applicants && tableBody) {
-                    // For instructor page, we'll need to reload the page since the table structure is complex
-                    // with PHP logic for interviews, deadlines, etc.
-                    // But we can still prevent the sidebar flash by using AJAX
+                if (data.html) {
+                    const parser = new DOMParser();
+                    const parsed = parser.parseFromString(data.html, 'text/html');
+                    const newSection = parsed.body.firstElementChild;
+                    if (newSection) {
+                        const existingSection = document.querySelector('.applicants-table-section');
+                        if (existingSection) {
+                            existingSection.replaceWith(newSection);
+                            history.replaceState({}, '', url);
+                            initializeApplicantFilters();
+                            updateBulkActions();
+                            reinitializeTooltips();
+                            
+                            // Restore opacity
+                            if (tableSection) {
+                                tableSection.style.opacity = '1';
+                                tableSection.style.pointerEvents = 'auto';
+                            }
+                            if (paginationWrapper) {
+                                paginationWrapper.style.opacity = '1';
+                                paginationWrapper.style.pointerEvents = 'auto';
+                            }
+                        }
+                    }
+                } else {
+                    // Fallback to page reload
                     window.location.href = url;
                 }
             })
             .catch(error => {
                 console.error('Pagination error:', error);
+                // Restore opacity before reload
+                if (tableSection) {
+                    tableSection.style.opacity = '1';
+                    tableSection.style.pointerEvents = 'auto';
+                }
+                if (paginationWrapper) {
+                    paginationWrapper.style.opacity = '1';
+                    paginationWrapper.style.pointerEvents = 'auto';
+                }
                 window.location.href = url;
             });
         }

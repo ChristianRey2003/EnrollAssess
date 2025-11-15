@@ -280,7 +280,13 @@ function openEmailNotificationDrawer() {
     console.log('Opening email notification drawer. Selected applicants:', selectedApplicants);
     
     if (!selectedApplicants || selectedApplicants.length === 0) {
-        alert('Please select at least one applicant first.');
+        if (window.NotificationSystem) {
+            window.NotificationSystem.error('Please select at least one applicant first.');
+        } else if (window.showError) {
+            window.showError('Please select at least one applicant first.');
+        } else {
+            console.error('Please select at least one applicant first.');
+        }
         return;
     }
     
@@ -338,7 +344,13 @@ function confirmSendEmails() {
     console.log('Confirming email send. Selected applicants:', selectedApplicants);
     
     if (!selectedApplicants || selectedApplicants.length === 0) {
-        alert('Please select at least one applicant.');
+        if (window.NotificationSystem) {
+            window.NotificationSystem.error('Please select at least one applicant.');
+        } else if (window.showError) {
+            window.showError('Please select at least one applicant.');
+        } else {
+            console.error('Please select at least one applicant.');
+        }
         return;
     }
     
@@ -350,12 +362,24 @@ function confirmSendEmails() {
     
     // Validate required fields
     if (!examDate) {
-        alert('Please enter the exam date.');
+        if (window.NotificationSystem) {
+            window.NotificationSystem.error('Please enter the exam date.');
+        } else if (window.showError) {
+            window.showError('Please enter the exam date.');
+        } else {
+            console.error('Please enter the exam date.');
+        }
         return;
     }
     
     if (!examTime) {
-        alert('Please enter the exam time.');
+        if (window.NotificationSystem) {
+            window.NotificationSystem.error('Please enter the exam time.');
+        } else if (window.showError) {
+            window.showError('Please enter the exam time.');
+        } else {
+            console.error('Please enter the exam time.');
+        }
         return;
     }
     
@@ -413,10 +437,28 @@ function confirmSendEmails() {
             
             // Show detailed results if there were failures
             if (data.data && data.data.errors && data.data.errors.length > 0) {
-                message += '\n\nDetails:\n' + data.data.errors.join('\n');
+                const errorDetails = data.data.errors.join('\n');
+                message += '\n\nDetails:\n' + errorDetails;
+                
+                // Show success with warning if there were partial failures
+                if (window.NotificationSystem) {
+                    window.NotificationSystem.warning(message);
+                } else if (window.showNotification) {
+                    window.showNotification(message, 'warning');
+                } else {
+                    console.warn(message);
+                }
+            } else {
+                // Show success notification
+                if (window.NotificationSystem) {
+                    window.NotificationSystem.success(message);
+                } else if (window.showSuccess) {
+                    window.showSuccess(message);
+                } else {
+                    console.log(message);
+                }
             }
             
-            alert(message);
             closeEmailNotificationDrawer();
             
             // Optional: Reload page if all emails sent successfully
@@ -425,12 +467,26 @@ function confirmSendEmails() {
                 // location.reload();
             }
         } else {
-            alert('Error: ' + data.message);
+            const errorMessage = 'Error: ' + data.message;
+            if (window.NotificationSystem) {
+                window.NotificationSystem.error(errorMessage);
+            } else if (window.showError) {
+                window.showError(errorMessage);
+            } else {
+                console.error(errorMessage);
+            }
         }
     })
     .catch(error => {
         console.error('Network error:', error);
-        alert('Network error: ' + error.message);
+        const errorMessage = 'Network error: ' + error.message;
+        if (window.NotificationSystem) {
+            window.NotificationSystem.error(errorMessage);
+        } else if (window.showError) {
+            window.showError(errorMessage);
+        } else {
+            console.error(errorMessage);
+        }
     })
     .finally(() => {
         // Reset button state

@@ -31,20 +31,10 @@ class SettingsController extends Controller
      */
     public function index()
     {
-        // Get all settings grouped by their category
+        // Get only email settings
         $emailSettings = Settings::where('group', 'email')->get();
-        $systemSettings = Settings::where('group', 'system')->get();
-        $examSettings = Settings::where('group', 'exam')->get();
-        $notificationSettings = Settings::where('group', 'notifications')->get();
-        $interviewSettings = Settings::where('group', 'interview')->get();
 
-        return view('admin.settings.index', compact(
-            'emailSettings',
-            'systemSettings',
-            'examSettings',
-            'notificationSettings',
-            'interviewSettings'
-        ));
+        return view('admin.settings.index', compact('emailSettings'));
     }
 
     /**

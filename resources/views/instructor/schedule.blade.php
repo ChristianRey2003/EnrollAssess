@@ -14,51 +14,12 @@
         margin: 0 auto;
     }
 
-    .schedule-stats {
-        display: flex;
-        gap: 32px;
-        margin-bottom: 32px;
-        background: white;
-        padding: 20px 24px;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        border: 1px solid #E5E7EB;
-    }
-
-    .stat-item {
-        flex: 1;
-        text-align: center;
-        padding: 0 16px;
-        border-right: 1px solid #E5E7EB;
-    }
-
-    .stat-item:last-child {
-        border-right: none;
-    }
-
-    .stat-value {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: var(--maroon-primary);
-        margin-bottom: 4px;
-    }
-
-    .stat-label {
-        color: #6B7280;
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-
-    .schedule-sections {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 32px;
-    }
 
     .schedule-section {
+        width: 100%;
         background: white;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         border: 1px solid #E5E7EB;
         overflow: hidden;
     }
@@ -70,6 +31,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 16px;
     }
 
     .section-title {
@@ -77,6 +39,8 @@
         font-weight: 600;
         color: #1F2937;
         margin: 0;
+        display: inline-block;
+        margin-right: 12px;
     }
 
     .section-count {
@@ -86,12 +50,55 @@
         border-radius: 20px;
         font-size: 0.875rem;
         font-weight: 600;
+        display: inline-block;
     }
 
     .section-content {
         padding: 24px;
-        max-height: 600px;
-        overflow-y: auto;
+    }
+
+    .table-responsive {
+        margin-bottom: 0;
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table thead {
+        background-color: white !important;
+    }
+
+    .table thead th {
+        background-color: white !important;
+        color: #1F2937 !important;
+    }
+
+    .table tbody td {
+        font-size: 13px;
+        font-weight: normal;
+        vertical-align: middle;
+    }
+
+    .table tbody tr:hover {
+        background-color: rgba(255, 215, 0, 0.05);
+    }
+
+    .applicant-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .applicant-name {
+        font-weight: 500;
+        color: #1F2937;
+    }
+
+    .applicant-email {
+        font-size: 12px;
+        color: #6B7280;
     }
 
     .interview-card {
@@ -361,51 +368,6 @@
         min-height: 80px;
     }
 
-    /* Bulk Scheduling Styles */
-    .bulk-schedule-section {
-        background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%);
-        border: 2px solid #bae6fd;
-        border-radius: 12px;
-        padding: 24px;
-        margin-bottom: 32px;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 20px;
-    }
-
-    .bulk-schedule-header {
-        margin: 0;
-        flex: 1 1 240px;
-    }
-
-    .bulk-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: var(--maroon-primary);
-        margin: 0 0 4px 0;
-    }
-
-    .bulk-subtitle {
-        color: #6B7280;
-        font-size: 0.875rem;
-        margin: 0;
-    }
-
-    .bulk-trigger-actions {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-    }
-
-    .bulk-selected-counter {
-        font-size: 0.875rem;
-        color: #1F2937;
-        font-weight: 500;
-    }
 
     .bulk-form-grid {
         display: grid;
@@ -536,29 +498,16 @@
         gap: 12px;
     }
 
-    @media (max-width: 768px) {
-        .schedule-sections {
-            grid-template-columns: 1fr;
-        }
-        
-        .schedule-stats {
+        @media (max-width: 768px) {
+        .section-header {
             flex-direction: column;
-            gap: 16px;
+            align-items: flex-start;
+            gap: 12px;
         }
-        
-        .stat-item {
-            border-right: none;
-            border-bottom: 1px solid #E5E7EB;
-            padding-bottom: 16px;
-        }
-        
-        .stat-item:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-        
-        .interview-meta {
-            grid-template-columns: 1fr;
+
+        .bulk-trigger-actions {
+            width: 100%;
+            justify-content: space-between;
         }
 
         .bulk-form-grid {
@@ -568,188 +517,125 @@
         .bulk-drawer {
             width: 100%;
         }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
     }
 </style>
 @endpush
 
 @section('content')
 <div class="schedule-container">
-    <!-- Statistics -->
-    <div class="schedule-stats">
-        <div class="stat-item">
-            <div class="stat-value">{{ $upcomingInterviews->count() }}</div>
-            <div class="stat-label">Upcoming</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-value">{{ $pendingScheduling->count() }}</div>
-            <div class="stat-label">Pending Schedule</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-value">{{ $upcomingInterviews->where('schedule_date', '<=', now()->addDay())->count() }}</div>
-            <div class="stat-label">Due Soon</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-value">{{ $upcomingInterviews->count() + $pendingScheduling->count() }}</div>
-            <div class="stat-label">Total Active</div>
-        </div>
-    </div>
-
-    <!-- Bulk Scheduling Section -->
-    @if($pendingScheduling->count() > 0)
-    <div class="bulk-schedule-section">
-        <div class="bulk-schedule-header">
-            <h3 class="bulk-title"> Bulk Scheduling</h3>
-            <p class="bulk-subtitle">Schedule multiple interviews with automatic time distribution</p>
-        </div>
-        <div class="bulk-trigger-actions">
-            <div class="bulk-selected-counter">
-                <span data-bulk-selected-count>0</span> selected
-            </div>
-            <button
-                type="button"
-                class="btn btn-primary"
-                data-bulk-drawer-trigger
-                aria-haspopup="dialog"
-                aria-controls="bulkScheduleDrawer"
-                aria-expanded="false"
-                onclick="openBulkScheduleDrawer()">
-                Open Bulk Scheduling
-            </button>
-        </div>
-    </div>
-    @endif
-
-    <!-- Schedule Sections -->
-    <div class="schedule-sections">
-        <!-- Upcoming Interviews -->
-        <div class="schedule-section">
-            <div class="section-header">
-                <h2 class="section-title">Upcoming Interviews</h2>
-                <span class="section-count">{{ $upcomingInterviews->count() }}</span>
-            </div>
-            <div class="section-content">
-                @forelse($upcomingInterviews as $interview)
-                    <div class="interview-card">
-                        <div class="interview-header">
-                            <div class="applicant-info">
-                                <h4>{{ $interview->applicant->first_name }} {{ $interview->applicant->last_name }}</h4>
-                                <p>{{ $interview->applicant->email_address }}</p>
-                            </div>
-                            <span class="status-badge status-scheduled">Scheduled</span>
-                        </div>
-                        
-                        <div class="interview-meta">
-                            <div class="meta-item">
-                                <span class="meta-label">Date:</span>
-                                <span>{{ $interview->schedule_date->format('M d, Y') }}</span>
-                            </div>
-                            <div class="meta-item">
-                                <span class="meta-label">Time:</span>
-                                <span>{{ $interview->schedule_date->format('g:i A') }}</span>
-                            </div>
-                            <div class="meta-item">
-                                <span class="meta-label">App No:</span>
-                                <span>{{ $interview->applicant->application_no }}</span>
-                            </div>
-                            <div class="meta-item">
-                                <span class="meta-label">Score:</span>
-                                @php
-                                    $examScore = $interview->applicant->enrollassess_score ?? null;
-                                @endphp
-                                <span>{{ $examScore !== null ? number_format($examScore, 1) . '%' : 'N/A' }}</span>
-                            </div>
-                        </div>
-
-                        <div class="interview-actions">
-                            @php $canConduct = $interview->applicant->hasCompletedExam(); @endphp
-                            <a href="{{ route('instructor.interview.show', $interview->applicant->applicant_id) }}" 
-                               class="btn btn-primary{{ !$canConduct ? ' disabled' : '' }}"
-                               @if(!$canConduct) aria-disabled="true" tabindex="-1" title="Applicant must complete exam first" @endif>
-                                Conduct Interview
-                            </a>
-                            <button onclick="rescheduleInterview({{ $interview->interview_id }})" 
-                                    class="btn btn-outline">
-                                Reschedule
-                            </button>
-                        </div>
-                    </div>
-                @empty
-                    <div class="empty-state">
-                        <h3>No Upcoming Interviews</h3>
-                        <p>You don't have any interviews scheduled for the coming days.</p>
-                    </div>
-                @endforelse
-            </div>
-        </div>
-
-        <!-- Pending Scheduling -->
-        <div class="schedule-section">
-            <div class="section-header">
+    <!-- Pending Scheduling Table -->
+    <div class="schedule-section">
+        <div class="section-header">
+            <div>
                 <h2 class="section-title">Pending Scheduling</h2>
                 <span class="section-count">{{ $pendingScheduling->count() }}</span>
             </div>
-            <div class="section-content">
-                @forelse($pendingScheduling as $interview)
-                    <div class="interview-card">
-                        <div class="interview-header">
-                            <div style="display: flex; align-items: start; gap: 12px; flex: 1;">
-                                <input type="checkbox" class="interview-checkbox" 
-                                       data-interview-id="{{ $interview->interview_id }}"
-                                       onchange="updateBulkSelection()"
-                                       style="width: 20px; height: 20px; cursor: pointer; margin-top: 2px;">
-                                <div class="applicant-info">
-                                    <h4>{{ $interview->applicant->first_name }} {{ $interview->applicant->last_name }}</h4>
-                                    <p>{{ $interview->applicant->email_address }}</p>
-                                </div>
-                            </div>
-                            <span class="status-badge status-pending">Pending</span>
-                        </div>
-                        
-                        <div class="interview-meta">
-                            <div class="meta-item">
-                                <span class="meta-label">App No:</span>
-                                <span>{{ $interview->applicant->application_no }}</span>
-                            </div>
-                            <div class="meta-item">
-                                <span class="meta-label">Score:</span>
-                                @php
-                                    $examScore = $interview->applicant->enrollassess_score ?? null;
-                                @endphp
-                                <span>{{ $examScore !== null ? number_format($examScore, 1) . '%' : 'N/A' }}</span>
-                            </div>
-                            <div class="meta-item">
-                                <span class="meta-label">Exam Date:</span>
-                                <span>{{ $interview->applicant->exam_completed_at ? $interview->applicant->exam_completed_at->format('M d, Y') : 'N/A' }}</span>
-                            </div>
-                            <div class="meta-item">
-                                <span class="meta-label">Course:</span>
-                                <span>{{ $interview->applicant->preferred_course ?? 'N/A' }}</span>
-                            </div>
-                        </div>
-
-                        <div class="interview-actions">
-                            @php $canSchedule = $interview->applicant->hasCompletedExam(); @endphp
-                            @if($canSchedule)
-                                <button onclick="scheduleInterview({{ $interview->interview_id }})" 
-                                        class="btn btn-primary">
-                                    Schedule Interview
-                                </button>
-                            @else
-                                <span class="tooltip" data-tip="Cannot schedule: applicant must complete the exam">
-                                    <button class="btn btn-primary disabled" disabled title="Applicant must complete the exam">
-                                        Schedule Interview
-                                    </button>
-                                </span>
-                            @endif
-                        </div>
-                    </div>
-                @empty
-                    <div class="empty-state">
-                        <h3>No Pending Scheduling</h3>
-                        <p>All assigned applicants have been scheduled for interviews.</p>
-                    </div>
-                @endforelse
+            @if($pendingScheduling->count() > 0)
+            <div class="bulk-trigger-actions" style="display: flex; align-items: center; gap: 16px;">
+                <div class="bulk-selected-counter" style="font-size: 0.875rem; color: #1F2937; font-weight: 500;">
+                    <span data-bulk-selected-count>0</span> selected
+                </div>
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    data-bulk-drawer-trigger
+                    aria-haspopup="dialog"
+                    aria-controls="bulkScheduleDrawer"
+                    aria-expanded="false"
+                    onclick="openBulkScheduleDrawer()">
+                    Bulk Schedule
+                </button>
             </div>
+            @endif
+        </div>
+        <div class="section-content">
+            @if($pendingScheduling->count() > 0)
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped align-middle">
+                        <thead style="background-color: white !important; color: #1F2937 !important;">
+                            <tr>
+                                <th style="width: 40px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
+                                    <input type="checkbox" 
+                                           id="selectAllPending" 
+                                           onchange="toggleAllPending()"
+                                           class="form-check-input"
+                                           style="cursor: pointer;">
+                                </th>
+                                <th style="width: 180px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-left">Applicant</th>
+                                <th style="width: 120px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">Application No.</th>
+                                <th style="width: 100px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">Exam Score</th>
+                                <th style="width: 120px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">Exam Date</th>
+                                <th style="width: 150px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">Course</th>
+                                <th style="width: 200px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($pendingScheduling as $interview)
+                            <tr>
+                                <td class="text-center">
+                                    <input type="checkbox" 
+                                           class="interview-checkbox form-check-input" 
+                                           data-interview-id="{{ $interview->interview_id }}"
+                                           onchange="updateBulkSelection()"
+                                           style="cursor: pointer;">
+                                </td>
+                                <td class="text-left" style="font-size: 13px; font-weight: normal;">
+                                    <div class="applicant-info">
+                                        <div class="applicant-name" style="font-weight: 500; color: #1F2937; margin-bottom: 4px;">{{ $interview->applicant->first_name }} {{ $interview->applicant->last_name }}</div>
+                                        <div class="applicant-email" style="font-size: 12px; color: #6B7280;">{{ $interview->applicant->email_address }}</div>
+                                    </div>
+                                </td>
+                                <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                                    <div class="applicant-name" style="font-weight: 500; color: #1F2937;">{{ $interview->applicant->application_no }}</div>
+                                </td>
+                                <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                                    @php
+                                        $examScore = $interview->applicant->enrollassess_score ?? null;
+                                    @endphp
+                                    @if($examScore !== null)
+                                        <div class="applicant-name" style="font-weight: 500; color: #1F2937;">{{ number_format($examScore, 2) }}%</div>
+                                    @else
+                                        <span class="applicant-email" style="font-size: 12px; color: #6B7280;">-</span>
+                                    @endif
+                                </td>
+                                <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                                    {{ $interview->applicant->exam_completed_at ? $interview->applicant->exam_completed_at->format('M d, Y') : '-' }}
+                                </td>
+                                <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                                    <div class="applicant-name" style="font-weight: 500; color: #1F2937;">{{ $interview->applicant->preferred_course ?? '-' }}</div>
+                                </td>
+                                <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                                    @php $canSchedule = $interview->applicant->hasCompletedExam(); @endphp
+                                    @if($canSchedule)
+                                        <button onclick="scheduleInterview({{ $interview->interview_id }})" 
+                                                class="btn btn-primary"
+                                                style="font-size: 12px; padding: 6px 12px;">
+                                            Schedule Interview
+                                        </button>
+                                    @else
+                                        <span class="tooltip" data-tip="Cannot schedule: applicant must complete the exam">
+                                            <button class="btn btn-primary disabled" disabled title="Applicant must complete the exam"
+                                                    style="font-size: 12px; padding: 6px 12px;">
+                                                Schedule Interview
+                                            </button>
+                                        </span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="empty-state">
+                    <h3>No Pending Scheduling</h3>
+                    <p>All assigned applicants have been scheduled for interviews.</p>
+                </div>
+            @endif
         </div>
     </div>
 </div>

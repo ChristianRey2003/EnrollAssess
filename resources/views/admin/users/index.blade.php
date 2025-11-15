@@ -142,16 +142,17 @@
         background: var(--light-gray);
         color: var(--text-dark);
         font-weight: 600;
-        padding: 15px;
+        padding: 10px 12px;
         text-align: left;
         border-bottom: 1px solid var(--border-gray);
-        font-size: 14px;
+        font-size: 0.85rem;
     }
 
     .users-table td {
-        padding: 15px;
+        padding: 10px 12px;
         border-bottom: 1px solid var(--border-gray);
-        font-size: 14px;
+        font-size: 13px;
+        vertical-align: middle;
     }
 
     .users-table tbody tr {
@@ -168,15 +169,17 @@
         visibility: visible !important;
     }
 
-    .user-info {
+    /* Only apply to table rows, not header dropdown */
+    .users-table .user-info {
         display: flex;
+        flex-direction: row;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
     }
 
     .user-avatar {
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         background: linear-gradient(135deg, var(--primary-maroon), var(--primary-gold));
         display: flex;
@@ -184,9 +187,10 @@
         justify-content: center;
         color: var(--white);
         font-weight: 600;
-        font-size: 16px;
+        font-size: 12px;
         overflow: hidden;
         flex-shrink: 0;
+        flex-grow: 0;
     }
 
     .user-avatar img {
@@ -196,11 +200,19 @@
         border-radius: 50%;
     }
 
+    .user-details {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-width: 0;
+    }
+
     .user-details h4 {
-        margin: 0 0 4px 0;
-        font-size: 15px;
-        font-weight: 600;
+        margin: 0 0 2px 0;
+        font-size: 13px;
+        font-weight: 500;
         color: var(--text-dark);
+        line-height: 1.3;
     }
 
     .user-details h4 a {
@@ -215,17 +227,18 @@
 
     .user-details p {
         margin: 0;
-        font-size: 13px;
+        font-size: 12px;
         color: var(--text-gray);
+        line-height: 1.2;
     }
 
     .role-badge {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
+        gap: 4px;
+        padding: 4px 10px;
         border-radius: 20px;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.5px;
@@ -276,8 +289,8 @@
     }
 
     .floating-actions .btn {
-        padding: 6px 12px;
-        font-size: 12px;
+        padding: 4px 10px;
+        font-size: 11px;
         border-radius: 6px;
         white-space: nowrap;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);

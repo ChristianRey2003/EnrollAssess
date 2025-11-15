@@ -38,8 +38,16 @@ class InstructorController extends Controller
             'total_assigned' => $assignedApplicants->count(),
             'pending_interviews' => $assignedApplicants->whereIn('status', ['exam-completed'])->count(),
             'completed_interviews' => $assignedApplicants->where('status', 'interview-completed')->count(),
-            'recommended' => $assignedApplicants->where('status', 'admitted')->count(),
         ];
+
+        // Get upcoming interviews with scheduled dates
+        $upcomingInterviews = Interview::where('interviewer_id', $instructor->user_id)
+            ->where('status', 'scheduled')
+            ->whereNotNull('schedule_date')
+            ->where('schedule_date', '>=', now())
+            ->with('applicant')
+            ->orderBy('schedule_date', 'asc')
+            ->get();
 
         // Recent activity (interviews in last 7 days)
         $recentInterviews = Interview::where('interviewer_id', $instructor->user_id)
@@ -53,7 +61,8 @@ class InstructorController extends Controller
             'instructor',
             'assignedApplicants', 
             'stats',
-            'recentInterviews'
+            'recentInterviews',
+            'upcomingInterviews'
         ));
     }
 
@@ -81,7 +90,28 @@ class InstructorController extends Controller
         }
 
         if ($request->filled('status')) {
-            $assignedApplicantsQuery->where('status', $request->input('status'));
+            $status = $request->input('status');
+            
+            if ($status === 'needs-scheduling') {
+                // Filter for applicants that need scheduling: 
+                // - Have an interview assigned to this instructor
+                // - Interview doesn't have a schedule_date OR status is 'assigned'/'available'
+                // - Applicant has completed the exam (status is exam-completed or interview-available)
+                $assignedApplicantsQuery->whereHas('latestInterview', function($query) use ($instructor) {
+                    $query->where('interviewer_id', $instructor->user_id)
+                          ->where(function($q) {
+                              // No schedule date set - needs scheduling
+                              $q->whereNull('schedule_date')
+                                // OR status is 'assigned' or 'available' - needs scheduling
+                                ->orWhereIn('status', ['assigned', 'available']);
+                          });
+                })->where(function($query) {
+                    $query->where('status', 'exam-completed')
+                          ->orWhere('status', 'interview-available');
+                });
+            } else {
+                $assignedApplicantsQuery->where('status', $status);
+            }
         }
 
         $assignedApplicants = $assignedApplicantsQuery
@@ -90,7 +120,7 @@ class InstructorController extends Controller
             ->appends($request->only(['search', 'status']));
 
         // Return JSON for AJAX pagination requests only
-        if ($request->ajax()) {
+        if ($request->ajax() || ($request->header('Accept') && str_contains($request->header('Accept'), 'application/json'))) {
             $html = view('instructor.partials.applicants-table', [
                 'assignedApplicants' => $assignedApplicants
             ])->render();
@@ -238,25 +268,25 @@ class InstructorController extends Controller
     {
         $instructor = Auth::user();
         
-        // Get upcoming interviews with scheduled dates
-        $upcomingInterviews = Interview::where('interviewer_id', $instructor->user_id)
-            ->where('status', 'scheduled')
-            ->whereNotNull('schedule_date')
-            ->where('schedule_date', '>=', now())
-            ->with('applicant')
-            ->orderBy('schedule_date', 'asc')
-            ->get();
-
-        // Get interviews pending scheduling
+        // Get interviews pending scheduling - only for applicants who have completed the exam
         $pendingScheduling = Interview::where('interviewer_id', $instructor->user_id)
             ->where(function ($q) {
                 $q->whereNull('schedule_date')
                   ->orWhere('status', 'assigned');
             })
+            ->whereHas('applicant', function($query) {
+                $query->whereIn('status', [
+                    'exam-completed', 
+                    'interview-scheduled', 
+                    'interview-completed', 
+                    'admitted', 
+                    'rejected'
+                ]);
+            })
             ->with('applicant')
             ->get();
 
-        return view('instructor.schedule', compact('upcomingInterviews', 'pendingScheduling'));
+        return view('instructor.schedule', compact('pendingScheduling'));
     }
 
     /**

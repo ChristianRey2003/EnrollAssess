@@ -34,63 +34,68 @@
                 <option value="">All Status</option>
                 <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                 <option value="exam-completed" {{ request('status') == 'exam-completed' ? 'selected' : '' }}>Exam Completed</option>
+                <option value="interview-available" {{ request('status') == 'interview-available' ? 'selected' : '' }}>Interview Ready</option>
+                <option value="interview-scheduled" {{ request('status') == 'interview-scheduled' ? 'selected' : '' }}>Interview Scheduled</option>
                 <option value="interview-completed" {{ request('status') == 'interview-completed' ? 'selected' : '' }}>Interview Completed</option>
-                <option value="admitted" {{ request('status') == 'admitted' ? 'selected' : '' }}>Admitted</option>
-                <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                <option value="needs-scheduling" {{ request('status') == 'needs-scheduling' ? 'selected' : '' }}>Need to be Scheduled</option>
             </select>
         </form>
     </div>
     
     @if($assignedApplicants->count() > 0)
         <div class="table-responsive">
-            <table class="table table-hover table-striped align-middle instructor-data-table">
-                <thead class="table-light">
+            <table class="table table-hover table-striped align-middle">
+                <thead style="background-color: white !important; color: #1F2937 !important;">
                     <tr>
-                        <th scope="col" class="text-center" style="width: 40px;">
-                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                        <th style="width: 40px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
+                            <input type="checkbox" 
+                                   id="selectAll" 
+                                   onchange="toggleSelectAll(this)"
+                                   class="form-check-input"
+                                   style="cursor: pointer;">
                         </th>
-                        <th scope="col" class="text-left">Applicant</th>
-                        <th scope="col" class="text-center" style="min-width: 140px;">Application No.</th>
-                        <th scope="col" class="text-center">Exam Score</th>
-                        <th scope="col" class="text-center">Status</th>
-                        <th scope="col" class="text-center">Interview Date</th>
-                        <th scope="col" class="text-left" style="min-width: 200px;">Interview Window</th>
-                        <th scope="col" class="text-center" style="min-width: 180px;">Actions</th>
+                        <th style="width: 180px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-left">Applicant</th>
+                        <th style="width: 120px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">Application No.</th>
+                        <th style="width: 100px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">Exam Score</th>
+                        <th style="width: 120px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">Status</th>
+                        <th style="width: 150px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">Interview Date</th>
+                        <th style="width: 200px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-left">Interview Window</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($assignedApplicants as $applicant)
+                    @foreach($assignedApplicants as $index => $applicant)
                     @php
                         $interview = $applicant->latestInterview;
                         $canSchedule = $interview && (!$interview->schedule_date || $interview->status === 'assigned');
                         $hasCompletedExam = method_exists($applicant, 'hasCompletedExam') ? $applicant->hasCompletedExam() : ($applicant->status === 'exam-completed');
                     @endphp
-                    <tr>
+                    <tr style="position: relative;" 
+                        onmouseover="showActions({{ $applicant->applicant_id }})" 
+                        onmouseout="hideActions({{ $applicant->applicant_id }})">
                         <td class="text-center">
-                            @if($canSchedule)
-                                <input type="checkbox" class="applicant-checkbox" 
+                            <input type="checkbox" 
+                                   class="form-check-input applicant-checkbox" 
+                                   @if($canSchedule && $interview)
                                        data-interview-id="{{ $interview->interview_id }}"
                                        data-applicant-name="{{ $applicant->first_name }} {{ $applicant->last_name }}"
-                                       onchange="updateBulkActions()">
-                            @endif
+                                       onchange="updateBulkActions()"
+                                   @else
+                                       disabled
+                                       title="{{ !$interview ? 'No interview assigned' : 'Interview already scheduled or cannot be scheduled' }}"
+                                   @endif
+                                   style="cursor: {{ ($canSchedule && $interview) ? 'pointer' : 'not-allowed' }};">
                         </td>
-                        <td>
-                            <div class="applicant-cell">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <div>
-                                        <div class="applicant-name">{{ $applicant->first_name }} {{ $applicant->last_name }}</div>
-                                        <div class="applicant-email">{{ $applicant->email_address }}</div>
-                                    </div>
-                                    @if($interview && $interview->assignment_notes)
-                                        <button type="button" 
-                                                onclick="toggleAssignmentInfo({{ $applicant->applicant_id }})" 
-                                                style="background: none; border: none; cursor: pointer; padding: 4px; font-size: 1.2rem; color: #3B82F6;"
-                                                title="View assignment message">
-                                            📋
-                                        </button>
-                                    @endif
-                                </div>
+                        <td class="text-left" style="font-size: 13px; font-weight: normal;">
+                            <div class="applicant-info">
+                                <div class="applicant-name" style="font-weight: 500; color: #1F2937; margin-bottom: 4px;">{{ $applicant->first_name }} {{ $applicant->last_name }}</div>
+                                <div class="applicant-email" style="font-size: 12px; color: #6B7280;">{{ $applicant->email_address }}</div>
                                 @if($interview && $interview->assignment_notes)
+                                    <button type="button" 
+                                            onclick="toggleAssignmentInfo({{ $applicant->applicant_id }})" 
+                                            style="background: none; border: none; cursor: pointer; padding: 4px; font-size: 1.2rem; color: #3B82F6; margin-top: 4px;"
+                                            title="View assignment message">
+                                        📋
+                                    </button>
                                     <div id="assignment-info-{{ $applicant->applicant_id }}" 
                                          style="display: none; margin-top: 8px; padding: 10px; background: #F3F4F6; border-radius: 6px; font-size: 0.875rem; color: #374151;">
                                         <strong style="color: #1F2937;">Assignment Message:</strong><br>
@@ -99,34 +104,47 @@
                                 @endif
                             </div>
                         </td>
-                        <td class="text-center">{{ $applicant->application_no }}</td>
-                        <td class="text-center">
+                        <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                            <div class="applicant-name" style="font-weight: 500; color: #1F2937;">{{ $applicant->application_no }}</div>
+                        </td>
+                        <td class="text-center" style="font-size: 13px; font-weight: normal;">
                             @php
                                 $examScore = $applicant->enrollassess_score ?? null;
                             @endphp
                             @if($examScore !== null)
-                                <span class="status-badge {{ $examScore >= 70 ? 'status-completed' : 'status-pending' }}">
-                                    {{ number_format($examScore, 1) }}%
-                                </span>
+                                <div class="applicant-name" style="font-weight: 500; color: #1F2937;">{{ number_format($examScore, 2) }}%</div>
                             @else
-                                <span class="status-badge status-pending">Pending</span>
+                                <span class="applicant-email" style="font-size: 12px; color: #6B7280;">-</span>
                             @endif
                         </td>
-                        <td class="text-center">
-                            <span class="status-badge status-{{ str_replace([' ', '-'], ['', ''], strtolower($applicant->status)) }}">
-                                {{ ucfirst(str_replace('-', ' ', $applicant->status)) }}
+                        <td class="text-center" style="padding: 6px 4px;">
+                            @php
+                                $status = $applicant->status;
+                                $statusMap = [
+                                    'exam-completed' => 'EXAM DONE',
+                                    'interview-available' => 'INTERVIEW READY',
+                                    'interview-scheduled' => 'INTERVIEW SET',
+                                    'interview-completed' => 'INTERVIEW DONE',
+                                    'admitted' => 'ADMITTED',
+                                    'rejected' => 'REJECTED',
+                                    'pending' => 'PENDING'
+                                ];
+                                $statusText = $statusMap[$status] ?? strtoupper(str_replace('-', ' ', $status));
+                            @endphp
+                            <span class="status-badge status-pending" style="font-size: 9px; padding: 2px 4px; border-radius: 3px; background: #fef3c7; color: #92400e; font-weight: 500; white-space: nowrap; display: inline-block;">
+                                {{ $statusText }}
                             </span>
                         </td>
-                        <td class="text-center">
+                        <td class="text-center" style="font-size: 13px; font-weight: normal;">
                             @if($interview && $interview->schedule_date)
-                                {{ $interview->schedule_date->format('M d, Y g:i A') }}
+                                <div class="applicant-name" style="font-weight: 500; color: #1F2937;">{{ $interview->schedule_date->format('M d, Y g:i A') }}</div>
                             @else
-                                <span style="color: #6B7280;">Not scheduled</span>
+                                <span class="applicant-email" style="font-size: 12px; color: #6B7280;">Not scheduled</span>
                             @endif
                         </td>
-                        <td>
+                        <td class="text-left" style="font-size: 13px; font-weight: normal; position: relative;">
                             @if($interview && $interview->interview_deadline_start && $interview->interview_deadline_end)
-                                <div style="font-size: 0.875rem;">
+                                <div style="font-size: 12px;">
                                     <div style="color: #374151; font-weight: 500;">
                                         {{ $interview->interview_deadline_start->format('M d, Y') }} - 
                                         {{ $interview->interview_deadline_end->format('M d, Y') }}
@@ -136,42 +154,109 @@
                                         $daysUntilEnd = $now->diffInDays($interview->interview_deadline_end, false);
                                     @endphp
                                     @if($interview->interview_deadline_end->isPast())
-                                        <span style="color: #DC2626; font-size: 0.813rem; font-weight: 600;">⚠️ Deadline passed</span>
+                                        <span style="color: #DC2626; font-size: 11px; font-weight: 600;">⚠️ Deadline passed</span>
                                     @elseif($daysUntilEnd <= 3 && $daysUntilEnd >= 0)
-                                        <span style="color: #F59E0B; font-size: 0.813rem; font-weight: 600;">⚠️ Due soon</span>
+                                        <span style="color: #F59E0B; font-size: 11px; font-weight: 600;">⚠️ Due soon</span>
                                     @endif
                                 </div>
                             @else
-                                <span style="color: #9CA3AF; font-size: 0.875rem;">No deadline set</span>
+                                <span style="color: #9CA3AF; font-size: 12px;">No deadline set</span>
                             @endif
-                        </td>
-                        <td class="text-center">
-                            @if($interview && $canSchedule)
-                                @if($hasCompletedExam)
-                                    <button type="button" class="btn btn-primary btn-small" 
-                                            onclick="openScheduleModal({{ $interview->interview_id }}, '{{ $applicant->first_name }} {{ $applicant->last_name }}')">
-                                        Schedule Interview
+                            <!-- Floating Actions -->
+                            <div id="actions-{{ $applicant->applicant_id }}" class="floating-actions" style="display: none;">
+                                @php
+                                    // Determine Schedule button state
+                                    $scheduleEnabled = $interview && $canSchedule && $hasCompletedExam;
+                                    $scheduleTooltip = "Schedule Interview";
+                                    if (!$scheduleEnabled) {
+                                        if (!$interview) {
+                                            $scheduleTooltip = "No interview assigned";
+                                        } elseif (!$hasCompletedExam) {
+                                            $scheduleTooltip = "Applicant must complete the exam first";
+                                        } elseif ($interview->schedule_date) {
+                                            $scheduleTooltip = "Interview already scheduled";
+                                        } else {
+                                            $scheduleTooltip = "Interview not available";
+                                        }
+                                    }
+                                    
+                                    // Determine Start button state
+                                    $startEnabled = in_array($applicant->status, ['exam-completed', 'interview-scheduled']);
+                                    $startTooltip = "Start Interview";
+                                    if (!$startEnabled) {
+                                        if ($applicant->status === 'interview-completed') {
+                                            $startTooltip = "Interview already completed";
+                                        } elseif ($applicant->status === 'pending') {
+                                            $startTooltip = "Applicant must complete the exam first";
+                                        } else {
+                                            $startTooltip = "Interview not ready";
+                                        }
+                                    }
+                                    
+                                    // Determine View button state
+                                    $viewEnabled = $applicant->status === 'interview-completed';
+                                    $viewTooltip = "View Interview";
+                                    if (!$viewEnabled) {
+                                        if (in_array($applicant->status, ['exam-completed', 'interview-scheduled'])) {
+                                            $viewTooltip = "Interview not completed yet";
+                                        } elseif ($applicant->status === 'pending') {
+                                            $viewTooltip = "Interview not started";
+                                        } else {
+                                            $viewTooltip = "Interview not completed";
+                                        }
+                                    }
+                                @endphp
+                                
+                                <!-- Schedule Button -->
+                                @if($scheduleEnabled)
+                                    <button type="button" 
+                                            class="action-btn action-btn-primary" 
+                                            onclick="openScheduleModal({{ $interview->interview_id }}, '{{ $applicant->first_name }} {{ $applicant->last_name }}')"
+                                            title="{{ $scheduleTooltip }}">
+                                        Schedule
                                     </button>
                                 @else
-                                    <span class="tooltip" data-tip="Cannot schedule: applicant must complete the exam">
-                                        <button type="button" class="btn btn-primary btn-small disabled" disabled title="Applicant must complete the exam">
-                                            Schedule Interview
-                                        </button>
+                                    <button type="button" 
+                                            class="action-btn action-btn-disabled tooltip" 
+                                            disabled
+                                            data-tip="{{ $scheduleTooltip }}"
+                                            title="{{ $scheduleTooltip }}">
+                                        Schedule
+                                    </button>
+                                @endif
+                                
+                                <!-- Start Button -->
+                                @if($startEnabled)
+                                    <a href="{{ route('instructor.interview.show', $applicant->applicant_id) }}" 
+                                       class="action-btn action-btn-primary"
+                                       title="{{ $startTooltip }}">
+                                        Start
+                                    </a>
+                                @else
+                                    <span class="action-btn action-btn-disabled tooltip" 
+                                          data-tip="{{ $startTooltip }}"
+                                          title="{{ $startTooltip }}"
+                                          style="cursor: not-allowed;">
+                                        Start
                                     </span>
                                 @endif
-                            @elseif(in_array($applicant->status, ['exam-completed', 'interview-scheduled']))
-                                <a href="{{ route('instructor.interview.show', $applicant->applicant_id) }}" 
-                                   class="btn btn-primary btn-small">
-                                    Start Interview
-                                </a>
-                            @elseif($applicant->status === 'interview-completed')
-                                <a href="{{ route('instructor.interview.show', $applicant->applicant_id) }}" 
-                                   class="btn btn-secondary btn-small">
-                                    View Interview
-                                </a>
-                            @else
-                                <span style="color: #6B7280; font-size: 0.875rem;">Waiting for exam</span>
-                            @endif
+                                
+                                <!-- View Button -->
+                                @if($viewEnabled)
+                                    <a href="{{ route('instructor.interview.show', $applicant->applicant_id) }}" 
+                                       class="action-btn action-btn-secondary"
+                                       title="{{ $viewTooltip }}">
+                                        View
+                                    </a>
+                                @else
+                                    <span class="action-btn action-btn-disabled tooltip" 
+                                          data-tip="{{ $viewTooltip }}"
+                                          title="{{ $viewTooltip }}"
+                                          style="cursor: not-allowed;">
+                                        View
+                                    </span>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                     @endforeach
@@ -186,9 +271,17 @@
         </div>
         @endif
     @else
-        <div class="empty-state">
-            <h3>No Applicants Found</h3>
-            <p>No applicants match your current search criteria. Try adjusting your filters or check back later.</p>
+        <div class="text-center py-5">
+            <div class="text-muted">
+                <h5>No applicants found</h5>
+                <p class="mb-0">
+                    @if(request()->hasAny(['search', 'status']))
+                        Try adjusting your search or filter criteria.
+                    @else
+                        No applicants have been assigned to you yet.
+                    @endif
+                </p>
+            </div>
         </div>
     @endif
 </div>

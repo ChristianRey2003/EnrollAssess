@@ -793,6 +793,8 @@ body.admin-page.instructor-portal .sidebar-subtitle::after {
 .user-info {
     flex: 1;
     text-align: left;
+    display: flex;
+    flex-direction: column;
 }
 
 .user-name {

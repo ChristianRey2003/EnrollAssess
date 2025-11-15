@@ -36,12 +36,46 @@ class ApplicantManager {
         // Load notifications if available
         if (window.notifications) {
             this.notifications = window.notifications;
-        } else {
-            console.warn('Notification system not loaded, falling back to alerts');
+        } else if (window.NotificationSystem) {
+            // Use NotificationSystem if available
             this.notifications = {
-                success: (msg) => alert(msg),
-                error: (msg) => alert('Error: ' + msg),
-                info: (msg) => alert(msg)
+                success: (msg) => window.NotificationSystem.success(msg),
+                error: (msg) => window.NotificationSystem.error(msg),
+                info: (msg, duration = 0) => {
+                    const id = Date.now();
+                    window.NotificationSystem.info(msg, duration || 5000);
+                    return id;
+                },
+                dismiss: (id) => {
+                    // NotificationSystem doesn't support dismiss, but we can try
+                    // This is a no-op for NotificationSystem
+                }
+            };
+        } else if (window.showSuccess && window.showError && window.showNotification) {
+            // Use global notification functions if available
+            this.notifications = {
+                success: (msg) => window.showSuccess(msg),
+                error: (msg) => window.showError(msg),
+                info: (msg, duration = 0) => {
+                    window.showNotification(msg, 'info');
+                    return Date.now();
+                },
+                dismiss: (id) => {
+                    // No-op for simple notifications
+                }
+            };
+        } else {
+            console.warn('Notification system not loaded, using console fallback');
+            this.notifications = {
+                success: (msg) => console.log('Success:', msg),
+                error: (msg) => console.error('Error:', msg),
+                info: (msg, duration = 0) => {
+                    console.info('Info:', msg);
+                    return Date.now();
+                },
+                dismiss: (id) => {
+                    // No-op
+                }
             };
         }
     }

@@ -20,8 +20,7 @@
             <!-- University Header -->
             <div class="auth-header">
                 <div class="university-logo">
-                    <!-- Replace 'logo.png' with your actual logo filename -->
-                    <img src="{{ asset('images/image-removebg-preview.png') }}" alt="University Logo" style="width: 60px; height: 60px; object-fit: contain;">
+                    <img src="{{ asset('images/evsu-logo.png') }}" alt="EVSU Logo" style="width: 60px; height: 60px; object-fit: contain;">
                 </div>
                 <h1 class="university-name">BSIT Entrance Examination</h1>
                 <p class="auth-subtitle">Computer Studies Department</p>

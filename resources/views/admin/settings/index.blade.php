@@ -1,10 +1,10 @@
 @extends('layouts.admin')
 
-@section('title', 'System Settings')
+@section('title', 'Email Settings')
 
 @php
-    $pageTitle = 'System Settings';
-    $pageSubtitle = 'Configure system-wide settings and preferences';
+    $pageTitle = 'Email Settings';
+    $pageSubtitle = 'Configure email settings and preferences';
 @endphp
 
 @push('styles')
@@ -26,92 +26,81 @@
         --transition: all 0.3s ease;
     }
 
-    .settings-container {
-        padding: 30px;
-        max-width: 1200px;
-        margin: 0 auto;
+    /* Override main-content padding for this page */
+    .main-content {
+        padding: 20px !important;
     }
 
-    .settings-tabs {
-        display: flex;
-        gap: 10px;
-        border-bottom: 2px solid var(--border-gray);
-        margin-bottom: 30px;
-        flex-wrap: wrap;
-    }
-
-    .tab-btn {
-        padding: 12px 24px;
-        background: transparent;
-        border: none;
-        color: var(--text-gray);
-        font-weight: 600;
-        font-size: 15px;
-        cursor: pointer;
-        border-bottom: 3px solid transparent;
-        transition: var(--transition);
-        white-space: nowrap;
-    }
-
-    .tab-btn:hover {
-        color: var(--primary-maroon);
-        background: rgba(128, 0, 32, 0.05);
-    }
-
-    .tab-btn.active {
-        color: var(--primary-maroon);
-        border-bottom-color: var(--primary-maroon);
-    }
-
-    .tab-content {
+    /* Hide default admin layout alerts on this page - we use floating notifications instead */
+    .main-content > .alert {
         display: none;
-        animation: fadeIn 0.3s ease;
     }
 
-    .tab-content.active {
-        display: block;
+    .settings-container {
+        width: 100%;
+        max-width: 100%;
     }
 
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
 
     .settings-card {
         background: var(--white);
-        border-radius: 12px;
-        padding: 30px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         border: 1px solid var(--border-gray);
         margin-bottom: 20px;
+    }
+
+    .settings-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid var(--border-gray);
     }
 
     .settings-card h3 {
         color: var(--primary-maroon);
         font-size: 18px;
         font-weight: 700;
-        margin: 0 0 20px 0;
-        padding-bottom: 15px;
-        border-bottom: 2px solid var(--border-gray);
+        margin: 0;
+    }
+
+    .settings-card-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px 20px;
     }
 
     .form-group {
-        margin-bottom: 20px;
+        margin-bottom: 0;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
     }
 
     .form-group label {
         display: block;
         font-weight: 600;
         color: var(--text-dark);
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         font-size: 14px;
     }
 
     .form-group .help-text {
         display: block;
-        font-size: 13px;
+        font-size: 12px;
         color: var(--text-gray);
-        margin-top: 5px;
+        margin-top: 4px;
+        line-height: 1.4;
     }
 
     .form-group input[type="text"],
@@ -120,11 +109,13 @@
     .form-group input[type="password"],
     .form-group select {
         width: 100%;
-        padding: 10px 15px;
-        border: 2px solid var(--border-gray);
-        border-radius: 8px;
+        padding: 6px 10px;
+        border: 1px solid var(--border-gray);
+        border-radius: 6px;
         font-size: 14px;
         transition: var(--transition);
+        height: 36px;
+        box-sizing: border-box;
     }
 
     .form-group input:focus,
@@ -162,7 +153,7 @@
 
     .btn {
         padding: 8px 14px;
-        border-radius: 8px;
+        border-radius: 6px;
         font-weight: 500;
         font-size: 12px;
         cursor: pointer;
@@ -171,6 +162,26 @@
         display: inline-flex;
         align-items: center;
         gap: 8px;
+    }
+
+    .btn-info {
+        background: var(--info-blue);
+        color: var(--white);
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+
+    .btn-info:hover {
+        background: #2563EB;
+    }
+
+    .btn-test-email {
+        background: var(--info-blue);
+        color: var(--white);
+    }
+
+    .btn-test-email:hover {
+        background: #2563EB;
     }
 
     .btn-primary {
@@ -205,29 +216,33 @@
         box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
     }
 
-    .test-email-section {
-        background: #EFF6FF;
-        border: 2px solid var(--info-blue);
-        border-radius: 8px;
-        padding: 20px;
-        margin-top: 20px;
-    }
-
-    .test-email-section h4 {
-        margin: 0 0 15px 0;
-        color: var(--info-blue);
-        font-size: 16px;
+    .test-email-modal .modal-body {
+        padding: 24px;
     }
 
     .test-email-form {
         display: flex;
-        gap: 10px;
-        align-items: flex-end;
+        flex-direction: column;
+        gap: 16px;
     }
 
     .test-email-form .form-group {
-        flex: 1;
         margin: 0;
+    }
+
+    .test-email-form .form-group label {
+        margin-bottom: 8px;
+    }
+
+    .test-email-form .form-group input {
+        width: 100%;
+    }
+
+    .test-email-form .form-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 8px;
     }
 
     .alert {
@@ -263,13 +278,203 @@
         pointer-events: none;
     }
 
+    /* Floating Notification */
+    .floating-notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 16px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 300px;
+        max-width: 500px;
+        transform: translateX(400px);
+        opacity: 0;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+
+    .floating-notification.show {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    .floating-notification.success {
+        background: rgba(5, 150, 105, 0.1);
+        color: var(--success-green);
+        border: 2px solid var(--success-green);
+    }
+
+    .floating-notification.error {
+        background: rgba(220, 38, 38, 0.1);
+        color: var(--danger-red);
+        border: 2px solid var(--danger-red);
+    }
+
+    .floating-notification .notification-icon {
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+
+    .floating-notification .notification-close {
+        margin-left: auto;
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        color: inherit;
+        opacity: 0.7;
+        padding: 0;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: var(--transition);
+    }
+
+    .floating-notification .notification-close:hover {
+        opacity: 1;
+        background: rgba(0, 0, 0, 0.1);
+    }
+
+    /* Modal styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .modal-overlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .modal-content {
+        background: var(--white);
+        border-radius: 12px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        position: relative;
+        animation: modalSlideIn 0.3s ease-out;
+        transform: translateY(-20px);
+        transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.show .modal-content {
+        transform: translateY(0);
+    }
+
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-50px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-gray);
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        color: var(--primary-maroon);
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: var(--text-gray);
+        cursor: pointer;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: var(--transition);
+    }
+
+    .modal-close:hover {
+        background: var(--light-gray);
+        color: var(--primary-maroon);
+    }
+
+    .modal-body {
+        padding: 24px;
+        color: var(--text-dark);
+        font-size: 14px;
+        line-height: 1.8;
+    }
+
+    .modal-body h4 {
+        color: var(--primary-maroon);
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0 0 12px 0;
+    }
+
+    .modal-body ul,
+    .modal-body ol {
+        margin: 0 0 20px 0;
+        padding-left: 20px;
+    }
+
+    .modal-body li {
+        margin-bottom: 8px;
+    }
+
+    .modal-body code {
+        background: #FEF3C7;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 13px;
+    }
+
+    .modal-body a {
+        color: #2563EB;
+        text-decoration: underline;
+    }
+
     @media (max-width: 768px) {
-        .settings-container {
-            padding: 15px;
+        .form-grid {
+            grid-template-columns: 1fr;
+            gap: 14px;
         }
 
-        .settings-tabs {
-            overflow-x: auto;
+        .form-group.full-width {
+            grid-column: 1;
         }
 
         .test-email-form {
@@ -284,269 +489,138 @@
             width: 100%;
             justify-content: center;
         }
+
+        .settings-card-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .settings-card-actions {
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .settings-card-actions .btn {
+            width: 100%;
+        }
+
+        .modal-content {
+            width: 95%;
+            margin: 20px;
+        }
+        
+        .modal-header,
+        .modal-body {
+            padding-left: 20px;
+            padding-right: 20px;
+        }
     }
 </style>
 @endpush
 
 @section('content')
 <div class="settings-container">
-    <!-- Success/Error Messages -->
-    @if (session('success'))
-        <div class="alert alert-success">
-            <span></span> {{ session('success') }}
-        </div>
-    @endif
-    @if (session('error'))
-        <div class="alert alert-error">
-            <span></span> {{ session('error') }}
-        </div>
-    @endif
-
-    <!-- Tabs -->
-    <div class="settings-tabs">
-        <button class="tab-btn active" onclick="switchTab('email')"> Email Settings</button>
-        <button class="tab-btn" onclick="switchTab('system')">️ System Defaults</button>
-        <button class="tab-btn" onclick="switchTab('exam')"> Exam Configuration</button>
-        <button class="tab-btn" onclick="switchTab('notifications')"> Notifications</button>
-        <button class="tab-btn" onclick="switchTab('interview')"> Interview Settings</button>
-    </div>
-
     <!-- Form -->
     <form method="POST" action="{{ route('admin.settings.update') }}" id="settingsForm">
         @csrf
         @method('PUT')
 
-        <!-- Email Settings Tab -->
-        <div id="email-tab" class="tab-content active">
-            <!-- SMTP/Gmail Setup Guide - Collapsible -->
-            <div id="smtp-guide" style="margin-bottom: 20px;">
-                <button type="button" onclick="toggleGmailGuide()" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #EFF6FF; border: 2px solid #3B82F6; border-radius: 8px; color: #1E40AF; font-weight: 600; font-size: 14px; cursor: pointer; width: 100%; transition: all 0.2s;">
-                    <span id="gmail-guide-icon" style="font-size: 20px; transition: transform 0.3s;">ℹ️</span>
-                    <span>Gmail SMTP Setup Guide (Click to expand)</span>
-                </button>
-                <div id="gmail-guide-content" style="display: none; margin-top: 15px; background: #F0F9FF; border: 1px solid #BAE6FD; border-radius: 8px; padding: 20px;">
-                    <div style="color: #1F2937; font-size: 14px; line-height: 1.8;">
-                        <p style="margin: 0 0 15px 0; font-weight: 600; color: #1E40AF;">Default Gmail Settings:</p>
-                        <ul style="margin: 0 0 20px 0; padding-left: 20px;">
-                            <li>Mail Driver: <code style="background: #FEF3C7; padding: 2px 6px; border-radius: 3px;">smtp</code></li>
-                            <li>SMTP Host: <code style="background: #FEF3C7; padding: 2px 6px; border-radius: 3px;">smtp.gmail.com</code></li>
-                            <li>SMTP Port: <code style="background: #FEF3C7; padding: 2px 6px; border-radius: 3px;">587</code> (TLS) or <code style="background: #FEF3C7; padding: 2px 6px; border-radius: 3px;">465</code> (SSL)</li>
-                            <li>Encryption: <code style="background: #FEF3C7; padding: 2px 6px; border-radius: 3px;">tls</code></li>
-                        </ul>
-                        <p style="margin: 0 0 15px 0; font-weight: 600; color: #1E40AF;">How to get Gmail App Password:</p>
-                        <ol style="margin: 0; padding-left: 20px;">
-                            <li>Go to <strong>Google Account → Security</strong></li>
-                            <li>Enable <strong>2-Step Verification</strong></li>
-                            <li>Go to <strong>App passwords</strong> section</li>
-                            <li>Select <strong>Mail</strong> and <strong>Other</strong></li>
-                            <li>Name it "EnrollAssess"</li>
-                            <li>Copy the 16-character password (e.g., <code style="background: #FEF3C7; padding: 2px 6px; border-radius: 3px;">abcd efgh ijkl mnop</code>)</li>
-                            <li>Paste it in the <strong>Password</strong> field below</li>
-                        </ol>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Amazon SES Setup Guide - Collapsible -->
-            <div id="ses-guide" style="margin-bottom: 20px; display: none;">
-                <button type="button" onclick="toggleSesGuide()" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #FEF3C7; border: 2px solid #F59E0B; border-radius: 8px; color: #92400E; font-weight: 600; font-size: 14px; cursor: pointer; width: 100%; transition: all 0.2s;">
-                    <span id="ses-guide-icon" style="font-size: 20px; transition: transform 0.3s;">☁️</span>
-                    <span>Amazon SES Setup Guide (Click to expand)</span>
-                </button>
-                <div id="ses-guide-content" style="display: none; margin-top: 15px; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 20px;">
-                    <div style="color: #1F2937; font-size: 14px; line-height: 1.8;">
-                        <p style="margin: 0 0 15px 0; font-weight: 600; color: #92400E;">What is Amazon SES?</p>
-                        <p style="margin: 0 0 15px 0;">Amazon Simple Email Service (SES) is a cloud-based email service for sending transactional and marketing emails. It's more reliable and scalable than SMTP for production use.</p>
-                        
-                        <p style="margin: 0 0 15px 0; font-weight: 600; color: #92400E;">Setup Steps:</p>
-                        <ol style="margin: 0 0 20px 0; padding-left: 20px;">
-                            <li>Sign up for AWS at <a href="https://aws.amazon.com" target="_blank" style="color: #2563EB;">aws.amazon.com</a></li>
-                            <li>Go to <strong>AWS Console → SES</strong></li>
-                            <li>Verify your sender email address or domain</li>
-                            <li>Create SMTP credentials or IAM user with SES permissions</li>
-                            <li>Copy <strong>Access Key ID</strong> and <strong>Secret Access Key</strong></li>
-                            <li>Choose your AWS region (Singapore recommended for Philippines)</li>
-                            <li>Paste credentials below</li>
-                        </ol>
-                        
-                        <p style="margin: 0 0 15px 0; font-weight: 600; color: #92400E;">⚠️ Important Notes:</p>
-                        <ul style="margin: 0; padding-left: 20px;">
-                            <li><strong>Sandbox Mode:</strong> New SES accounts start in sandbox mode. You can only send to verified email addresses.</li>
-                            <li><strong>Production Access:</strong> Request production access in AWS SES Console to send to any email address.</li>
-                            <li><strong>Region:</strong> <code style="background: #FEF3C7; padding: 2px 6px; border-radius: 3px;">ap-southeast-1</code> (Singapore) is recommended for best performance in Philippines.</li>
-                            <li><strong>Cost:</strong> First 62,000 emails/month are free, then $0.10 per 1,000 emails.</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
+        <!-- Email Settings -->
+        <div>
             <div class="settings-card">
-                <h3> Email Configuration</h3>
+                <div class="settings-card-header">
+                    <h3>Email Configuration</h3>
+                    <div class="settings-card-actions">
+                        <button type="button" class="btn btn-info" onclick="openSesGuide()" id="ses-guide-btn" style="display: none;">
+                            <span>☁️</span> Amazon SES Setup Guide
+                        </button>
+                        <button type="button" class="btn btn-test-email" onclick="openTestEmailModal()">
+                            <span>🧪</span> Test Email
+                        </button>
+                    </div>
+                </div>
                 
-                @foreach($emailSettings as $setting)
+                <div class="form-grid">
                     @php
-                        // Determine field grouping for show/hide logic
-                        $isSmtpField = in_array($setting->key, ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_encryption']);
-                        $isSesField = in_array($setting->key, ['aws_access_key_id', 'aws_secret_access_key', 'aws_region']);
-                        $fieldClass = '';
-                        if ($isSmtpField) {
-                            $fieldClass = 'smtp-field';
-                        } elseif ($isSesField) {
-                            $fieldClass = 'ses-field';
+                        // Reorder fields for optimal layout: Mailer|Region, From Address|From Name, Access Key ID|Secret Access Key
+                        $orderedKeys = ['mail_mailer', 'aws_region', 'mail_from_address', 'mail_from_name', 'aws_access_key_id', 'aws_secret_access_key'];
+                        $orderedSettings = [];
+                        $otherSettings = [];
+                        
+                        // Separate ordered fields from others
+                        foreach ($emailSettings as $setting) {
+                            if (in_array($setting->key, $orderedKeys)) {
+                                $orderedSettings[$setting->key] = $setting;
+                            } else {
+                                $otherSettings[] = $setting;
+                            }
                         }
+                        
+                        // Build final ordered array
+                        $finalSettings = [];
+                        foreach ($orderedKeys as $key) {
+                            if (isset($orderedSettings[$key])) {
+                                $finalSettings[] = $orderedSettings[$key];
+                            }
+                        }
+                        // Add remaining fields
+                        $finalSettings = array_merge($finalSettings, $otherSettings);
                     @endphp
-                    
-                <div class="form-group {{ $fieldClass }}" @if($fieldClass) data-field-type="{{ $fieldClass }}" @endif>
-                    <label for="{{ $setting->key }}">{{ ucwords(str_replace('_', ' ', str_replace(['mail_', 'aws_'], '', $setting->key))) }}</label>
-                    
-                    @if($setting->type === 'select')
-                        @if($setting->key === 'mail_mailer')
-                            <select name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" onchange="toggleMailerFields()">
-                                <option value="smtp" {{ $setting->value === 'smtp' ? 'selected' : '' }}>SMTP (Gmail, etc.)</option>
-                                <option value="ses" {{ $setting->value === 'ses' ? 'selected' : '' }}>Amazon SES</option>
-                                <option value="sendmail" {{ $setting->value === 'sendmail' ? 'selected' : '' }}>Sendmail</option>
-                                <option value="mailgun" {{ $setting->value === 'mailgun' ? 'selected' : '' }}>Mailgun</option>
-                                <option value="log" {{ $setting->value === 'log' ? 'selected' : '' }}>Log (Testing)</option>
-                            </select>
-                        @elseif($setting->key === 'mail_encryption')
-                            <select name="settings[{{ $setting->key }}]" id="{{ $setting->key }}">
-                                <option value="tls" {{ $setting->value === 'tls' ? 'selected' : '' }}>TLS</option>
-                                <option value="ssl" {{ $setting->value === 'ssl' ? 'selected' : '' }}>SSL</option>
-                                <option value="" {{ $setting->value === '' ? 'selected' : '' }}>None</option>
-                            </select>
-                        @elseif($setting->key === 'aws_region')
-                            <select name="settings[{{ $setting->key }}]" id="{{ $setting->key }}">
-                                <option value="ap-southeast-1" {{ $setting->value === 'ap-southeast-1' ? 'selected' : '' }}>ap-southeast-1 (Singapore)</option>
-                                <option value="us-east-1" {{ $setting->value === 'us-east-1' ? 'selected' : '' }}>us-east-1 (N. Virginia)</option>
-                                <option value="us-west-2" {{ $setting->value === 'us-west-2' ? 'selected' : '' }}>us-west-2 (Oregon)</option>
-                                <option value="eu-west-1" {{ $setting->value === 'eu-west-1' ? 'selected' : '' }}>eu-west-1 (Ireland)</option>
-                                <option value="ap-northeast-1" {{ $setting->value === 'ap-northeast-1' ? 'selected' : '' }}>ap-northeast-1 (Tokyo)</option>
-                            </select>
-                        @endif
-                    @elseif($setting->type === 'password')
-                        <input type="password" name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" value="{{ $setting->value }}" placeholder="Leave blank to keep current">
-                    @elseif($setting->type === 'number')
-                        <input type="number" name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" value="{{ $setting->value }}">
-                    @else
-                        <input type="text" name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" value="{{ $setting->value }}">
-                    @endif
-                    
-                    @if($setting->description)
-                        <span class="help-text">{{ $setting->description }}</span>
-                    @endif
-                </div>
-                @endforeach
-            </div>
-
-            <!-- Test Email Section -->
-            <div class="test-email-section">
-                <h4>🧪 Test Email Configuration</h4>
-                <p style="color: var(--text-gray); font-size: 14px; margin-bottom: 15px;">
-                    Send a test email to verify your email configuration is working correctly.
-                </p>
-                <div class="test-email-form">
-                    <div class="form-group">
-                        <label for="test_email">Test Email Address</label>
-                        <input type="email" id="test_email" placeholder="your-email@example.com">
-                    </div>
-                    <button type="button" class="btn btn-test" onclick="sendTestEmail()">
-                        <span></span> Send Test Email
-                    </button>
-                </div>
-                <div id="test-email-result" style="margin-top: 15px;"></div>
-            </div>
-        </div>
-
-        <!-- System Settings Tab -->
-        <div id="system-tab" class="tab-content">
-            <div class="settings-card">
-                <h3>️ System Defaults</h3>
-                
-                @foreach($systemSettings as $setting)
-                <div class="form-group">
-                    <label for="{{ $setting->key }}">{{ ucwords(str_replace('_', ' ', str_replace('app_', '', $setting->key))) }}</label>
-                    
-                    @if($setting->type === 'select' && $setting->key === 'app_timezone')
-                        <select name="settings[{{ $setting->key }}]" id="{{ $setting->key }}">
-                            <option value="Asia/Manila" {{ $setting->value === 'Asia/Manila' ? 'selected' : '' }}>Asia/Manila (PHT)</option>
-                            <option value="UTC" {{ $setting->value === 'UTC' ? 'selected' : '' }}>UTC</option>
-                            <option value="America/New_York" {{ $setting->value === 'America/New_York' ? 'selected' : '' }}>America/New York (EST)</option>
-                        </select>
-                    @elseif($setting->type === 'number')
-                        <input type="number" name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" value="{{ $setting->value }}">
-                    @else
-                        <input type="text" name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" value="{{ $setting->value }}">
-                    @endif
-                    
-                    @if($setting->description)
-                        <span class="help-text">{{ $setting->description }}</span>
-                    @endif
-                </div>
-                @endforeach
-            </div>
-        </div>
-
-        <!-- Exam Settings Tab -->
-        <div id="exam-tab" class="tab-content">
-            <div class="settings-card">
-                <h3> Exam Configuration</h3>
-                
-                @foreach($examSettings as $setting)
-                    @if($setting->type === 'boolean')
-                        <div class="form-group checkbox">
-                            <input type="checkbox" name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" value="1" {{ $setting->value === 'true' ? 'checked' : '' }}>
-                            <label for="{{ $setting->key }}">{{ ucwords(str_replace('_', ' ', str_replace('exam_', '', $setting->key))) }}</label>
-                        </div>
-                        @if($setting->description)
-                            <span class="help-text" style="margin-left: 30px;">{{ $setting->description }}</span>
-                        @endif
-                    @else
-                        <div class="form-group">
-                            <label for="{{ $setting->key }}">{{ ucwords(str_replace('_', ' ', str_replace('exam_', '', $setting->key))) }}</label>
-                            <input type="number" name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" value="{{ $setting->value }}">
-                            @if($setting->description)
-                                <span class="help-text">{{ $setting->description }}</span>
+                    @foreach($finalSettings as $setting)
+                        @php
+                            // Determine field grouping for show/hide logic
+                            $isSmtpField = in_array($setting->key, ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_encryption']);
+                            $isSesField = in_array($setting->key, ['aws_access_key_id', 'aws_secret_access_key', 'aws_region']);
+                            $fieldClass = '';
+                            if ($isSmtpField) {
+                                $fieldClass = 'smtp-field';
+                            } elseif ($isSesField) {
+                                $fieldClass = 'ses-field';
+                            }
+                            // Fields that should be side-by-side (pairs): Mailer|Region, From Address|From Name, Access Key ID|Secret Access Key
+                            $sideBySideFields = ['mail_mailer', 'aws_region', 'mail_from_address', 'mail_from_name', 'aws_access_key_id', 'aws_secret_access_key'];
+                            $fullWidth = in_array($setting->key, $sideBySideFields) ? '' : 'full-width';
+                        @endphp
+                        
+                    <div class="form-group {{ $fieldClass }} {{ $fullWidth }}" @if($fieldClass) data-field-type="{{ $fieldClass }}" @endif>
+                        <label for="{{ $setting->key }}">{{ ucwords(str_replace('_', ' ', str_replace(['mail_', 'aws_'], '', $setting->key))) }}</label>
+                        
+                        @if($setting->type === 'select')
+                            @if($setting->key === 'mail_mailer')
+                                <select name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" onchange="toggleMailerFields()">
+                                    <option value="ses" {{ $setting->value === 'ses' ? 'selected' : '' }}>Amazon SES</option>
+                                    <option value="log" {{ $setting->value === 'log' ? 'selected' : '' }}>Log (Testing)</option>
+                                </select>
+                            @elseif($setting->key === 'mail_encryption')
+                                <select name="settings[{{ $setting->key }}]" id="{{ $setting->key }}">
+                                    <option value="tls" {{ $setting->value === 'tls' ? 'selected' : '' }}>TLS</option>
+                                    <option value="ssl" {{ $setting->value === 'ssl' ? 'selected' : '' }}>SSL</option>
+                                    <option value="" {{ $setting->value === '' ? 'selected' : '' }}>None</option>
+                                </select>
+                            @elseif($setting->key === 'aws_region')
+                                <select name="settings[{{ $setting->key }}]" id="{{ $setting->key }}">
+                                    <option value="ap-southeast-1" {{ $setting->value === 'ap-southeast-1' ? 'selected' : '' }}>ap-southeast-1 (Singapore)</option>
+                                    <option value="us-east-1" {{ $setting->value === 'us-east-1' ? 'selected' : '' }}>us-east-1 (N. Virginia)</option>
+                                    <option value="us-west-2" {{ $setting->value === 'us-west-2' ? 'selected' : '' }}>us-west-2 (Oregon)</option>
+                                    <option value="eu-west-1" {{ $setting->value === 'eu-west-1' ? 'selected' : '' }}>eu-west-1 (Ireland)</option>
+                                    <option value="ap-northeast-1" {{ $setting->value === 'ap-northeast-1' ? 'selected' : '' }}>ap-northeast-1 (Tokyo)</option>
+                                </select>
                             @endif
-                        </div>
-                    @endif
-                @endforeach
-            </div>
-        </div>
-
-        <!-- Notifications Tab -->
-        <div id="notifications-tab" class="tab-content">
-            <div class="settings-card">
-                <h3> Notification Preferences</h3>
-                <p style="color: var(--text-gray); margin-bottom: 20px;">
-                    Enable or disable automatic email notifications for various system events.
-                </p>
-                
-                @foreach($notificationSettings as $setting)
-                <div class="form-group checkbox">
-                    <input type="checkbox" name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" value="1" {{ $setting->value === 'true' ? 'checked' : '' }}>
-                    <label for="{{ $setting->key }}">{{ ucwords(str_replace('_', ' ', str_replace('notify_', '', $setting->key))) }}</label>
+                        @elseif($setting->type === 'password')
+                            <input type="password" name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" value="{{ $setting->value }}" placeholder="Leave blank to keep current">
+                        @elseif($setting->type === 'number')
+                            <input type="number" name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" value="{{ $setting->value }}">
+                        @else
+                            <input type="text" name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" value="{{ $setting->value }}">
+                        @endif
+                        
+                        @if($setting->description)
+                            <span class="help-text">{{ $setting->description }}</span>
+                        @endif
+                    </div>
+                    @endforeach
                 </div>
-                @if($setting->description)
-                    <span class="help-text" style="margin-left: 30px; display: block; margin-bottom: 15px;">{{ $setting->description }}</span>
-                @endif
-                @endforeach
-            </div>
-        </div>
-
-        <!-- Interview Settings Tab -->
-        <div id="interview-tab" class="tab-content">
-            <div class="settings-card">
-                <h3> Interview Configuration</h3>
-                
-                @foreach($interviewSettings as $setting)
-                <div class="form-group">
-                    <label for="{{ $setting->key }}">{{ ucwords(str_replace('_', ' ', str_replace('interview_', '', $setting->key))) }}</label>
-                    <input type="number" name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" value="{{ $setting->value }}">
-                    @if($setting->description)
-                        <span class="help-text">{{ $setting->description }}</span>
-                    @endif
-                </div>
-                @endforeach
             </div>
         </div>
 
@@ -561,34 +635,106 @@
         </div>
     </form>
 </div>
+
+<!-- Amazon SES Setup Guide Modal -->
+<div id="sesGuideModal" class="modal-overlay" onclick="closeSesGuide(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3>☁️ Amazon SES Setup Guide</h3>
+            <button type="button" class="modal-close" onclick="closeSesGuide()">×</button>
+        </div>
+        <div class="modal-body">
+            <h4>What is Amazon SES?</h4>
+            <p>Amazon Simple Email Service (SES) is a cloud-based email service for sending transactional and marketing emails. It's more reliable and scalable than SMTP for production use.</p>
+            
+            <h4>Setup Steps:</h4>
+            <ol>
+                <li>Sign up for AWS at <a href="https://aws.amazon.com" target="_blank">aws.amazon.com</a></li>
+                <li>Go to <strong>AWS Console → SES</strong></li>
+                <li>Verify your sender email address or domain</li>
+                <li>Create SMTP credentials or IAM user with SES permissions</li>
+                <li>Copy <strong>Access Key ID</strong> and <strong>Secret Access Key</strong></li>
+                <li>Choose your AWS region (Singapore recommended for Philippines)</li>
+                <li>Paste credentials below</li>
+            </ol>
+            
+            <h4>⚠️ Important Notes:</h4>
+            <ul>
+                <li><strong>Sandbox Mode:</strong> New SES accounts start in sandbox mode. You can only send to verified email addresses.</li>
+                <li><strong>Production Access:</strong> Request production access in AWS SES Console to send to any email address.</li>
+                <li><strong>Region:</strong> <code>ap-southeast-1</code> (Singapore) is recommended for best performance in Philippines.</li>
+                <li><strong>Cost:</strong> First 62,000 emails/month are free, then $0.10 per 1,000 emails.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Test Email Modal -->
+<div id="testEmailModal" class="modal-overlay" onclick="closeTestEmailModal(event)">
+    <div class="modal-content test-email-modal" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3>🧪 Test Email Configuration</h3>
+            <button type="button" class="modal-close" onclick="closeTestEmailModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <p style="color: var(--text-gray); font-size: 14px; margin-bottom: 20px;">
+                Send a test email to verify your email configuration is working correctly.
+            </p>
+            <div class="test-email-form">
+                <div class="form-group">
+                    <label for="test_email">Test Email Address</label>
+                    <input type="email" id="test_email" placeholder="your-email@example.com">
+                </div>
+                <div id="test-email-result"></div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeTestEmailModal()">
+                        <span></span> Cancel
+                    </button>
+                    <button type="button" class="btn btn-test" onclick="sendTestEmail()">
+                        <span></span> Send Test Email
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
 <script>
-    function toggleGmailGuide() {
-        const content = document.getElementById('gmail-guide-content');
-        const icon = document.getElementById('gmail-guide-icon');
-        
-        if (content.style.display === 'none') {
-            content.style.display = 'block';
-            icon.textContent = '📖';
-        } else {
-            content.style.display = 'none';
-            icon.textContent = 'ℹ️';
-        }
+    function openSesGuide() {
+        const modal = document.getElementById('sesGuideModal');
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
     }
 
-    function toggleSesGuide() {
-        const content = document.getElementById('ses-guide-content');
-        const icon = document.getElementById('ses-guide-icon');
-        
-        if (content.style.display === 'none') {
-            content.style.display = 'block';
-            icon.textContent = '📚';
-        } else {
-            content.style.display = 'none';
-            icon.textContent = '☁️';
-        }
+    function closeSesGuide(event) {
+        if (event && event.target !== event.currentTarget) return;
+        const modal = document.getElementById('sesGuideModal');
+        modal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    function openTestEmailModal() {
+        const modal = document.getElementById('testEmailModal');
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        // Clear previous results
+        document.getElementById('test-email-result').innerHTML = '';
+        // Focus on email input
+        setTimeout(() => {
+            document.getElementById('test_email').focus();
+        }, 100);
+    }
+
+    function closeTestEmailModal(event) {
+        if (event && event.target !== event.currentTarget) return;
+        const modal = document.getElementById('testEmailModal');
+        modal.classList.remove('show');
+        document.body.style.overflow = '';
+        // Clear form
+        document.getElementById('test_email').value = '';
+        document.getElementById('test-email-result').innerHTML = '';
     }
 
     function toggleMailerFields() {
@@ -598,51 +744,85 @@
         const smtpFields = document.querySelectorAll('.smtp-field');
         const sesFields = document.querySelectorAll('.ses-field');
         
-        // Get guide sections
-        const smtpGuide = document.getElementById('smtp-guide');
-        const sesGuide = document.getElementById('ses-guide');
+        // Get guide button
+        const sesGuideBtn = document.getElementById('ses-guide-btn');
         
         // Show/hide fields based on mailer type
-        if (mailerType === 'smtp') {
-            // Show SMTP fields, hide SES fields
-            smtpFields.forEach(field => field.style.display = 'block');
-            sesFields.forEach(field => field.style.display = 'none');
-            smtpGuide.style.display = 'block';
-            sesGuide.style.display = 'none';
-        } else if (mailerType === 'ses') {
+        if (mailerType === 'ses') {
             // Show SES fields, hide SMTP fields
             smtpFields.forEach(field => field.style.display = 'none');
             sesFields.forEach(field => field.style.display = 'block');
-            smtpGuide.style.display = 'none';
-            sesGuide.style.display = 'block';
+            if (sesGuideBtn) sesGuideBtn.style.display = 'inline-flex';
         } else {
-            // For other mailers (log, sendmail, etc.), hide both
+            // For log (testing), hide both
             smtpFields.forEach(field => field.style.display = 'none');
             sesFields.forEach(field => field.style.display = 'none');
-            smtpGuide.style.display = 'none';
-            sesGuide.style.display = 'none';
+            if (sesGuideBtn) sesGuideBtn.style.display = 'none';
         }
     }
+
+    // Close modals on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeSesGuide();
+            closeTestEmailModal();
+        }
+    });
 
     // Call on page load to set initial state
     document.addEventListener('DOMContentLoaded', function() {
         toggleMailerFields();
+        showFloatingNotification();
     });
 
-    function switchTab(tabName) {
-        // Remove active class from all tabs and content
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-        
-        // Add active class to selected tab and content
-        event.target.classList.add('active');
-        document.getElementById(tabName + '-tab').classList.add('active');
+    // Floating notification system
+    function showFloatingNotification() {
+        @if (session('success'))
+            createFloatingNotification('{{ session('success') }}', 'success');
+        @endif
+        @if (session('error'))
+            createFloatingNotification('{{ session('error') }}', 'error');
+        @endif
     }
+
+    function createFloatingNotification(message, type = 'success') {
+        // Remove any existing notifications
+        const existing = document.querySelector('.floating-notification');
+        if (existing) {
+            existing.remove();
+        }
+
+        const notification = document.createElement('div');
+        notification.className = `floating-notification ${type}`;
+        notification.innerHTML = `
+            <span class="notification-icon">${type === 'success' ? '✓' : '✕'}</span>
+            <span class="notification-message">${message}</span>
+            <button type="button" class="notification-close" onclick="this.parentElement.remove()">×</button>
+        `;
+
+        document.body.appendChild(notification);
+
+        // Trigger animation
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 100);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 300);
+        }, 5000);
+    }
+
 
     function sendTestEmail() {
         const email = document.getElementById('test_email').value;
         const resultDiv = document.getElementById('test-email-result');
-        const button = event.target;
+        const button = event.target.closest('.btn-test') || event.target;
         
         if (!email) {
             resultDiv.innerHTML = '<div class="alert alert-error"><span></span> Please enter an email address</div>';
@@ -670,6 +850,8 @@
             
             if (data.success) {
                 resultDiv.innerHTML = `<div class="alert alert-success"><span></span> ${data.message}</div>`;
+                // Clear email input on success
+                document.getElementById('test_email').value = '';
             } else {
                 resultDiv.innerHTML = `<div class="alert alert-error"><span></span> ${data.message}</div>`;
             }
@@ -699,4 +881,5 @@
     });
 </script>
 @endpush
+
 
