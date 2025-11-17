@@ -26,9 +26,9 @@
                 <h1>{{ $title }}</h1>
             @endif
             
-            @if($subtitle)
+            {{-- @if($subtitle)
                 <p class="header-subtitle">{{ $subtitle }}</p>
-            @endif
+            @endif --}}
         </div>
     </div>
     <div class="header-right">

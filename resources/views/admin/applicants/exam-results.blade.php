@@ -10,6 +10,36 @@
 @push('styles')
     <link href="{{ asset('css/admin/applicants.css') }}" rel="stylesheet">
     <style>
+        /* Breadcrumb Styles */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            margin-bottom: 20px;
+            padding: 0;
+        }
+
+        .breadcrumb-link {
+            color: #800020;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb-link:hover {
+            color: #5C0016;
+            text-decoration: underline;
+        }
+
+        .breadcrumb-separator {
+            margin: 0 8px;
+            color: #9CA3AF;
+        }
+
+        .breadcrumb-current {
+            color: #1F2937;
+            font-weight: 600;
+        }
         .score-badge {
             display: inline-block;
             padding: 4px 8px;
@@ -62,34 +92,6 @@
             background: #fee2e2;
         }
         
-        .stats-section {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 25px;
-        }
-        
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-        
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 5px;
-        }
-        
-        .stat-label {
-            font-size: 0.875rem;
-            color: #6b7280;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
         
         .results-toolbar {
             display: flex;
@@ -202,69 +204,79 @@
 @endpush
 
 @section('content')
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <a href="{{ route('admin.applicants.index') }}" class="breadcrumb-link">Applicants</a>
+        <span class="breadcrumb-separator">›</span>
+        <span class="breadcrumb-current">Exam Results</span>
+    </div>
+
     <!-- Statistics Section -->
     <section class="stats-section">
         <div class="stat-card">
+            <div class="stat-icon" aria-hidden="true"></div>
             <div class="stat-value">{{ $stats['qualifiers_count'] ?? 0 }}</div>
             <div class="stat-label">Qualifiers</div>
         </div>
         <div class="stat-card">
+            <div class="stat-icon" aria-hidden="true"></div>
             <div class="stat-value">{{ $stats['average_overall'] ?? 0 }}</div>
             <div class="stat-label">Avg Overall Rating</div>
         </div>
         <div class="stat-card">
+            <div class="stat-icon" aria-hidden="true"></div>
             <div class="stat-value">{{ $stats['average_uee'] ?? 0 }}</div>
             <div class="stat-label">Avg UEE</div>
         </div>
         <div class="stat-card">
+            <div class="stat-icon" aria-hidden="true"></div>
             <div class="stat-value">{{ $stats['average_gwa'] ?? 0 }}</div>
             <div class="stat-label">Avg GWA</div>
         </div>
     </section>
 
-    <!-- Results Toolbar -->
-    <div class="results-toolbar">
-        <div class="toolbar-left">
-            <div style="position: relative; width: 220px;">
-                <input type="text" 
-                       id="searchInput" 
-                       class="form-control form-control-sm" 
-                       placeholder="Search..." 
-                       value="{{ request('search') }}"
-                       style="width: 100%; height: 26px; padding: 4px 32px 4px 8px;"
-                       aria-label="Search applicants">
-                <svg style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
+    <!-- Results Container -->
+    <div class="applicants-container" style="background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); border: 1px solid #E5E7EB; overflow: hidden;">
+        <!-- Results Toolbar -->
+        <div class="results-toolbar" style="display: flex; justify-content: space-between; align-items: center; gap: 15px; padding: 20px; border-bottom: 1px solid #E5E7EB;">
+            <div class="toolbar-left" style="display: flex; align-items: center; gap: 10px;">
+                <div style="position: relative; width: 220px;">
+                    <input type="text" 
+                           id="searchInput" 
+                           class="form-control form-control-sm" 
+                           placeholder="Search..." 
+                           value="{{ request('search') }}"
+                           style="width: 100%; height: 26px; padding: 4px 32px 4px 8px;"
+                           aria-label="Search applicants">
+                    <svg style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+                <select id="statusFilter" class="form-select form-select-sm" onchange="applyFilter()" style="width: 180px; min-width: 180px; height: 40px; padding: 4px 28px 4px 8px;">
+                    <option value="">All Status</option>
+                    @foreach($statuses as $status)
+                        <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : '' }}>
+                            {{ ucwords(str_replace('-', ' ', $status)) }}
+                        </option>
+                    @endforeach
+                </select>
+                <select id="sortFilter" class="form-select form-select-sm" onchange="applySort()" style="width: 180px; min-width: 180px; height: 40px; padding: 4px 28px 4px 8px;">
+                    <option value="exam_completed_at_desc" {{ request('sort_by') == 'exam_completed_at' && request('sort_order') == 'desc' ? 'selected' : (!request('sort_by') ? 'selected' : '') }}>Newest First</option>
+                    <option value="exam_completed_at_asc" {{ request('sort_by') == 'exam_completed_at' && request('sort_order') == 'asc' ? 'selected' : '' }}>Oldest First</option>
+                    <option value="enrollassess_score_desc" {{ request('sort_by') == 'enrollassess_score' && request('sort_order') == 'desc' ? 'selected' : '' }}>Score: High to Low</option>
+                    <option value="enrollassess_score_asc" {{ request('sort_by') == 'enrollassess_score' && request('sort_order') == 'asc' ? 'selected' : '' }}>Score: Low to High</option>
+                    <option value="first_name_asc" {{ request('sort_by') == 'first_name' && request('sort_order') == 'asc' ? 'selected' : '' }}>Name: A to Z</option>
+                    <option value="first_name_desc" {{ request('sort_by') == 'first_name' && request('sort_order') == 'desc' ? 'selected' : '' }}>Name: Z to A</option>
+                </select>
             </div>
         </div>
-        <div class="toolbar-right">
-            <select id="statusFilter" class="form-select form-select-sm" onchange="applyFilter()" style="width: 140px; height: 26px; padding: 4px 28px 4px 8px;">
-                <option value="">All Status</option>
-                @foreach($statuses as $status)
-                    <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : '' }}>
-                        {{ ucwords(str_replace('-', ' ', $status)) }}
-                    </option>
-                @endforeach
-            </select>
-            <select id="sortFilter" class="form-select form-select-sm" onchange="applySort()" style="width: 140px; height: 26px; padding: 4px 28px 4px 8px;">
-                <option value="exam_completed_at_desc" {{ request('sort_by') == 'exam_completed_at' && request('sort_order') == 'desc' ? 'selected' : (!request('sort_by') ? 'selected' : '') }}>Newest First</option>
-                <option value="exam_completed_at_asc" {{ request('sort_by') == 'exam_completed_at' && request('sort_order') == 'asc' ? 'selected' : '' }}>Oldest First</option>
-                <option value="enrollassess_score_desc" {{ request('sort_by') == 'enrollassess_score' && request('sort_order') == 'desc' ? 'selected' : '' }}>Score: High to Low</option>
-                <option value="enrollassess_score_asc" {{ request('sort_by') == 'enrollassess_score' && request('sort_order') == 'asc' ? 'selected' : '' }}>Score: Low to High</option>
-                <option value="first_name_asc" {{ request('sort_by') == 'first_name' && request('sort_order') == 'asc' ? 'selected' : '' }}>Name: A to Z</option>
-                <option value="first_name_desc" {{ request('sort_by') == 'first_name' && request('sort_order') == 'desc' ? 'selected' : '' }}>Name: Z to A</option>
-            </select>
-            <a href="{{ route('admin.applicants.index') }}" class="btn btn-secondary btn-sm" style="height: 26px; display: inline-flex; align-items: center;">Back to Applicants</a>
-        </div>
-    </div>
 
-    <!-- Results Table -->
-    <div class="table-responsive">
-        <table class="table table-hover table-striped align-middle">
-            <thead class="table-light">
+        <!-- Results Table -->
+        <div class="table-responsive">
+            <table class="table table-hover table-striped align-middle">
+            <thead style="background-color: white !important; color: #1F2937 !important;">
                 <tr>
-                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-left">
+                    <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-left">
                         <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'first_name', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
                            style="color: inherit; text-decoration: none; font-weight: bold;">
                             Applicant
@@ -273,7 +285,7 @@
                             @endif
                         </a>
                     </th>
-                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">
+                    <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
                         <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'score', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
                            style="color: inherit; text-decoration: none; font-weight: bold;">
                             UEE
@@ -282,7 +294,7 @@
                             @endif
                         </a>
                     </th>
-                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">
+                    <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
                         <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'card_tor_gwa', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
                            style="color: inherit; text-decoration: none; font-weight: bold;">
                             GWA
@@ -291,7 +303,7 @@
                             @endif
                         </a>
                     </th>
-                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">
+                    <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
                         <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'enrollassess_score', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
                            style="color: inherit; text-decoration: none; font-weight: bold;">
                             EnrollAssess
@@ -300,7 +312,7 @@
                             @endif
                         </a>
                     </th>
-                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">
+                    <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
                         <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'interview_score', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
                            style="color: inherit; text-decoration: none; font-weight: bold;">
                             Interview
@@ -309,7 +321,7 @@
                             @endif
                         </a>
                     </th>
-                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">
+                    <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
                         <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'overall_rating', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
                            style="color: inherit; text-decoration: none; font-weight: bold;">
                             Overall
@@ -318,7 +330,7 @@
                             @endif
                         </a>
                     </th>
-                    <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">
+                    <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
                         <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'status', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
                            style="color: inherit; text-decoration: none; font-weight: bold;">
                             Status
@@ -430,7 +442,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="text-center py-5">
+                        <td colspan="8" class="text-center py-5">
                             <div class="text-muted">
                                 <h5>No exam results found</h5>
                                 <p class="mb-0">Only applicants who completed the EnrollAssess exam are shown here.</p>
@@ -440,14 +452,15 @@
                 @endforelse
             </tbody>
         </table>
-    </div>
-
-    <!-- Pagination -->
-    @if($applicants->hasPages())
-        <div style="margin-top: 20px; display: flex; justify-content: center;">
-            {{ $applicants->appends(request()->query())->links() }}
         </div>
-    @endif
+
+        <!-- Pagination -->
+        @if($applicants->hasPages())
+            <div class="pagination-wrapper" style="padding: 20px;">
+                {{ $applicants->appends(request()->query())->links() }}
+            </div>
+        @endif
+    </div>
 @endsection
 
 @push('scripts')
@@ -558,7 +571,7 @@ document.addEventListener('click', function(e) {
                 const from = data.pagination.from || 0;
                 
                 if (data.applicants.length === 0) {
-                    html = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #6b7280;">No exam results found. Only applicants who completed the EnrollAssess exam are shown here.</td></tr>';
+                    html = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">No exam results found. Only applicants who completed the EnrollAssess exam are shown here.</td></tr>';
                 } else {
                     data.applicants.forEach((applicant, index) => {
                         // This is a simplified version - you may need to adjust based on your actual data structure

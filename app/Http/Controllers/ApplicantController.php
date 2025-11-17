@@ -176,12 +176,12 @@ class ApplicantController extends BaseController
                     ]);
                     
                     // Dispatch interview scheduled event
-                    \App\Events\InterviewScheduled::dispatch($interview->load(['applicant', 'interviewer']));
+                    \App\Helpers\BroadcastHelper::safeDispatch(new \App\Events\InterviewScheduled($interview->load(['applicant', 'interviewer'])));
                 }
             });
 
             // Dispatch applicant created event
-            \App\Events\ApplicantCreated::dispatch($applicant);
+            \App\Helpers\BroadcastHelper::safeDispatch(new \App\Events\ApplicantCreated($applicant));
             
             // Dispatch statistics updated event
             $this->dispatchStatisticsUpdate();
@@ -242,6 +242,12 @@ class ApplicantController extends BaseController
 
         // Get overall rating
         $overallRating = $applicant->getOverallRating();
+        
+        // Add verbal description if overall rating exists
+        if ($overallRating) {
+            $scoringService = app(\App\Services\AdmissionScoringService::class);
+            $overallRating['verbal_description'] = $scoringService->getVerbalDescription($overallRating['overall_rating']);
+        }
 
         // Build timeline
         $timeline = [];
@@ -534,7 +540,7 @@ class ApplicantController extends BaseController
 
             // Dispatch events for imported applicants
             foreach ($importResults['imported_applicants'] as $applicant) {
-                \App\Events\ApplicantCreated::dispatch($applicant);
+                \App\Helpers\BroadcastHelper::safeDispatch(new \App\Events\ApplicantCreated($applicant));
             }
             
             // Dispatch statistics update event
@@ -1348,6 +1354,6 @@ class ApplicantController extends BaseController
             'without_access_codes' => Applicant::whereDoesntHave('accessCode')->count(),
         ];
 
-        \App\Events\StatisticsUpdated::dispatch($stats);
+        \App\Helpers\BroadcastHelper::safeDispatch(new \App\Events\StatisticsUpdated($stats));
     }
 }

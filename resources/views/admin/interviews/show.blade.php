@@ -121,7 +121,7 @@
                     <div style="margin-top: 8px; padding: 10px; background: #F0FDF4; border-radius: 4px; font-size: 0.75rem;">
                         <div style="margin-bottom: 4px;"><strong>UEE (60%):</strong> {{ number_format($components['uee']['weighted'], 2) }}</div>
                         <div style="margin-bottom: 4px;"><strong>GWA (30%):</strong> {{ number_format($components['gwa']['weighted'], 2) }}</div>
-                        <div><strong>Interview/Skill (10%):</strong> {{ number_format($components['interview_skill']['weighted'], 2) }}</div>
+                        <div><strong>Interview/Skill (10%):</strong> {{ number_format($components['interview_skill_combined']['weighted'], 2) }}</div>
                     </div>
                 @endif
             </div>

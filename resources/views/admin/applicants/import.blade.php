@@ -16,141 +16,144 @@
                     <span class="breadcrumb-current">Import</span>
                 </div>
 
-                <!-- Instructions Section -->
-                <div class="content-section">
-                    <div class="section-header">
-                        <h2 class="section-title">Import Instructions</h2>
-                    </div>
-                    <div class="section-content">
-                        <div class="import-instructions">
-                            <div class="instruction-step">
-                                <div class="step-number">1</div>
-                                <div class="step-content">
-                                    <h3>Download Template</h3>
-                                    <p>Start by downloading our CSV template with the correct format and sample data.</p>
-                                    <a href="{{ route('admin.applicants.download-template') }}" class="btn-secondary">
-                                        Download CSV Template
-                                    </a>
+                <!-- Two Column Layout -->
+                <div class="import-layout">
+                    <!-- Instructions Section -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <h2 class="section-title">Import Instructions</h2>
+                        </div>
+                        <div class="section-content">
+                            <div class="import-instructions">
+                                <div class="instruction-step">
+                                    <div class="step-number">1</div>
+                                    <div class="step-content">
+                                        <h3>Download Template</h3>
+                                        <p>Start by downloading our CSV template with the correct format and sample data.</p>
+                                        <a href="{{ route('admin.applicants.download-template') }}" class="btn-secondary">
+                                            Download CSV Template
+                                        </a>
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <div class="instruction-step">
-                                <div class="step-number">2</div>
-                                <div class="step-content">
-                                    <h3>Prepare Your Data</h3>
-                                    <p>Your CSV file should contain these exact column headers (only <strong>First Name</strong>, <strong>Last Name</strong>, and <strong>E-mail</strong> are required):</p>
-                                    <ul class="required-columns">
-                                        <li><strong>No.</strong> - Row number (auto-generated, can be left empty)</li>
-                                        <li><strong>Applicant No.</strong> - Application number (auto-generated if empty)</li>
-                                        <li><strong>Preferred Course</strong> - Course preference (optional)</li>
-                                        <li><strong>Last Name</strong> - Last name of the applicant (required)</li>
-                                        <li><strong>First Name</strong> - First name of the applicant (required)</li>
-                                        <li><strong>Middle Name</strong> - Middle name of the applicant (optional)</li>
-                                        <li><strong>E-mail</strong> - Valid email address (required, must be unique)</li>
-                                        <li><strong>Contact #</strong> - Phone/contact number (optional)</li>
-                                        <li><strong>Weighted Exam Percentage (60%)</strong> - Exam score (auto-calculated, can be left empty)</li>
-                                        <li><strong>Verbal Description</strong> - Performance description (auto-generated, can be left empty)</li>
-                                    </ul>
+                                
+                                <div class="instruction-step">
+                                    <div class="step-number">2</div>
+                                    <div class="step-content">
+                                        <h3>Prepare Your Data</h3>
+                                        <p>Your CSV file should contain these exact column headers (only <strong>First Name</strong>, <strong>Last Name</strong>, and <strong>E-mail</strong> are required):</p>
+                                        <ul class="required-columns">
+                                            <li><strong>No.</strong> - Row number (auto-generated, can be left empty)</li>
+                                            <li><strong>Applicant No.</strong> - Application number (auto-generated if empty)</li>
+                                            <li><strong>Preferred Course</strong> - Course preference (optional)</li>
+                                            <li><strong>Last Name</strong> - Last name of the applicant (required)</li>
+                                            <li><strong>First Name</strong> - First name of the applicant (required)</li>
+                                            <li><strong>Middle Name</strong> - Middle name of the applicant (optional)</li>
+                                            <li><strong>E-mail</strong> - Valid email address (required, must be unique)</li>
+                                            <li><strong>Contact #</strong> - Phone/contact number (optional)</li>
+                                            <li><strong>Weighted Exam Percentage (60%)</strong> - Exam score (auto-calculated, can be left empty)</li>
+                                            <li><strong>Verbal Description</strong> - Performance description (auto-generated, can be left empty)</li>
+                                        </ul>
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <div class="instruction-step">
-                                <div class="step-number">3</div>
-                                <div class="step-content">
-                                    <h3>Configure Import Settings</h3>
-                                    <p>Choose your import settings below, then upload your CSV file.</p>
+                                
+                                <div class="instruction-step">
+                                    <div class="step-number">3</div>
+                                    <div class="step-content">
+                                        <h3>Configure Import Settings</h3>
+                                        <p>Choose your import settings below, then upload your CSV file.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Import Form Section -->
-                <div class="content-section">
-                    <div class="section-header">
-                        <h2 class="section-title">Upload CSV File</h2>
-                    </div>
-                    <div class="section-content">
-                        <form id="importForm" enctype="multipart/form-data" class="import-form">
-                            @csrf
-                            
-                            <!-- File Upload -->
-                            <div class="form-group">
-                                <label for="csv_file" class="form-label required">CSV File</label>
-                                <div class="file-upload-area" id="fileUploadArea">
-                                    <input type="file" id="csv_file" name="csv_file" accept=".csv,.txt" required class="file-input">
-                                    <div class="upload-content">
-                                        <div class="upload-icon">
-                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                                <polyline points="14,2 14,8 20,8"/>
-                                                <line x1="16" y1="13" x2="8" y2="13"/>
-                                                <line x1="16" y1="17" x2="8" y2="17"/>
-                                                <polyline points="10,9 9,9 8,9"/>
-                                            </svg>
+                    <!-- Import Form Section -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <h2 class="section-title">Upload CSV File</h2>
+                        </div>
+                        <div class="section-content">
+                            <form id="importForm" enctype="multipart/form-data" class="import-form">
+                                @csrf
+                                
+                                <!-- File Upload -->
+                                <div class="form-group">
+                                    <label for="csv_file" class="form-label required">CSV File</label>
+                                    <div class="file-upload-area" id="fileUploadArea">
+                                        <input type="file" id="csv_file" name="csv_file" accept=".csv,.txt" required class="file-input">
+                                        <div class="upload-content">
+                                            <div class="upload-icon">
+                                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                    <polyline points="14,2 14,8 20,8"/>
+                                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                                    <line x1="16" y1="17" x2="8" y2="17"/>
+                                                    <polyline points="10,9 9,9 8,9"/>
+                                                </svg>
+                                            </div>
+                                            <div class="upload-text">
+                                                <strong>Click to browse</strong> or drag and drop your CSV file here
+                                            </div>
+                                            <div class="upload-hint">Maximum file size: 2MB</div>
                                         </div>
-                                        <div class="upload-text">
-                                            <strong>Click to browse</strong> or drag and drop your CSV file here
+                                    </div>
+                                    <div id="fileInfo" class="file-info" style="display: none;"></div>
+                                </div>
+
+                                <!-- Instructor Assignment -->
+                                <div class="form-group">
+                                    <label for="assigned_instructor_id" class="form-label">Assign Instructor (Optional)</label>
+                                    <select id="assigned_instructor_id" name="assigned_instructor_id" class="form-control">
+                                        <option value="">Assign instructor later</option>
+                                        @foreach($instructors as $instructor)
+                                            <option value="{{ $instructor->user_id }}">
+                                                {{ $instructor->full_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <div class="form-help">All imported applicants will be assigned to this exam set. You can change assignments later.<br><small class="text-muted">Note: If the exam set has a configured exam window, access will only be allowed during that time period.</small></div>
+                                </div>
+
+                                <!-- Access Code Settings -->
+                                <div class="form-group">
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="generate_access_codes" name="generate_access_codes" checked>
+                                        <label for="generate_access_codes" class="checkbox-label">
+                                            Generate access codes automatically
+                                        </label>
+                                    </div>
+                                    <div class="form-help">Recommended: Generate unique access codes for each applicant during import.</div>
+                                </div>
+
+                                <div class="form-group" id="accessCodeSettings">
+                                    <label for="access_code_expiry_days" class="form-label">Expires In (Days)</label>
+                                    <div class="duration-input-group">
+                                        <input type="number" id="access_code_expiry_days" name="access_code_expiry_days" class="form-control duration-input" value="30" min="1" max="365">
+                                        <span class="duration-label">days</span>
+                                        <div class="duration-presets">
+                                            <button type="button" onclick="setExpiry(7)" class="preset-btn">7 days</button>
+                                            <button type="button" onclick="setExpiry(30)" class="preset-btn">30 days</button>
+                                            <button type="button" onclick="setExpiry(60)" class="preset-btn">60 days</button>
+                                            <button type="button" onclick="setExpiry(90)" class="preset-btn">90 days</button>
                                         </div>
-                                        <div class="upload-hint">Maximum file size: 2MB</div>
                                     </div>
+                                    <div class="form-help">Access codes are single-use and will expire after this duration. Default: 30 days. Applicants can resume the same attempt if interrupted.</div>
                                 </div>
-                                <div id="fileInfo" class="file-info" style="display: none;"></div>
-                            </div>
 
-                            <!-- Instructor Assignment -->
-                            <div class="form-group">
-                                <label for="assigned_instructor_id" class="form-label">Assign Instructor (Optional)</label>
-                                <select id="assigned_instructor_id" name="assigned_instructor_id" class="form-control">
-                                    <option value="">Assign instructor later</option>
-                                    @foreach($instructors as $instructor)
-                                        <option value="{{ $instructor->user_id }}">
-                                            {{ $instructor->full_name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <div class="form-help">All imported applicants will be assigned to this exam set. You can change assignments later.<br><small class="text-muted">Note: If the exam set has a configured exam window, access will only be allowed during that time period.</small></div>
-                            </div>
-
-                            <!-- Access Code Settings -->
-                            <div class="form-group">
-                                <div class="checkbox-group">
-                                    <input type="checkbox" id="generate_access_codes" name="generate_access_codes" checked>
-                                    <label for="generate_access_codes" class="checkbox-label">
-                                        Generate access codes automatically
-                                    </label>
+                                <!-- Import Actions -->
+                                <div class="form-actions">
+                                    <a href="{{ route('admin.applicants.index') }}" class="btn-secondary">
+                                        Cancel
+                                    </a>
+                                    <button type="button" onclick="previewImport()" class="btn-secondary" id="previewBtn" disabled>
+                                        Preview Import
+                                    </button>
+                                    <button type="submit" class="btn-primary" id="importBtn" disabled>
+                                        Start Import
+                                    </button>
                                 </div>
-                                <div class="form-help">Recommended: Generate unique access codes for each applicant during import.</div>
-                            </div>
-
-                            <div class="form-group" id="accessCodeSettings">
-                                <label for="access_code_expiry_days" class="form-label">Expires In (Days)</label>
-                                <div class="duration-input-group">
-                                    <input type="number" id="access_code_expiry_days" name="access_code_expiry_days" class="form-control duration-input" value="30" min="1" max="365">
-                                    <span class="duration-label">days</span>
-                                    <div class="duration-presets">
-                                        <button type="button" onclick="setExpiry(7)" class="preset-btn">7 days</button>
-                                        <button type="button" onclick="setExpiry(30)" class="preset-btn">30 days</button>
-                                        <button type="button" onclick="setExpiry(60)" class="preset-btn">60 days</button>
-                                        <button type="button" onclick="setExpiry(90)" class="preset-btn">90 days</button>
-                                    </div>
-                                </div>
-                                <div class="form-help">Access codes are single-use and will expire after this duration. Default: 30 days. Applicants can resume the same attempt if interrupted.</div>
-                            </div>
-
-                            <!-- Import Actions -->
-                            <div class="form-actions">
-                                <a href="{{ route('admin.applicants.index') }}" class="btn-secondary">
-                                    ← Back to Applicants
-                                </a>
-                                <button type="button" onclick="previewImport()" class="btn-secondary" id="previewBtn" disabled>
-                                    Preview Import
-                                </button>
-                                <button type="submit" class="btn-primary" id="importBtn" disabled>
-                                    Start Import
-                                </button>
-                            </div>
-                        </form>
+                            </form>
+                        </div>
                     </div>
                 </div>
 
@@ -203,6 +206,14 @@
         const importBtn = document.getElementById('importBtn');
 
         fileInput.addEventListener('change', handleFileSelect);
+        
+        // Click handler for file upload area
+        fileUploadArea.addEventListener('click', (e) => {
+            // Only trigger if clicking on the upload area itself, not on child elements
+            if (e.target === fileUploadArea || e.target.closest('.upload-content')) {
+                fileInput.click();
+            }
+        });
         
         fileUploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -609,21 +620,76 @@
 
 @push('styles')
 <style>
+        /* Breadcrumb Styles */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            margin-bottom: 20px;
+            padding: 0;
+        }
+
+        .breadcrumb-link {
+            color: #800020;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb-link:hover {
+            color: #5C0016;
+            text-decoration: underline;
+        }
+
+        .breadcrumb-separator {
+            margin: 0 8px;
+            color: #9CA3AF;
+        }
+
+        .breadcrumb-current {
+            color: #1F2937;
+            font-weight: 600;
+        }
+
         /* Import page styles */
+        .import-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .import-layout .content-section {
+            margin-bottom: 0;
+        }
+
+        .content-section .section-header {
+            padding: 10px 10px;
+        }
+
+        .content-section .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--maroon-primary);
+        }
+
         .import-instructions {
-            padding: 20px;
+            padding: 12px;
         }
 
         .instruction-step {
             display: flex;
-            gap: 20px;
-            margin-bottom: 30px;
+            gap: 12px;
+            margin-bottom: 16px;
             align-items: flex-start;
         }
 
         .step-number {
-            width: 40px;
-            height: 40px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             background: var(--maroon-primary);
             color: var(--white);
@@ -631,39 +697,44 @@
             align-items: center;
             justify-content: center;
             font-weight: 600;
+            font-size: 14px;
             flex-shrink: 0;
         }
 
         .step-content h3 {
-            margin: 0 0 8px 0;
+            margin: 0 0 6px 0;
             color: var(--maroon-primary);
-            font-size: 18px;
+            font-size: 14px;
+            font-weight: 600;
         }
 
         .step-content p {
-            margin: 0 0 12px 0;
+            margin: 0 0 8px 0;
             color: var(--text-gray);
+            font-size: 13px;
             line-height: 1.5;
         }
 
         .required-columns {
-            margin: 12px 0;
-            padding-left: 20px;
+            margin: 8px 0;
+            padding-left: 16px;
         }
 
         .required-columns li {
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             color: var(--text-dark);
+            font-size: 13px;
+            line-height: 1.5;
         }
 
         .import-form {
-            padding: 30px;
+            padding: 16px;
         }
 
         .file-upload-area {
             border: 2px dashed var(--border-gray);
             border-radius: 12px;
-            padding: 40px 20px;
+            padding: 24px 16px;
             text-align: center;
             cursor: pointer;
             transition: var(--transition);
@@ -677,21 +748,29 @@
 
         .file-input {
             position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
             opacity: 0;
             cursor: pointer;
+            z-index: 2;
+        }
+
+        .upload-content {
+            position: relative;
+            z-index: 1;
         }
 
         .upload-icon {
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             opacity: 0.7;
             color: var(--text-gray);
         }
         
         .upload-icon svg {
-            width: 48px;
-            height: 48px;
+            width: 36px;
+            height: 36px;
         }
 
         .upload-text strong {
@@ -972,6 +1051,27 @@
             display: flex;
             gap: 12px;
             justify-content: center;
+        }
+
+        .form-actions .btn-primary,
+        .form-actions .btn-secondary {
+            padding: 8px 14px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        @media (max-width: 1024px) {
+            .import-layout {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media (max-width: 768px) {

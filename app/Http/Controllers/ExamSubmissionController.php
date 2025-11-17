@@ -123,7 +123,7 @@ class ExamSubmissionController extends Controller
             DB::commit();
 
             // Dispatch exam completed event
-            \App\Events\ExamCompleted::dispatch($applicant->fresh(), $scoreData['percentage']);
+            \App\Helpers\BroadcastHelper::safeDispatch(new \App\Events\ExamCompleted($applicant->fresh(), $scoreData['percentage']));
             
             // Dispatch statistics update event
             $this->dispatchStatisticsUpdate();
@@ -398,6 +398,6 @@ class ExamSubmissionController extends Controller
             'without_access_codes' => Applicant::whereDoesntHave('accessCode')->count(),
         ];
 
-        \App\Events\StatisticsUpdated::dispatch($stats);
+        \App\Helpers\BroadcastHelper::safeDispatch(new \App\Events\StatisticsUpdated($stats));
     }
 }

@@ -33,6 +33,9 @@
     <link rel="preload" href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet"></noscript>
 
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
     <!-- Admin CSS Bundle -->
     @vite(['resources/css/admin.css'])
     
@@ -60,9 +63,8 @@
         }
     </script>
     <style>
-        /* Hide sidebar immediately if collapsed state was saved */
-        html.sidebar-collapsed-init #adminSidebar,
-        html.sidebar-collapsed-init .admin-main {
+        /* Hide sidebar immediately if collapsed state was saved - but NOT the main content */
+        html.sidebar-collapsed-init #adminSidebar {
             visibility: hidden;
         }
     </style>
@@ -119,6 +121,9 @@
     <script>
         // Persist sidebar state - runs after DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
+            // Remove the init class to restore visibility
+            document.documentElement.classList.remove('sidebar-collapsed-init');
+            
             const isMobile = window.innerWidth <= 768;
             if (!isMobile) {
                 const sidebar = document.getElementById('adminSidebar');

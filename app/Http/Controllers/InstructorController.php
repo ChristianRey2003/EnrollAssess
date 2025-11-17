@@ -251,7 +251,7 @@ class InstructorController extends Controller
         ]);
 
         // Dispatch interview completed event
-        \App\Events\InterviewCompleted::dispatch($interview->load(['applicant', 'interviewer']));
+        \App\Helpers\BroadcastHelper::safeDispatch(new \App\Events\InterviewCompleted($interview->load(['applicant', 'interviewer'])));
         
         // Dispatch statistics update event
         $this->dispatchStatisticsUpdate();
@@ -535,7 +535,7 @@ class InstructorController extends Controller
         }
 
         // Dispatch interview scheduled event
-        \App\Events\InterviewScheduled::dispatch($interview->load(['applicant', 'interviewer']));
+        \App\Helpers\BroadcastHelper::safeDispatch(new \App\Events\InterviewScheduled($interview->load(['applicant', 'interviewer'])));
         
         // Dispatch statistics update event
         $this->dispatchStatisticsUpdate();
@@ -751,7 +751,7 @@ class InstructorController extends Controller
         }
 
         // Dispatch interview scheduled event (for rescheduling)
-        \App\Events\InterviewScheduled::dispatch($interview->load(['applicant', 'instructor']));
+        \App\Helpers\BroadcastHelper::safeDispatch(new \App\Events\InterviewScheduled($interview->load(['applicant', 'instructor'])));
 
         return response()->json([
             'success' => true,
@@ -778,6 +778,6 @@ class InstructorController extends Controller
             'without_access_codes' => \App\Models\Applicant::whereDoesntHave('accessCode')->count(),
         ];
 
-        \App\Events\StatisticsUpdated::dispatch($stats);
+        \App\Helpers\BroadcastHelper::safeDispatch(new \App\Events\StatisticsUpdated($stats));
     }
 }

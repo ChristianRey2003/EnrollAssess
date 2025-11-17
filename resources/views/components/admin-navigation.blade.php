@@ -33,7 +33,7 @@
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.dashboard') ? 'active' : '' }}"
                    @if(str_starts_with($currentRoute, 'admin.dashboard')) aria-current="page" @endif
                    aria-label="Dashboard - Main admin overview">
-                    <span class="nav-icon" aria-hidden="true"></span>
+                    <span class="nav-icon" aria-hidden="true"><i class="fas fa-tachometer-alt"></i></span>
                     <span class="nav-text">Dashboard</span>
                 </a>
             </div>
@@ -42,7 +42,7 @@
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.applicants') ? 'active' : '' }}"
                    @if(str_starts_with($currentRoute, 'admin.applicants')) aria-current="page" @endif
                    aria-label="Applicants - View and manage applicants">
-                    <span class="nav-icon" aria-hidden="true"></span>
+                    <span class="nav-icon" aria-hidden="true"><i class="fas fa-user-graduate"></i></span>
                     <span class="nav-text">Applicants</span>
                 </a>
             </div>
@@ -51,7 +51,7 @@
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.sets-questions') || str_starts_with($currentRoute, 'admin.exams') || str_starts_with($currentRoute, 'admin.questions') ? 'active' : '' }}"
                    @if(str_starts_with($currentRoute, 'admin.sets-questions') || str_starts_with($currentRoute, 'admin.exams') || str_starts_with($currentRoute, 'admin.questions')) aria-current="page" @endif
                    aria-label="Question Bank - Manage exam questions and sets">
-                    <span class="nav-icon" aria-hidden="true"></span>
+                    <span class="nav-icon" aria-hidden="true"><i class="fas fa-book"></i></span>
                     <span class="nav-text">Question Bank</span>
                 </a>
             </div>
@@ -61,7 +61,7 @@
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.interviews') && !str_contains($currentRoute, 'pool') ? 'active' : '' }}"
                    @if(str_starts_with($currentRoute, 'admin.interviews') && !str_contains($currentRoute, 'pool')) aria-current="page" @endif
                    aria-label="Interviews - Manage interview schedules and records">
-                    <span class="nav-icon" aria-hidden="true"></span>
+                    <span class="nav-icon" aria-hidden="true"><i class="fas fa-calendar-alt"></i></span>
                     <span class="nav-text">Interviews</span>
                 </a>
             </div>
@@ -71,7 +71,7 @@
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.users') ? 'active' : '' }}"
                    @if(str_starts_with($currentRoute, 'admin.users')) aria-current="page" @endif
                    aria-label="Users - Manage system users and permissions">
-                    <span class="nav-icon" aria-hidden="true"></span>
+                    <span class="nav-icon" aria-hidden="true"><i class="fas fa-users-cog"></i></span>
                     <span class="nav-text">Users</span>
                 </a>
             </div>
@@ -80,7 +80,7 @@
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.reports') ? 'active' : '' }}"
                    @if(str_starts_with($currentRoute, 'admin.reports')) aria-current="page" @endif
                    aria-label="Reports - View system reports and analytics">
-                    <span class="nav-icon" aria-hidden="true"></span>
+                    <span class="nav-icon" aria-hidden="true"><i class="fas fa-chart-bar"></i></span>
                     <span class="nav-text">Reports</span>
                 </a>
             </div>
@@ -90,7 +90,7 @@
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.settings') ? 'active' : '' }}"
                    @if(str_starts_with($currentRoute, 'admin.settings')) aria-current="page" @endif
                    aria-label="Settings - System configuration and preferences">
-                    <span class="nav-icon" aria-hidden="true"></span>
+                    <span class="nav-icon" aria-hidden="true"><i class="fas fa-cog"></i></span>
                     <span class="nav-text">Settings</span>
                 </a>
             </div>
@@ -102,7 +102,7 @@
                    class="nav-link {{ str_starts_with($currentRoute, 'instructor.dashboard') ? 'active' : '' }}"
                    @if(str_starts_with($currentRoute, 'instructor.dashboard')) aria-current="page" @endif
                    aria-label="Dashboard - Instructor overview">
-                    <span class="nav-icon" aria-hidden="true"></span>
+                    <span class="nav-icon" aria-hidden="true"><i class="fas fa-tachometer-alt"></i></span>
                     <span class="nav-text">Dashboard</span>
                 </a>
             </div>
@@ -112,7 +112,7 @@
                    class="nav-link {{ str_starts_with($currentRoute, 'instructor.applicants') ? 'active' : '' }}"
                    @if(str_starts_with($currentRoute, 'instructor.applicants')) aria-current="page" @endif
                    aria-label="My assigned applicants">
-                    <span class="nav-icon" aria-hidden="true"></span>
+                    <span class="nav-icon" aria-hidden="true"><i class="fas fa-user-graduate"></i></span>
                     <span class="nav-text">My Applicants</span>
                 </a>
             </div>
@@ -121,7 +121,7 @@
                    class="nav-link {{ str_starts_with($currentRoute, 'instructor.schedule') ? 'active' : '' }}"
                    @if(str_starts_with($currentRoute, 'instructor.schedule')) aria-current="page" @endif
                    aria-label="Interview schedule">
-                    <span class="nav-icon" aria-hidden="true"></span>
+                    <span class="nav-icon" aria-hidden="true"><i class="fas fa-calendar-alt"></i></span>
                     <span class="nav-text">Schedule</span>
                 </a>
             </div>
@@ -130,7 +130,7 @@
                    class="nav-link {{ str_starts_with($currentRoute, 'instructor.interview-history') ? 'active' : '' }}"
                    @if(str_starts_with($currentRoute, 'instructor.interview-history')) aria-current="page" @endif
                    aria-label="Interview history and records">
-                    <span class="nav-icon" aria-hidden="true"></span>
+                    <span class="nav-icon" aria-hidden="true"><i class="fas fa-history"></i></span>
                     <span class="nav-text">Interview History</span>
                 </a>
             </div>
@@ -139,7 +139,7 @@
                    class="nav-link {{ str_starts_with($currentRoute, 'instructor.guidelines') ? 'active' : '' }}"
                    @if(str_starts_with($currentRoute, 'instructor.guidelines')) aria-current="page" @endif
                    aria-label="Interview guidelines and standards">
-                    <span class="nav-icon" aria-hidden="true"></span>
+                    <span class="nav-icon" aria-hidden="true"><i class="fas fa-file-alt"></i></span>
                     <span class="nav-text">Guidelines</span>
                 </a>
             </div>

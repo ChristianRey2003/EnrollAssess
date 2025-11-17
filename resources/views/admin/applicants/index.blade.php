@@ -62,6 +62,86 @@
             background: #047857;
         }
 
+        /* Dropdown Menu Styles */
+        .actions-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-toggle {
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid #E9ECEF;
+            background: #F8F9FA;
+            color: #1F2937;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .dropdown-toggle:hover {
+            background: #E9ECEF;
+            border-color: #800020;
+            color: #800020;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 4px;
+            background: white;
+            border: 1px solid #E5E7EB;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            min-width: 180px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .actions-dropdown.active .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-item {
+            display: block;
+            padding: 10px 16px;
+            color: #374151;
+            font-size: 13px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.15s;
+            border: none;
+            width: 100%;
+            text-align: left;
+            background: none;
+        }
+
+        .dropdown-item:hover {
+            background: #F9FAFB;
+            color: #800020;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: #E5E7EB;
+            margin: 4px 0;
+        }
+
+        .dropdown-item-icon {
+            display: inline-block;
+            margin-right: 8px;
+            vertical-align: middle;
+            width: 16px;
+            height: 16px;
+        }
+
         /* Pagination spacing */
         .pagination-wrapper {
             display: flex;
@@ -179,6 +259,19 @@
                 font-size: 12px !important;
             }
         }
+
+        /* Drawer Header Override */
+        .drawer-header {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 10px 10px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
     </style>
 @endpush
 
@@ -237,29 +330,65 @@
                                 <option value="interview-completed" {{ request('status') == 'interview-completed' ? 'selected' : '' }}>Interview Completed</option>
                             </select>
                         </div>
-                        <div class="toolbar-right" style="display: flex; align-items: center; gap: 8px;">
-                            <a href="{{ route('admin.applicants.assign') }}" 
-                               class="btn btn-primary" 
-                               style="white-space: nowrap;">Assign</a>
-                            <a href="{{ route('admin.applicants.exam-results') }}" 
-                               class="btn btn-success" 
-                               style="white-space: nowrap;">Exam Results</a>
+                        <div class="toolbar-right" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <!-- Most Common Actions - Keep Visible for Better UX -->
                             <a href="{{ route('admin.applicants.create') }}" 
-                               class="btn btn-secondary" 
-                               style="white-space: nowrap;">Add</a>
+                               class="btn btn-primary" 
+                               style="white-space: nowrap;">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                Add
+                            </a>
+                            
                             <a href="{{ route('admin.applicants.import') }}" 
                                class="btn btn-secondary" 
-                               style="white-space: nowrap;">Import</a>
-                            <button onclick="showGenerateAccessCodesModal()" 
-                                    class="btn" 
-                                    style="white-space: nowrap; background: #3b82f6; color: white; border: none;">
-                                Generate Codes
-                            </button>
-                            <button onclick="openEmailNotificationDrawer()" 
-                                    class="btn" 
-                                    style="white-space: nowrap; background: #059669; color: white; border: none;">
-                                Send Notifications
-                            </button>
+                               style="white-space: nowrap;">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 4px;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                                </svg>
+                                Import
+                            </a>
+                            
+                            <a href="{{ route('admin.applicants.assign') }}" 
+                               class="btn btn-success" 
+                               style="white-space: nowrap;">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 4px;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                                </svg>
+                                Assign
+                            </a>
+                            
+                            <!-- Less Frequent Actions - In Dropdown -->
+                            <div class="actions-dropdown" id="moreActionsDropdown">
+                                <button type="button" class="dropdown-toggle" onclick="toggleDropdown('moreActionsDropdown')">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+                                    </svg>
+                                    More
+                                </button>
+                                <div class="dropdown-menu">
+                                    <a href="{{ route('admin.applicants.exam-results') }}" class="dropdown-item" onclick="toggleDropdown('moreActionsDropdown')">
+                                        <svg class="dropdown-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        Exam Results
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                    <button type="button" class="dropdown-item" onclick="showGenerateAccessCodesModal(); toggleDropdown('moreActionsDropdown');">
+                                        <svg class="dropdown-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                                        </svg>
+                                        Generate Codes
+                                    </button>
+                                    <button type="button" class="dropdown-item" onclick="openEmailNotificationDrawer(); toggleDropdown('moreActionsDropdown');">
+                                        <svg class="dropdown-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                        </svg>
+                                        Send Notifications
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -550,6 +679,22 @@
             
             window.location.href = url.toString();
         }
+
+        // Toggle dropdown menu
+        function toggleDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            dropdown.classList.toggle('active');
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdowns = document.querySelectorAll('.actions-dropdown');
+            dropdowns.forEach(dropdown => {
+                if (!dropdown.contains(event.target)) {
+                    dropdown.classList.remove('active');
+                }
+            });
+        });
 
         function showActions(applicantId) {
             document.getElementById('actions-' + applicantId).style.display = 'flex';

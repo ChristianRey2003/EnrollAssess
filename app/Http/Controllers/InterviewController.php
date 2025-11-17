@@ -129,7 +129,7 @@ class InterviewController extends Controller
                  ->update(['status' => 'interview-scheduled']);
 
         // Dispatch interview scheduled event
-        \App\Events\InterviewScheduled::dispatch($interview->load(['applicant', 'interviewer']));
+        \App\Helpers\BroadcastHelper::safeDispatch(new \App\Events\InterviewScheduled($interview->load(['applicant', 'interviewer'])));
         
         // Dispatch statistics update event
         $this->dispatchStatisticsUpdate();
@@ -840,6 +840,6 @@ class InterviewController extends Controller
             'without_access_codes' => \App\Models\Applicant::whereDoesntHave('accessCode')->count(),
         ];
 
-        \App\Events\StatisticsUpdated::dispatch($stats);
+        \App\Helpers\BroadcastHelper::safeDispatch(new \App\Events\StatisticsUpdated($stats));
     }
 }

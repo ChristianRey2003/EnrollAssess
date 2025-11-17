@@ -148,9 +148,6 @@
 
     .table-header-controls .form-input,
     .table-header-controls .form-select {
-        width: 220px;
-        padding: 6px 12px;
-        height: 36px;
         border: 1px solid #D1D5DB;
         border-radius: 6px;
         font-size: 0.875rem;
@@ -458,6 +455,10 @@
             align-items: stretch;
             width: 100%;
             gap: 10px;
+        }
+
+        .table-header-controls > div[style*="position: relative"] {
+            width: 100% !important;
         }
 
         .table-header-controls .form-input,

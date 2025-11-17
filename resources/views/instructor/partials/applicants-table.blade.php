@@ -17,19 +17,27 @@
     <div class="table-header">
         <h2 class="table-title">Assigned Applicants ({{ $assignedApplicants->total() }})</h2>
         <form class="table-header-controls" id="applicantFiltersForm" method="GET" action="{{ route('instructor.applicants') }}">
-            <input
-                type="text"
-                name="search"
-                id="searchApplicantsInput"
-                class="form-input"
-                placeholder="Search applicants..."
-                value="{{ request('search') }}"
-                autocomplete="off"
-            >
+            <div style="position: relative; width: 220px;">
+                <input
+                    type="text"
+                    name="search"
+                    id="searchApplicantsInput"
+                    class="form-input"
+                    placeholder="Search..."
+                    value="{{ request('search') }}"
+                    autocomplete="off"
+                    style="width: 100%; height: 40px; padding: 4px 32px 4px 8px;"
+                    aria-label="Search applicants"
+                >
+                <svg style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </div>
             <select
                 name="status"
                 class="form-select"
                 aria-label="Filter by status"
+                style="width: 180px; min-width: 180px; height: 40px; padding: 4px 28px 4px 8px;"
             >
                 <option value="">All Status</option>
                 <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>

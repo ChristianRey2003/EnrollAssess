@@ -13,7 +13,7 @@
                     <div class="section-header">
                         <h2 class="section-title">Primary Reports</h2>
                     </div>
-                    <div class="section-content" style="padding: 20px;">
+                    <div class="section-content" style="padding: 16px;">
                         <div class="primary-reports-grid">
                             <!-- EVSU Entrance Results XLSX -->
                             <div class="primary-report-card">
@@ -1041,15 +1041,15 @@
         /* Primary Reports Grid */
         .primary-reports-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
         }
 
         .primary-report-card {
             background: linear-gradient(135deg, #FFF9E6 0%, var(--white) 100%);
             border: 2px solid var(--yellow-primary);
             border-radius: 8px;
-            padding: 20px;
+            padding: 16px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
             transition: var(--transition);
         }
@@ -1063,7 +1063,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .report-card-header .report-card-icon {
@@ -1071,7 +1071,7 @@
         }
 
         .report-card-header .report-card-title {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
             color: var(--maroon-primary);
             margin: 0;
@@ -1087,19 +1087,19 @@
         .export-form {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
         }
 
         .form-row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
         }
 
         .form-group {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 5px;
         }
 
         .help-text {
@@ -1109,14 +1109,14 @@
         }
 
         .btn-primary-export {
-            padding: 10px 20px;
+            padding: 8px 16px;
             background: linear-gradient(135deg, var(--maroon-primary) 0%, var(--maroon-light) 100%);
             color: var(--white);
             border: none;
             border-radius: 6px;
             cursor: pointer;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 12px;
             transition: var(--transition);
             box-shadow: 0 2px 6px rgba(128, 0, 32, 0.2);
         }

@@ -9,6 +9,37 @@
 
 @push('styles')
 <style>
+    /* Breadcrumb Styles */
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        margin-bottom: 20px;
+        padding: 0;
+    }
+
+    .breadcrumb-link {
+        color: #800020;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s ease;
+    }
+
+    .breadcrumb-link:hover {
+        color: #5C0016;
+        text-decoration: underline;
+    }
+
+    .breadcrumb-separator {
+        margin: 0 8px;
+        color: #9CA3AF;
+    }
+
+    .breadcrumb-current {
+        color: #1F2937;
+        font-weight: 600;
+    }
+
     /* Remove horizontal padding from main-content to allow proper centering with header */
     /* This only affects this page to ensure assign-container aligns with header */
     .admin-main .main-content {
@@ -577,6 +608,13 @@
 
 @section('content')
 <div class="assign-container">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <a href="{{ route('admin.applicants.index') }}" class="breadcrumb-link">Applicants</a>
+        <span class="breadcrumb-separator">›</span>
+        <span class="breadcrumb-current">Assign</span>
+    </div>
+
     <div class="assign-grid">
         <!-- Left Panel: Applicants List -->
         <div class="assign-left">

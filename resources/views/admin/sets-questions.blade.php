@@ -15,14 +15,15 @@
     }
 
     .section-header {
+        padding: 10px 10px;
+        border-bottom: 1px solid var(--border-gray);
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 16px;
     }
 
     .section-title {
-        font-size: 25px;
+        font-size: 20px;
         font-weight: 600;
         color: #1f2937;
         margin: 0;
@@ -31,6 +32,101 @@
     .section-actions {
         display: flex;
         gap: 8px;
+        position: relative;
+    }
+
+    /* Dropdown Menu Styles */
+    .actions-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .dropdown-toggle {
+        padding: 8px 14px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid #d1d5db;
+        background: white;
+        color: #6b7280;
+        transition: all 0.15s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .dropdown-toggle:hover {
+        background: #f9fafb;
+        border-color: #991b1b;
+        color: #991b1b;
+    }
+
+    .dropdown-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 4px;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        min-width: 180px;
+        z-index: 1000;
+        overflow: hidden;
+    }
+
+    .actions-dropdown.active .dropdown-menu {
+        display: block;
+    }
+
+    .dropdown-item {
+        display: block;
+        padding: 10px 16px;
+        color: #374151;
+        font-size: 13px;
+        text-decoration: none;
+        cursor: pointer;
+        transition: background 0.15s;
+        border: none;
+        width: 100%;
+        text-align: left;
+        background: none;
+    }
+
+    .dropdown-item:hover {
+        background: #f9fafb;
+        color: #991b1b;
+    }
+
+    .dropdown-divider {
+        height: 1px;
+        background: #e5e7eb;
+        margin: 4px 0;
+    }
+
+    /* Icon button for overview */
+    .btn-icon-only {
+        padding: 6px 10px;
+        border-radius: 4px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid #d1d5db;
+        background: white;
+        color: #6b7280;
+        transition: all 0.15s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+    }
+
+    .btn-icon-only:hover {
+        background: #f9fafb;
+        border-color: #991b1b;
+        color: #991b1b;
     }
 
     .btn-primary, .btn-outline, .btn-success, .btn-secondary {
@@ -401,7 +497,7 @@
     }
 
     .drawer-header {
-        padding: 20px 24px;
+        padding: 10px 20px;
         border-bottom: 1px solid #e5e7eb;
         display: flex;
         justify-content: space-between;
@@ -477,7 +573,7 @@
 
     textarea.form-control {
         resize: vertical;
-        min-height: 80px;
+        min-height: 60px;
     }
 
     .error-message {
@@ -520,9 +616,30 @@
         </div>
         <div class="section-actions">
             @if($currentExam)
-                <button type="button" onclick="showNewSemesterDrawer()" class="btn-outline">
-                    Add Question Bank
-                </button>
+                <div class="actions-dropdown" id="headerActionsDropdown">
+                    <button type="button" class="dropdown-toggle" onclick="toggleDropdown('headerActionsDropdown')">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+                        </svg>
+                        Actions
+                    </button>
+                    <div class="dropdown-menu">
+                        <button type="button" class="dropdown-item" onclick="showNewSemesterDrawer(); toggleDropdown('headerActionsDropdown');">
+                            <svg width="16" height="16" style="display: inline-block; margin-right: 8px; vertical-align: middle;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Add Question Bank
+                        </button>
+                        <div class="dropdown-divider"></div>
+                        <button type="button" class="dropdown-item" onclick="openEditSettingsDrawer(); toggleDropdown('headerActionsDropdown');">
+                            <svg width="16" height="16" style="display: inline-block; margin-right: 8px; vertical-align: middle;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            Exam Settings
+                        </button>
+                    </div>
+                </div>
             @else
                 <button onclick="showCreateExamModal()" class="btn-primary">
                     Setup First Exam
@@ -544,8 +661,8 @@
                 @endif
             </div>
             <div style="display: flex; gap: 6px; align-items: center;">
-                <button onclick="toggleOverviewPanel()" class="btn-outline" style="padding: 4px 10px; font-size: 13px;">
-                    <span id="overviewToggleIcon">▼</span> Overview
+                <button onclick="toggleOverviewPanel()" class="btn-icon-only" title="Toggle Overview">
+                    <span id="overviewToggleIcon">▼</span>
                 </button>
                 @if(!$currentExam->is_active)
                     <button onclick="publishExam({{ $currentExam->exam_id }})" class="btn-success" style="padding: 4px 10px; font-size: 13px;">
@@ -661,12 +778,12 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
                     </div>
-                    <select class="form-select form-select-sm" name="type" id="typeFilter" onchange="this.form.submit()" style=" width: 150px; padding: 4px 28px 4px 8px;">
+                    <select class="form-select form-select-sm" name="type" id="typeFilter" onchange="this.form.submit()" style="width: 180px; min-width: 180px; height: 40px; padding: 4px 28px 4px 8px;">
                         <option value="">All Types</option>
                         <option value="multiple_choice" {{ request('type') === 'multiple_choice' ? 'selected' : '' }}>Multiple Choice</option>
                         <option value="true_false" {{ request('type') === 'true_false' ? 'selected' : '' }}>True/False</option>
                     </select>
-                    <select class="form-select form-select-sm" name="status" id="statusFilter" onchange="this.form.submit()" style=" width: 120px; padding: 4px 28px 4px 8px;">
+                    <select class="form-select form-select-sm" name="status" id="statusFilter" onchange="this.form.submit()" style="width: 180px; min-width: 180px; height: 40px; padding: 4px 28px 4px 8px;">
                         <option value="">All Status</option>
                         <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
                         <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
@@ -674,11 +791,11 @@
                 </div>
                 @if($currentExam)
                 <div class="toolbar-right">
-                    <button type="button" onclick="showAddQuestionModal()" class="btn-primary" style="padding: 4px 10px; font-size: 13px; height: 26px; display: inline-flex; align-items: center;">
+                    <button type="button" onclick="showAddQuestionModal()" class="btn-primary" style="padding: 8px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 500; transition: var(--transition); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
                         Add Question
-                    </button>
-                    <button type="button" onclick="openEditSettingsDrawer()" class="btn-outline" style="padding: 4px 10px; font-size: 13px; height: 26px; display: inline-flex; align-items: center;">
-                        Exam Setting
                     </button>
                 </div>
                 @endif
@@ -715,23 +832,11 @@
                     <div style="display: flex; align-items: start; gap: 12px; flex: 1;">
                         <input type="checkbox" class="question-checkbox" value="{{ $question->question_id }}" onchange="updateBulkActions()" style="margin-top: 4px; cursor: pointer;">
                         <div class="question-content" style="flex: 1;">
-                            <div class="question-header">
-                                <span class="question-number">Q{{ $question->order_number ?? ($loop->iteration + ($questions->currentPage() - 1) * $questions->perPage()) }}</span>
-                                <span class="question-type-badge type-{{ $question->question_type }}">
-                                    {{ str_replace('_', ' ', $question->question_type) }}
-                                </span>
-                                @if(!$question->is_active)
-                                    <span class="status-badge status-draft">Draft</span>
-                                @endif
-                            </div>
-                            <div class="question-text">{{ $question->question_text }}</div>
+                            <div class="question-text" style="margin-bottom: 6px;">{{ $question->question_text }}</div>
                             <div class="question-meta">
-                                <span>Points: {{ $question->points }}</span>
-                                @if($question->options->count() > 0)
-                                    <span>Options: {{ $question->options->count() }}</span>
-                                @endif
-                                @if($question->order_number)
-                                    <span>Order: {{ $question->order_number }}</span>
+                                <span>Type: {{ ucwords(str_replace('_', ' ', $question->question_type)) }} Points: {{ $question->points }}</span>
+                                @if(!$question->is_active)
+                                    <span class="status-badge status-draft" style="margin-left: 8px;">Draft</span>
                                 @endif
                             </div>
                         </div>
@@ -801,7 +906,7 @@
 
                 <div class="form-group">
                     <label class="form-label">Question Text</label>
-                    <textarea class="form-control" name="question_text" id="questionText" rows="4" required></textarea>
+                    <textarea class="form-control" name="question_text" id="questionText" rows="3" required></textarea>
                 </div>
 
                 <div class="form-group">
@@ -816,7 +921,7 @@
 
                 <div class="form-group">
                     <label class="form-label">Explanation (Optional)</label>
-                    <textarea class="form-control" name="explanation" id="questionExplanation" rows="3"></textarea>
+                    <textarea class="form-control" name="explanation" id="questionExplanation" rows="2"></textarea>
                 </div>
 
                 <div id="optionsContainer" style="display: none;">
@@ -1015,7 +1120,7 @@
                     <textarea class="form-control" 
                               id="exam_description" 
                               name="description" 
-                              rows="3" 
+                              rows="2" 
                               placeholder="Brief description of this exam..."
                               style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px; resize: vertical;"></textarea>
                     <span class="error-message" id="exam_error_description" style="color: #ef4444; font-size: 12px; margin-top: 4px; display: block;"></span>
@@ -1073,6 +1178,22 @@
 
 @push('scripts')
 <script>
+    // Toggle dropdown menu
+    function toggleDropdown(dropdownId) {
+        const dropdown = document.getElementById(dropdownId);
+        dropdown.classList.toggle('active');
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(event) {
+        const dropdowns = document.querySelectorAll('.actions-dropdown');
+        dropdowns.forEach(dropdown => {
+            if (!dropdown.contains(event.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+    });
+
     // Toggle overview panel
     function toggleOverviewPanel() {
         const panel = document.getElementById('overviewPanel');

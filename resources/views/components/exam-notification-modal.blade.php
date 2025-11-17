@@ -9,99 +9,70 @@
     <div class="drawer-body">
         <!-- Selected Applicants Info -->
         <div style="background: #f3f4f6; padding: 12px; border-radius: 6px; margin-bottom: 20px;">
-            <div style="font-weight: 600; margin-bottom: 4px;">Selected Applicants</div>
-            <div style="font-size: 14px; color: #6b7280;">
+            <div style="font-weight: 600; font-size: 12px; margin-bottom: 4px;">Selected Applicants</div>
+            <div style="font-size: 12px; color: #6b7280;">
                 <span id="emailSelectedCount">0</span> applicant(s) will receive this email
             </div>
         </div>
 
-        <!-- Important Notice -->
-        <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px; margin-bottom: 20px;">
-            <div style="font-weight: 600; color: #1e40af; margin-bottom: 4px;">What This Email Contains:</div>
-            <ul style="margin: 8px 0; padding-left: 20px; font-size: 14px; color: #1e40af;">
-                <li>Application number</li>
-                <li>Exam date and time</li>
-                <li>Exam venue/room information</li>
-                <li>Their unique access code</li>
-                <li>Link to the exam portal</li>
-                <li>Special instructions (if provided)</li>
-                <li>Important instructions and reminders</li>
-            </ul>
-        </div>
-
         <!-- Exam Date -->
         <div style="margin-bottom: 20px;">
-            <label for="examDate" style="font-weight: 600; margin-bottom: 8px; display: block;">
+            <label for="examDate" style="font-weight: 600; font-size: 12px; margin-bottom: 8px; display: block;">
                 Exam Date <span style="color: #ef4444;">*</span>
             </label>
             <input type="date" 
                    id="examDate" 
                    class="form-control" 
                    required
-                   style="width: 100%;">
-            <small style="color: #6b7280; font-size: 12px;">The scheduled date for the examination</small>
+                   style="width: 100%; font-size: 12px;">
+            <small style="color: #6b7280; font-size: 11px;">The scheduled date for the examination</small>
         </div>
 
         <!-- Exam Time -->
         <div style="margin-bottom: 20px;">
-            <label for="examTime" style="font-weight: 600; margin-bottom: 8px; display: block;">
+            <label for="examTime" style="font-weight: 600; font-size: 12px; margin-bottom: 8px; display: block;">
                 Exam Time <span style="color: #ef4444;">*</span>
             </label>
             <input type="time" 
                    id="examTime" 
                    class="form-control" 
                    required
-                   style="width: 100%;">
-            <small style="color: #6b7280; font-size: 12px;">Start time of the examination</small>
+                   style="width: 100%; font-size: 12px;">
+            <small style="color: #6b7280; font-size: 11px;">Start time of the examination</small>
         </div>
 
         <!-- Exam Venue -->
         <div style="margin-bottom: 20px;">
-            <label for="examVenue" style="font-weight: 600; margin-bottom: 8px; display: block;">
+            <label for="examVenue" style="font-weight: 600; font-size: 12px; margin-bottom: 8px; display: block;">
                 Exam Venue/Room
             </label>
             <input type="text" 
                    id="examVenue" 
                    class="form-control" 
                    placeholder="e.g., Computer Laboratory 1, Room 203"
-                   style="width: 100%;">
-            <small style="color: #6b7280; font-size: 12px;">Location where the exam will be held (optional)</small>
+                   style="width: 100%; font-size: 12px;">
+            <small style="color: #6b7280; font-size: 11px;">Location where the exam will be held (optional)</small>
         </div>
 
         <!-- Special Instructions -->
         <div style="margin-bottom: 20px;">
-            <label for="specialInstructions" style="font-weight: 600; margin-bottom: 8px; display: block;">
+            <label for="specialInstructions" style="font-weight: 600; font-size: 12px; margin-bottom: 8px; display: block;">
                 Special Instructions
             </label>
             <textarea id="specialInstructions" 
                       class="form-control" 
                       rows="4"
                       placeholder="Additional notes or instructions for the applicants (optional)"
-                      style="width: 100%; resize: vertical;"></textarea>
-            <small style="color: #6b7280; font-size: 12px;">Optional custom instructions that will appear in the email</small>
-        </div>
-
-        <!-- Preview Info -->
-        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; margin-bottom: 20px;">
-            <div style="font-weight: 600; margin-bottom: 8px; font-size: 14px;">Email Preview</div>
-            <div style="font-size: 13px; color: #4b5563; line-height: 1.5;">
-                Each applicant will receive a personalized email with:
-                <ul style="margin: 8px 0; padding-left: 20px;">
-                    <li>Their full name and application number</li>
-                    <li>Exam date, time, and venue details</li>
-                    <li>Their unique access code</li>
-                    <li>Your special instructions (if provided)</li>
-                    <li>Direct link to login page</li>
-                </ul>
-            </div>
+                      style="width: 100%; resize: vertical; font-size: 12px;"></textarea>
+            <small style="color: #6b7280; font-size: 11px;">Optional custom instructions that will appear in the email</small>
         </div>
 
         <!-- Warning for Missing Requirements -->
         <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px;">
-            <div style="font-weight: 600; color: #92400e; margin-bottom: 4px;"> Requirements Check</div>
-            <div style="font-size: 13px; color: #78350f;">
+            <div style="font-weight: 600; font-size: 12px; color: #92400e; margin-bottom: 4px;"> Requirements Check</div>
+            <div style="font-size: 12px; color: #78350f;">
                 Applicants must have:
-                <ul style="margin: 8px 0; padding-left: 20px;">
+                <ul style="margin: 8px 0; padding-left: 20px; font-size: 12px;">
                     <li><strong>Access code generated</strong></li>
                     <li><strong>Valid email address</strong></li>
                 </ul>
@@ -166,7 +137,7 @@
     }
 
     .drawer-title {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 600;
         color: #1f2937;
         margin: 0;

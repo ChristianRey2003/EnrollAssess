@@ -26,6 +26,37 @@
         --transition: all 0.3s ease;
     }
 
+    /* Breadcrumb Styles */
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        margin-bottom: 20px;
+        padding: 0;
+    }
+
+    .breadcrumb-link {
+        color: #800020;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s ease;
+    }
+
+    .breadcrumb-link:hover {
+        color: #5C0016;
+        text-decoration: underline;
+    }
+
+    .breadcrumb-separator {
+        margin: 0 8px;
+        color: #9CA3AF;
+    }
+
+    .breadcrumb-current {
+        color: #1F2937;
+        font-weight: 600;
+    }
+
     /* Override main-content padding for this page */
     .main-content {
         padding: 20px !important;
@@ -291,6 +322,13 @@
 @endpush
 
 @section('content')
+<!-- Breadcrumb -->
+<div class="breadcrumb">
+    <a href="{{ route('admin.users.index') }}" class="breadcrumb-link">Users</a>
+    <span class="breadcrumb-separator">›</span>
+    <span class="breadcrumb-current">{{ $user->full_name }}</span>
+</div>
+
 <div class="user-detail-container">
     <!-- User Profile Card -->
     <div class="user-profile-card">

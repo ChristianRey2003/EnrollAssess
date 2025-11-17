@@ -9,9 +9,48 @@
 
 @push('styles')
     <link href="{{ asset('css/admin/applicants.css') }}" rel="stylesheet">
+    <style>
+        /* Breadcrumb Styles */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            margin-bottom: 20px;
+            padding: 0;
+        }
+
+        .breadcrumb-link {
+            color: #800020;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb-link:hover {
+            color: #5C0016;
+            text-decoration: underline;
+        }
+
+        .breadcrumb-separator {
+            margin: 0 8px;
+            color: #9CA3AF;
+        }
+
+        .breadcrumb-current {
+            color: #1F2937;
+            font-weight: 600;
+        }
+    </style>
 @endpush
 
 @section('content')
+
+<!-- Breadcrumb -->
+<div class="breadcrumb">
+    <a href="{{ route('admin.applicants.index') }}" class="breadcrumb-link">Applicants</a>
+    <span class="breadcrumb-separator">›</span>
+    <span class="breadcrumb-current">{{ isset($applicant) ? 'Edit' : 'Add' }}</span>
+</div>
 
 <!-- Main Content -->
 <div class="content-section">
