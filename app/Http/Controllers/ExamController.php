@@ -6,10 +6,12 @@ use App\Models\Exam;
 use App\Models\Question;
 use App\Models\Applicant;
 use App\Models\Result;
+use App\Models\ExamAttempt;
 use App\Services\QuestionSelectionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Session;
 
 class ExamController extends Controller
 {
@@ -469,7 +471,36 @@ class ExamController extends Controller
                 ], 400);
             }
             
-            // Select random questions for this applicant (per-examinee randomization)
+            // Check for existing active attempt (resume functionality)
+            $existingAttempt = ExamAttempt::getActiveAttempt($applicant->applicant_id, $exam->exam_id);
+            
+            if ($existingAttempt && $existingAttempt->canBeResumed()) {
+                // Resume existing attempt
+                $examSession = [
+                    'applicant_id' => $applicant->applicant_id,
+                    'exam_id' => $exam->exam_id,
+                    'attempt_id' => $existingAttempt->attempt_id,
+                    'attempt_token' => $existingAttempt->attempt_token,
+                    'question_ids' => $existingAttempt->question_ids,
+                    'started_at' => $existingAttempt->started_at->toDateTimeString(),
+                    'duration_minutes' => $existingAttempt->duration_minutes,
+                    'current_section' => $existingAttempt->current_section,
+                    'sections_completed' => $existingAttempt->sections_completed ?? [],
+                    'answers' => $existingAttempt->answers ?? []
+                ];
+                
+                session(['exam_session' => $examSession]);
+                
+                return response()->json([
+                    'success' => true,
+                    'resumed' => true,
+                    'message' => 'Resuming your previous exam attempt.',
+                    'exam_session' => $examSession,
+                    'redirect_url' => route('exam.interface')
+                ]);
+            }
+            
+            // Create new attempt
             $selectedQuestions = $selectionService->selectQuestionsForApplicant(
                 $exam, 
                 $applicant->applicant_id
@@ -478,13 +509,29 @@ class ExamController extends Controller
             // Store selected question IDs in session for consistency
             $questionIds = $selectedQuestions->pluck('question_id')->toArray();
             
+            // Create exam attempt record in database
+            $examAttempt = ExamAttempt::create([
+                'applicant_id' => $applicant->applicant_id,
+                'exam_id' => $exam->exam_id,
+                'question_ids' => $questionIds,
+                'started_at' => now(),
+                'duration_minutes' => $exam->duration_minutes ?? 30,
+                'current_section' => 0,
+                'sections_completed' => [],
+                'answers' => [],
+                'status' => 'in_progress',
+                'violation_count' => 0,
+            ]);
+            
             // Initialize exam session
             $examSession = [
                 'applicant_id' => $applicant->applicant_id,
                 'exam_id' => $exam->exam_id,
-                'question_ids' => $questionIds, // Store for reload consistency
-                'started_at' => now()->toDateTimeString(),
-                'duration_minutes' => $exam->duration_minutes ?? 30,
+                'attempt_id' => $examAttempt->attempt_id,
+                'attempt_token' => $examAttempt->attempt_token,
+                'question_ids' => $questionIds,
+                'started_at' => $examAttempt->started_at->toDateTimeString(),
+                'duration_minutes' => $examAttempt->duration_minutes,
                 'current_section' => 0,
                 'sections_completed' => [],
                 'answers' => []
@@ -494,6 +541,7 @@ class ExamController extends Controller
             
             return response()->json([
                 'success' => true,
+                'resumed' => false,
                 'exam_session' => $examSession,
                 'redirect_url' => route('exam.interface')
             ]);
@@ -514,7 +562,7 @@ class ExamController extends Controller
         $examSession = session('exam_session');
         
         if (!$examSession) {
-            // Check if applicant is in session, if so redirect to start exam
+            // Try to resume from database (recovery after shutdown)
             $applicantId = $request->session()->get('applicant_id');
             if ($applicantId) {
                 // Check if applicant has already completed the exam
@@ -524,12 +572,44 @@ class ExamController extends Controller
                         ->with('info', 'You have already completed the exam.');
                 }
                 
-                return redirect()->route('exam.pre-requirements')
-                    ->with('info', 'Please complete the pre-requirements to start your exam.');
+                // Try to find active exam attempt in database
+                $exam = Exam::where('is_active', true)->first();
+                if ($exam) {
+                    $activeAttempt = ExamAttempt::getActiveAttempt($applicantId, $exam->exam_id);
+                    
+                    if ($activeAttempt && $activeAttempt->canBeResumed()) {
+                        // Restore exam session from database
+                        $examSession = [
+                            'applicant_id' => $applicant->applicant_id,
+                            'exam_id' => $exam->exam_id,
+                            'attempt_id' => $activeAttempt->attempt_id,
+                            'attempt_token' => $activeAttempt->attempt_token,
+                            'question_ids' => $activeAttempt->question_ids,
+                            'started_at' => $activeAttempt->started_at->toDateTimeString(),
+                            'duration_minutes' => $activeAttempt->duration_minutes,
+                            'current_section' => $activeAttempt->current_section,
+                            'sections_completed' => $activeAttempt->sections_completed ?? [],
+                            'answers' => $activeAttempt->answers ?? [],
+                            'violation_count' => $activeAttempt->violation_count ?? 0
+                        ];
+                        
+                        session(['exam_session' => $examSession]);
+                        
+                        // Update last activity
+                        $activeAttempt->updateActivity();
+                    } else {
+                        // No active attempt found, redirect to start
+                        return redirect()->route('exam.pre-requirements')
+                            ->with('info', 'Please complete the pre-requirements to start your exam.');
+                    }
+                } else {
+                    return redirect()->route('exam.pre-requirements')
+                        ->with('info', 'Please complete the pre-requirements to start your exam.');
+                }
+            } else {
+                return redirect()->route('applicant.login')
+                    ->with('error', 'Please verify your access code first.');
             }
-            
-            return redirect()->route('applicant.login')
-                ->with('error', 'Please verify your access code first.');
         }
         
         // Additional check: if exam session exists but applicant has completed exam
@@ -611,14 +691,32 @@ class ExamController extends Controller
                 ->values();
 
             $totalQuestions = $questions->count();
-            $timeRemaining = $this->calculateTimeRemaining($examSession);
+            
+            // Calculate time remaining - use database attempt if available
+            $attemptId = $examSession['attempt_id'] ?? null;
+            if ($attemptId) {
+                $attempt = ExamAttempt::find($attemptId);
+                if ($attempt) {
+                    $timeRemaining = $attempt->time_remaining;
+                    // Update last activity
+                    $attempt->updateActivity();
+                } else {
+                    $timeRemaining = $this->calculateTimeRemaining($examSession);
+                }
+            } else {
+                $timeRemaining = $this->calculateTimeRemaining($examSession);
+            }
+
+            // Get saved violation count from exam session
+            $savedViolationCount = $examSession['violation_count'] ?? 0;
 
             return view('exam.sectioned-interface', compact(
                 'applicant',
                 'sections', 
                 'examSession',
                 'totalQuestions',
-                'timeRemaining'
+                'timeRemaining',
+                'savedViolationCount'
             ));
 
         } catch (\Exception $e) {
@@ -657,6 +755,20 @@ class ExamController extends Controller
             $examSession['sections_completed'][] = $request->section_type;
             $examSession['current_section']++;
             
+            // Save to database attempt if available
+            $attemptId = $examSession['attempt_id'] ?? null;
+            if ($attemptId) {
+                $attempt = ExamAttempt::find($attemptId);
+                if ($attempt) {
+                    $attempt->saveAnswers($request->answers);
+                    $attempt->update([
+                        'current_section' => $examSession['current_section'],
+                        'sections_completed' => $examSession['sections_completed'],
+                        'last_activity_at' => now(),
+                    ]);
+                }
+            }
+            
             session(['exam_session' => $examSession]);
 
             return response()->json([
@@ -670,6 +782,64 @@ class ExamController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to submit section: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Auto-save exam answers (called periodically)
+     */
+    public function autoSave(Request $request)
+    {
+        $examSession = session('exam_session');
+        
+        if (!$examSession) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Exam session not found.'
+            ], 400);
+        }
+
+        $request->validate([
+            'answers' => 'required|array',
+            'violation_count' => 'nullable|integer|min:0|max:5'
+        ]);
+
+        try {
+            // Update session
+            $examSession['answers'] = array_merge(
+                $examSession['answers'] ?? [],
+                $request->answers
+            );
+            
+            if ($request->has('violation_count')) {
+                $examSession['violation_count'] = $request->violation_count;
+            }
+            
+            // Save to database attempt
+            $attemptId = $examSession['attempt_id'] ?? null;
+            if ($attemptId) {
+                $attempt = ExamAttempt::find($attemptId);
+                if ($attempt && $attempt->status === 'in_progress') {
+                    $attempt->saveAnswers($request->answers);
+                    if ($request->has('violation_count')) {
+                        $attempt->update(['violation_count' => $request->violation_count]);
+                    }
+                }
+            }
+            
+            session(['exam_session' => $examSession]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Answers saved successfully.',
+                'saved_at' => now()->toDateTimeString()
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save answers: ' . $e->getMessage()
             ], 500);
         }
     }

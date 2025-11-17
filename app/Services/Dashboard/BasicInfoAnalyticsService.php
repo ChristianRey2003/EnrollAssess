@@ -15,7 +15,7 @@ class BasicInfoAnalyticsService
      */
     public function getDashboardAnalytics(int $days = 30): array
     {
-        $cacheKey = "dashboard_basic_info_analytics_v2_{$days}";
+        $cacheKey = "dashboard_basic_info_analytics_v3_{$days}";
         
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($days) {
             $dateFilter = $days > 0 ? now()->subDays($days) : null;
@@ -25,6 +25,8 @@ class BasicInfoAnalyticsService
                 'exam_scores_by_sex' => $this->getTopExamScoresBySex($dateFilter),
                 'interview_scores_by_sex' => $this->getTopInterviewScoresBySex($dateFilter),
                 'cities' => $this->getCityDistribution($dateFilter),
+                'violations' => $this->getViolationDistribution($dateFilter),
+                'status_distribution' => $this->getStatusDistribution($dateFilter),
             ];
         });
     }
@@ -209,6 +211,131 @@ class BasicInfoAnalyticsService
     }
     
     /**
+     * Get violation distribution
+     */
+    public function getViolationDistribution($dateFilter = null): array
+    {
+        $query = Applicant::query()
+            ->whereNotNull('exam_completed_at');
+        
+        if ($dateFilter) {
+            $query->where('exam_completed_at', '>=', $dateFilter);
+        }
+        
+        // Count students by violation count categories
+        $clean = (clone $query)->where('violation_count', 0)->count();
+        $minor = (clone $query)->whereBetween('violation_count', [1, 2])->count();
+        $moderate = (clone $query)->whereBetween('violation_count', [3, 4])->count();
+        $flagged = (clone $query)->where('violation_count', 5)->count();
+        
+        $labels = ['Clean (0)', 'Minor (1-2)', 'Moderate (3-4)', 'Flagged (5)'];
+        $data = [$clean, $minor, $moderate, $flagged];
+        $colors = [
+            '#10B981', // Green for clean
+            '#F59E0B', // Amber for minor
+            '#EF4444', // Red for moderate
+            '#DC2626', // Dark red for flagged
+        ];
+        
+        $total = array_sum($data);
+        $headline = $total > 0 
+            ? sprintf(
+                '%d students completed exams. %d (%.1f%%) were flagged with 5 violations.',
+                $total,
+                $flagged,
+                ($flagged / $total) * 100
+            )
+            : 'No exam completion data available yet.';
+        
+        return [
+            'labels' => $labels,
+            'data' => $data,
+            'colors' => $colors,
+            'headline' => $headline,
+            'total' => $total,
+            'flagged' => $flagged,
+        ];
+    }
+    
+    /**
+     * Get status distribution
+     */
+    public function getStatusDistribution($dateFilter = null): array
+    {
+        // Build base query
+        $baseQuery = Applicant::query();
+        
+        if ($dateFilter) {
+            $baseQuery->where('created_at', '>=', $dateFilter);
+        }
+        
+        // Count applicants by status - get all statuses that exist in database
+        $statusCounts = (clone $baseQuery)
+            ->select('status', DB::raw('COUNT(*) as count'))
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+        
+        // Map status codes to display labels
+        $statusLabels = [
+            'pending' => 'Pending',
+            'exam-completed' => 'Exam Completed',
+            'interview-available' => 'Interview Available',
+            'interview-claimed' => 'Interview Claimed',
+            'interview-scheduled' => 'Interview Scheduled',
+            'interview-completed' => 'Interview Completed',
+            'admitted' => 'Admitted',
+            'rejected' => 'Rejected',
+        ];
+        
+        // Define colors for each status
+        $statusColors = [
+            'pending' => '#9CA3AF', // Gray
+            'exam-completed' => '#3B82F6', // Blue
+            'interview-available' => '#10B981', // Green
+            'interview-claimed' => '#F59E0B', // Amber
+            'interview-scheduled' => '#8B5CF6', // Purple
+            'interview-completed' => '#06B6D4', // Cyan
+            'admitted' => '#10B981', // Green
+            'rejected' => '#EF4444', // Red
+        ];
+        
+        // Build arrays for chart (only include statuses that have data)
+        $labels = [];
+        $data = [];
+        $colors = [];
+        
+        foreach ($statusLabels as $status => $label) {
+            if (isset($statusCounts[$status]) && $statusCounts[$status] > 0) {
+                $labels[] = $label;
+                $data[] = $statusCounts[$status];
+                $colors[] = $statusColors[$status] ?? '#9CA3AF';
+            }
+        }
+        
+        $total = array_sum($data);
+        $admittedCount = $statusCounts['admitted'] ?? 0;
+        $rejectedCount = $statusCounts['rejected'] ?? 0;
+        
+        $headline = $total > 0 
+            ? sprintf(
+                '%d total applicants. %d admitted, %d rejected.',
+                $total,
+                $admittedCount,
+                $rejectedCount
+            )
+            : 'No applicant data available yet.';
+        
+        return [
+            'labels' => $labels,
+            'data' => $data,
+            'colors' => $colors,
+            'headline' => $headline,
+            'total' => $total,
+        ];
+    }
+    
+    /**
      * Clear cache manually
      */
     public function clearCache(): void
@@ -218,6 +345,7 @@ class BasicInfoAnalyticsService
         foreach ($periods as $period) {
             Cache::forget("dashboard_basic_info_analytics_{$period}");
             Cache::forget("dashboard_basic_info_analytics_v2_{$period}");
+            Cache::forget("dashboard_basic_info_analytics_v3_{$period}");
         }
     }
 }

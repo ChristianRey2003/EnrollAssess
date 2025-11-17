@@ -501,7 +501,8 @@
                 body: JSON.stringify({
                     applicant_id: applicantId,
                     answers: examAnswers,
-                    exam_session_id: 'demo_session_' + Date.now()
+                    exam_session_id: 'demo_session_' + Date.now(),
+                    violation_count: violationCount
                 })
             })
             .then(response => response.json())
@@ -538,7 +539,8 @@
                     answers: examAnswers,
                     exam_session_id: 'demo_session_' + Date.now(),
                     auto_submitted: true,
-                    auto_submit_reason: reason
+                    auto_submit_reason: reason,
+                    violation_count: violationCount
                 })
             })
             .then(response => response.json())

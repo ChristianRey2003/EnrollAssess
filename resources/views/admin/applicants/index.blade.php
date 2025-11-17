@@ -343,6 +343,11 @@
                                         </div>
                                         <!-- Floating Actions -->
                                         <div id="actions-{{ $applicant->applicant_id }}" class="floating-actions" style="display: none;">
+                                            <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}"
+                                               class="action-btn action-btn-view"
+                                               title="View applicant information">
+                                                View
+                                            </a>
                                             <a href="{{ route('admin.applicants.edit', $applicant->applicant_id) }}"
                                                class="action-btn action-btn-edit"
                                                title="Edit applicant">
@@ -998,6 +1003,11 @@
                                             ${accessCodeInfo}
                                         </div>
                                         <div id="actions-${applicant.applicant_id}" class="floating-actions" style="display: none;">
+                                            <a href="/admin/applicants/${applicant.applicant_id}"
+                                               class="action-btn action-btn-view"
+                                               title="View applicant information">
+                                                View
+                                            </a>
                                             <a href="/admin/applicants/${applicant.applicant_id}/edit"
                                                class="action-btn action-btn-edit"
                                                title="Edit applicant">

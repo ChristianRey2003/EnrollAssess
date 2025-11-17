@@ -247,6 +247,14 @@
                     </option>
                 @endforeach
             </select>
+            <select id="sortFilter" class="form-select form-select-sm" onchange="applySort()" style="width: 140px; height: 26px; padding: 4px 28px 4px 8px;">
+                <option value="exam_completed_at_desc" {{ request('sort_by') == 'exam_completed_at' && request('sort_order') == 'desc' ? 'selected' : (!request('sort_by') ? 'selected' : '') }}>Newest First</option>
+                <option value="exam_completed_at_asc" {{ request('sort_by') == 'exam_completed_at' && request('sort_order') == 'asc' ? 'selected' : '' }}>Oldest First</option>
+                <option value="enrollassess_score_desc" {{ request('sort_by') == 'enrollassess_score' && request('sort_order') == 'desc' ? 'selected' : '' }}>Score: High to Low</option>
+                <option value="enrollassess_score_asc" {{ request('sort_by') == 'enrollassess_score' && request('sort_order') == 'asc' ? 'selected' : '' }}>Score: Low to High</option>
+                <option value="first_name_asc" {{ request('sort_by') == 'first_name' && request('sort_order') == 'asc' ? 'selected' : '' }}>Name: A to Z</option>
+                <option value="first_name_desc" {{ request('sort_by') == 'first_name' && request('sort_order') == 'desc' ? 'selected' : '' }}>Name: Z to A</option>
+            </select>
             <a href="{{ route('admin.applicants.index') }}" class="btn btn-secondary btn-sm" style="height: 26px; display: inline-flex; align-items: center;">Back to Applicants</a>
         </div>
     </div>
@@ -478,6 +486,21 @@ function applyFilter() {
     
     updateUrl({
         status: status,
+        page: 1
+    });
+}
+
+function applySort() {
+    const sortValue = document.getElementById('sortFilter').value;
+    
+    // Parse the sort value (format: "field_asc" or "field_desc")
+    const lastUnderscoreIndex = sortValue.lastIndexOf('_');
+    const sortBy = sortValue.substring(0, lastUnderscoreIndex);
+    const sortOrder = sortValue.substring(lastUnderscoreIndex + 1);
+    
+    updateUrl({
+        sort_by: sortBy,
+        sort_order: sortOrder,
         page: 1
     });
 }

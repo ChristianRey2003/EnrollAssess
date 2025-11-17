@@ -166,7 +166,7 @@ class TestDataSeeder extends Seeder
         
         ApplicantBasicInfo::create([
             'applicant_id' => $applicant->applicant_id,
-            'sex' => fake()->randomElement(['Male', 'Female', 'Other', 'Prefer not to say']),
+            'sex' => fake()->randomElement(['Male', 'Female', 'Other']),
             'date_of_birth' => $birthDate,
             'age' => $age,
             'civil_status' => fake()->optional(0.8)->randomElement(['Single', 'Married', 'Widowed', 'Separated', 'Divorced']),

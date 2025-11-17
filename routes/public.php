@@ -21,6 +21,7 @@ Route::get('/', function () {
 Route::post('/exam/start', [App\Http\Controllers\ExamController::class, 'startExam'])->name('exam.start')->middleware(['no.cache', 'rate.limit:exam-submit']);
 Route::get('/exam', [App\Http\Controllers\ExamController::class, 'getExamInterface'])->name('exam.interface')->middleware('no.cache');
 Route::post('/exam/submit-section', [App\Http\Controllers\ExamController::class, 'submitSection'])->name('exam.submit-section')->middleware(['no.cache', 'rate.limit:exam-submit']);
+Route::post('/exam/auto-save', [App\Http\Controllers\ExamController::class, 'autoSave'])->name('exam.auto-save')->middleware(['no.cache']);
 Route::post('/exam/complete', [App\Http\Controllers\ExamSubmissionController::class, 'completeExam'])->name('exam.complete')->middleware(['no.cache', 'rate.limit:exam-submit']);
 
 // Legacy routes for backward compatibility
@@ -83,6 +84,7 @@ Route::get('/exam/pre-requirements', function (Illuminate\Http\Request $request)
 // Basic Information Form (between pre-requirements and exam)
 Route::get('/exam/basic-info', [App\Http\Controllers\BasicInfoController::class, 'showBasicInfoForm'])->name('exam.basic-info');
 Route::post('/exam/basic-info', [App\Http\Controllers\BasicInfoController::class, 'storeBasicInfo'])->name('exam.basic-info.store');
+Route::get('/api/cities-by-province/{province}', [App\Http\Controllers\BasicInfoController::class, 'getCitiesByProvince'])->name('api.cities-by-province');
 
 // Exam Start Form (page before starting exam)
 Route::get('/exam/start-form', function (Illuminate\Http\Request $request) {

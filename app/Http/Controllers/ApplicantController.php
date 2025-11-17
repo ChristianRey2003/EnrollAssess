@@ -202,73 +202,104 @@ class ApplicantController extends BaseController
     public function show($id)
     {
         try {
-            $applicant = Applicant::with(['assignedInstructor', 'accessCode', 'latestInterview.interviewer', 'results.question'])
-                ->findOrFail($id);
+            $applicant = Applicant::with([
+                'assignedInstructor', 
+                'accessCode.exam', 
+                'latestInterview.interviewer', 
+                'results.question',
+                'basicInfo'
+            ])->findOrFail($id);
         } catch (ModelNotFoundException $e) {
             return back()->with('error', 'Applicant not found.');
         }
 
-        // Calculate additional data for the view (simplified from route logic)
-        $applicant->name = $applicant->full_name;
-        $applicant->email = $applicant->email_address;
-        $applicant->phone = $applicant->phone_number;
-        $applicant->overall_status = ucfirst(str_replace('-', ' ', $applicant->status));
-        $applicant->student_id = $applicant->application_no;
-
-        // Exam data
-        $applicant->exam_completed = $applicant->hasCompletedExam();
-        $applicant->exam_score = $applicant->exam_percentage ?? $applicant->score ?? 0;
-
         // Get exam results if available
+        $totalQuestions = 0;
+        $correctAnswers = 0;
         if ($applicant->results && $applicant->results->count() > 0) {
             $totalQuestions = $applicant->results->count();
             $correctAnswers = $applicant->results->where('is_correct', true)->count();
-
-            $applicant->correct_answers = $correctAnswers;
-            $applicant->total_questions = $totalQuestions;
-            $applicant->exam_duration = '24 minutes 30 seconds';
-
-            // Category scores (demo data)
-            $applicant->category_scores = [
-                ['name' => 'Programming Logic', 'score' => 90, 'correct' => 9, 'total' => 10],
-                ['name' => 'Mathematics', 'score' => 85, 'correct' => 4, 'total' => 5],
-                ['name' => 'Problem Solving', 'score' => 80, 'correct' => 3, 'total' => 4],
-                ['name' => 'Computer Fundamentals', 'score' => 85, 'correct' => 3, 'total' => 4],
-                ['name' => 'English Proficiency', 'score' => 88, 'correct' => 3, 'total' => 3]
-            ];
-        } else {
-            $applicant->correct_answers = 0;
-            $applicant->total_questions = 20;
-            $applicant->category_scores = [];
         }
 
-        // Interview data
-        $interview = $applicant->latestInterview;
-        $applicant->interview_status = $interview ? $interview->status : 'not-scheduled';
-        $applicant->interview_date = ($interview && $interview->schedule_date) ? $interview->schedule_date->format('Y-m-d') : null;
-        $applicant->interview_time = ($interview && $interview->schedule_date) ? $interview->schedule_date->format('H:i') : null;
-        $interviewerFullName = $interview ? (optional($interview->interviewer)->full_name ?? 'Dr. Smith') : 'Dr. Smith';
-        $applicant->interviewer = $interview ? 'dr-' . strtolower(str_replace(' ', '-', $interviewerFullName)) : 'dr-smith';
-        $applicant->private_notes = $interview ? ($interview->notes ?? 'No interview notes available.') : 'No interview notes available.';
-        $applicant->final_recommendation = $interview ? ($interview->recommendation ?? 'pending') : 'pending';
+        // Get exam attempt for duration calculation
+        $examAttempt = \App\Models\ExamAttempt::where('applicant_id', $applicant->applicant_id)
+            ->where('status', 'completed')
+            ->latest('completed_at')
+            ->first();
 
-        // Timeline (build locally to avoid indirect modification notice)
-        $timeline = [
-            ['date' => $applicant->created_at->format('M d, Y'), 'time' => $applicant->created_at->format('g:i A'), 'event' => 'Application submitted successfully', 'type' => 'application'],
-            ['date' => $applicant->created_at->addDays(2)->format('M d, Y'), 'time' => '2:15 PM', 'event' => 'Documents verified and approved', 'type' => 'update'],
+        // Calculate exam duration if attempt exists
+        $examDuration = null;
+        if ($examAttempt && $examAttempt->started_at && $examAttempt->completed_at) {
+            $duration = $examAttempt->started_at->diffInMinutes($examAttempt->completed_at);
+            $hours = floor($duration / 60);
+            $minutes = $duration % 60;
+            if ($hours > 0) {
+                $examDuration = $hours . ' hour' . ($hours > 1 ? 's' : '') . ' ' . $minutes . ' minute' . ($minutes != 1 ? 's' : '');
+            } else {
+                $examDuration = $minutes . ' minute' . ($minutes != 1 ? 's' : '');
+            }
+        }
+
+        // Get overall rating
+        $overallRating = $applicant->getOverallRating();
+
+        // Build timeline
+        $timeline = [];
+        $timeline[] = [
+            'date' => $applicant->created_at->format('M d, Y'), 
+            'time' => $applicant->created_at->format('g:i A'), 
+            'event' => 'Application submitted', 
+            'type' => 'application'
         ];
 
+        if ($applicant->accessCode && $applicant->accessCode->created_at) {
+            $timeline[] = [
+                'date' => $applicant->accessCode->created_at->format('M d, Y'), 
+                'time' => $applicant->accessCode->created_at->format('g:i A'), 
+                'event' => 'Access code generated', 
+                'type' => 'update'
+            ];
+        }
+
         if ($applicant->exam_completed_at) {
-            $timeline[] = ['date' => $applicant->exam_completed_at->format('M d, Y'), 'time' => $applicant->exam_completed_at->format('g:i A'), 'event' => 'Entrance exam completed with ' . $applicant->exam_score . '% score', 'type' => 'exam'];
+            $score = $applicant->enrollassess_score ?? 0;
+            $timeline[] = [
+                'date' => $applicant->exam_completed_at->format('M d, Y'), 
+                'time' => $applicant->exam_completed_at->format('g:i A'), 
+                'event' => 'Entrance exam completed with ' . number_format($score, 2) . '% score', 
+                'type' => 'exam'
+            ];
         }
 
-        if ($interview && $interview->status === 'scheduled' && $interview->schedule_date) {
-            $timeline[] = ['date' => $interview->schedule_date->format('M d, Y'), 'time' => $interview->schedule_date->format('g:i A'), 'event' => 'Interview scheduled with ' . $interviewerFullName, 'type' => 'interview'];
+        $interview = $applicant->latestInterview;
+        if ($interview) {
+            if ($interview->status === 'scheduled' && $interview->schedule_date) {
+                $interviewerName = $interview->interviewer ? $interview->interviewer->full_name : 'Instructor';
+                $timeline[] = [
+                    'date' => $interview->schedule_date->format('M d, Y'), 
+                    'time' => $interview->schedule_date->format('g:i A'), 
+                    'event' => 'Interview scheduled with ' . $interviewerName, 
+                    'type' => 'interview'
+                ];
+            }
+            if ($interview->status === 'completed' && $interview->updated_at) {
+                $timeline[] = [
+                    'date' => $interview->updated_at->format('M d, Y'), 
+                    'time' => $interview->updated_at->format('g:i A'), 
+                    'event' => 'Interview completed', 
+                    'type' => 'interview'
+                ];
+            }
         }
 
-        $applicant->timeline = $timeline;
-
-        return view('admin.applicants.show', compact('applicant'));
+        return view('admin.applicants.show', compact(
+            'applicant',
+            'totalQuestions',
+            'correctAnswers',
+            'examDuration',
+            'overallRating',
+            'timeline'
+        ));
     }
 
     /**
@@ -898,8 +929,8 @@ class ApplicantController extends BaseController
                 $query->where('status', $request->status);
             }
 
-            // Sorting
-            $sortBy = $request->get('sort_by', 'enrollassess_score');
+            // Sorting - Default to newest exam completions first
+            $sortBy = $request->get('sort_by', 'exam_completed_at');
             $sortOrder = $request->get('sort_order', 'desc');
             
             $allowedSorts = [
@@ -936,9 +967,22 @@ class ApplicantController extends BaseController
                 );
                 $applicants = $paginator;
             } elseif (in_array($sortBy, $allowedSorts)) {
-                $query->orderBy($sortBy, $sortOrder);
+                // Handle exam_completed_at with NULLS LAST for proper newest-to-oldest sorting
+                if ($sortBy === 'exam_completed_at') {
+                    if ($sortOrder === 'desc') {
+                        // Newest first: non-null values descending, then nulls (MySQL compatible)
+                        $query->orderByRaw('ISNULL(exam_completed_at), exam_completed_at DESC');
+                    } else {
+                        // Oldest first: non-null values ascending, then nulls (MySQL compatible)
+                        $query->orderByRaw('ISNULL(exam_completed_at), exam_completed_at ASC');
+                    }
+                } else {
+                    $query->orderBy($sortBy, $sortOrder);
+                }
                 $applicants = $query->paginate(20);
             } else {
+                // Default fallback: newest exam completions first (MySQL compatible)
+                $query->orderByRaw('ISNULL(exam_completed_at), exam_completed_at DESC');
                 $applicants = $query->paginate(20);
             }
 

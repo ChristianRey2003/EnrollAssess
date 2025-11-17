@@ -38,6 +38,89 @@
         .pagination-wrapper .relative.z-0.inline-flex {
             margin-left: 20px;
         }
+
+        /* Floating Actions - matching applicants page style */
+        .floating-actions {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+            display: flex;
+            flex-direction: row;
+        }
+        
+        .floating-actions .action-btn {
+            padding: 6px 8px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: background-color 0.2s;
+            text-decoration: none;
+            color: #374151;
+            white-space: nowrap;
+        }
+        
+        .floating-actions .action-btn:hover {
+            background: #f3f4f6;
+        }
+        
+        .floating-actions .action-btn-conduct {
+            background: #800020;
+            color: white;
+        }
+        
+        .floating-actions .action-btn-conduct:hover {
+            background: #5C0016;
+            color: white;
+        }
+        
+        .floating-actions .action-btn-edit {
+            color: #2563eb;
+        }
+        
+        .floating-actions .action-btn-edit:hover {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .floating-actions .action-btn-view {
+            color: #6b7280;
+        }
+        
+        .floating-actions .action-btn-view:hover {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .floating-actions .action-btn-delete {
+            color: #dc2626;
+        }
+        
+        .floating-actions .action-btn-delete:hover {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        tr:hover {
+            background-color: rgba(255, 215, 0, 0.1) !important;
+        }
+        
+        .table tbody tr {
+            position: relative;
+        }
+        
+        .table tbody td {
+            overflow: visible;
+        }
     </style>
 @endpush
 
@@ -102,11 +185,12 @@
                     </thead>
                     <tbody>
                         @foreach($interviews as $index => $interview)
-                            <tr>
+                            <tr onmouseover="showActions({{ $interview->interview_id }})" 
+                                onmouseout="hideActions({{ $interview->interview_id }})">
                                 <td class="text-center" style="font-size: 13px; font-weight: normal;">
                                     {{ ($interviews->currentPage() - 1) * $interviews->perPage() + $index + 1 }}
                                 </td>
-                                <td class="text-left" style="font-size: 13px; font-weight: normal; position: relative;">
+                                <td class="text-left" style="font-size: 13px; font-weight: normal;">
                                     <div class="applicant-info">
                                         @if($interview->applicant)
                                             <div class="applicant-name">{{ $interview->applicant->full_name }}</div>
@@ -115,44 +199,6 @@
                                             <div class="applicant-name text-muted">Unknown Applicant</div>
                                             <div class="applicant-email text-muted">N/A</div>
                                         @endif
-                                    </div>
-
-                                    <!-- Floating Actions -->
-                                    <div class="floating-actions">
-                                        @if(in_array($interview->status, ['scheduled', 'available', 'claimed']) && $interview->status !== 'completed')
-                                            @if($interview->claimed_by === auth()->id())
-                                                <a href="{{ route('admin.interviews.conduct', $interview->interview_id) }}" 
-                                                   class="action-btn action-btn-conduct">
-                                                    Continue
-                                                </a>
-                                            @elseif(!$interview->claimed_by || $interview->isClaimedTooLong(1))
-                                                <a href="{{ route('admin.interviews.conduct', $interview->interview_id) }}" 
-                                                   class="action-btn action-btn-conduct">
-                                                    I'll Conduct This
-                                                </a>
-                                            @else
-                                                <span class="action-btn" style="cursor: not-allowed; opacity: 0.6;">
-                                                    Claimed
-                                                </span>
-                                            @endif
-                                        @endif
-                                        
-                                        <button onclick="editInterview({{ $interview->interview_id }})" 
-                                                class="action-btn action-btn-edit">
-                                            Edit
-                                        </button>
-                                        
-                                        @if($interview->status === 'scheduled')
-                                            <button onclick="cancelInterview({{ $interview->interview_id }})" 
-                                                    class="action-btn action-btn-delete">
-                                                Cancel
-                                            </button>
-                                        @endif
-                                        
-                                        <a href="{{ route('admin.interviews.show', $interview->interview_id) }}" 
-                                           class="action-btn action-btn-view">
-                                            View Details
-                                        </a>
                                     </div>
                                 </td>
                                 <td class="text-left" style="font-size: 13px; font-weight: normal;">
@@ -177,7 +223,7 @@
                                         {{ ucfirst($interview->status) }}
                                     </span>
                                 </td>
-                                <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                                <td class="text-center" style="font-size: 13px; font-weight: normal; position: relative;">
                                     <div class="score-display">
                                         @if($interview->status === 'completed' && $interview->overall_score !== null)
                                             @php
@@ -197,6 +243,44 @@
                                         @else
                                             <span class="score-pending">Pending</span>
                                         @endif
+                                    </div>
+
+                                    <!-- Floating Actions -->
+                                    <div id="actions-{{ $interview->interview_id }}" class="floating-actions" style="display: none;">
+                                        @if(in_array($interview->status, ['scheduled', 'available', 'claimed']) && $interview->status !== 'completed')
+                                            @if($interview->claimed_by === auth()->id())
+                                                <a href="{{ route('admin.interviews.conduct', $interview->interview_id) }}" 
+                                                   class="action-btn action-btn-conduct">
+                                                    Continue
+                                                </a>
+                                            @elseif(!$interview->claimed_by || $interview->isClaimedTooLong(1))
+                                                <a href="{{ route('admin.interviews.conduct', $interview->interview_id) }}" 
+                                                   class="action-btn action-btn-conduct">
+                                                    Conduct
+                                                </a>
+                                            @else
+                                                <span class="action-btn" style="cursor: not-allowed; opacity: 0.6;">
+                                                    Claimed
+                                                </span>
+                                            @endif
+                                        @endif
+                                        
+                                        <button onclick="editInterview({{ $interview->interview_id }})" 
+                                                class="action-btn action-btn-edit">
+                                            Edit
+                                        </button>
+                                        
+                                        @if($interview->status === 'scheduled')
+                                            <button onclick="cancelInterview({{ $interview->interview_id }})" 
+                                                    class="action-btn action-btn-delete">
+                                                Cancel
+                                            </button>
+                                        @endif
+                                        
+                                        <a href="{{ route('admin.interviews.show', $interview->interview_id) }}" 
+                                           class="action-btn action-btn-view">
+                                            View
+                                        </a>
                                     </div>
                                 </td>
                             </tr>
@@ -226,6 +310,9 @@
 
 @push('scripts')
 <script>
+    // Store current user ID for AJAX pagination
+    const currentUserId = {{ auth()->id() }};
+    
     // Auto-search functionality
     let searchTimeout;
     const searchInput = document.getElementById('searchInput');
@@ -245,6 +332,20 @@
                 window.location.href = url.toString();
             }, 500); // 500ms debounce
         });
+    }
+
+    function showActions(interviewId) {
+        const actionsElement = document.getElementById('actions-' + interviewId);
+        if (actionsElement) {
+            actionsElement.style.display = 'flex';
+        }
+    }
+    
+    function hideActions(interviewId) {
+        const actionsElement = document.getElementById('actions-' + interviewId);
+        if (actionsElement) {
+            actionsElement.style.display = 'none';
+        }
     }
 
     function editInterview(interviewId) {
@@ -350,22 +451,28 @@
                             // Build action buttons HTML
                             let actionsHtml = '';
                             if (['scheduled', 'available', 'claimed'].includes(interview.status) && interview.status !== 'completed') {
-                                actionsHtml += `<a href="/admin/interviews/${interview.interview_id}/conduct" class="action-btn action-btn-conduct">I'll Conduct This</a>`;
+                                const claimedBy = interview.claimed_by;
+                                if (claimedBy === currentUserId) {
+                                    actionsHtml += `<a href="/admin/interviews/${interview.interview_id}/conduct" class="action-btn action-btn-conduct">Continue</a>`;
+                                } else if (!claimedBy) {
+                                    actionsHtml += `<a href="/admin/interviews/${interview.interview_id}/conduct" class="action-btn action-btn-conduct">Conduct</a>`;
+                                } else {
+                                    actionsHtml += `<span class="action-btn" style="cursor: not-allowed; opacity: 0.6;">Claimed</span>`;
+                                }
                             }
                             actionsHtml += `<button onclick="editInterview(${interview.interview_id})" class="action-btn action-btn-edit">Edit</button>`;
                             if (interview.status === 'scheduled') {
                                 actionsHtml += `<button onclick="cancelInterview(${interview.interview_id})" class="action-btn action-btn-delete">Cancel</button>`;
                             }
-                            actionsHtml += `<a href="/admin/interviews/${interview.interview_id}" class="action-btn action-btn-view">View Details</a>`;
+                            actionsHtml += `<a href="/admin/interviews/${interview.interview_id}" class="action-btn action-btn-view">View</a>`;
                             
-                            html += `<tr>
+                            html += `<tr onmouseover="showActions(${interview.interview_id})" onmouseout="hideActions(${interview.interview_id})">
                                 <td class="text-center" style="font-size: 13px; font-weight: normal;">${rowNum}</td>
                                 <td class="text-left" style="font-size: 13px; font-weight: normal; position: relative;">
                                     <div class="applicant-info">
                                         <div class="applicant-name">${(applicant.full_name || applicant.first_name + ' ' + applicant.last_name || 'Unknown Applicant').trim()}</div>
                                         <div class="applicant-email">${applicant.email_address || applicant.email || 'N/A'}</div>
                                     </div>
-                                    <div class="floating-actions">${actionsHtml}</div>
                                 </td>
                                 <td class="text-left" style="font-size: 13px; font-weight: normal;">
                                     <div class="interviewer-info">
@@ -382,8 +489,9 @@
                                 <td class="text-center" style="font-size: 13px; font-weight: normal;">
                                     <span class="badge bg-secondary">${statusText}</span>
                                 </td>
-                                <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                                <td class="text-center" style="font-size: 13px; font-weight: normal; position: relative;">
                                     <div class="score-display">${scoreHtml}</div>
+                                    <div id="actions-${interview.interview_id}" class="floating-actions" style="display: none;">${actionsHtml}</div>
                                 </td>
                             </tr>`;
                         });

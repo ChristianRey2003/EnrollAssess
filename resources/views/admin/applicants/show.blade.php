@@ -5,328 +5,211 @@
 @push('styles')
     <link href="{{ asset('css/admin/applicants.css') }}" rel="stylesheet">
     <style>
-        .applicant-detail-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: var(--space-6);
-            background: var(--background-gray);
-            min-height: 100vh;
+        .main-content {
+            padding: 20px !important;
         }
 
-        .detail-header {
-            background: linear-gradient(135deg, var(--maroon-primary) 0%, var(--maroon-light) 100%);
-            border-radius: var(--radius-2xl);
-            padding: var(--space-8);
-            margin-bottom: var(--space-8);
-            color: var(--white);
-            box-shadow: var(--shadow-xl);
-            position: relative;
-            overflow: hidden;
+        .applicant-header {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
         }
 
-        .detail-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 200px;
-            height: 200px;
-            background: rgba(255, 215, 0, 0.1);
-            border-radius: 50%;
-            transform: translate(50%, -50%);
-        }
-
-        .header-breadcrumb {
+        .header-top {
             display: flex;
-            align-items: center;
-            gap: var(--space-2);
-            margin-bottom: var(--space-4);
-            font-size: var(--text-sm);
-            opacity: 0.9;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
         }
 
-        .breadcrumb-link {
-            color: var(--yellow-light);
-            text-decoration: none;
-            transition: var(--transition-colors);
-        }
-
-        .breadcrumb-link:hover {
-            color: var(--yellow-primary);
-            text-decoration: underline;
-        }
-
-        .breadcrumb-separator {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .header-content {
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            gap: var(--space-8);
-            align-items: center;
-            position: relative;
-            z-index: 1;
-        }
-
-        .header-avatar {
-            position: relative;
-        }
-
-        .avatar-large {
-            width: 120px;
-            height: 120px;
-            background: linear-gradient(135deg, var(--yellow-primary) 0%, var(--yellow-dark) 100%);
-            border-radius: var(--radius-full);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: var(--text-4xl);
-            font-weight: var(--font-bold);
-            color: var(--maroon-primary);
-            border: 4px solid rgba(255, 255, 255, 0.2);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .status-indicator {
-            position: absolute;
-            bottom: 8px;
-            right: 8px;
-            width: 24px;
-            height: 24px;
-            border-radius: var(--radius-full);
-            border: 3px solid var(--white);
-            background: var(--success);
-        }
-
-        .header-info h1 {
-            font-size: var(--text-4xl);
-            font-weight: var(--font-bold);
-            margin: 0 0 var(--space-2) 0;
-            line-height: var(--leading-tight);
+        .header-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 8px 0;
         }
 
         .header-subtitle {
-            font-size: var(--text-lg);
-            opacity: 0.9;
-            margin-bottom: var(--space-4);
-        }
-
-        .header-meta {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: var(--space-4);
-        }
-
-        .meta-item {
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-1);
-        }
-
-        .meta-label {
-            font-size: var(--text-xs);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            opacity: 0.8;
-            font-weight: var(--font-medium);
-        }
-
-        .meta-value {
-            font-size: var(--text-base);
-            font-weight: var(--font-semibold);
+            font-size: 14px;
+            color: #6b7280;
+            margin: 0;
         }
 
         .header-actions {
             display: flex;
-            flex-direction: column;
-            gap: var(--space-3);
+            gap: 8px;
         }
 
-        .btn-modern {
-            padding: var(--space-3) var(--space-6);
-            border-radius: var(--radius-xl);
-            font-weight: var(--font-semibold);
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            gap: var(--space-2);
-            transition: var(--transition-normal);
+            gap: 6px;
             border: none;
             cursor: pointer;
-            font-size: var(--text-sm);
-            min-width: 140px;
+            transition: all 0.2s;
         }
 
-        .btn-primary-modern {
-            background: var(--yellow-primary);
-            color: var(--maroon-primary);
-            box-shadow: var(--shadow-md);
+        .btn-primary {
+            background: #800020;
+            color: white;
         }
 
-        .btn-primary-modern:hover {
-            background: var(--yellow-dark);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
+        .btn-primary:hover {
+            background: #5C0016;
         }
 
-        .btn-secondary-modern {
-            background: rgba(255, 255, 255, 0.15);
-            color: var(--white);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(10px);
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #e5e7eb;
         }
 
-        .btn-secondary-modern:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: translateY(-1px);
-        }
-
-        .content-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: var(--space-8);
-        }
-
-        .main-content {
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-6);
-        }
-
-        .sidebar-content {
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-6);
-        }
-
-        .modern-card {
-            background: var(--white);
-            border-radius: var(--radius-2xl);
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--border-gray);
-            overflow: hidden;
-            transition: var(--transition-shadow);
-        }
-
-        .modern-card:hover {
-            box-shadow: var(--shadow-md);
-        }
-
-        .card-header {
-            padding: var(--space-6);
-            border-bottom: 1px solid var(--border-gray);
-            background: linear-gradient(135deg, var(--light-gray) 0%, var(--white) 100%);
-        }
-
-        .card-title {
-            font-size: var(--text-xl);
-            font-weight: var(--font-bold);
-            color: var(--maroon-primary);
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: var(--space-3);
-        }
-
-        .card-icon {
-            width: 24px;
-            height: 24px;
-            background: var(--maroon-primary);
-            border-radius: var(--radius-lg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .card-icon::after {
-            content: '';
-            width: 12px;
-            height: 12px;
-            background: var(--white);
-            border-radius: var(--radius-sm);
-        }
-
-        .card-content {
-            padding: var(--space-6);
+        .btn-secondary:hover {
+            background: #e5e7eb;
         }
 
         .info-grid {
             display: grid;
-            gap: var(--space-4);
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
         }
 
         .info-item {
             display: flex;
-            align-items: center;
-            gap: var(--space-4);
-            padding: var(--space-4);
-            background: var(--light-gray);
-            border-radius: var(--radius-xl);
-            transition: var(--transition-colors);
-        }
-
-        .info-item:hover {
-            background: var(--yellow-light);
-        }
-
-        .info-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--maroon-primary) 0%, var(--maroon-light) 100%);
-            border-radius: var(--radius-full);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--white);
-            font-size: var(--text-lg);
-            flex-shrink: 0;
-        }
-
-        .info-details {
-            flex: 1;
+            flex-direction: column;
+            gap: 4px;
         }
 
         .info-label {
-            font-size: var(--text-xs);
-            color: var(--text-gray);
-            font-weight: var(--font-medium);
+            font-size: 12px;
+            color: #6b7280;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin-bottom: var(--space-1);
+            font-weight: 500;
         }
 
         .info-value {
-            font-size: var(--text-base);
-            color: var(--text-dark);
-            font-weight: var(--font-semibold);
+            font-size: 14px;
+            color: #1f2937;
+            font-weight: 500;
         }
 
-        .score-showcase {
-            text-align: center;
-            padding: var(--space-8);
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
         }
 
-        .score-circle-large {
-            width: 180px;
-            height: 180px;
-            margin: 0 auto var(--space-6);
-            border-radius: var(--radius-full);
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-exam-completed { background: #dbeafe; color: #1e40af; }
+        .status-interview-available { background: #d1fae5; color: #065f46; }
+        .status-interview-scheduled { background: #e0e7ff; color: #3730a3; }
+        .status-interview-completed { background: #f3e8ff; color: #6b21a8; }
+        .status-admitted { background: #d1fae5; color: #065f46; }
+        .status-rejected { background: #fecaca; color: #991b1b; }
+
+        .content-section {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 20px 0;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f3f4f6;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .data-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-grid-compact {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-top: 8px;
+        }
+
+        .info-item-compact {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 6px;
+        }
+
+        .info-item-compact .data-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .info-item-compact .data-value {
+            font-size: 14px;
+            color: #1f2937;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .data-label {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .data-value {
+            font-size: 14px;
+            color: #1f2937;
+            font-weight: 500;
+        }
+
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            position: relative;
-            background: conic-gradient(var(--success) 0deg 306deg, var(--border-gray) 306deg 360deg);
-            padding: 8px;
+            margin: 0 auto 16px;
+            background: conic-gradient(#10b981 0deg {{ ($applicant->enrollassess_score ?? 0) * 3.6 }}deg, #e5e7eb {{ ($applicant->enrollassess_score ?? 0) * 3.6 }}deg 360deg);
+            padding: 4px;
         }
 
         .score-inner {
             width: 100%;
             height: 100%;
-            background: var(--white);
-            border-radius: var(--radius-full);
+            background: white;
+            border-radius: 50%;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -334,662 +217,329 @@
         }
 
         .score-number {
-            font-size: var(--text-5xl);
-            font-weight: var(--font-extrabold);
-            color: var(--maroon-primary);
+            font-size: 32px;
+            font-weight: 700;
+            color: #1f2937;
             line-height: 1;
         }
 
         .score-label {
-            font-size: var(--text-sm);
-            color: var(--text-gray);
-            font-weight: var(--font-medium);
-            margin-top: var(--space-2);
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
         }
 
-        .status-badge-modern {
-            display: inline-flex;
-            align-items: center;
-            gap: var(--space-2);
-            padding: var(--space-2) var(--space-4);
-            border-radius: var(--radius-full);
-            font-size: var(--text-sm);
-            font-weight: var(--font-semibold);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .status-passed {
-            background: var(--success-light);
-            color: var(--success-dark);
-        }
-
-        .status-pending {
-            background: var(--warning-light);
-            color: var(--warning-dark);
-        }
-
-        .timeline-modern {
+        .timeline {
             position: relative;
-            padding-left: var(--space-8);
+            padding-left: 24px;
         }
 
-        .timeline-modern::before {
+        .timeline::before {
             content: '';
             position: absolute;
-            left: 20px;
+            left: 8px;
             top: 0;
             bottom: 0;
             width: 2px;
-            background: linear-gradient(to bottom, var(--maroon-primary), var(--yellow-primary));
+            background: #e5e7eb;
         }
 
-        .timeline-item-modern {
+        .timeline-item {
             position: relative;
-            margin-bottom: var(--space-6);
-            padding-left: var(--space-4);
+            margin-bottom: 20px;
+            padding-left: 24px;
         }
 
-        .timeline-marker-modern {
+        .timeline-marker {
             position: absolute;
-            left: -32px;
-            top: 8px;
+            left: -20px;
+            top: 4px;
             width: 16px;
             height: 16px;
-            background: var(--maroon-primary);
-            border: 3px solid var(--white);
-            border-radius: var(--radius-full);
-            box-shadow: var(--shadow-sm);
+            background: #800020;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 0 2px #e5e7eb;
         }
 
-        .timeline-content-modern {
-            background: var(--white);
-            border-radius: var(--radius-xl);
-            padding: var(--space-4);
-            border: 1px solid var(--border-gray);
-            box-shadow: var(--shadow-sm);
+        .timeline-content {
+            background: #f9fafb;
+            border-radius: 6px;
+            padding: 12px;
         }
 
         .timeline-event {
-            font-weight: var(--font-semibold);
-            color: var(--maroon-primary);
-            margin-bottom: var(--space-1);
+            font-size: 14px;
+            font-weight: 500;
+            color: #1f2937;
+            margin-bottom: 4px;
         }
 
         .timeline-time {
-            font-size: var(--text-sm);
-            color: var(--text-gray);
+            font-size: 12px;
+            color: #6b7280;
         }
 
-        /* Enhanced Mobile Responsiveness */
-        @media (max-width: 1200px) {
-            .applicant-detail-container {
-                padding: var(--space-4);
-            }
-            
-            .content-grid {
-                grid-template-columns: 1fr;
-                gap: var(--space-6);
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6b7280;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 1024px) {
+            div[style*="grid-template-columns: 2fr 1fr"] {
+                grid-template-columns: 1fr !important;
             }
         }
-        
+
         @media (max-width: 768px) {
-            .applicant-detail-container {
-                padding: var(--space-3);
-            }
-            
-            .detail-header {
-                padding: var(--space-6);
-                margin-bottom: var(--space-6);
-            }
-            
-            .header-content {
-                grid-template-columns: 1fr;
-                text-align: center;
-                gap: var(--space-4);
-            }
-            
-            .header-meta {
-                grid-template-columns: 1fr;
-                gap: var(--space-3);
-            }
-            
-            .avatar-large {
-                width: 80px;
-                height: 80px;
-                font-size: var(--text-2xl);
-            }
-            
-            .header-info h1 {
-                font-size: var(--text-2xl);
-            }
-            
-            .header-actions {
-                flex-direction: row;
-                justify-content: center;
-                gap: var(--space-2);
-            }
-            
-            .btn-modern {
-                min-width: 120px;
-                padding: var(--space-2) var(--space-4);
-                font-size: var(--text-xs);
-            }
-            
-            .score-circle-large {
-                width: 140px;
-                height: 140px;
-            }
-            
-            .score-number {
-                font-size: var(--text-3xl);
-            }
-            
-            .card-content {
-                padding: var(--space-4);
-            }
-            
-            .card-header {
-                padding: var(--space-4);
-            }
-            
-            .info-item {
-                padding: var(--space-3);
-            }
-            
-            .info-icon {
-                width: 32px;
-                height: 32px;
-                font-size: var(--text-base);
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .detail-header::before {
-                display: none;
-            }
-            
-            .header-meta {
-                grid-template-columns: 1fr;
-                text-align: center;
-            }
-            
-            .header-actions {
+            .header-top {
                 flex-direction: column;
-                width: 100%;
+                gap: 16px;
             }
-            
-            .btn-modern {
+
+            .header-actions {
                 width: 100%;
-                min-width: unset;
+                flex-direction: column;
             }
-            
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
             .info-grid {
-                gap: var(--space-3);
-            }
-            
-            .timeline-modern {
-                padding-left: var(--space-6);
-            }
-            
-            .timeline-marker-modern {
-                left: -24px;
-            }
-        }
-        
-        /* Loading Animation */
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.5;
-            }
-        }
-        
-        .loading-state {
-            animation: pulse 2s infinite;
-        }
-        
-        /* Hover Enhancements */
-        .info-item:hover .info-icon {
-            transform: scale(1.1);
-            transition: var(--transition-transform);
-        }
-        
-        .btn-modern:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-lg);
-        }
-        
-        .btn-primary-modern:hover:not(:disabled) {
-            background: linear-gradient(135deg, var(--yellow-dark) 0%, var(--yellow-primary) 100%);
-        }
-        
-        /* Focus States for Accessibility */
-        .btn-modern:focus {
-            outline: 2px solid var(--yellow-primary);
-            outline-offset: 2px;
-        }
-        
-        .modern-card:focus-within {
-            box-shadow: 0 0 0 2px var(--yellow-primary);
-        }
-        
-        /* Print Styles */
-        @media print {
-            .applicant-detail-container {
-                background: white;
-                padding: 0;
-            }
-            
-            .detail-header {
-                background: white !important;
-                color: black !important;
-                box-shadow: none !important;
-                border: 2px solid var(--maroon-primary);
-            }
-            
-            .header-actions,
-            .card-header .card-icon {
-                display: none !important;
-            }
-            
-            .modern-card {
-                break-inside: avoid;
-                box-shadow: none !important;
-                border: 1px solid #ccc;
-                margin-bottom: var(--space-4);
-            }
-            
-            .content-grid {
                 grid-template-columns: 1fr;
-                gap: var(--space-4);
+            }
+
+            .info-grid-compact {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .content-section {
+                padding: 16px;
+            }
+
+            .section-title {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .info-grid-compact {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 @endpush
 
 @section('content')
-
-<div class="applicant-detail-container">
-    <!-- Modern Header -->
-    <div class="detail-header">
-        <div class="header-breadcrumb">
-            <a href="{{ route('admin.applicants.index') }}" class="breadcrumb-link">Applicants</a>
-            <span class="breadcrumb-separator">›</span>
-            <span>{{ $applicant->full_name ?? 'John Doe' }}</span>
+<div class="applicant-header">
+    <div class="header-top">
+        <div>
+            <h1 class="header-title">{{ $applicant->full_name }}</h1>
+            <p class="header-subtitle">{{ $applicant->application_no ?? $applicant->formatted_applicant_no }}</p>
         </div>
-        
-        <div class="header-content">
-            <div class="header-avatar">
-                <div class="avatar-large">
-                    {{ $applicant->initials ?? 'JD' }}
-                </div>
-                <div class="status-indicator"></div>
-            </div>
-            
-            <div class="header-info">
-                <h1>{{ $applicant->name ?? 'John Doe' }}</h1>
-                <p class="header-subtitle">BSIT Entrance Examination Applicant</p>
-                
-                <div class="header-meta">
-                    <div class="meta-item">
-                        <span class="meta-label">Student ID</span>
-                        <span class="meta-value">{{ $applicant->student_id ?? '2024-001' }}</span>
-                    </div>
-                    <div class="meta-item">
-                        <span class="meta-label">Application Date</span>
-                        <span class="meta-value">{{ $applicant->created_at->format('M d, Y') ?? now()->format('M d, Y') }}</span>
-                    </div>
-                    <div class="meta-item">
-                        <span class="meta-label">Status</span>
-                        <span class="meta-value">
-                            <span class="status-badge-modern status-{{ ($applicant->exam_score ?? 85) >= 75 ? 'passed' : 'pending' }}">
-                                {{ $applicant->overall_status ?? 'Exam Completed' }}
-                            </span>
-                        </span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="header-actions">
-                <a href="{{ route('admin.applicants.edit', $applicant->applicant_id ?? 1) }}" class="btn-modern btn-primary-modern">
-                    Edit Applicant
-                </a>
-                <a href="{{ route('admin.applicants.index') }}" class="btn-modern btn-secondary-modern">
-                    ← Back to List
-                </a>
-            </div>
+        <div class="header-actions">
+            <a href="{{ route('admin.applicants.edit', $applicant->applicant_id) }}" class="btn btn-primary">
+                Edit
+            </a>
+            <a href="{{ route('admin.applicants.index') }}" class="btn btn-secondary">
+                ← Back
+            </a>
         </div>
     </div>
 
-    <!-- Content Grid -->
-    <div class="content-grid">
-        <!-- Main Content -->
-        <div class="main-content">
-            
-            <!-- Contact Information -->
-            <div class="modern-card">
-                <div class="card-header">
-                    <h2 class="card-title">
-                        <div class="card-icon"></div>
-                        Contact Information
-                    </h2>
+    <div class="info-grid">
+        <div class="info-item">
+            <span class="info-label">Status</span>
+            <span class="status-badge status-{{ str_replace('-', '-', $applicant->status) }}">
+                {{ ucwords(str_replace('-', ' ', $applicant->status)) }}
+            </span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Email</span>
+            <span class="info-value">{{ $applicant->email_address ?? '-' }}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Phone</span>
+            <span class="info-value">{{ $applicant->phone_number ?? '-' }}</span>
+        </div>
+        @if($applicant->basicInfo)
+        <div class="info-item">
+            <span class="info-label">City/Municipality</span>
+            <span class="info-value">{{ $applicant->basicInfo->city_municipality ?? '-' }}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Province</span>
+            <span class="info-value">{{ $applicant->basicInfo->province ?? '-' }}</span>
+        </div>
+        @endif
+        <div class="info-item">
+            <span class="info-label">Application Date</span>
+            <span class="info-value">{{ $applicant->created_at->format('M d, Y') }}</span>
+        </div>
+        @if($applicant->assignedInstructor)
+        <div class="info-item">
+            <span class="info-label">Assigned Instructor</span>
+            <span class="info-value">{{ $applicant->assignedInstructor->full_name }}</span>
+        </div>
+        @endif
+        @if($applicant->accessCode)
+        <div class="info-item">
+            <span class="info-label">Access Code</span>
+            <span class="info-value">{{ $applicant->accessCode->code }}</span>
+        </div>
+        @endif
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+    <!-- Main Content -->
+    <div>
+        <!-- Personal Information -->
+        @if($applicant->basicInfo)
+        <div class="content-section">
+            <h2 class="section-title">Personal Information</h2>
+            <div class="info-grid-compact">
+                <div class="info-item-compact">
+                    <span class="data-label">Sex</span>
+                    <span class="data-value">{{ $applicant->basicInfo->sex ?? '-' }}</span>
                 </div>
-                <div class="card-content">
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <div class="info-icon">@</div>
-                            <div class="info-details">
-                                <div class="info-label">Email Address</div>
-                                <div class="info-value">{{ $applicant->email ?? 'john.doe@email.com' }}</div>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-icon"></div>
-                            <div class="info-details">
-                                <div class="info-label">Phone Number</div>
-                                <div class="info-value">{{ $applicant->phone ?? '+1 (555) 123-4567' }}</div>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-icon"></div>
-                            <div class="info-details">
-                                <div class="info-label">Address</div>
-                                <div class="info-value">{{ $applicant->address ?? '123 Main St, City, State 12345' }}</div>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-icon"></div>
-                            <div class="info-details">
-                                <div class="info-label">Previous Education</div>
-                                <div class="info-value">{{ $applicant->education ?? 'City High School, 2023' }}</div>
-                            </div>
-                        </div>
-                    </div>
+                @if($applicant->basicInfo->date_of_birth)
+                <div class="info-item-compact">
+                    <span class="data-label">Date of Birth</span>
+                    <span class="data-value">{{ $applicant->basicInfo->date_of_birth->format('M d, Y') }}</span>
+                </div>
+                @endif
+                @if($applicant->basicInfo->age)
+                <div class="info-item-compact">
+                    <span class="data-label">Age</span>
+                    <span class="data-value">{{ $applicant->basicInfo->age }}</span>
+                </div>
+                @endif
+                @if($applicant->basicInfo->civil_status)
+                <div class="info-item-compact">
+                    <span class="data-label">Civil Status</span>
+                    <span class="data-value">{{ $applicant->basicInfo->civil_status }}</span>
+                </div>
+                @endif
+                <div class="info-item-compact">
+                    <span class="data-label">City/Municipality</span>
+                    <span class="data-value">{{ $applicant->basicInfo->city_municipality ?? '-' }}</span>
+                </div>
+                <div class="info-item-compact">
+                    <span class="data-label">Province</span>
+                    <span class="data-value">{{ $applicant->basicInfo->province ?? '-' }}</span>
+                </div>
+                @if($applicant->basicInfo->senior_high_school_name)
+                <div class="info-item-compact">
+                    <span class="data-label">Senior High School</span>
+                    <span class="data-value">{{ $applicant->basicInfo->senior_high_school_name }}</span>
+                </div>
+                @endif
+                @if($applicant->basicInfo->senior_high_school_strand)
+                <div class="info-item-compact">
+                    <span class="data-label">SHS Strand</span>
+                    <span class="data-value">
+                        {{ $applicant->basicInfo->senior_high_school_strand }}
+                        @if($applicant->basicInfo->senior_high_school_strand === 'Others' && $applicant->basicInfo->senior_high_school_strand_other)
+                            - {{ $applicant->basicInfo->senior_high_school_strand_other }}
+                        @endif
+                    </span>
+                </div>
+                @endif
+            </div>
+            @if($applicant->basicInfo->complete_address)
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #f3f4f6;">
+                <div class="data-row" style="border-bottom: none; padding: 0;">
+                    <span class="data-label">Complete Address</span>
+                    <span class="data-value" style="text-align: right;">{{ $applicant->basicInfo->complete_address }}</span>
                 </div>
             </div>
+            @endif
+        </div>
+        @endif
 
-            <!-- Exam Performance -->
-            <div class="modern-card">
-                <div class="card-header">
-                    <h2 class="card-title">
-                        <div class="card-icon"></div>
-                        Exam Performance
-                    </h2>
-                </div>
-                <div class="card-content">
-                    @if($applicant->exam_completed ?? true)
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <div class="info-icon"></div>
-                                <div class="info-details">
-                                    <div class="info-label">Questions Correct</div>
-                                    <div class="info-value">{{ $applicant->correct_answers ?? 17 }}/{{ $applicant->total_questions ?? 20 }}</div>
-                                </div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-icon">⏱</div>
-                                <div class="info-details">
-                                    <div class="info-label">Time Taken</div>
-                                    <div class="info-value">{{ $applicant->exam_duration ?? '24 minutes 30 seconds' }}</div>
-                                </div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-icon"></div>
-                                <div class="info-details">
-                                    <div class="info-label">Completion Date</div>
-                                    <div class="info-value">{{ $applicant->exam_completed_at ?? now()->format('M d, Y - g:i A') }}</div>
-                                </div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-icon"></div>
-                                <div class="info-details">
-                                    <div class="info-label">Result Status</div>
-                                    <div class="info-value">
-                                        <span class="status-badge-modern status-{{ ($applicant->exam_score ?? 85) >= 75 ? 'passed' : 'pending' }}">
-                                            {{ ($applicant->exam_score ?? 85) >= 75 ? 'PASSED' : 'FAILED' }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    @else
-                        <div style="text-align: center; padding: var(--space-8);">
-                            <div style="font-size: var(--text-4xl); margin-bottom: var(--space-4);"></div>
-                            <h3 style="color: var(--maroon-primary); margin-bottom: var(--space-2);">Exam Not Completed</h3>
-                            <p style="color: var(--text-gray); margin-bottom: var(--space-4);">This applicant has not yet completed the entrance examination.</p>
-                            <button onclick="sendExamReminder()" class="btn-modern btn-primary-modern">Send Exam Reminder</button>
-                        </div>
-                    @endif
-                </div>
+        <!-- Interview Information -->
+        @if($applicant->latestInterview)
+        <div class="content-section">
+            <h2 class="section-title">Interview Information</h2>
+            <div class="data-row">
+                <span class="data-label">Status</span>
+                <span class="status-badge status-{{ str_replace('-', '-', $applicant->latestInterview->status) }}">
+                    {{ ucwords(str_replace('-', ' ', $applicant->latestInterview->status)) }}
+                </span>
+            </div>
+            @if($applicant->latestInterview->schedule_date)
+            <div class="data-row">
+                <span class="data-label">Scheduled Date</span>
+                <span class="data-value">{{ $applicant->latestInterview->schedule_date->format('M d, Y g:i A') }}</span>
+            </div>
+            @endif
+            @if($applicant->latestInterview->interviewer)
+            <div class="data-row">
+                <span class="data-label">Interviewer</span>
+                <span class="data-value">{{ $applicant->latestInterview->interviewer->full_name }}</span>
+            </div>
+            @endif
+            @if($applicant->latestInterview->overall_score !== null)
+            <div class="data-row">
+                <span class="data-label">Interview Score</span>
+                <span class="data-value">{{ number_format($applicant->latestInterview->overall_score, 2) }}/100</span>
+            </div>
+            @endif
+            @if($applicant->latestInterview->recommendation)
+            <div class="data-row">
+                <span class="data-label">Recommendation</span>
+                <span class="data-value">{{ ucwords(str_replace('_', ' ', $applicant->latestInterview->recommendation)) }}</span>
+            </div>
+            @endif
+            <div style="margin-top: 16px;">
+                <a href="{{ route('admin.interviews.show', $applicant->latestInterview->interview_id) }}" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                    View Interview Details
+                </a>
             </div>
         </div>
+        @endif
+    </div>
 
-        <!-- Sidebar Content -->
-        <div class="sidebar-content">
-            
-            <!-- Exam Score Showcase -->
-            <div class="modern-card">
-                <div class="card-content">
-                    <div class="score-showcase">
-                        <div class="score-circle-large">
-                            <div class="score-inner">
-                                <div class="score-number">{{ $applicant->exam_score ?? 85 }}%</div>
-                                <div class="score-label">Final Score</div>
-                            </div>
-                        </div>
-                        <div class="status-badge-modern status-{{ ($applicant->exam_score ?? 85) >= 75 ? 'passed' : 'pending' }}">
-                            {{ ($applicant->exam_score ?? 85) >= 75 ? 'Excellent Performance' : 'Needs Improvement' }}
-                        </div>
-                    </div>
-                </div>
+    <!-- Sidebar -->
+    <div>
+        <!-- Scores Overview -->
+        <div class="content-section">
+            <h2 class="section-title">Scores Overview</h2>
+            <div class="data-row">
+                <span class="data-label">UEE Score</span>
+                <span class="data-value">{{ $applicant->score ? number_format($applicant->score, 2) . '%' : '-' }}</span>
             </div>
-
-            <!-- Quick Actions -->
-            <div class="modern-card">
-                <div class="card-header">
-                    <h2 class="card-title">
-                        <div class="card-icon"></div>
-                        Quick Actions
-                    </h2>
-                </div>
-                <div class="card-content">
-                    <div style="display: flex; flex-direction: column; gap: var(--space-3);">
-                        <button onclick="emailApplicant()" class="btn-modern btn-primary-modern">
-                            Send Email
-                        </button>
-                        @if($applicant->latestInterview)
-                            <a href="{{ route('admin.interviews.show', $applicant->latestInterview->interview_id) }}" class="btn-modern btn-primary-modern" style="text-align: center; text-decoration: none;">
-                                View Interview
-                            </a>
-                        @else
-                            <button onclick="scheduleInterview()" class="btn-modern btn-secondary-modern" style="color: var(--maroon-primary); background: var(--light-gray); border: 1px solid var(--border-gray);">
-                                Schedule Interview
-                            </button>
-                        @endif
-                        <button onclick="printProfile()" class="btn-modern btn-secondary-modern" style="color: var(--maroon-primary); background: var(--light-gray); border: 1px solid var(--border-gray);">
-                            Print Profile
-                        </button>
-                        <button onclick="viewDetailedAnswers()" class="btn-modern btn-secondary-modern" style="color: var(--maroon-primary); background: var(--light-gray); border: 1px solid var(--border-gray);">
-                            View Exam Details
-                        </button>
-                    </div>
-                </div>
+            <div class="data-row">
+                <span class="data-label">GWA</span>
+                <span class="data-value">{{ $applicant->card_tor_gwa ? number_format($applicant->card_tor_gwa, 2) : '-' }}</span>
             </div>
-
-            <!-- Activity Timeline -->
-            <div class="modern-card">
-                <div class="card-header">
-                    <h2 class="card-title">
-                        <div class="card-icon"></div>
-                        Recent Activity
-                    </h2>
-                </div>
-                <div class="card-content">
-                    <div class="timeline-modern">
-                        @php
-                            $timeline = $applicant->timeline ?? [
-                                ['date' => now()->format('M d, Y'), 'time' => '2:30 PM', 'event' => 'Interview notes updated', 'type' => 'update'],
-                                ['date' => now()->format('M d, Y'), 'time' => '10:15 AM', 'event' => 'Exam completed with 85% score', 'type' => 'exam'],
-                                ['date' => now()->subDay()->format('M d, Y'), 'time' => '3:45 PM', 'event' => 'Exam started', 'type' => 'exam'],
-                                ['date' => now()->subDays(2)->format('M d, Y'), 'time' => '9:00 AM', 'event' => 'Application submitted', 'type' => 'application'],
-                            ];
-                        @endphp
-                        @foreach($timeline as $event)
-                        <div class="timeline-item-modern">
-                            <div class="timeline-marker-modern"></div>
-                            <div class="timeline-content-modern">
-                                <div class="timeline-event">{{ $event['event'] }}</div>
-                                <div class="timeline-time">{{ $event['date'] }} at {{ $event['time'] }}</div>
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
-                </div>
+            <div class="data-row">
+                <span class="data-label">EnrollAssess Score</span>
+                <span class="data-value">{{ $applicant->enrollassess_score ? number_format($applicant->enrollassess_score, 2) . '%' : '-' }}</span>
             </div>
+            <div class="data-row">
+                <span class="data-label">Interview Score</span>
+                <span class="data-value">{{ $applicant->interview_score ? number_format($applicant->interview_score, 2) . '%' : '-' }}</span>
+            </div>
+            @if($overallRating)
+            <div class="data-row">
+                <span class="data-label">Overall Rating</span>
+                <span class="data-value" style="font-weight: 600; color: #800020;">
+                    {{ number_format($overallRating['overall_rating'], 2) }}% - {{ $overallRating['verbal_description'] }}
+                </span>
+            </div>
+            @endif
         </div>
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-    // Modern notification system
-    function showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.innerHTML = `
-            <div class="notification-content">
-                <span class="notification-icon">${type === 'success' ? '' : type === 'error' ? '' : 'ℹ'}</span>
-                <span class="notification-message">${message}</span>
-            </div>
-        `;
-        
-        // Add notification styles
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: ${type === 'success' ? 'var(--success-light)' : type === 'error' ? 'var(--error-light)' : 'var(--info-light)'};
-            color: ${type === 'success' ? 'var(--success-dark)' : type === 'error' ? 'var(--error-dark)' : 'var(--info-dark)'};
-            padding: var(--space-4) var(--space-6);
-            border-radius: var(--radius-xl);
-            border: 1px solid ${type === 'success' ? 'var(--success)' : type === 'error' ? 'var(--error)' : 'var(--info)'};
-            box-shadow: var(--shadow-lg);
-            z-index: var(--z-toast);
-            transform: translateX(100%);
-            transition: var(--transition-normal);
-            max-width: 400px;
-        `;
-        
-        document.body.appendChild(notification);
-        
-        // Animate in
-        setTimeout(() => {
-            notification.style.transform = 'translateX(0)';
-        }, 100);
-        
-        // Remove after 3 seconds
-        setTimeout(() => {
-            notification.style.transform = 'translateX(100%)';
-            setTimeout(() => {
-                document.body.removeChild(notification);
-            }, 300);
-        }, 3000);
-    }
-
-    // Enhanced functionality
-    function emailApplicant() {
-        showNotification('Email functionality will be implemented in the next update', 'info');
-    }
-
-    function printProfile() {
-        showNotification('Preparing profile for printing...', 'info');
-        setTimeout(() => {
-            window.print();
-        }, 500);
-    }
-
-    function scheduleInterview() {
-        showNotification('Interview scheduling interface will open in the next update', 'info');
-    }
-
-    function viewDetailedAnswers() {
-        showNotification('Detailed exam analysis will be available soon', 'info');
-    }
-
-    function sendExamReminder() {
-        showNotification('Exam reminder sent successfully!', 'success');
-    }
-
-    // Add smooth scroll behavior
-    document.addEventListener('DOMContentLoaded', function() {
-        // Add smooth scrolling to all internal links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-
-        // Add loading states to buttons
-        document.querySelectorAll('.btn-modern').forEach(button => {
-            button.addEventListener('click', function(e) {
-                if (this.classList.contains('loading')) return;
-                
-                const originalText = this.innerHTML;
-                this.classList.add('loading');
-                this.innerHTML = 'Loading...';
-                this.disabled = true;
-                
-                setTimeout(() => {
-                    this.classList.remove('loading');
-                    this.innerHTML = originalText;
-                    this.disabled = false;
-                }, 1000);
-            });
-        });
-
-        // Add hover effects to cards
-        document.querySelectorAll('.modern-card').forEach(card => {
-            card.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-2px)';
-            });
-            
-            card.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(0)';
-            });
-        });
-    });
-</script>
-
-<style>
-    .notification-content {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-    }
-    
-    .notification-icon {
-        font-weight: bold;
-        font-size: var(--text-lg);
-    }
-    
-    .btn-modern.loading {
-        opacity: 0.7;
-        cursor: not-allowed;
-    }
-    
-    .modern-card {
-        transition: var(--transition-normal);
-    }
-</style>
-@endpush

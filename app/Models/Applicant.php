@@ -27,6 +27,7 @@ class Applicant extends Model
         'verbal_description',
         'status',
         'exam_completed_at',
+        'violation_count',
     ];
 
     protected $casts = [

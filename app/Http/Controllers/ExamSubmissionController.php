@@ -6,6 +6,7 @@ use App\Models\Applicant;
 use App\Models\Result;
 use App\Models\Question;
 use App\Models\QuestionOption;
+use App\Models\ExamAttempt;
 use App\Services\InterviewPoolService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +32,7 @@ class ExamSubmissionController extends Controller
             'applicant_id' => 'required|exists:applicants,applicant_id',
             'answers' => 'required|array',
             'exam_session_id' => 'nullable|string',
+            'violation_count' => 'nullable|integer|min:0|max:5',
         ]);
 
         try {
@@ -43,15 +45,40 @@ class ExamSubmissionController extends Controller
             
             // Get exam session to retrieve assigned question IDs
             $examSession = Session::get('exam_session');
+            $attemptId = $examSession['attempt_id'] ?? null;
+            $attemptToken = $examSession['attempt_token'] ?? null;
+            
+            // If session is lost, try to recover from database
             if (!$examSession || empty($examSession['question_ids'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Exam session expired or invalid. Please contact the administrator.'
-                ], 400);
+                if ($attemptId) {
+                    $attempt = ExamAttempt::find($attemptId);
+                    if ($attempt && $attempt->status === 'in_progress') {
+                        // Recover from database
+                        $examSession = [
+                            'applicant_id' => $attempt->applicant_id,
+                            'exam_id' => $attempt->exam_id,
+                            'question_ids' => $attempt->question_ids,
+                            'answers' => $attempt->answers ?? [],
+                        ];
+                        $attemptToken = $attempt->attempt_token;
+                    } else {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Exam session expired or invalid. Please contact the administrator.'
+                        ], 400);
+                    }
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Exam session expired or invalid. Please contact the administrator.'
+                    ], 400);
+                }
             }
             
-            // Generate unique attempt token for this exam submission
-            $attemptToken = Str::uuid()->toString();
+            // Use existing attempt token or generate new one
+            if (!$attemptToken) {
+                $attemptToken = Str::uuid()->toString();
+            }
             
             // Calculate score (using only assigned questions from session)
             $scoreData = $this->calculateExamScore($answers, $examSession['question_ids']);
@@ -61,11 +88,21 @@ class ExamSubmissionController extends Controller
                 'enrollassess_score' => $scoreData['percentage'],
                 'status' => 'exam-completed',
                 'exam_completed_at' => now(),
-                'verbal_description' => $scoreData['verbal_description']
+                'verbal_description' => $scoreData['verbal_description'],
+                'violation_count' => $request->input('violation_count', 0)
             ]);
 
             // Store detailed results (only for assigned questions) with attempt token
             $this->storeExamResults($applicantId, $answers, $scoreData, $examSession['question_ids'], false, null, $attemptToken);
+            
+            // Mark exam attempt as completed
+            if ($attemptId) {
+                $attempt = ExamAttempt::find($attemptId);
+                if ($attempt) {
+                    $attempt->markAsCompleted();
+                    Log::info("Exam attempt {$attemptId} marked as completed for applicant {$applicantId}");
+                }
+            }
             
             // Store attempt token in session for results page
             session(['exam_attempt_token' => $attemptToken]);

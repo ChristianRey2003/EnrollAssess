@@ -203,37 +203,39 @@
             <div class="summary-label">Total Applicants</div>
         </div>
         <div class="summary-box">
-            <div class="summary-value">{{ $totalProvinces }}</div>
-            <div class="summary-label">Provinces Represented</div>
+            <div class="summary-value">{{ $totalCities }}</div>
+            <div class="summary-label">Cities/Municipalities Represented</div>
         </div>
         <div class="summary-box">
-            <div class="summary-value">{{ $topProvince['province'] ?? 'N/A' }}</div>
-            <div class="summary-label">Top Province</div>
+            <div class="summary-value" style="font-size: 14pt;">{{ $topCity['city'] ?? 'N/A' }}</div>
+            <div class="summary-label">Top City/Municipality</div>
         </div>
         <div class="summary-box">
-            <div class="summary-value">{{ $topProvince['count'] ?? 0 }}</div>
-            <div class="summary-label">Applicants from Top Province</div>
+            <div class="summary-value">{{ $topCity['count'] ?? 0 }}</div>
+            <div class="summary-label">Applicants from Top City</div>
         </div>
     </div>
 
-    <!-- Province Performance Table -->
-    <div class="section-title">📍 Performance by Province</div>
+    <!-- City/Municipality Performance Table (Primary) -->
+    <div class="section-title">🏙️ Performance by City/Municipality</div>
     <table>
         <thead>
             <tr>
-                <th style="width: 5%;">#</th>
-                <th style="width: 25%;">Province</th>
-                <th style="width: 12%;" class="text-center">Applicants</th>
-                <th style="width: 15%;" class="text-center">Avg Exam Score</th>
-                <th style="width: 15%;" class="text-center">Avg Overall Rating</th>
-                <th style="width: 13%;" class="text-center">Exam Completed</th>
-                <th style="width: 15%;" class="text-center">Admitted</th>
+                <th style="width: 4%;">#</th>
+                <th style="width: 25%;">City/Municipality</th>
+                <th style="width: 15%;">Province</th>
+                <th style="width: 10%;" class="text-center">Applicants</th>
+                <th style="width: 12%;" class="text-center">Avg Exam Score</th>
+                <th style="width: 12%;" class="text-center">Avg Overall Rating</th>
+                <th style="width: 11%;" class="text-center">Exam Completed</th>
+                <th style="width: 11%;" class="text-center">Admitted</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($provinceData as $index => $data)
+            @forelse($cityData as $index => $data)
                 <tr class="{{ $index === 0 ? 'highlight-row' : '' }}">
                     <td class="text-center">{{ $index + 1 }}</td>
+                    <td>{{ $data['city'] }}</td>
                     <td>{{ $data['province'] }}</td>
                     <td class="text-center"><strong>{{ $data['count'] }}</strong></td>
                     <td class="text-center">{{ number_format($data['avg_exam_score'], 2) }}%</td>
@@ -243,36 +245,34 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center">No data available</td>
+                    <td colspan="8" class="text-center">No data available</td>
                 </tr>
             @endforelse
         </tbody>
     </table>
 
-    <!-- Top Cities Performance Table -->
-    <div class="section-title">🏙️ Top 10 Cities/Municipalities</div>
+    <!-- Province Performance Table (Secondary/Reference) -->
+    <div class="section-title">📍 Performance by Province (Reference)</div>
     <table>
         <thead>
             <tr>
                 <th style="width: 5%;">#</th>
-                <th style="width: 35%;">City/Municipality</th>
                 <th style="width: 30%;">Province</th>
                 <th style="width: 15%;" class="text-center">Applicants</th>
                 <th style="width: 15%;" class="text-center">Avg Exam Score</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($cityData as $index => $data)
+            @forelse($provinceData as $index => $data)
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
-                    <td>{{ $data['city'] }}</td>
                     <td>{{ $data['province'] }}</td>
                     <td class="text-center"><strong>{{ $data['count'] }}</strong></td>
                     <td class="text-center">{{ number_format($data['avg_exam_score'], 2) }}%</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" class="text-center">No data available</td>
+                    <td colspan="4" class="text-center">No data available</td>
                 </tr>
             @endforelse
         </tbody>

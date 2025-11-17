@@ -490,12 +490,12 @@
                             @enderror
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group" id="city_municipality_group">
                             <label for="city_municipality" class="form-label required">City/Municipality</label>
                             <select id="city_municipality" name="city_municipality" class="form-control @error('city_municipality') error @enderror" required>
                                 <option value="">Select City/Municipality</option>
                             </select>
-                            <span class="help-text">Select province first</span>
+                            <span class="help-text" id="city_help_text">Select province first</span>
                             @error('city_municipality')
                                 <span class="error-message">{{ $message }}</span>
                             @enderror
@@ -594,25 +594,154 @@
             validateForm();
         });
 
+        // Helper function to convert select to text input
+        function convertToTextInput(currentValue = '') {
+            const cityGroup = document.getElementById('city_municipality_group');
+            const cityField = document.getElementById('city_municipality');
+            const helpText = document.getElementById('city_help_text');
+            
+            // If already an input, just update value and return
+            if (cityField && cityField.tagName === 'INPUT') {
+                cityField.value = currentValue || cityField.value;
+                helpText.textContent = 'Please enter your city/municipality';
+                return;
+            }
+            
+            // Get current value if not provided
+            if (!currentValue && cityField) {
+                currentValue = cityField.value || '';
+            }
+            
+            // Get classes from existing field
+            const existingClasses = cityField ? cityField.className : 'form-control @error("city_municipality") error @enderror';
+            
+            // Create text input
+            const textInput = document.createElement('input');
+            textInput.type = 'text';
+            textInput.id = 'city_municipality';
+            textInput.name = 'city_municipality';
+            textInput.className = existingClasses;
+            textInput.required = true;
+            textInput.value = currentValue;
+            textInput.placeholder = 'Enter City/Municipality';
+            
+            // Add event listeners for validation
+            textInput.addEventListener('input', validateForm);
+            textInput.addEventListener('change', validateForm);
+            
+            // Replace select with input
+            if (cityField) {
+                cityField.replaceWith(textInput);
+            }
+            helpText.textContent = 'Please enter your city/municipality';
+        }
+
+        // Helper function to convert text input to select
+        function convertToSelect() {
+            const cityGroup = document.getElementById('city_municipality_group');
+            const cityField = document.getElementById('city_municipality');
+            const helpText = document.getElementById('city_help_text');
+            
+            if (cityField && cityField.tagName === 'INPUT') {
+                const currentValue = cityField.value;
+                
+                // Get classes from existing field
+                const existingClasses = cityField.className;
+                
+                // Create select
+                const select = document.createElement('select');
+                select.id = 'city_municipality';
+                select.name = 'city_municipality';
+                select.className = existingClasses;
+                select.required = true;
+                select.innerHTML = '<option value="">Select City/Municipality</option>';
+                
+                // Add event listeners for validation
+                select.addEventListener('change', validateForm);
+                
+                // Replace input with select
+                cityField.replaceWith(select);
+                helpText.textContent = 'Select City/Municipality';
+                
+                return select;
+            }
+            
+            return document.getElementById('city_municipality');
+        }
+
         // Province change - update cities
         document.getElementById('province').addEventListener('change', function() {
             const province = this.value;
-            const citySelect = document.getElementById('city_municipality');
+            const cityGroup = document.getElementById('city_municipality_group');
+            const helpText = document.getElementById('city_help_text');
             
-            // Clear current options
-            citySelect.innerHTML = '<option value="">Select City/Municipality</option>';
-            
-            if (province && citiesByProvince[province]) {
-                // Add cities for selected province
+            if (!province) {
+                // No province selected
+                const cityField = document.getElementById('city_municipality');
+                if (cityField.tagName === 'SELECT') {
+                    cityField.innerHTML = '<option value="">Select City/Municipality</option>';
+                } else {
+                    convertToSelect();
+                    document.getElementById('city_municipality').innerHTML = '<option value="">Select City/Municipality</option>';
+                }
+                helpText.textContent = 'Select province first';
+                validateForm();
+                return;
+            }
+
+            // Check if cities exist in initial data
+            if (citiesByProvince[province] && citiesByProvince[province].length > 0) {
+                // Convert to select if it's currently an input
+                let citySelect = document.getElementById('city_municipality');
+                if (citySelect.tagName === 'INPUT') {
+                    citySelect = convertToSelect();
+                }
+                
+                // Clear and populate cities
+                citySelect.innerHTML = '<option value="">Select City/Municipality</option>';
                 citiesByProvince[province].forEach(city => {
                     const option = document.createElement('option');
                     option.value = city;
                     option.textContent = city;
                     citySelect.appendChild(option);
                 });
-            } else if (province) {
-                // If province not in list, enable free input (using input instead of select)
-                // For now, just show a message in help text
+                helpText.textContent = 'Select City/Municipality';
+            } else {
+                // Fetch cities via AJAX
+                helpText.textContent = 'Loading cities...';
+                
+                fetch(`/api/cities-by-province/${encodeURIComponent(province)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.hasCities && data.cities.length > 0) {
+                            // Convert to select if it's currently an input
+                            let citySelect = document.getElementById('city_municipality');
+                            if (citySelect.tagName === 'INPUT') {
+                                citySelect = convertToSelect();
+                            }
+                            
+                            // Populate cities
+                            citySelect.innerHTML = '<option value="">Select City/Municipality</option>';
+                            data.cities.forEach(city => {
+                                const option = document.createElement('option');
+                                option.value = city;
+                                option.textContent = city;
+                                citySelect.appendChild(option);
+                            });
+                            helpText.textContent = 'Select City/Municipality';
+                        } else {
+                            // No cities available, convert to text input
+                            convertToTextInput();
+                        }
+                        validateForm();
+                    })
+                    .catch(error => {
+                        console.error('Error fetching cities:', error);
+                        // On error, convert to text input as fallback
+                        convertToTextInput();
+                        helpText.textContent = 'Please enter your city/municipality';
+                        validateForm();
+                    });
             }
 
             validateForm();
@@ -644,7 +773,8 @@
             const isPwd = document.getElementById('is_pwd').value;
             const address = document.getElementById('complete_address').value.trim();
             const province = document.getElementById('province').value;
-            const city = document.getElementById('city_municipality').value;
+            const cityField = document.getElementById('city_municipality');
+            const city = cityField ? cityField.value.trim() : '';
             const strand = document.getElementById('senior_high_school_strand').value;
             const schoolName = document.getElementById('senior_high_school_name').value.trim();
             
@@ -674,12 +804,16 @@
                 provinceSelect.value = oldProvince;
                 provinceSelect.dispatchEvent(new Event('change'));
                 
-                // Set old city after cities are populated
+                // Set old city after cities are populated (with longer timeout for AJAX)
                 setTimeout(() => {
                     if (oldCity) {
-                        document.getElementById('city_municipality').value = oldCity;
+                        const cityField = document.getElementById('city_municipality');
+                        if (cityField) {
+                            cityField.value = oldCity;
+                            validateForm();
+                        }
                     }
-                }, 100);
+                }, 500);
             }
 
             // Check if strand is "Others" on load

@@ -107,7 +107,7 @@ class BasicInfoController extends Controller
 
         // Validation rules
         $rules = [
-            'sex' => 'required|in:Male,Female,Other,Prefer not to say',
+            'sex' => 'required|in:Male,Female,Other',
             'date_of_birth' => 'required|date|before:today|after:' . now()->subYears(100)->toDateString(),
             'age' => 'required|integer|min:16|max:99',
             'civil_status' => 'nullable|in:Single,Married,Widowed,Separated,Divorced',
@@ -174,6 +174,34 @@ class BasicInfoController extends Controller
             return back()
                 ->withInput()
                 ->with('error', 'Failed to save basic information. Please try again.');
+        }
+    }
+
+    /**
+     * Get cities for a specific province (API endpoint).
+     */
+    public function getCitiesByProvince(string $province)
+    {
+        try {
+            // Decode URL-encoded province name
+            $province = urldecode($province);
+            
+            $cities = PhilippineLocations::getCitiesForProvince($province);
+            
+            return response()->json([
+                'success' => true,
+                'cities' => $cities,
+                'hasCities' => !empty($cities)
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching cities for province: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'cities' => [],
+                'hasCities' => false,
+                'message' => 'Error fetching cities'
+            ], 500);
         }
     }
 }

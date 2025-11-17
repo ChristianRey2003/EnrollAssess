@@ -816,10 +816,10 @@ class ReportGenerationService
         
         $applicants = $query->get();
         
-        // Group by province with performance data
-        $provinceData = $applicants->groupBy(function($applicant) {
-            return $applicant->basicInfo->province ?? 'Unknown';
-        })->map(function($group, $province) {
+        // Group by city/municipality with performance data (primary grouping)
+        $cityData = $applicants->groupBy(function($applicant) {
+            return $applicant->basicInfo->city_municipality ?? 'Unknown';
+        })->map(function($group, $city) {
             $examScores = $group->whereNotNull('enrollassess_score')->pluck('enrollassess_score');
             $overallRatings = $group->filter(function($applicant) {
                 return $applicant->hasAllRequiredScores();
@@ -828,35 +828,35 @@ class ReportGenerationService
             })->filter();
             
             return [
-                'province' => $province,
+                'city' => $city,
                 'count' => $group->count(),
                 'avg_exam_score' => $examScores->isNotEmpty() ? round($examScores->average(), 2) : 0,
                 'avg_overall_rating' => $overallRatings->isNotEmpty() ? round($overallRatings->average(), 2) : 0,
                 'exam_completed' => $group->where('status', '!=', 'pending')->count(),
                 'admitted' => $group->where('status', 'admitted')->count(),
+                'province' => $group->first()->basicInfo->province ?? 'Unknown',
             ];
         })->sortByDesc('count')->values();
         
-        // Group by city (top 10)
-        $cityData = $applicants->groupBy(function($applicant) {
-            return $applicant->basicInfo->city_municipality ?? 'Unknown';
-        })->map(function($group, $city) {
+        // Group by province (secondary grouping for reference)
+        $provinceData = $applicants->groupBy(function($applicant) {
+            return $applicant->basicInfo->province ?? 'Unknown';
+        })->map(function($group, $province) {
             $examScores = $group->whereNotNull('enrollassess_score')->pluck('enrollassess_score');
             
             return [
-                'city' => $city,
+                'province' => $province,
                 'count' => $group->count(),
                 'avg_exam_score' => $examScores->isNotEmpty() ? round($examScores->average(), 2) : 0,
-                'province' => $group->first()->basicInfo->province ?? 'Unknown',
             ];
-        })->sortByDesc('count')->take(10)->values();
+        })->sortByDesc('count')->values();
         
         $data = [
-            'provinceData' => $provinceData,
             'cityData' => $cityData,
+            'provinceData' => $provinceData,
             'totalApplicants' => $applicants->count(),
-            'totalProvinces' => $provinceData->count(),
-            'topProvince' => $provinceData->first(),
+            'totalCities' => $cityData->count(),
+            'topCity' => $cityData->first(),
             'filters' => $filters,
             'generatedAt' => now()->format('F d, Y - g:i A'),
             'generatedBy' => auth()->user()->name ?? 'System',

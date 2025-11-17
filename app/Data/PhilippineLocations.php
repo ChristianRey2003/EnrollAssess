@@ -257,7 +257,6 @@ class PhilippineLocations
             'Male',
             'Female',
             'Other',
-            'Prefer not to say',
         ];
     }
 

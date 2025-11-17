@@ -684,8 +684,8 @@
             history.pushState(null, '', location.href);
         });
 
-        let timeRemaining = {{ $timeRemaining ?? 1800 }};
-        let violationCount = 0;
+        let timeRemaining = Math.floor({{ $timeRemaining ?? 1800 }});
+        let violationCount = {{ $savedViolationCount ?? 0 }};
         let currentSubmittingSection = null;
         let completedSections = @json($examSession['sections_completed'] ?? []);
         let sectionAnswers = @json($examSession['answers'] ?? []);
@@ -785,11 +785,7 @@
             const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
                                    document.mozFullScreenElement || document.msFullscreenElement);
             
-            if (!isFullscreen && fullscreenActive && examStarted && timeRemaining > 0) {
-                // Immediately try to re-enter fullscreen (no delay)
-                fullscreenReEntryAttempts = 0;
-                reEnterFullscreen();
-            } else if (isFullscreen) {
+            if (isFullscreen) {
                 // Reset attempts when fullscreen is successfully entered
                 fullscreenReEntryAttempts = 0;
             }
@@ -810,10 +806,10 @@
                 return;
             }
 
-            // Limit re-entry attempts to prevent infinite loops
+            // Limit re-entry attempts to prevent infinite loops (but don't record as violation)
             if (fullscreenReEntryAttempts >= MAX_FULLSCREEN_ATTEMPTS) {
-                console.warn('Maximum fullscreen re-entry attempts reached');
-                recordViolation('FULLSCREEN_BLOCKED', 'Unable to maintain fullscreen mode. Please contact the administrator.');
+                console.warn('Maximum fullscreen re-entry attempts reached - user must manually re-enter fullscreen');
+                fullscreenReEntryAttempts = 0; // Reset for next attempt
                 return;
             }
 
@@ -830,16 +826,11 @@
                     .then(() => {
                         fullscreenReEntryAttempts = 0;
                         fullscreenActive = true;
+                        console.log('Successfully re-entered fullscreen');
                     })
                     .catch(err => {
                         console.warn('Re-entering fullscreen failed, attempt', fullscreenReEntryAttempts, err);
-                        
-                        // If user denied fullscreen or it failed, try again after a short delay
-                        if (fullscreenReEntryAttempts < MAX_FULLSCREEN_ATTEMPTS) {
-                            setTimeout(() => {
-                                reEnterFullscreen();
-                            }, 200);
-                        }
+                        // Don't retry automatically - wait for user to click back into the page
                     });
             }
         }
@@ -852,10 +843,12 @@
                     return;
                 }
                 
+                // Ensure timeRemaining is always an integer
+                timeRemaining = Math.floor(timeRemaining);
                 timeRemaining--;
                 
                 const minutes = Math.floor(timeRemaining / 60);
-                const seconds = timeRemaining % 60;
+                const seconds = Math.floor(timeRemaining % 60);
                 const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
                 
                 document.getElementById('timeRemaining').textContent = timeString;
@@ -874,7 +867,8 @@
 
         // Violation system
         function initializeViolationSystem() {
-            violationCount = 0;
+            // Keep existing violation count from database (already loaded from savedViolationCount)
+            // violationCount is already set at page load from PHP
             updateViolationBadge();
         }
 
@@ -893,79 +887,41 @@
         }
 
         function setupViolationMonitoring() {
-            let lastFocusTime = Date.now();
-            let focusCheckInterval = null;
-            let fullscreenCheckInterval = null;
-            let fullscreenRetryInterval = null; // For tab visibility retries
-            let violationCooldown = {}; // Prevent spam violations
+            let lastViolationTime = 0; // Global cooldown for all violations
+            const GLOBAL_VIOLATION_COOLDOWN = 3000; // 3 seconds between ANY violations
+            let fullscreenRetryInterval = null;
+            let isRecoveringFromViolation = false; // Flag to prevent cascading violations
             
-            // AGGRESSIVE: Continuous fullscreen monitoring (every 100ms)
-            let wasFullscreen = true; // Track previous state
-            fullscreenCheckInterval = setInterval(function() {
-                if (!examStarted || timeRemaining <= 0) {
-                    clearInterval(fullscreenCheckInterval);
-                    return;
-                }
-                
-                const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
-                                       document.mozFullScreenElement || document.msFullscreenElement);
-                
-                // Only record violation on state change, not on every check
-                if (fullscreenActive && wasFullscreen && !isFullscreen) {
-                    // Fullscreen was just exited - record violation and try to re-enter
-                    const violationKey = 'FS_EXIT_' + Math.floor(Date.now() / 1000);
-                    if (!violationCooldown[violationKey]) {
-                        violationCooldown[violationKey] = true;
-                        recordViolation('FULLSCREEN_EXIT', 'Fullscreen mode was exited. Re-entering immediately...');
-                        setTimeout(() => delete violationCooldown[violationKey], 2000);
-                    }
-                    reEnterFullscreen();
-                }
-                wasFullscreen = isFullscreen;
-            }, 100); // Check every 100ms
-
-            // AGGRESSIVE: Continuous focus monitoring (every 50ms)
-            focusCheckInterval = setInterval(function() {
-                if (!examStarted || timeRemaining <= 0) {
-                    clearInterval(focusCheckInterval);
-                    return;
-                }
-                
+            // Helper function to record violation with global cooldown
+            function recordViolationWithCooldown(type, message) {
                 const now = Date.now();
-                const timeSinceFocus = now - lastFocusTime;
                 
-                // If window lost focus for more than 200ms, it's likely Alt+Tab or window switch
-                if (!document.hasFocus() && timeSinceFocus > 200) {
-                    const violationKey = 'FOCUS_LOST_' + Math.floor(now / 1000); // Rate limit to once per second
-                    if (!violationCooldown[violationKey]) {
-                        violationCooldown[violationKey] = true;
-                        recordViolation('WINDOW_SWITCH', 'Window lost focus. This may indicate application switching.');
-                        
-                        // Immediately try to regain focus and fullscreen
-                        window.focus();
-                        reEnterFullscreen();
-                        
-                        // Clear old cooldown entries
-                        setTimeout(() => delete violationCooldown[violationKey], 2000);
-                    }
-                } else if (document.hasFocus()) {
-                    lastFocusTime = now;
+                // Skip if we're in cooldown or recovering from a violation
+                if (now - lastViolationTime < GLOBAL_VIOLATION_COOLDOWN || isRecoveringFromViolation) {
+                    console.log(`Violation ${type} skipped (in cooldown or recovering)`);
+                    return false;
                 }
-            }, 50); // Check every 50ms
+                
+                lastViolationTime = now;
+                isRecoveringFromViolation = true;
+                
+                // Clear recovery flag after 2 seconds
+                setTimeout(() => {
+                    isRecoveringFromViolation = false;
+                }, 2000);
+                
+                recordViolation(type, message);
+                return true;
+            }
 
-            // Tab visibility - IMMEDIATE detection and aggressive fullscreen re-entry
+            // Tab visibility - Detection and fullscreen re-entry
             let wasHidden = false;
             
             document.addEventListener('visibilitychange', function() {
                 if (document.hidden && examStarted && timeRemaining > 0) {
                     // Only record if this is a new hidden state
                     if (!wasHidden) {
-                        const violationKey = 'TAB_SWITCH_' + Math.floor(Date.now() / 1000);
-                        if (!violationCooldown[violationKey]) {
-                            violationCooldown[violationKey] = true;
-                            recordViolation('TAB_SWITCH', 'You switched to another tab or minimized the browser.');
-                            setTimeout(() => delete violationCooldown[violationKey], 2000);
-                        }
+                        recordViolationWithCooldown('TAB_SWITCH', 'You switched to another tab or minimized the browser.');
                     }
                     wasHidden = true;
                     
@@ -1021,53 +977,13 @@
                 }
             });
 
-            // Window blur - IMMEDIATE detection
-            window.addEventListener('blur', function() {
-                if (examStarted && timeRemaining > 0) {
-                    lastFocusTime = Date.now();
-                    const violationKey = 'BLUR_' + Math.floor(Date.now() / 500);
-                    if (!violationCooldown[violationKey]) {
-                        violationCooldown[violationKey] = true;
-                        recordViolation('WINDOW_BLUR', 'You clicked outside the exam window or switched applications.');
-                        setTimeout(() => delete violationCooldown[violationKey], 1000);
-                    }
-                }
-            });
+            // Window blur - Removed to prevent duplicate violations (visibilitychange handles this)
 
-            // Window focus - AGGRESSIVELY ensure fullscreen when window regains focus (e.g., after Alt+Tab)
+            // Window focus - Ensure fullscreen when window regains focus (e.g., after Alt+Tab)
             window.addEventListener('focus', function() {
-                if (examStarted && timeRemaining > 0) {
-                    lastFocusTime = Date.now();
-                    
-                    // Immediate fullscreen attempt
-                    reEnterFullscreen();
-                    
-                    // Persistent retry for Alt+Tab scenarios - user might have switched back
-                    let focusRetryCount = 0;
-                    const focusRetryMax = 15; // Try for 3 seconds (15 * 200ms)
-                    
-                    const focusRetryInterval = setInterval(function() {
-                        if (!examStarted || timeRemaining <= 0 || !document.hasFocus()) {
-                            clearInterval(focusRetryInterval);
-                            return;
-                        }
-                        
-                        const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
-                                               document.mozFullScreenElement || document.msFullscreenElement);
-                        
-                        if (isFullscreen) {
-                            // Success! Stop retrying
-                            clearInterval(focusRetryInterval);
-                            fullscreenActive = true;
-                        } else {
-                            focusRetryCount++;
-                            if (focusRetryCount <= focusRetryMax) {
-                                reEnterFullscreen();
-                            } else {
-                                clearInterval(focusRetryInterval);
-                            }
-                        }
-                    }, 200);
+                if (examStarted && timeRemaining > 0 && !document.hidden) {
+                    // Only try to re-enter fullscreen if we're not in cooldown
+                    setTimeout(() => reEnterFullscreen(), 200);
                 }
             });
 
@@ -1079,9 +995,9 @@
                         e.preventDefault();
                         e.stopPropagation();
                         e.stopImmediatePropagation();
-                        recordViolation('ESC_PRESSED', 'ESC key is disabled during the exam. You cannot exit fullscreen mode.');
+                        recordViolationWithCooldown('ESC_PRESSED', 'ESC key is disabled during the exam. You cannot exit fullscreen mode.');
                         // Immediately re-enter fullscreen if somehow exited
-                        reEnterFullscreen();
+                        setTimeout(() => reEnterFullscreen(), 50);
                         return false;
                     }
                 }
@@ -1090,58 +1006,15 @@
                 if (e.altKey && (e.key === 'Tab' || e.keyCode === 9)) {
                     e.preventDefault();
                     e.stopPropagation();
-                    recordViolation('ALT_TAB_ATTEMPT', 'Alt+Tab detected. Application switching is not allowed.');
+                    recordViolationWithCooldown('ALT_TAB_ATTEMPT', 'Alt+Tab detected. Application switching is not allowed.');
                     
-                    // Immediately try to regain focus and fullscreen
-                    // Use multiple attempts since Alt+Tab might have already switched windows
-                    let altTabRetryCount = 0;
-                    const altTabRetryMax = 20; // Try for 4 seconds (20 * 200ms)
-                    
-                    const altTabRetryInterval = setInterval(function() {
-                        if (!examStarted || timeRemaining <= 0) {
-                            clearInterval(altTabRetryInterval);
-                            return;
-                        }
-                        
-                        // Try to regain focus and fullscreen
+                    // Try to regain focus and fullscreen after short delay
+                    setTimeout(() => {
                         window.focus();
                         reEnterFullscreen();
-                        
-                        const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
-                                               document.mozFullScreenElement || document.msFullscreenElement);
-                        const hasFocus = document.hasFocus();
-                        
-                        if (isFullscreen && hasFocus) {
-                            // Success! Stop retrying
-                            clearInterval(altTabRetryInterval);
-                            fullscreenActive = true;
-                        } else {
-                            altTabRetryCount++;
-                            if (altTabRetryCount >= altTabRetryMax) {
-                                clearInterval(altTabRetryInterval);
-                            }
-                        }
-                    }, 200); // Try every 200ms
+                    }, 100);
                     
                     return false;
-                }
-
-                // Alt key alone - monitor for Alt+Tab attempts
-                if (e.key === 'Alt' || e.altKey) {
-                    // Set a flag to detect if Tab is pressed shortly after
-                    const altPressTime = Date.now();
-                    const keyupHandler = function(upEvent) {
-                        if (upEvent.key === 'Alt' && (Date.now() - altPressTime) < 500) {
-                            // Alt was released, check if Tab might have been pressed
-                            if (!document.hasFocus()) {
-                                recordViolation('ALT_TAB_DETECTED', 'Application switching detected via Alt key.');
-                                window.focus();
-                                reEnterFullscreen();
-                            }
-                        }
-                        document.removeEventListener('keyup', keyupHandler);
-                    };
-                    document.addEventListener('keyup', keyupHandler);
                 }
 
                 // Dev tools
@@ -1150,7 +1023,7 @@
                     (e.ctrlKey && (e.key === 'u' || e.key === 'U'))) {
                     e.preventDefault();
                     e.stopPropagation();
-                    recordViolation('DEV_TOOLS', 'Developer tools access blocked.');
+                    recordViolationWithCooldown('DEV_TOOLS', 'Developer tools access blocked.');
                     return false;
                 }
 
@@ -1159,7 +1032,7 @@
                                  e.key === 'x' || e.key === 'X' || e.key === 'a' || e.key === 'A')) {
                     e.preventDefault();
                     e.stopPropagation();
-                    recordViolation('COPY_PASTE', 'Copy/paste is not allowed.');
+                    recordViolationWithCooldown('COPY_PASTE', 'Copy/paste is not allowed.');
                     return false;
                 }
 
@@ -1167,7 +1040,7 @@
                 if (e.ctrlKey && (e.key === 'p' || e.key === 'P')) {
                     e.preventDefault();
                     e.stopPropagation();
-                    recordViolation('PRINT_ATTEMPT', 'Printing is not allowed.');
+                    recordViolationWithCooldown('PRINT_ATTEMPT', 'Printing is not allowed.');
                     return false;
                 }
 
@@ -1175,7 +1048,7 @@
                 if (e.key === 'F5' || (e.ctrlKey && (e.key === 'r' || e.key === 'R'))) {
                     e.preventDefault();
                     e.stopPropagation();
-                    recordViolation('REFRESH_ATTEMPT', 'Page refresh is not allowed.');
+                    recordViolationWithCooldown('REFRESH_ATTEMPT', 'Page refresh is not allowed.');
                     return false;
                 }
 
@@ -1183,7 +1056,7 @@
                 if (e.key === 'Meta' || e.key === 'OS' || e.keyCode === 91 || e.keyCode === 92) {
                     e.preventDefault();
                     e.stopPropagation();
-                    recordViolation('WINDOWS_KEY', 'Windows/System key pressed. This is not allowed.');
+                    recordViolationWithCooldown('WINDOWS_KEY', 'Windows/System key pressed. This is not allowed.');
                     return false;
                 }
 
@@ -1191,7 +1064,7 @@
                 if (e.ctrlKey && e.altKey && (e.key === 'Delete' || e.keyCode === 46)) {
                     e.preventDefault();
                     e.stopPropagation();
-                    recordViolation('SYSTEM_SHORTCUT', 'System shortcut (Ctrl+Alt+Del) is not allowed.');
+                    recordViolationWithCooldown('SYSTEM_SHORTCUT', 'System shortcut (Ctrl+Alt+Del) is not allowed.');
                     return false;
                 }
 
@@ -1199,7 +1072,7 @@
                 if (e.ctrlKey && e.shiftKey && (e.key === 'Escape' || e.keyCode === 27)) {
                     e.preventDefault();
                     e.stopPropagation();
-                    recordViolation('TASK_MANAGER', 'Task Manager shortcut is not allowed.');
+                    recordViolationWithCooldown('TASK_MANAGER', 'Task Manager shortcut is not allowed.');
                     return false;
                 }
             }, true); // Use capture phase for better interception
@@ -1208,17 +1081,14 @@
             document.addEventListener('contextmenu', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                recordViolation('RIGHT_CLICK', 'Right-click is not allowed.');
+                recordViolationWithCooldown('RIGHT_CLICK', 'Right-click is not allowed.');
                 return false;
             }, true);
 
             // Cleanup intervals when exam ends
             window.addEventListener('beforeunload', function() {
-                if (focusCheckInterval) clearInterval(focusCheckInterval);
-                if (fullscreenCheckInterval) clearInterval(fullscreenCheckInterval);
                 if (fullscreenRetryInterval) clearInterval(fullscreenRetryInterval);
             });
-            
         }
 
         function recordViolation(type, message) {
@@ -1433,7 +1303,8 @@
                 body: JSON.stringify({
                     applicant_id: {{ $examSession['applicant_id'] ?? ($applicant->applicant_id ?? 1) }},
                     answers: window.allExamAnswers || {},
-                    exam_session_id: 'session_' + Date.now()
+                    exam_session_id: 'session_' + Date.now(),
+                    violation_count: typeof violationCount !== 'undefined' ? violationCount : 0
                 })
             })
             .then(response => response.json())
@@ -1492,7 +1363,8 @@
                     answers: allAnswers,
                     exam_session_id: 'session_' + Date.now(),
                     auto_submitted: true,
-                    auto_submit_reason: reason
+                    auto_submit_reason: reason,
+                    violation_count: typeof violationCount !== 'undefined' ? violationCount : 0
                 })
             })
             .then(response => response.json())
