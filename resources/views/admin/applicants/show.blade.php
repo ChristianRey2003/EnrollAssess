@@ -43,8 +43,8 @@
         .applicant-header {
             background: white;
             border-radius: 8px;
-            padding: 24px;
-            margin-bottom: 20px;
+            padding: 16px;
+            margin-bottom: 12px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             border: 1px solid #e5e7eb;
         }
@@ -53,20 +53,46 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         .header-title {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 600;
             color: #1f2937;
-            margin: 0 0 8px 0;
+            margin: 0 0 6px 0;
         }
 
         .header-subtitle {
             font-size: 14px;
             color: #6b7280;
             margin: 0;
+        }
+
+        .header-access-code {
+            font-size: 13px;
+            color: #6b7280;
+            margin: 6px 0 0 0;
+        }
+
+        .header-status {
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .header-personal-info {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .header-personal-info .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 12px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #800020;
         }
 
         .header-actions {
@@ -110,8 +136,8 @@
         .info-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-top: 20px;
+            gap: 12px;
+            margin-top: 0;
         }
 
         .info-item {
@@ -173,7 +199,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 0;
+            padding: 5px 0;
             border-bottom: 1px solid #f3f4f6;
         }
 
@@ -208,6 +234,33 @@
             font-size: 14px;
             color: #1f2937;
             font-weight: 500;
+            margin: 0;
+        }
+
+        .personal-info-list {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px 20px;
+            margin-top: 12px;
+        }
+
+        .personal-info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .personal-info-label {
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .personal-info-value {
+            font-size: 14px;
+            color: #1f2937;
+            font-weight: 400;
             margin: 0;
         }
 
@@ -324,7 +377,7 @@
         }
 
         @media (max-width: 1024px) {
-            div[style*="grid-template-columns: 2fr 1fr"] {
+            div[style*="grid-template-columns: 1fr 1fr"] {
                 grid-template-columns: 1fr !important;
             }
         }
@@ -383,127 +436,77 @@
         <div>
             <h1 class="header-title">{{ $applicant->full_name }}</h1>
             <p class="header-subtitle">{{ $applicant->application_no ?? $applicant->formatted_applicant_no }}</p>
+            @if($applicant->accessCode)
+            <p class="header-access-code">Access Code: {{ $applicant->accessCode->code }}</p>
+            @endif
         </div>
-        <div class="header-actions">
-            <a href="{{ route('admin.applicants.edit', $applicant->applicant_id) }}" class="btn btn-primary">
-                Edit
-            </a>
-            <a href="{{ route('admin.applicants.index') }}" class="btn btn-secondary">
-                ← Back
-            </a>
-        </div>
-    </div>
-
-    <div class="info-grid">
-        <div class="info-item">
-            <span class="info-label">Status</span>
+        <div class="header-status">
             <span class="status-badge status-{{ str_replace('-', '-', $applicant->status) }}">
                 {{ ucwords(str_replace('-', ' ', $applicant->status)) }}
             </span>
         </div>
-        <div class="info-item">
-            <span class="info-label">Email</span>
-            <span class="info-value">{{ $applicant->email_address ?? '-' }}</span>
-        </div>
-        <div class="info-item">
-            <span class="info-label">Phone</span>
-            <span class="info-value">{{ $applicant->phone_number ?? '-' }}</span>
-        </div>
-        @if($applicant->basicInfo)
-        <div class="info-item">
-            <span class="info-label">City/Municipality</span>
-            <span class="info-value">{{ $applicant->basicInfo->city_municipality ?? '-' }}</span>
-        </div>
-        <div class="info-item">
-            <span class="info-label">Province</span>
-            <span class="info-value">{{ $applicant->basicInfo->province ?? '-' }}</span>
-        </div>
-        @endif
-        <div class="info-item">
-            <span class="info-label">Application Date</span>
-            <span class="info-value">{{ $applicant->created_at->format('M d, Y') }}</span>
-        </div>
-        @if($applicant->assignedInstructor)
-        <div class="info-item">
-            <span class="info-label">Assigned Instructor</span>
-            <span class="info-value">{{ $applicant->assignedInstructor->full_name }}</span>
-        </div>
-        @endif
-        @if($applicant->accessCode)
-        <div class="info-item">
-            <span class="info-label">Access Code</span>
-            <span class="info-value">{{ $applicant->accessCode->code }}</span>
-        </div>
-        @endif
     </div>
-</div>
-
-<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
-    <!-- Main Content -->
-    <div>
-        <!-- Personal Information -->
-        @if($applicant->basicInfo)
-        <div class="content-section">
-            <h2 class="section-title">Personal Information</h2>
-            <div class="info-grid-compact">
-                <div class="info-item-compact">
-                    <span class="data-label">Sex</span>
-                    <span class="data-value">{{ $applicant->basicInfo->sex ?? '-' }}</span>
-                </div>
-                @if($applicant->basicInfo->date_of_birth)
-                <div class="info-item-compact">
-                    <span class="data-label">Date of Birth</span>
-                    <span class="data-value">{{ $applicant->basicInfo->date_of_birth->format('M d, Y') }}</span>
-                </div>
-                @endif
-                @if($applicant->basicInfo->age)
-                <div class="info-item-compact">
-                    <span class="data-label">Age</span>
-                    <span class="data-value">{{ $applicant->basicInfo->age }}</span>
-                </div>
-                @endif
-                @if($applicant->basicInfo->civil_status)
-                <div class="info-item-compact">
-                    <span class="data-label">Civil Status</span>
-                    <span class="data-value">{{ $applicant->basicInfo->civil_status }}</span>
-                </div>
-                @endif
-                <div class="info-item-compact">
-                    <span class="data-label">City/Municipality</span>
-                    <span class="data-value">{{ $applicant->basicInfo->city_municipality ?? '-' }}</span>
-                </div>
-                <div class="info-item-compact">
-                    <span class="data-label">Province</span>
-                    <span class="data-value">{{ $applicant->basicInfo->province ?? '-' }}</span>
-                </div>
-                @if($applicant->basicInfo->senior_high_school_name)
-                <div class="info-item-compact">
-                    <span class="data-label">Senior High School</span>
-                    <span class="data-value">{{ $applicant->basicInfo->senior_high_school_name }}</span>
-                </div>
-                @endif
-                @if($applicant->basicInfo->senior_high_school_strand)
-                <div class="info-item-compact">
-                    <span class="data-label">SHS Strand</span>
-                    <span class="data-value">
+    
+    <!-- Personal Information -->
+    @if($applicant->basicInfo)
+    <div class="header-personal-info">
+        <h2 class="section-title">Personal Information</h2>
+        <div class="personal-info-list">
+            <div class="personal-info-item">
+                <span class="personal-info-label">Sex:</span>
+                <span class="personal-info-value">{{ $applicant->basicInfo->sex ?? '-' }}</span>
+            </div>
+            <div class="personal-info-item">
+                <span class="personal-info-label">Civil Status:</span>
+                <span class="personal-info-value">{{ $applicant->basicInfo->civil_status ?? '-' }}</span>
+            </div>
+            <div class="personal-info-item">
+                <span class="personal-info-label">Date of Birth:</span>
+                <span class="personal-info-value">
+                    @if($applicant->basicInfo->date_of_birth)
+                        {{ $applicant->basicInfo->date_of_birth->format('M d, Y') }}
+                    @else
+                        -
+                    @endif
+                </span>
+            </div>
+            <div class="personal-info-item">
+                <span class="personal-info-label">Email:</span>
+                <span class="personal-info-value">{{ $applicant->email_address ?? '-' }}</span>
+            </div>
+            <div class="personal-info-item">
+                <span class="personal-info-label">Phone Number:</span>
+                <span class="personal-info-value">{{ $applicant->phone_number ?? '-' }}</span>
+            </div>
+            <div class="personal-info-item">
+                <span class="personal-info-label">Complete Address:</span>
+                <span class="personal-info-value">{{ $applicant->basicInfo->complete_address ?? '-' }}</span>
+            </div>
+            <div class="personal-info-item">
+                <span class="personal-info-label">Senior High School:</span>
+                <span class="personal-info-value">{{ $applicant->basicInfo->senior_high_school_name ?? '-' }}</span>
+            </div>
+            <div class="personal-info-item">
+                <span class="personal-info-label">SHS Strand:</span>
+                <span class="personal-info-value">
+                    @if($applicant->basicInfo->senior_high_school_strand)
                         {{ $applicant->basicInfo->senior_high_school_strand }}
                         @if($applicant->basicInfo->senior_high_school_strand === 'Others' && $applicant->basicInfo->senior_high_school_strand_other)
                             - {{ $applicant->basicInfo->senior_high_school_strand_other }}
                         @endif
-                    </span>
-                </div>
-                @endif
+                    @else
+                        -
+                    @endif
+                </span>
             </div>
-            @if($applicant->basicInfo->complete_address)
-            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #f3f4f6;">
-                <div class="data-row" style="border-bottom: none; padding: 0;">
-                    <span class="data-label">Complete Address</span>
-                    <span class="data-value" style="text-align: right;">{{ $applicant->basicInfo->complete_address }}</span>
-                </div>
-            </div>
-            @endif
         </div>
-        @endif
+    </div>
+    @endif
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <!-- Main Content -->
+    <div>
 
         <!-- Interview Information -->
         @if($applicant->latestInterview)

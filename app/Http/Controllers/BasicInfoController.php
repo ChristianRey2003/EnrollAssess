@@ -110,7 +110,7 @@ class BasicInfoController extends Controller
             'sex' => 'required|in:Male,Female,Other',
             'date_of_birth' => 'required|date|before:today|after:' . now()->subYears(100)->toDateString(),
             'age' => 'required|integer|min:16|max:99',
-            'civil_status' => 'nullable|in:Single,Married,Widowed,Separated,Divorced',
+            'civil_status' => 'nullable|in:Single,Married,Widowed,Separated',
             'applicant_type' => 'required|in:New College Applicant,Transferee,ALS passer',
             'is_pwd' => 'required|in:Yes,No,Prefer not to answer',
             'complete_address' => 'required|string|max:1000',

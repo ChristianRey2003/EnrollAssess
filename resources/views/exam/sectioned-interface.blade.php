@@ -39,7 +39,7 @@
         .exam-header {
             background: #800020;
             color: white;
-            padding: 16px 24px;
+            padding: 12px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -50,7 +50,7 @@
         }
 
         .exam-title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
             letter-spacing: -0.02em;
         }
@@ -58,16 +58,16 @@
         .exam-meta {
             display: flex;
             align-items: center;
-            gap: 24px;
+            gap: 16px;
         }
 
         .exam-timer {
             background: rgba(255, 255, 255, 0.2);
-            padding: 8px 16px;
+            padding: 6px 14px;
             border-radius: 6px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
-            min-width: 100px;
+            min-width: 90px;
             text-align: center;
             backdrop-filter: blur(10px);
         }
@@ -84,13 +84,13 @@
 
         .violation-badge {
             background: rgba(255, 255, 255, 0.15);
-            padding: 8px 16px;
+            padding: 6px 14px;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .violation-badge.warning {
@@ -125,7 +125,7 @@
         .exam-content {
             flex: 1;
             overflow-y: auto;
-            padding: 32px 24px;
+            padding: 16px 20px;
         }
 
         .exam-sections {
@@ -133,7 +133,7 @@
             margin: 0 auto;
             display: flex;
             flex-direction: column;
-            gap: 32px;
+            gap: 20px;
         }
 
         /* Section card */
@@ -158,7 +158,7 @@
         /* Section header */
         .section-header {
             background: #f9fafb;
-            padding: 20px 24px;
+            padding: 12px 16px;
             border-bottom: 1px solid #e5e7eb;
             display: flex;
             justify-content: space-between;
@@ -170,20 +170,20 @@
         }
 
         .section-title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
             color: #1f2937;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         .section-badge {
             background: #800020;
             color: white;
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-size: 12px;
+            padding: 3px 10px;
+            border-radius: 5px;
+            font-size: 11px;
             font-weight: 600;
             letter-spacing: 0.05em;
         }
@@ -193,7 +193,7 @@
         }
 
         .section-status {
-            font-size: 14px;
+            font-size: 13px;
             color: #6b7280;
             font-weight: 500;
         }
@@ -204,57 +204,57 @@
 
         /* Section content */
         .section-content {
-            padding: 32px 24px;
+            padding: 16px 20px;
         }
 
         .question-grid {
             display: flex;
             flex-direction: column;
-            gap: 32px;
+            gap: 16px;
         }
 
         /* Question card */
         .question-item {
-            padding: 24px;
+            padding: 14px 16px;
             background: #f9fafb;
-            border-radius: 8px;
-            border-left: 4px solid #800020;
+            border-radius: 6px;
+            border-left: 3px solid #800020;
         }
 
         .question-number {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             color: #800020;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
 
         .question-text {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 500;
             color: #1f2937;
-            line-height: 1.6;
-            margin-bottom: 20px;
+            line-height: 1.5;
+            margin-bottom: 12px;
         }
 
         /* Options */
         .question-options {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
         }
 
         .option-group {
             background: white;
             border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 16px;
+            border-radius: 6px;
+            padding: 10px 12px;
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
             align-items: flex-start;
-            gap: 12px;
+            gap: 10px;
         }
 
         .option-group:hover {
@@ -269,8 +269,8 @@
         }
 
         .option-input {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             margin-top: 2px;
             cursor: pointer;
             flex-shrink: 0;
@@ -286,13 +286,14 @@
         .option-letter {
             font-weight: 600;
             color: #800020;
-            margin-right: 8px;
+            margin-right: 6px;
+            font-size: 14px;
         }
 
         .option-text {
             color: #374151;
-            font-size: 15px;
-            line-height: 1.5;
+            font-size: 14px;
+            line-height: 1.4;
             -webkit-user-select: auto;
             -moz-user-select: auto;
             user-select: auto;
@@ -301,13 +302,13 @@
         /* Essay textarea */
         .essay-textarea {
             width: 100%;
-            min-height: 150px;
-            padding: 16px;
+            min-height: 100px;
+            padding: 12px;
             border: 2px solid #e5e7eb;
-            border-radius: 8px;
+            border-radius: 6px;
             font-family: inherit;
-            font-size: 15px;
-            line-height: 1.6;
+            font-size: 14px;
+            line-height: 1.5;
             resize: vertical;
             transition: all 0.2s;
             -webkit-user-select: auto;
@@ -323,7 +324,7 @@
 
         /* Section footer */
         .section-footer {
-            padding: 20px 24px;
+            padding: 12px 16px;
             background: #f9fafb;
             border-top: 1px solid #e5e7eb;
             display: flex;
@@ -332,7 +333,7 @@
         }
 
         .section-progress {
-            font-size: 14px;
+            font-size: 13px;
             color: #6b7280;
         }
 
@@ -381,7 +382,7 @@
 
         .submit-exam-container {
             text-align: center;
-            padding: 40px 24px;
+            padding: 24px 20px;
             background: white;
             border-radius: 12px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -531,26 +532,26 @@
             }
 
             .exam-content {
-                padding: 20px 16px;
+                padding: 12px 14px;
             }
 
             .exam-sections {
-                gap: 24px;
+                gap: 16px;
             }
 
             .section-header {
-                padding: 16px;
+                padding: 10px 12px;
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 8px;
+                gap: 6px;
             }
 
             .section-content {
-                padding: 20px 16px;
+                padding: 12px 14px;
             }
 
             .question-item {
-                padding: 16px;
+                padding: 12px 14px;
             }
 
             .notification {
@@ -1241,6 +1242,17 @@
 
         // Single submit for all sections
         function submitAllSections() {
+            // Prevent opening modal if already submitting
+            if (isSubmittingExam) {
+                return;
+            }
+            
+            // Prevent opening modal multiple times
+            const modal = document.getElementById('finalSubmitModal');
+            if (modal && modal.style.display === 'flex') {
+                return;
+            }
+            
             // Collect all answers from all sections
             const allAnswers = {};
             let totalQuestions = 0;
@@ -1291,7 +1303,28 @@
         let isSubmittingExam = false;
 
         function confirmFinalSubmit() {
+            // Prevent multiple submissions
+            if (isSubmittingExam) {
+                console.warn('Exam submission already in progress. Please wait...');
+                return;
+            }
+
             isSubmittingExam = true; // Disable beforeunload warning
+            
+            // Disable submit button and show loading state
+            const submitButton = document.querySelector('#finalSubmitModal button.btn-success');
+            const cancelButton = document.querySelector('#finalSubmitModal button.btn-secondary');
+            const originalButtonText = submitButton ? submitButton.textContent : '';
+            
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Submitting...';
+                submitButton.style.opacity = '0.6';
+                submitButton.style.cursor = 'not-allowed';
+            }
+            if (cancelButton) {
+                cancelButton.disabled = true;
+            }
             
             fetch('{{ route('exam.complete') }}', {
                 method: 'POST',
@@ -1315,12 +1348,34 @@
                 } else {
                     showNotification('Failed to submit exam: ' + data.message, 'error');
                     isSubmittingExam = false; // Re-enable warning if submission failed
+                    
+                    // Re-enable buttons
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = originalButtonText;
+                        submitButton.style.opacity = '1';
+                        submitButton.style.cursor = 'pointer';
+                    }
+                    if (cancelButton) {
+                        cancelButton.disabled = false;
+                    }
                 }
             })
             .catch(error => {
                 console.error('Error submitting exam:', error);
                 showNotification('Failed to submit exam. Please try again.', 'error');
                 isSubmittingExam = false; // Re-enable warning if submission failed
+                
+                // Re-enable buttons
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalButtonText;
+                    submitButton.style.opacity = '1';
+                    submitButton.style.cursor = 'pointer';
+                }
+                if (cancelButton) {
+                    cancelButton.disabled = false;
+                }
             });
         }
 

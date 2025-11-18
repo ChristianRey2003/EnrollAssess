@@ -270,7 +270,6 @@ class PhilippineLocations
             'Married',
             'Widowed',
             'Separated',
-            'Divorced',
         ];
     }
 

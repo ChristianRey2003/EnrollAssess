@@ -368,13 +368,6 @@
                                     More
                                 </button>
                                 <div class="dropdown-menu">
-                                    <a href="{{ route('admin.applicants.exam-results') }}" class="dropdown-item" onclick="toggleDropdown('moreActionsDropdown')">
-                                        <svg class="dropdown-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                        </svg>
-                                        Exam Results
-                                    </a>
-                                    <div class="dropdown-divider"></div>
                                     <button type="button" class="dropdown-item" onclick="showGenerateAccessCodesModal(); toggleDropdown('moreActionsDropdown');">
                                         <svg class="dropdown-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
@@ -392,10 +385,18 @@
                         </div>
                     </div>
 
-                    <!-- Compact Bulk Actions - Selected Count Only -->
-                    <div id="bulkActions" class="bulk-actions" style="display: none; background: #eff6ff; border-bottom: 1px solid #bfdbfe; padding: 6px 20px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <!-- Compact Bulk Actions -->
+                    <div id="bulkActions" class="bulk-actions" style="display: none; background: #eff6ff; border-bottom: 1px solid #bfdbfe; padding: 6px 20px; flex-direction: column;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%;">
                             <span id="selectedCount" style="font-size: 12px; font-weight: 500; color: #1e40af;">0 selected</span>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="bulkDeleteApplicants()" class="btn" style="padding: 4px 12px; font-size: 12px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; display: inline-flex; align-items: center;">
+                                    <svg width="14" height="14" style="margin-right: 4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                    Delete Selected
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -702,6 +703,85 @@
         
         function hideActions(applicantId) {
             document.getElementById('actions-' + applicantId).style.display = 'none';
+        }
+
+        // Bulk delete function with fallback
+        function bulkDeleteApplicants() {
+            // Try to use the applicant manager if available
+            if (window.applicantManager && typeof window.applicantManager.bulkDelete === 'function') {
+                window.applicantManager.bulkDelete();
+                return;
+            }
+            
+            // Fallback implementation
+            const checkboxes = document.querySelectorAll('.applicant-checkbox:checked');
+            if (checkboxes.length === 0) {
+                alert('Please select applicants first.');
+                return;
+            }
+
+            const count = checkboxes.length;
+            const confirmed = confirm(`Are you sure you want to delete ${count} selected applicant(s)? This action cannot be undone.`);
+            
+            if (!confirmed) return;
+
+            // Convert to integers and filter out invalid values
+            const applicantIds = Array.from(checkboxes)
+                .map(cb => parseInt(cb.value))
+                .filter(id => !isNaN(id) && id > 0);
+
+            if (applicantIds.length === 0) {
+                alert('No valid applicant IDs found.');
+                return;
+            }
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (!csrfToken) {
+                alert('CSRF token not found. Please refresh the page and try again.');
+                return;
+            }
+
+            // Show loading
+            const loadingMsg = document.createElement('div');
+            loadingMsg.textContent = 'Deleting applicants...';
+            loadingMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #3b82f6; color: white; padding: 12px 20px; border-radius: 6px; z-index: 10000; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+            document.body.appendChild(loadingMsg);
+
+            fetch('/admin/applicants/bulk/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ applicant_ids: applicantIds })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.message || `HTTP ${response.status}: ${response.statusText}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (loadingMsg.parentNode) {
+                    document.body.removeChild(loadingMsg);
+                }
+                if (data.success) {
+                    alert(data.message || 'Applicants deleted successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to delete applicants'));
+                }
+            })
+            .catch(error => {
+                if (loadingMsg.parentNode) {
+                    document.body.removeChild(loadingMsg);
+                }
+                console.error('Bulk delete error:', error);
+                alert('An error occurred while deleting applicants: ' + (error.message || 'Please try again.'));
+            });
         }
 
         // Send individual exam notification

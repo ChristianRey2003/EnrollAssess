@@ -161,7 +161,11 @@ class ApplicantManager {
         }
         
         if (this.elements.bulkActions) {
-            this.elements.bulkActions.style.display = count > 0 ? 'flex' : 'none';
+            if (count > 0) {
+                this.elements.bulkActions.style.display = 'flex';
+            } else {
+                this.elements.bulkActions.style.display = 'none';
+            }
         }
 
         // Update select all checkboxes
@@ -368,6 +372,59 @@ class ApplicantManager {
         window.open(url.toString(), '_blank');
     }
 
+    async bulkDelete() {
+        if (this.selectedApplicants.size === 0) {
+            this.notifications.error('Please select applicants first.');
+            return;
+        }
+
+        const count = this.selectedApplicants.size;
+        const confirmed = await this.confirm(
+            'Delete Selected Applicants',
+            `Are you sure you want to delete ${count} selected applicant(s)? This action cannot be undone.`,
+            'Delete',
+            'Cancel'
+        );
+
+        if (!confirmed) return;
+
+        const loadingId = this.notifications.info('Deleting applicants...', 0);
+
+        try {
+            // Convert to integers to ensure proper type
+            const applicantIds = Array.from(this.selectedApplicants)
+                .map(id => parseInt(id))
+                .filter(id => !isNaN(id) && id > 0);
+
+            if (applicantIds.length === 0) {
+                this.notifications.dismiss?.(loadingId);
+                this.notifications.error('No valid applicant IDs found.');
+                return;
+            }
+
+            const response = await this.apiCall('/admin/applicants/bulk/delete', {
+                applicant_ids: applicantIds
+            });
+
+            this.notifications.dismiss?.(loadingId);
+
+            if (response.success) {
+                this.notifications.success(response.message);
+                // Clear selection
+                this.selectedApplicants.clear();
+                this.elements.checkboxes().forEach(cb => cb.checked = false);
+                this.updateBulkActions();
+                // Reload page after a short delay
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                throw new Error(response.message || 'Operation failed');
+            }
+        } catch (error) {
+            this.notifications.dismiss?.(loadingId);
+            this.handleError(error, 'deleting applicants');
+        }
+    }
+
     // Utility methods
     async apiCall(endpoint, data) {
         const response = await fetch(endpoint, {
@@ -422,6 +479,7 @@ window.confirmGenerateAccessCodes = () => window.applicantManager?.confirmGenera
 window.generateSingleAccessCode = (id) => window.applicantManager?.generateSingleAccessCode(id);
 window.deleteApplicant = (id) => window.applicantManager?.deleteApplicant(id);
 window.bulkExport = () => window.applicantManager?.bulkExport();
+window.bulkDeleteApplicants = () => window.applicantManager?.bulkDelete();
 window.toggleSelectAll = () => window.applicantManager?.handleSelectAll();
 window.toggleTableSelectAll = () => window.applicantManager?.handleTableSelectAll();
 window.updateBulkActions = () => window.applicantManager?.updateBulkActions();

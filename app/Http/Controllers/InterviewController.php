@@ -237,26 +237,49 @@ class InterviewController extends Controller
      */
     public function update(Request $request, Interview $interview)
     {
+        // Restrict editing to non-completed interviews
+        if ($interview->status === 'completed') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot edit completed interviews. Please use the Conduct form to make changes.'
+            ], 403);
+        }
+
         $request->validate([
             'schedule_date' => 'required|date',
-            'status' => 'required|in:scheduled,completed,cancelled',
-            'notes' => 'nullable|string|max:1000',
+            'interviewer_id' => 'nullable|exists:users,user_id',
+            'status' => 'required|in:scheduled,completed,cancelled,available,claimed',
+            'assignment_notes' => 'nullable|string|max:1000',
         ]);
 
-        $interview->update([
+        $updateData = [
             'schedule_date' => $request->schedule_date,
             'status' => $request->status,
-            'notes' => $request->notes,
-        ]);
+        ];
+
+        // Only update interviewer if provided
+        if ($request->has('interviewer_id') && $request->interviewer_id) {
+            $updateData['interviewer_id'] = $request->interviewer_id;
+        }
+
+        // Update assignment notes if provided
+        if ($request->has('assignment_notes')) {
+            $updateData['assignment_notes'] = $request->assignment_notes;
+        }
+
+        $interview->update($updateData);
 
         // Update applicant status based on interview status
         $applicantStatus = match($request->status) {
             'scheduled' => 'interview-scheduled',
             'completed' => 'interview-completed',
             'cancelled' => 'exam-completed', // Back to exam completed
+            default => $interview->applicant->status, // Keep current status for other statuses
         };
 
-        $interview->applicant->update(['status' => $applicantStatus]);
+        if ($applicantStatus !== $interview->applicant->status) {
+            $interview->applicant->update(['status' => $applicantStatus]);
+        }
 
         return response()->json([
             'success' => true,
@@ -793,7 +816,7 @@ class InterviewController extends Controller
     /**
      * Show detailed interview information
      */
-    public function show($interviewId)
+    public function show(Request $request, $interviewId)
     {
         // Find interview with all necessary relationships
         $interview = Interview::with([
@@ -804,14 +827,41 @@ class InterviewController extends Controller
 
         // Graceful 404 handling
         if (!$interview) {
+            if ($request->expectsJson() || $request->has('json')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Interview not found.'
+                ], 404);
+            }
             return redirect()->route('admin.interviews.index')
                 ->with('error', 'Interview not found. It may have been deleted or the ID is invalid.');
         }
 
         // Check if applicant exists
         if (!$interview->applicant) {
+            if ($request->expectsJson() || $request->has('json')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Applicant not found for this interview.'
+                ], 404);
+            }
             return redirect()->route('admin.interviews.index')
                 ->with('error', 'Applicant not found for this interview.');
+        }
+
+        // Return JSON if requested
+        if ($request->expectsJson() || $request->has('json')) {
+            return response()->json([
+                'success' => true,
+                'interview' => [
+                    'interview_id' => $interview->interview_id,
+                    'applicant_id' => $interview->applicant_id,
+                    'interviewer_id' => $interview->interviewer_id,
+                    'schedule_date' => $interview->schedule_date ? $interview->schedule_date->toIso8601String() : null,
+                    'status' => $interview->status,
+                    'assignment_notes' => $interview->assignment_notes,
+                ]
+            ]);
         }
 
         $applicant = $interview->applicant;

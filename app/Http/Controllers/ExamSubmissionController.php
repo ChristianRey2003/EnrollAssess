@@ -43,10 +43,31 @@ class ExamSubmissionController extends Controller
             
             $applicant = Applicant::findOrFail($applicantId);
             
+            // Prevent duplicate submissions - check if exam is already completed
+            if ($applicant->exam_completed_at) {
+                Log::warning("Duplicate exam submission attempt blocked for applicant {$applicantId}");
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This exam has already been completed. You cannot submit again.'
+                ], 400);
+            }
+            
             // Get exam session to retrieve assigned question IDs
             $examSession = Session::get('exam_session');
             $attemptId = $examSession['attempt_id'] ?? null;
             $attemptToken = $examSession['attempt_token'] ?? null;
+            
+            // Check if attempt is already completed (additional protection against race conditions)
+            if ($attemptId) {
+                $existingAttempt = ExamAttempt::find($attemptId);
+                if ($existingAttempt && $existingAttempt->status === 'completed') {
+                    Log::warning("Duplicate exam submission attempt blocked - attempt {$attemptId} already completed for applicant {$applicantId}");
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'This exam has already been completed. You cannot submit again.'
+                    ], 400);
+                }
+            }
             
             // If session is lost, try to recover from database
             if (!$examSession || empty($examSession['question_ids'])) {

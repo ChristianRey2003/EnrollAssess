@@ -20,7 +20,7 @@
             <!-- University Header -->
             <div class="auth-header">
                 <div class="university-logo">
-                    <img src="{{ asset('images/image-removebg-preview.png') }}" alt="University Logo" style="width: 60px; height: 60px; object-fit: contain;">
+                    <img src="{{ asset('images/evsu-logo.png') }}" alt="EVSU Logo" style="width: 60px; height: 60px; object-fit: contain;">
                 </div>
                 <h1 class="university-name">Faculty Portal</h1>
                 <p class="auth-subtitle">Computer Studies Department</p>

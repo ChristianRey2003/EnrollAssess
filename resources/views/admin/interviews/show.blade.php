@@ -41,27 +41,11 @@
                         {{ ucfirst(str_replace('-', ' ', $interview->status)) }}
                     </span>
                 </div>
-                <div class="dates-group">
-                    @if($interview->schedule_date)
-                        <div class="date-item">
-                            <span class="date-label">Scheduled</span>
-                            <span class="date-value">{{ $interview->schedule_date->format('M d, Y • g:i A') }}</span>
-                        </div>
-                    @endif
-                    @if($interview->status === 'completed' && $interview->updated_at)
-                        <div class="date-item">
-                            <span class="date-label">Completed</span>
-                            <span class="date-value">{{ $interview->updated_at->format('M d, Y • g:i A') }}</span>
-                        </div>
-                    @endif
-                </div>
             </div>
         </div>
-    </div>
 
-    <div class="detail-grid">
-        <!-- 2. Interview Summary Section -->
-        <div class="detail-card summary-card">
+        <!-- Interview Summary Section -->
+        <div class="header-summary">
             <h3 class="card-title">Interview Summary</h3>
             <div class="summary-content">
                 <div class="summary-row">
@@ -75,6 +59,20 @@
                         @endif
                     </span>
                 </div>
+
+                @if($interview->schedule_date)
+                    <div class="summary-row">
+                        <span class="row-label">Scheduled</span>
+                        <span class="row-value">{{ $interview->schedule_date->format('M d, Y • g:i A') }}</span>
+                    </div>
+                @endif
+
+                @if($interview->status === 'completed' && $interview->updated_at)
+                    <div class="summary-row">
+                        <span class="row-label">Completed</span>
+                        <span class="row-value">{{ $interview->updated_at->format('M d, Y • g:i A') }}</span>
+                    </div>
+                @endif
                 
                 @if($applicant->assignedInstructor && $applicant->assignedInstructor->user_id !== $interview->interviewer_id)
                     <div class="summary-row">
@@ -83,63 +81,39 @@
                     </div>
                 @endif
 
-                <div class="summary-divider"></div>
-
-                <div class="summary-row">
-                    <span class="row-label">Exam Score</span>
-                    <span class="row-value">
-                        <span class="score-highlight">{{ number_format($applicant->enrollassess_score ?? 0, 1) }}%</span>
-                        @if($totalQuestions > 0)
-                            <span class="score-detail">({{ $correctAnswers }}/{{ $totalQuestions }})</span>
-                        @endif
-                        <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}" class="detail-link">View Details</a>
-                    </span>
-                </div>
-
-                @if($applicant->card_tor_gwa !== null)
+                @if($interview->status === 'completed' && $interview->overall_score !== null)
+                    <div class="summary-divider"></div>
                     <div class="summary-row">
-                        <span class="row-label">CARD/TOR GWA</span>
+                        <span class="row-label">Interview Score</span>
                         <span class="row-value">
-                            <span class="score-highlight">{{ number_format($applicant->card_tor_gwa, 2) }}%</span>
+                            <span class="score-highlight">{{ number_format($interview->overall_score, 1) }}%</span>
                         </span>
                     </div>
                 @endif
 
-                @if($applicant->hasAllRequiredScores())
-                    @php
-                        $overallData = $applicant->getOverallRating();
-                        $overallRating = $overallData['overall_rating'];
-                        $components = $overallData['components'];
-                    @endphp
-                    <div class="summary-divider"></div>
+                @if($interview->recommendation)
                     <div class="summary-row">
-                        <span class="row-label">Overall Admission Rating</span>
+                        <span class="row-label">Remarks</span>
                         <span class="row-value">
-                            <span class="score-highlight" style="font-size: 1.25rem; color: #10B981;">{{ number_format($overallRating, 2) }}%</span>
+                            <span class="recommendation-badge recommendation-{{ str_replace('_', '-', $interview->recommendation) }}">
+                                {{ ucfirst(str_replace('_', ' ', $interview->recommendation)) }}
+                            </span>
                         </span>
-                    </div>
-                    <div style="margin-top: 8px; padding: 10px; background: #F0FDF4; border-radius: 4px; font-size: 0.75rem;">
-                        <div style="margin-bottom: 4px;"><strong>UEE (60%):</strong> {{ number_format($components['uee']['weighted'], 2) }}</div>
-                        <div style="margin-bottom: 4px;"><strong>GWA (30%):</strong> {{ number_format($components['gwa']['weighted'], 2) }}</div>
-                        <div><strong>Interview/Skill (10%):</strong> {{ number_format($components['interview_skill_combined']['weighted'], 2) }}</div>
                     </div>
                 @endif
             </div>
         </div>
+    </div>
+
+    <div class="detail-grid">
 
         <!-- 3. Scoring and Rubric Section -->
-        <div class="detail-card scoring-card">
-            <h3 class="card-title">Scoring and Rubric</h3>
+        <div class="detail-card scoring-card full-width">
+            <h3 class="card-title">Scoring and Rubric Breakdown</h3>
             
             @if($interview->status === 'completed' && $interview->overall_score !== null)
                 <div class="scoring-content">
-                    <div class="overall-score-display">
-                        <div class="score-number">{{ number_format($interview->overall_score, 1) }}%</div>
-                        <div class="score-label">Overall Interview Score</div>
-                    </div>
-
                     <div class="rubric-breakdown">
-                        <h4 class="rubric-heading">Rubric Breakdown</h4>
                         <div class="rubric-grid">
                             @if($interview->communication_skills !== null)
                                 <div class="rubric-item">
@@ -199,12 +173,10 @@
                         </div>
                     </div>
 
-                    @if($interview->recommendation)
-                        <div class="recommendation-section">
-                            <span class="recommendation-label">Final Recommendation</span>
-                            <span class="recommendation-badge recommendation-{{ str_replace('_', '-', $interview->recommendation) }}">
-                                {{ ucfirst(str_replace('_', ' ', $interview->recommendation)) }}
-                            </span>
+                    @if($interview->final_comments)
+                        <div class="final-comments-section">
+                            <h4 class="note-heading">Final Comments</h4>
+                            <div class="note-text">{{ $interview->final_comments }}</div>
                         </div>
                     @endif
                 </div>
@@ -217,73 +189,10 @@
             @endif
         </div>
 
-        <!-- 4. Notes and Activity Section -->
-        <div class="detail-card notes-card full-width">
-            <h3 class="card-title">Notes and Activity</h3>
-            
-            @if($interview->final_comments || $interview->interview_notes || $interview->evaluator_notes)
-                <div class="notes-content">
-                    @if($interview->final_comments)
-                        <div class="note-section">
-                            <h4 class="note-heading">Final Comments</h4>
-                            <div class="note-text">{{ $interview->final_comments }}</div>
-                        </div>
-                    @endif
-
-                    @if($interview->interview_notes)
-                        <div class="note-section">
-                            <h4 class="note-heading">Interview Notes</h4>
-                            <div class="note-text">{{ $interview->interview_notes }}</div>
-                        </div>
-                    @endif
-
-                    @if($interview->evaluator_notes)
-                        <div class="note-section">
-                            <h4 class="note-heading">Evaluator Notes</h4>
-                            <div class="note-text">{{ $interview->evaluator_notes }}</div>
-                        </div>
-                    @endif
-
-                    <div class="activity-log">
-                        <h4 class="activity-heading">Activity Log</h4>
-                        <div class="activity-timeline">
-                            <div class="activity-item">
-                                <span class="activity-time">{{ $interview->created_at->format('M d, Y g:i A') }}</span>
-                                <span class="activity-action">Interview created</span>
-                            </div>
-                            
-                            @if($interview->schedule_date)
-                                <div class="activity-item">
-                                    <span class="activity-time">{{ $interview->schedule_date->format('M d, Y g:i A') }}</span>
-                                    <span class="activity-action">Interview scheduled</span>
-                                </div>
-                            @endif
-
-                            @if($interview->status === 'completed')
-                                <div class="activity-item">
-                                    <span class="activity-time">{{ $interview->updated_at->format('M d, Y g:i A') }}</span>
-                                    <span class="activity-action">Interview completed and scored</span>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            @else
-                <div class="empty-state">
-                    <div class="empty-icon"></div>
-                    <p class="empty-text">No notes available</p>
-                    <p class="empty-subtext">Notes and activity will appear here once the interview is conducted.</p>
-                </div>
-            @endif
-        </div>
     </div>
 
     <!-- Actions Bar -->
     <div class="actions-bar">
-        <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}" class="btn btn-secondary">
-            Back to Applicant
-        </a>
-        
         @php $canConduct = $applicant->hasCompletedExam(); @endphp
         @if($interview->status !== 'completed')
             <a href="{{ route('admin.interviews.conduct', $interview->interview_id) }}" 
@@ -292,9 +201,14 @@
                 Conduct Interview
             </a>
         @else
-            <a href="{{ route('admin.interviews.conduct', $interview->interview_id) }}" class="btn btn-outline">
-                Edit Evaluation
-            </a>
+            <div class="actions-group">
+                <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}" class="btn btn-secondary">
+                    Cancel
+                </a>
+                <a href="{{ route('admin.interviews.conduct', $interview->interview_id) }}" class="btn btn-outline">
+                    Edit Evaluation
+                </a>
+            </div>
         @endif
     </div>
 </div>
@@ -305,36 +219,39 @@
 .interview-detail-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 24px;
+    padding: 0 24px 24px 0;
 }
 
 /* Breadcrumb */
 .breadcrumb {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 24px;
     font-size: 14px;
-    color: #6B7280;
+    margin-bottom: 16px;
+    margin-top: 0;
+    padding: 0;
 }
 
 .breadcrumb-link {
-    color: #6B7280;
+    color: #800020;
     text-decoration: none;
-    transition: color 0.2s;
+    font-weight: 500;
+    transition: color 0.2s ease;
 }
 
 .breadcrumb-link:hover {
-    color: #800020;
+    color: #5C0016;
+    text-decoration: underline;
 }
 
 .breadcrumb-separator {
-    color: #D1D5DB;
+    margin: 0 8px;
+    color: #9CA3AF;
 }
 
 .breadcrumb-current {
-    color: #111827;
-    font-weight: 500;
+    color: #1F2937;
+    font-weight: 600;
 }
 
 /* Detail Cards */
@@ -366,6 +283,21 @@
     justify-content: space-between;
     align-items: flex-start;
     gap: 24px;
+}
+
+.header-summary {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #E5E7EB;
+}
+
+.header-summary .card-title {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #800020;
 }
 
 .header-primary {
@@ -490,24 +422,24 @@
 .summary-content {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 6px;
 }
 
 .summary-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 0;
+    padding: 0px 0;
 }
 
 .row-label {
-    font-size: 14px;
+    font-size: 12px;
     color: #6B7280;
     font-weight: 500;
 }
 
 .row-value {
-    font-size: 14px;
+    font-size: 12px;
     color: #111827;
     font-weight: 500;
     display: flex;
@@ -517,11 +449,11 @@
 
 .role-badge {
     display: inline-block;
-    padding: 2px 8px;
+    padding: 2px 6px;
     background: #F3F4F6;
     color: #6B7280;
-    border-radius: 8px;
-    font-size: 12px;
+    border-radius: 6px;
+    font-size: 10px;
     font-weight: 500;
 }
 
@@ -533,13 +465,13 @@
 .summary-divider {
     height: 1px;
     background: #E5E7EB;
-    margin: 8px 0;
+    margin: 4px 0;
 }
 
 .score-highlight {
     color: #800020;
     font-weight: 600;
-    font-size: 16px;
+    font-size: 13px;
 }
 
 .score-detail {
@@ -568,13 +500,13 @@
 
 .overall-score-display {
     text-align: center;
-    padding: 20px;
+    padding: 12px;
     background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
     border-radius: 8px;
 }
 
 .score-number {
-    font-size: 48px;
+    font-size: 32px;
     font-weight: 700;
     color: #800020;
     line-height: 1;
@@ -601,8 +533,8 @@
 
 .rubric-grid {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
 }
 
 .rubric-item {
@@ -615,12 +547,12 @@
 }
 
 .rubric-name {
-    font-size: 14px;
+    font-size: 12px;
     color: #374151;
 }
 
 .rubric-score {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
     color: #800020;
 }
@@ -665,6 +597,28 @@
 .recommendation-badge.recommendation-not-recommended {
     background: #FEE2E2;
     color: #991B1B;
+}
+
+.final-comments-section {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #E5E7EB;
+}
+
+.final-comments-section .note-heading {
+    margin: 0 0 8px 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.final-comments-section .note-text {
+    padding: 12px;
+    background: #F9FAFB;
+    border-radius: 8px;
+    color: #374151;
+    line-height: 1.6;
+    font-size: 14px;
 }
 
 /* Notes Card */
@@ -761,35 +715,43 @@
 /* Actions Bar */
 .actions-bar {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     gap: 12px;
-    padding: 20px 0;
-    margin-top: 24px;
-    border-top: 1px solid #E5E7EB;
+    padding-top: 8px;
+    padding-bottom: 0;
+    margin-top: 8px;
+}
+
+.actions-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .btn {
     padding: 8px 14px;
-    border-radius: 8px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
     font-size: 12px;
     font-weight: 500;
+    transition: all 0.3s ease;
     text-decoration: none;
-    transition: all 0.2s;
-    border: 1px solid transparent;
-    cursor: pointer;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .btn-primary {
     background: #800020;
     color: white;
-    border-color: #800020;
+    border: none;
 }
 
 .btn-primary:hover {
     background: #a00028;
-    border-color: #a00028;
+    border: none;
 }
 
 .btn-primary.disabled {
@@ -801,17 +763,18 @@
 .btn-secondary {
     background: #F3F4F6;
     color: #374151;
-    border-color: #E5E7EB;
+    border: none;
 }
 
 .btn-secondary:hover {
     background: #E5E7EB;
+    border: none;
 }
 
 .btn-outline {
     background: white;
     color: #800020;
-    border-color: #800020;
+    border: none;
 }
 
 .btn-outline:hover {
@@ -819,6 +782,12 @@
 }
 
 /* Responsive Design */
+@media (max-width: 768px) {
+    .rubric-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media (max-width: 768px) {
     .detail-grid {
         grid-template-columns: 1fr;
@@ -831,6 +800,10 @@
     .header-status {
         text-align: left;
         width: 100%;
+    }
+
+    .rubric-grid {
+        grid-template-columns: 1fr;
     }
 
     .actions-bar {

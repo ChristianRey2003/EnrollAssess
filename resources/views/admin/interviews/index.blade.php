@@ -51,9 +51,11 @@
             padding: 8px;
             gap: 8px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            z-index: 10;
-            display: flex;
+            z-index: 1000;
+            display: none;
             flex-direction: row;
+            white-space: nowrap;
+            align-items: center;
         }
         
         .floating-actions .action-btn {
@@ -119,7 +121,34 @@
         }
         
         .table tbody td {
-            overflow: visible;
+            overflow: visible !important;
+            position: relative;
+        }
+        
+        /* Ensure the last column (score column) allows overflow */
+        .table tbody td:last-child {
+            overflow: visible !important;
+            position: relative !important;
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+            overflow-y: visible !important;
+            position: relative;
+        }
+        
+        .table {
+            overflow: visible !important;
+            position: relative;
+        }
+        
+        .table tbody {
+            overflow: visible !important;
+        }
+        
+        /* Ensure floating actions are not clipped */
+        .table tbody tr td:last-child {
+            overflow: visible !important;
         }
     </style>
 @endpush
@@ -223,7 +252,7 @@
                                         {{ ucfirst($interview->status) }}
                                     </span>
                                 </td>
-                                <td class="text-center" style="font-size: 13px; font-weight: normal; position: relative;">
+                                <td class="text-center" style="font-size: 13px; font-weight: normal; position: relative; overflow: visible;">
                                     <div class="score-display">
                                         @if($interview->status === 'completed' && $interview->overall_score !== null)
                                             @php
@@ -248,16 +277,35 @@
                                     <!-- Floating Actions -->
                                     <div id="actions-{{ $interview->interview_id }}" class="floating-actions" style="display: none;">
                                         @if(in_array($interview->status, ['scheduled', 'available', 'claimed']) && $interview->status !== 'completed')
+                                            @php
+                                                $hasCompletedExam = $interview->applicant && $interview->applicant->hasCompletedExam();
+                                            @endphp
                                             @if($interview->claimed_by === auth()->id())
-                                                <a href="{{ route('admin.interviews.conduct', $interview->interview_id) }}" 
-                                                   class="action-btn action-btn-conduct">
-                                                    Continue
-                                                </a>
+                                                @if($hasCompletedExam)
+                                                    <a href="{{ route('admin.interviews.conduct', $interview->interview_id) }}" 
+                                                       class="action-btn action-btn-conduct">
+                                                        Continue
+                                                    </a>
+                                                @else
+                                                    <span class="action-btn action-btn-conduct" 
+                                                          style="cursor: not-allowed; opacity: 0.5; position: relative;"
+                                                          title="Cannot conduct interview: Applicant has not completed the exam yet">
+                                                        Continue
+                                                    </span>
+                                                @endif
                                             @elseif(!$interview->claimed_by || $interview->isClaimedTooLong(1))
-                                                <a href="{{ route('admin.interviews.conduct', $interview->interview_id) }}" 
-                                                   class="action-btn action-btn-conduct">
-                                                    Conduct
-                                                </a>
+                                                @if($hasCompletedExam)
+                                                    <a href="{{ route('admin.interviews.conduct', $interview->interview_id) }}" 
+                                                       class="action-btn action-btn-conduct">
+                                                        Conduct
+                                                    </a>
+                                                @else
+                                                    <span class="action-btn action-btn-conduct" 
+                                                          style="cursor: not-allowed; opacity: 0.5; position: relative;"
+                                                          title="Cannot conduct interview: Applicant has not completed the exam yet">
+                                                        Conduct
+                                                    </span>
+                                                @endif
                                             @else
                                                 <span class="action-btn" style="cursor: not-allowed; opacity: 0.6;">
                                                     Claimed
@@ -265,15 +313,10 @@
                                             @endif
                                         @endif
                                         
-                                        <button onclick="editInterview({{ $interview->interview_id }})" 
-                                                class="action-btn action-btn-edit">
-                                            Edit
-                                        </button>
-                                        
-                                        @if($interview->status === 'scheduled')
-                                            <button onclick="cancelInterview({{ $interview->interview_id }})" 
-                                                    class="action-btn action-btn-delete">
-                                                Cancel
+                                        @if($interview->status !== 'completed')
+                                            <button onclick="editInterview({{ $interview->interview_id }})" 
+                                                    class="action-btn action-btn-edit">
+                                                Edit
                                             </button>
                                         @endif
                                         
@@ -305,11 +348,162 @@
             @endif
         </div>
     </div>
+
+    <!-- Edit Interview Modal -->
+    <div id="editInterviewModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #e5e7eb;">
+                <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Edit Interview</h3>
+                <button onclick="closeEditModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">&times;</button>
+            </div>
+            <form id="editInterviewForm" style="padding: 20px;">
+                <input type="hidden" id="edit_interview_id" name="interview_id">
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">Schedule Date & Time</label>
+                    <input type="datetime-local" 
+                           id="edit_schedule_date" 
+                           name="schedule_date" 
+                           required
+                           class="form-control"
+                           style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">Interviewer</label>
+                    <select id="edit_interviewer_id" 
+                            name="interviewer_id" 
+                            class="form-select"
+                            style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
+                        <option value="">Select Interviewer</option>
+                        @foreach($instructors as $instructor)
+                            <option value="{{ $instructor->user_id }}">{{ $instructor->full_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">Status</label>
+                    <select id="edit_status" 
+                            name="status" 
+                            required
+                            class="form-select"
+                            style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
+                        <option value="scheduled">Scheduled</option>
+                        <option value="available">Available</option>
+                        <option value="claimed">Claimed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">Assignment Notes</label>
+                    <textarea id="edit_assignment_notes" 
+                              name="assignment_notes" 
+                              rows="4"
+                              class="form-control"
+                              style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; resize: vertical;"></textarea>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                    <button type="button" 
+                            onclick="closeEditModal()" 
+                            style="padding: 8px 16px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; color: #374151;">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            style="padding: 8px 16px; background: #2563eb; border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: 500;">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            animation: modalFadeIn 0.2s;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .floating-actions .action-btn[title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            margin-bottom: 5px;
+            pointer-events: none;
+        }
+        .floating-actions .action-btn[title]:hover::before {
+            content: '';
+            position: absolute;
+            bottom: calc(100% - 5px);
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: #1f2937;
+            z-index: 1000;
+            pointer-events: none;
+        }
+    </style>
 @endsection
 
 
 @push('scripts')
 <script>
+    // Define showActions and hideActions functions FIRST, before any other code
+    // This ensures they're available when inline event handlers execute
+    function showActions(interviewId) {
+        const actionsElement = document.getElementById('actions-' + interviewId);
+        if (actionsElement) {
+            // Check if element has any children (should always have at least View button)
+            if (actionsElement.children.length > 0) {
+                actionsElement.style.setProperty('display', 'flex', 'important');
+            } else {
+                console.warn('Floating actions div is empty for interview:', interviewId);
+            }
+        } else {
+            console.error('Actions element not found for interview:', interviewId);
+        }
+    }
+    
+    function hideActions(interviewId) {
+        const actionsElement = document.getElementById('actions-' + interviewId);
+        if (actionsElement) {
+            actionsElement.style.display = 'none';
+        }
+    }
+    
+    // Make functions globally available immediately
+    window.showActions = showActions;
+    window.hideActions = hideActions;
+    
     // Store current user ID for AJAX pagination
     const currentUserId = {{ auth()->id() }};
     
@@ -334,24 +528,109 @@
         });
     }
 
-    function showActions(interviewId) {
-        const actionsElement = document.getElementById('actions-' + interviewId);
-        if (actionsElement) {
-            actionsElement.style.display = 'flex';
-        }
-    }
-    
-    function hideActions(interviewId) {
-        const actionsElement = document.getElementById('actions-' + interviewId);
-        if (actionsElement) {
-            actionsElement.style.display = 'none';
-        }
-    }
 
     function editInterview(interviewId) {
-        // Implementation for editing interview
-        alert('Edit interview functionality - to be implemented with inline editing');
+        // Fetch interview data via JSON endpoint
+        fetch(`/admin/interviews/${interviewId}?json=1`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch interview data');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success && data.interview) {
+                const interview = data.interview;
+                
+                // Check if interview is completed (should not be editable)
+                if (interview.status === 'completed') {
+                    alert('Cannot edit completed interviews. Please use the Conduct form to make changes.');
+                    return;
+                }
+                
+                // Populate form
+                document.getElementById('edit_interview_id').value = interview.interview_id;
+                
+                // Format date for datetime-local input (YYYY-MM-DDTHH:mm)
+                if (interview.schedule_date) {
+                    const scheduleDate = new Date(interview.schedule_date);
+                    const year = scheduleDate.getFullYear();
+                    const month = String(scheduleDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(scheduleDate.getDate()).padStart(2, '0');
+                    const hours = String(scheduleDate.getHours()).padStart(2, '0');
+                    const minutes = String(scheduleDate.getMinutes()).padStart(2, '0');
+                    document.getElementById('edit_schedule_date').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+                }
+                
+                document.getElementById('edit_interviewer_id').value = interview.interviewer_id || '';
+                document.getElementById('edit_status').value = interview.status || 'scheduled';
+                document.getElementById('edit_assignment_notes').value = interview.assignment_notes || '';
+                
+                // Show modal
+                document.getElementById('editInterviewModal').style.display = 'flex';
+            } else {
+                alert('Could not load interview data. Please refresh the page.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to load interview data. Please try again.');
+        });
     }
+
+    function closeEditModal() {
+        document.getElementById('editInterviewModal').style.display = 'none';
+        document.getElementById('editInterviewForm').reset();
+    }
+
+    // Handle edit form submission
+    document.getElementById('editInterviewForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const interviewId = document.getElementById('edit_interview_id').value;
+        const formData = {
+            schedule_date: document.getElementById('edit_schedule_date').value,
+            interviewer_id: document.getElementById('edit_interviewer_id').value || null,
+            status: document.getElementById('edit_status').value,
+            assignment_notes: document.getElementById('edit_assignment_notes').value,
+        };
+
+        fetch(`/admin/interviews/${interviewId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                closeEditModal();
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Failed to update interview'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the interview. Please try again.');
+        });
+    });
+
+    // Close modal when clicking outside
+    document.getElementById('editInterviewModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeEditModal();
+        }
+    });
 
     function cancelInterview(interviewId) {
         if (confirm('Are you sure you want to cancel this interview?')) {
@@ -448,21 +727,31 @@
                             const statusClass = interview.status || 'scheduled';
                             const statusText = (interview.status || 'scheduled').charAt(0).toUpperCase() + (interview.status || 'scheduled').slice(1);
                             
+                            // Check if applicant has completed exam (applicant already declared above)
+                            const hasCompletedExam = applicant.status && ['exam-completed', 'interview-scheduled', 'interview-completed', 'admitted', 'rejected'].includes(applicant.status);
+                            
                             // Build action buttons HTML
                             let actionsHtml = '';
                             if (['scheduled', 'available', 'claimed'].includes(interview.status) && interview.status !== 'completed') {
                                 const claimedBy = interview.claimed_by;
                                 if (claimedBy === currentUserId) {
-                                    actionsHtml += `<a href="/admin/interviews/${interview.interview_id}/conduct" class="action-btn action-btn-conduct">Continue</a>`;
-                                } else if (!claimedBy) {
-                                    actionsHtml += `<a href="/admin/interviews/${interview.interview_id}/conduct" class="action-btn action-btn-conduct">Conduct</a>`;
+                                    if (hasCompletedExam) {
+                                        actionsHtml += `<a href="/admin/interviews/${interview.interview_id}/conduct" class="action-btn action-btn-conduct">Continue</a>`;
+                                    } else {
+                                        actionsHtml += `<span class="action-btn action-btn-conduct" style="cursor: not-allowed; opacity: 0.5; position: relative;" title="Cannot conduct interview: Applicant has not completed the exam yet">Continue</span>`;
+                                    }
+                                } else if (!claimedBy || !interview.claimed_at || (new Date(interview.claimed_at) < new Date(Date.now() - 3600000))) {
+                                    if (hasCompletedExam) {
+                                        actionsHtml += `<a href="/admin/interviews/${interview.interview_id}/conduct" class="action-btn action-btn-conduct">Conduct</a>`;
+                                    } else {
+                                        actionsHtml += `<span class="action-btn action-btn-conduct" style="cursor: not-allowed; opacity: 0.5; position: relative;" title="Cannot conduct interview: Applicant has not completed the exam yet">Conduct</span>`;
+                                    }
                                 } else {
                                     actionsHtml += `<span class="action-btn" style="cursor: not-allowed; opacity: 0.6;">Claimed</span>`;
                                 }
                             }
-                            actionsHtml += `<button onclick="editInterview(${interview.interview_id})" class="action-btn action-btn-edit">Edit</button>`;
-                            if (interview.status === 'scheduled') {
-                                actionsHtml += `<button onclick="cancelInterview(${interview.interview_id})" class="action-btn action-btn-delete">Cancel</button>`;
+                            if (interview.status !== 'completed') {
+                                actionsHtml += `<button onclick="editInterview(${interview.interview_id})" class="action-btn action-btn-edit">Edit</button>`;
                             }
                             actionsHtml += `<a href="/admin/interviews/${interview.interview_id}" class="action-btn action-btn-view">View</a>`;
                             

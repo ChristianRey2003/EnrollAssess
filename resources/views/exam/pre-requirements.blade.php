@@ -164,6 +164,17 @@
             line-height: 1.5;
         }
 
+        .checkbox-item.check-all {
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .checkbox-item.check-all label {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
         .button-container {
             display: flex;
             gap: 12px;
@@ -294,20 +305,26 @@
             <!-- Agreement -->
             <div class="section">
                 <div class="checkbox-group">
+                    <div class="checkbox-item check-all">
+                        <input type="checkbox" id="check-all">
+                        <label for="check-all">
+                            Check All
+                        </label>
+                    </div>
                     <div class="checkbox-item">
-                        <input type="checkbox" id="agree-instructions" required>
+                        <input type="checkbox" id="agree-instructions" class="agreement-checkbox" required>
                         <label for="agree-instructions">
                             I have read and understood all exam instructions and prohibited actions.
                         </label>
                     </div>
                     <div class="checkbox-item">
-                        <input type="checkbox" id="agree-terms" required>
+                        <input type="checkbox" id="agree-terms" class="agreement-checkbox" required>
                         <label for="agree-terms">
                             I agree to the terms and conditions. I understand that violations will result in automatic exam submission.
                         </label>
                     </div>
                     <div class="checkbox-item">
-                        <input type="checkbox" id="agree-privacy" required>
+                        <input type="checkbox" id="agree-privacy" class="agreement-checkbox" required>
                         <label for="agree-privacy">
                             I consent to the collection of exam data including answers, timing, and violation records for assessment purposes.
                         </label>
@@ -329,15 +346,32 @@
 
     <script>
         // Enable continue button only when all checkboxes are checked
-        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        const checkAllCheckbox = document.getElementById('check-all');
+        const agreementCheckboxes = document.querySelectorAll('.agreement-checkbox');
         const continueButton = document.getElementById('continueBtn');
 
-        checkboxes.forEach(checkbox => {
+        // Check all functionality
+        checkAllCheckbox.addEventListener('change', function() {
+            agreementCheckboxes.forEach(checkbox => {
+                checkbox.checked = checkAllCheckbox.checked;
+            });
+            updateContinueButton();
+        });
+
+        // Update check all state when individual checkboxes change
+        agreementCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', function() {
-                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-                continueButton.disabled = !allChecked;
+                const allAgreementChecked = Array.from(agreementCheckboxes).every(cb => cb.checked);
+                checkAllCheckbox.checked = allAgreementChecked;
+                updateContinueButton();
             });
         });
+
+        // Function to update continue button state
+        function updateContinueButton() {
+            const allAgreementChecked = Array.from(agreementCheckboxes).every(cb => cb.checked);
+            continueButton.disabled = !allAgreementChecked;
+        }
 
         function continueToBasicInfo() {
             // Store consent acknowledgment in localStorage
@@ -351,15 +385,6 @@
             // Redirect to basic information form
             window.location.href = "{{ route('exam.basic-info') }}";
         }
-
-        // Prevent accidental navigation
-        window.addEventListener('beforeunload', function(e) {
-            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-            if (allChecked && !continueButton.disabled) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
-        });
     </script>
 </body>
 </html>

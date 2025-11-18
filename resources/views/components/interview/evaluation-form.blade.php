@@ -86,23 +86,104 @@
         --bg-light: #F9FAFB;
     }
 
-    .interview-container {
-        display: grid;
-        grid-template-columns: 280px 1fr;
-        gap: 16px;
+    .applicant-header {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px 18px;
+        margin-bottom: 14px;
         max-width: 1600px;
-        margin: 0 auto;
-        padding-bottom: 80px;
+        margin-left: auto;
+        margin-right: auto;
     }
 
-    /* Scoped sidebar for interview component to avoid clashing with layout sidebar */
-    .interview-sidebar {
+    .applicant-header-content {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .applicant-header-left {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .applicant-header-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .applicant-header-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .applicant-header-name {
+        margin: 0 0 4px 0;
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.3;
+    }
+
+    .applicant-header-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        flex-wrap: wrap;
+    }
+
+    .applicant-header-meta-separator {
+        color: var(--text-secondary);
+    }
+
+    .applicant-header-right {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        flex-shrink: 0;
+    }
+
+    .applicant-header-score-item {
         display: flex;
         flex-direction: column;
-        gap: 12px;
-        position: sticky;
-        top: 20px;
-        align-self: start;
+        gap: 4px;
+        align-items: flex-end;
+    }
+
+    .applicant-header-score-label {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .applicant-header-score-value {
+        font-size: 0.9375rem;
+        font-weight: 700;
+    }
+
+    .interview-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding-bottom: 20px;
     }
 
     .card {
@@ -114,13 +195,13 @@
 
     .card-header {
         background: var(--bg-light);
-        padding: 10px 14px;
+        padding: 8px 12px;
         border-bottom: 1px solid var(--border);
     }
 
     .card-header h3 {
         margin: 0;
-        font-size: 0.8125rem;
+        font-size: 0.75rem;
         font-weight: 600;
         color: var(--text-primary);
         text-transform: uppercase;
@@ -128,55 +209,55 @@
     }
 
     .card-body {
-        padding: 14px;
+        padding: 12px;
     }
 
     .applicant-info {
         display: flex;
         align-items: center;
-        gap: 10px;
-        margin-bottom: 12px;
-        padding-bottom: 12px;
+        gap: 8px;
+        margin-bottom: 10px;
+        padding-bottom: 10px;
         border-bottom: 1px solid #F3F4F6;
     }
 
     .avatar {
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         background: var(--primary);
         color: white;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.8125rem;
+        font-size: 0.75rem;
         font-weight: 600;
         flex-shrink: 0;
     }
 
     .applicant-details h4 {
         margin: 0 0 2px 0;
-        font-size: 0.875rem;
+        font-size: 0.8125rem;
         font-weight: 600;
         color: var(--text-primary);
     }
 
     .applicant-details p {
         margin: 0;
-        font-size: 0.75rem;
+        font-size: 0.6875rem;
         color: var(--text-secondary);
     }
 
     .info-list {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
     }
 
     .info-item {
         display: flex;
         justify-content: space-between;
-        font-size: 0.8125rem;
+        font-size: 0.75rem;
     }
 
     .info-label {
@@ -193,9 +274,9 @@
     .badge {
         display: inline-flex;
         align-items: center;
-        padding: 4px 10px;
+        padding: 3px 8px;
         border-radius: 4px;
-        font-size: 0.8125rem;
+        font-size: 0.75rem;
         font-weight: 600;
     }
 
@@ -223,16 +304,17 @@
 
     .form-header {
         background: var(--bg-light);
-        padding: 12px 16px;
+        padding: 10px 14px;
         border-bottom: 1px solid var(--border);
         display: flex;
         justify-content: space-between;
         align-items: center;
+        margin-top: 0;
     }
 
     .form-header h2 {
         margin: 0;
-        font-size: 1rem;
+        font-size: 0.9375rem;
         font-weight: 700;
         color: var(--text-primary);
     }
@@ -240,8 +322,8 @@
     .score-display {
         display: flex;
         align-items: baseline;
-        gap: 4px;
-        padding: 6px 12px;
+        gap: 3px;
+        padding: 5px 10px;
         background: white;
         border: 1px solid var(--border);
         border-radius: 4px;
@@ -255,24 +337,24 @@
     }
 
     .score-value {
-        font-size: 1.5rem;
+        font-size: 1.375rem;
         font-weight: 700;
         color: var(--primary);
         line-height: 1;
     }
 
     .score-max {
-        font-size: 0.875rem;
+        font-size: 0.8125rem;
         color: var(--text-secondary);
         font-weight: 500;
     }
 
     .form-body {
-        padding: 16px;
+        padding: 12px;
     }
 
     .section {
-        margin-bottom: 16px;
+        margin-bottom: 12px;
         background: white;
         border: 1px solid var(--border);
         border-radius: 6px;
@@ -287,7 +369,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 10px 14px;
+        padding: 8px 12px;
         background: var(--bg-light);
         cursor: pointer;
         user-select: none;
@@ -299,7 +381,7 @@
 
     .section-header h3 {
         margin: 0;
-        font-size: 0.875rem;
+        font-size: 0.8125rem;
         font-weight: 600;
         color: var(--text-primary);
         display: flex;
@@ -308,14 +390,14 @@
     }
 
     .section-count {
-        font-size: 0.75rem;
+        font-size: 0.6875rem;
         font-weight: 500;
         color: var(--text-secondary);
     }
 
     .toggle-icon {
-        width: 20px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
         color: var(--text-secondary);
         transition: transform 0.2s;
     }
@@ -325,7 +407,7 @@
     }
 
     .section-body {
-        padding: 14px;
+        padding: 10px 12px;
     }
 
     .section.collapsed .section-body {
@@ -333,7 +415,7 @@
     }
 
     .criterion {
-        margin-bottom: 16px;
+        margin-bottom: 12px;
     }
 
     .criterion:last-child {
@@ -344,7 +426,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
     }
 
     .criterion-label {
@@ -354,9 +436,9 @@
     }
 
     .criterion-badge {
-        font-size: 0.8125rem;
+        font-size: 0.75rem;
         font-weight: 600;
-        padding: 4px 10px;
+        padding: 3px 8px;
         border-radius: 4px;
         display: none;
     }
@@ -387,27 +469,29 @@
 
     .rating-options {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 8px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
     }
 
     .rating-option {
         background: white;
-        border: 1px solid var(--border);
+        border: 1.5px solid var(--border);
         border-radius: 4px;
-        padding: 10px;
+        padding: 8px;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.15s;
         position: relative;
     }
 
     .rating-option:hover {
         border-color: #D1D5DB;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         transform: translateY(-1px);
     }
 
     .rating-option.selected {
         border-width: 2px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .rating-option.excellent {
@@ -457,9 +541,9 @@
     }
 
     .rating-title {
-        font-size: 0.8125rem;
+        font-size: 0.75rem;
         font-weight: 600;
-        margin-bottom: 4px;
+        margin-bottom: 3px;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -482,13 +566,14 @@
     }
 
     .rating-points {
-        font-size: 0.8125rem;
-        opacity: 0.8;
+        font-size: 0.75rem;
+        font-weight: 700;
+        opacity: 0.9;
     }
 
     .rating-desc {
-        font-size: 0.75rem;
-        line-height: 1.4;
+        font-size: 0.6875rem;
+        line-height: 1.3;
         color: #374151;
         margin: 0;
     }
@@ -498,20 +583,94 @@
         font-weight: 500;
     }
 
+    .gwa-section {
+        background: white;
+        border-bottom: 1px solid var(--border);
+        padding: 14px 18px;
+        margin-bottom: 0;
+    }
+
+    .gwa-section-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .gwa-section-header {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .gwa-input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .gwa-input {
+        width: 120px;
+        padding: 6px 10px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        text-align: center;
+        transition: all 0.2s;
+        background: white;
+    }
+
+    .gwa-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1);
+    }
+
+    .gwa-help-text {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        line-height: 1.4;
+        margin-top: 6px;
+    }
+
+    .gwa-status {
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 0.8125rem;
+        margin-top: 8px;
+    }
+
+    .gwa-status.success {
+        background: #D1FAE5;
+        border: 1px solid #10B981;
+        color: #065F46;
+    }
+
+    .gwa-status.warning {
+        background: #FEF3C7;
+        border: 1px solid #F59E0B;
+        color: #92400E;
+    }
+
     .recommendation-section,
     .comments-section {
         background: white;
         border: 1px solid var(--border);
         border-radius: 6px;
-        padding: 14px;
-        margin-bottom: 16px;
+        padding: 12px;
+        margin-bottom: 12px;
     }
 
     .section-label {
         font-size: 0.8125rem;
         font-weight: 600;
         color: var(--text-primary);
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         display: block;
     }
 
@@ -549,18 +708,18 @@
 
     /* Sentence choices styles */
     .sentence-choices {
-        margin-bottom: 12px;
+        margin-bottom: 10px;
     }
 
     .choices-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
     }
 
     .choices-label {
-        font-size: 0.75rem;
+        font-size: 0.6875rem;
         font-weight: 600;
         color: var(--text-secondary);
     }
@@ -569,8 +728,8 @@
         background: var(--bg-light);
         border: 1px solid var(--border);
         border-radius: 4px;
-        padding: 4px 10px;
-        font-size: 0.75rem;
+        padding: 3px 8px;
+        font-size: 0.6875rem;
         font-weight: 500;
         color: var(--text-primary);
         cursor: pointer;
@@ -585,12 +744,12 @@
         background: var(--bg-light);
         border: 1px solid var(--border);
         border-radius: 4px;
-        padding: 10px;
-        margin-bottom: 10px;
+        padding: 8px;
+        margin-bottom: 8px;
     }
 
     .choice-group {
-        margin-bottom: 10px;
+        margin-bottom: 8px;
     }
 
     .choice-group:last-child {
@@ -599,24 +758,24 @@
 
     .choice-group-label {
         display: block;
-        font-size: 0.75rem;
+        font-size: 0.6875rem;
         font-weight: 600;
         color: var(--text-primary);
-        margin-bottom: 6px;
+        margin-bottom: 5px;
     }
 
     .choice-buttons {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
+        gap: 5px;
     }
 
     .choice-btn {
         background: white;
         border: 1px solid var(--border);
         border-radius: 4px;
-        padding: 6px 10px;
-        font-size: 0.75rem;
+        padding: 4px 8px;
+        font-size: 0.6875rem;
         font-weight: 500;
         color: var(--text-primary);
         cursor: pointer;
@@ -631,15 +790,13 @@
     }
 
     .actions {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
         display: flex;
         flex-direction: column;
         align-items: flex-end;
         gap: 10px;
-        z-index: 1000;
-        max-width: calc(100vw - 40px);
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
     }
     
     .actions .buttons-row {
@@ -647,6 +804,8 @@
         flex-direction: row;
         gap: 10px;
         align-items: center;
+        width: 100%;
+        justify-content: flex-end;
     }
 
     .warning-message {
@@ -723,18 +882,27 @@
     }
 
     @media (max-width: 1024px) {
+        .applicant-header-content {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .applicant-header-right {
+            width: 100%;
+            justify-content: flex-start;
+            gap: 32px;
+        }
+
+        .applicant-header-score-item {
+            align-items: flex-start;
+        }
+
+        .rating-options {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
         .interview-container {
-            grid-template-columns: 1fr;
-            padding-bottom: 140px;
-        }
-
-        .sidebar {
-            position: static;
-        }
-
-        .actions {
-            bottom: 16px;
-            right: 16px;
+            padding-bottom: 20px;
         }
     }
 
@@ -744,11 +912,7 @@
         }
 
         .actions {
-            left: 16px;
-            right: 16px;
-            flex-direction: column;
             align-items: stretch;
-            max-width: calc(100vw - 32px);
         }
         
         .actions .warning-message {
@@ -762,6 +926,7 @@
             flex-direction: row;
             gap: 10px;
             width: 100%;
+            justify-content: stretch;
         }
 
         .btn {
@@ -771,118 +936,96 @@
 </style>
 @endpush
 
-<div class="interview-container">
-    <!-- Sidebar -->
-    <div class="interview-sidebar">
-        <!-- Applicant Information -->
-        <div class="card">
-            <div class="card-header">
-                <h3>Applicant Information</h3>
+<!-- Applicant Header -->
+<div class="applicant-header">
+    <div class="applicant-header-content">
+        <div class="applicant-header-left">
+            <div class="applicant-header-avatar">
+                {{ substr($applicant->first_name, 0, 1) }}{{ substr($applicant->last_name, 0, 1) }}
             </div>
-            <div class="card-body">
-                <div class="applicant-info">
-                    <div class="avatar">
-                        {{ substr($applicant->first_name, 0, 1) }}{{ substr($applicant->last_name, 0, 1) }}
-                    </div>
-                    <div class="applicant-details">
-                        <h4>{{ $applicant->full_name }}</h4>
-                        <p>{{ $applicant->application_no }}</p>
-                    </div>
-                </div>
-
-                <div class="info-list">
-                    <div class="info-item">
-                        <span class="info-label">Email</span>
-                        <span class="info-value">{{ $applicant->email_address }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Phone</span>
-                        <span class="info-value">{{ $applicant->phone_number }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Course</span>
-                        <span class="info-value">{{ $applicant->preferred_course ?? 'N/A' }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">UEE Score</span>
-                        <span class="info-value">
-                            @php
-                                $ueeScore = $applicant->score ?? 0;
-                                $ueeClass = $ueeScore >= 75 ? 'success' : ($ueeScore >= 60 ? 'warning' : 'danger');
-                            @endphp
-                            <span class="badge badge-{{ $ueeClass }}">{{ number_format($ueeScore, 1) }}%</span>
-                        </span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Exam Score</span>
-                        <span class="info-value">
-                            @php
-                                $examScore = $applicant->enrollassess_score ?? 0;
-                                $scoreClass = $examScore >= 75 ? 'success' : ($examScore >= 60 ? 'warning' : 'danger');
-                            @endphp
-                            <span class="badge badge-{{ $scoreClass }}">{{ number_format($examScore, 1) }}%</span>
-                        </span>
-                    </div>
+            <div class="applicant-header-details">
+                <h3 class="applicant-header-name">{{ $applicant->full_name }}</h3>
+                <div class="applicant-header-meta">
+                    <span>{{ $applicant->application_no }}</span>
+                    <span class="applicant-header-meta-separator">·</span>
+                    <span>{{ $applicant->email_address }}</span>
                 </div>
             </div>
         </div>
-
-        <!-- CARD/TOR GWA Input (display/input in sidebar; actual value submitted via hidden field in form) -->
-        <div class="card">
-            <div class="card-header">
-                <h3>CARD/TOR GWA</h3>
+        <div class="applicant-header-right">
+            <div class="applicant-header-score-item">
+                <span class="applicant-header-score-label">UEE Score</span>
+                <span class="applicant-header-score-value">
+                    @php
+                        $ueeScore = $applicant->score ?? 0;
+                        $ueeClass = $ueeScore >= 75 ? 'success' : ($ueeScore >= 60 ? 'warning' : 'danger');
+                    @endphp
+                    <span class="badge badge-{{ $ueeClass }}">{{ number_format($ueeScore, 1) }}%</span>
+                </span>
             </div>
-            <div class="card-body">
-                <div style="margin-bottom: 12px;">
-                    <label for="card_tor_gwa_input" style="display: block; font-size: 0.8125rem; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">
-                        GWA (%) <span style="color: #DC2626;">*</span>
-                    </label>
-                    <input 
-                        type="number" 
-                        id="card_tor_gwa_input" 
-                        class="form-select" 
-                        min="0" 
-                        max="100" 
-                        step="0.01" 
-                        value="{{ old('card_tor_gwa', $applicant->card_tor_gwa) }}"
-                        placeholder="Enter GWA percentage"
-                        required
-                        style="text-align: center; font-size: 1.125rem; font-weight: 600;"
-                    >
-                    <div style="margin-top: 8px; font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4;">
-                        Enter the applicant's General Weighted Average from their CARD/TOR as a percentage (0-100). This is required before submission.
-                    </div>
-                </div>
-                @if($applicant->card_tor_gwa)
-                <div style="padding: 10px; background: #D1FAE5; border: 1px solid #10B981; border-radius: 4px; font-size: 0.8125rem; color: #065F46;">
-                    <strong>Current GWA:</strong> {{ number_format($applicant->card_tor_gwa, 2) }}%
-                </div>
-                @else
-                <div style="padding: 10px; background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 4px; font-size: 0.8125rem; color: #92400E;">
-                    ⚠️ GWA not yet recorded
-                </div>
-                @endif
+            <div class="applicant-header-score-item">
+                <span class="applicant-header-score-label">Exam Score</span>
+                <span class="applicant-header-score-value">
+                    @php
+                        $examScore = $applicant->enrollassess_score ?? 0;
+                        $scoreClass = $examScore >= 75 ? 'success' : ($examScore >= 60 ? 'warning' : 'danger');
+                    @endphp
+                    <span class="badge badge-{{ $scoreClass }}">{{ number_format($examScore, 1) }}%</span>
+                </span>
             </div>
         </div>
     </div>
+</div>
 
+<div class="interview-container">
     <!-- Evaluation Form -->
     <div class="form-container">
-        <div class="form-header">
-            <h2>BSIT Admission Interview Evaluation</h2>
-            <div class="score-display">
-                <span class="score-label">Total</span>
-                <span class="score-value" id="totalScore">0</span>
-                <span class="score-max">/100</span>
+        <form method="POST" action="{{ $form_action }}" id="evaluationForm">
+            @csrf
+            <!-- Hidden field to submit GWA value -->
+            <input type="hidden" name="card_tor_gwa" id="card_tor_gwa" value="{{ old('card_tor_gwa', $applicant->card_tor_gwa) }}">
+            
+            <!-- CARD/TOR GWA Input -->
+            <div class="gwa-section">
+                <div class="gwa-section-row">
+                    <label for="card_tor_gwa_input" class="gwa-section-header">
+                        CARD/TOR GWA (%) <span style="color: #DC2626;">*</span>
+                    </label>
+                    <div class="gwa-input-wrapper">
+                        <input 
+                            type="number" 
+                            id="card_tor_gwa_input" 
+                            class="gwa-input" 
+                            min="0" 
+                            max="100" 
+                            step="0.01" 
+                            value="{{ old('card_tor_gwa', $applicant->card_tor_gwa) }}"
+                            placeholder="0.00"
+                            required
+                        >
+                        <span style="font-size: 0.875rem; color: var(--text-secondary);">%</span>
+                    </div>
+                </div>
+                <div class="gwa-help-text">
+                    Enter the applicant's General Weighted Average from their CARD/TOR as a percentage (0-100). This is required before submission.
+                </div>
+                @if($applicant->card_tor_gwa)
+                <div class="gwa-status success">
+                    <strong>Current GWA:</strong> {{ number_format($applicant->card_tor_gwa, 2) }}%
+                </div>
+                @endif
             </div>
-        </div>
 
-        <div class="form-body">
-            <form method="POST" action="{{ $form_action }}" id="evaluationForm">
-                @csrf
-                <!-- Hidden field to submit GWA value from sidebar input -->
-                <input type="hidden" name="card_tor_gwa" id="card_tor_gwa" value="{{ old('card_tor_gwa', $applicant->card_tor_gwa) }}">
-                
+            <div class="form-header">
+                <h2>BSIT Admission Interview Evaluation</h2>
+                <div class="score-display">
+                    <span class="score-label">Total</span>
+                    <span class="score-value" id="totalScore">0</span>
+                    <span class="score-max">/100</span>
+                </div>
+            </div>
+
+            <div class="form-body">
                 @foreach($criteriaGroups as $groupId => $group)
                 <div class="section" data-section="{{ $groupId }}">
                     <div class="section-header" onclick="toggleSection('{{ $groupId }}')">
@@ -1012,24 +1155,24 @@
                 @if($mode === 'admin')
                 <input type="hidden" name="action" value="submit_final" id="actionField">
                 @endif
+
+                <!-- Actions -->
+                <div class="actions">
+                    <div class="warning-message" id="completionWarning">
+                        Please complete all criteria and recommendation before submitting.
+                    </div>
+                    <div class="buttons-row">
+                        <a href="{{ $back_url }}" class="btn btn-secondary">Cancel</a>
+                        @if($mode === 'admin')
+                        <button type="button" onclick="submitForm('save_draft')" class="btn btn-secondary">Save Draft</button>
+                        <button type="button" onclick="submitForm('submit_final')" class="btn btn-primary" id="submitBtn" disabled>Submit Evaluation</button>
+                        @else
+                        <button type="submit" form="evaluationForm" class="btn btn-primary" id="submitBtn" disabled>Submit Evaluation</button>
+                        @endif
+                    </div>
+                </div>
             </form>
         </div>
-    </div>
-</div>
-
-<!-- Floating Actions -->
-<div class="actions">
-    <div class="warning-message" id="completionWarning">
-        Please complete all criteria and recommendation before submitting.
-    </div>
-    <div class="buttons-row">
-        <a href="{{ $back_url }}" class="btn btn-secondary">Cancel</a>
-        @if($mode === 'admin')
-        <button type="button" onclick="submitForm('save_draft')" class="btn btn-secondary">Save Draft</button>
-        <button type="button" onclick="submitForm('submit_final')" class="btn btn-primary" id="submitBtn" disabled>Submit Evaluation</button>
-        @else
-        <button type="submit" form="evaluationForm" class="btn btn-primary" id="submitBtn" disabled>Submit Evaluation</button>
-        @endif
     </div>
 </div>
 
@@ -1079,7 +1222,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Recommendation change
     document.getElementById('recommendation')?.addEventListener('change', checkCompletion);
     
-    // GWA change (sync sidebar input to hidden field inside form)
+    // GWA change (sync input to hidden field inside form)
     const gwaInput = document.getElementById('card_tor_gwa_input');
     const gwaHidden = document.getElementById('card_tor_gwa');
     gwaInput?.addEventListener('input', function() {

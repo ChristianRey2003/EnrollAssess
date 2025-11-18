@@ -61,6 +61,7 @@ Route::prefix('applicants')->name('applicants.')->middleware('role:department-he
         Route::post('/generate-access-codes', [ApplicantController::class, 'generateAccessCodes'])->name('generate-access-codes');
         Route::post('/assign-instructors', [ApplicantController::class, 'bulkAssignInstructors'])->name('assign-instructors');
         Route::post('/send-exam-notifications', [ApplicantController::class, 'sendExamNotifications'])->name('send-exam-notifications');
+        Route::post('/delete', [ApplicantController::class, 'bulkDelete'])->name('delete');
     });
     
     // Exam Assignment Routes
@@ -151,6 +152,11 @@ Route::prefix('reports')->name('reports.')->middleware('role:department-head,adm
     Route::post('/preview', [ReportsController::class, 'preview'])->name('preview');
     Route::get('/history', [ReportsController::class, 'history'])->name('history');
     Route::delete('/{id}', [ReportsController::class, 'destroy'])->name('destroy');
+    Route::get('/stats', [ReportsController::class, 'getStats'])->name('stats');
+    Route::post('/archive-all', [ReportsController::class, 'archiveAll'])->name('archive-all');
+    Route::get('/archived-history', [ReportsController::class, 'archivedHistory'])->name('archived-history');
+    Route::post('/restore-all', [ReportsController::class, 'restoreAll'])->name('restore-all');
+    Route::post('/permanently-delete-all', [ReportsController::class, 'permanentlyDeleteAll'])->name('permanently-delete-all');
 });
 
 // User Management (Department Head only)

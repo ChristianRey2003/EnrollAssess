@@ -23,7 +23,7 @@ class ReportsController extends Controller
     /**
      * Display the reports dashboard
      */
-    public function index()
+    public function index(Request $request)
     {
         // Overall statistics
         $totalApplicants = Applicant::count();
@@ -55,6 +55,138 @@ class ReportsController extends Controller
         // Recent activity (last 7 days)
         $recentApplicants = Applicant::where('created_at', '>=', now()->subDays(7))->count();
 
+        // Exam Results Data
+        try {
+            $query = Applicant::with(['assignedInstructor', 'accessCode', 'latestInterview'])
+                ->whereNotNull('enrollassess_score'); // Only show applicants who completed EnrollAssess exam
+
+            // Search functionality
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhere('application_no', 'like', "%{$search}%")
+                      ->orWhere('email_address', 'like', "%{$search}%");
+                });
+            }
+
+            // Status filter
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+
+            // Sorting - Default to newest exam completions first
+            $sortBy = $request->get('sort_by', 'exam_completed_at');
+            $sortOrder = $request->get('sort_order', 'desc');
+            
+            $allowedSorts = [
+                'created_at',
+                'updated_at',
+                'application_no',
+                'first_name',
+                'last_name',
+                'email_address',
+                'enrollassess_score',
+                'interview_score',
+                'score',
+                'card_tor_gwa',
+                'status',
+                'exam_completed_at',
+            ];
+            
+            // Handle overall_rating sorting (calculated field)
+            if ($sortBy === 'overall_rating') {
+                $collection = $query->get();
+                $sorted = $collection->sortBy(function($applicant) {
+                    $rating = $applicant->getOverallRating();
+                    return $rating ? $rating['overall_rating'] : 0;
+                }, SORT_REGULAR, $sortOrder === 'desc');
+                
+                $page = $request->get('page', 1);
+                $perPage = 20;
+                $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                    $sorted->forPage($page, $perPage),
+                    $sorted->count(),
+                    $perPage,
+                    $page,
+                    ['path' => $request->url(), 'query' => $request->query()]
+                );
+                $applicants = $paginator;
+            } elseif (in_array($sortBy, $allowedSorts)) {
+                // Handle exam_completed_at with NULLS LAST for proper newest-to-oldest sorting
+                if ($sortBy === 'exam_completed_at') {
+                    if ($sortOrder === 'desc') {
+                        // Newest first: non-null values descending, then nulls (MySQL compatible)
+                        $query->orderByRaw('ISNULL(exam_completed_at), exam_completed_at DESC');
+                    } else {
+                        // Oldest first: non-null values ascending, then nulls (MySQL compatible)
+                        $query->orderByRaw('ISNULL(exam_completed_at), exam_completed_at ASC');
+                    }
+                } else {
+                    $query->orderBy($sortBy, $sortOrder);
+                }
+                $applicants = $query->paginate(20);
+            } else {
+                // Default fallback: newest exam completions first (MySQL compatible)
+                $query->orderByRaw('ISNULL(exam_completed_at), exam_completed_at DESC');
+                $applicants = $query->paginate(20);
+            }
+
+            $statuses = [
+                'exam-completed',
+                'interview-available',
+                'interview-claimed',
+                'interview-scheduled',
+                'interview-completed'
+            ];
+
+            // Statistics - 4 most important metrics
+            $scoringService = app(\App\Services\AdmissionScoringService::class);
+            $allApplicants = Applicant::whereNotNull('enrollassess_score')->get();
+            
+            $qualifiersCount = $allApplicants->filter(function($applicant) use ($scoringService) {
+                return $scoringService->hasAllRequiredScores($applicant);
+            })->count();
+            
+            $overallRatings = $allApplicants->map(function($applicant) {
+                $rating = $applicant->getOverallRating();
+                return $rating ? $rating['overall_rating'] : null;
+            })->filter()->values();
+            
+            $stats = [
+                'qualifiers_count' => $qualifiersCount,
+                'average_overall' => $overallRatings->count() > 0 ? round($overallRatings->avg(), 2) : 0,
+                'average_uee' => round(Applicant::whereNotNull('score')->avg('score'), 2),
+                'average_gwa' => round(Applicant::whereNotNull('card_tor_gwa')->avg('card_tor_gwa'), 2),
+            ];
+
+            // Return JSON for AJAX pagination requests only
+            if ($request->ajax() && $request->header('Accept') && str_contains($request->header('Accept'), 'application/json')) {
+                return response()->json([
+                    'applicants' => $applicants->items(),
+                    'pagination' => [
+                        'current_page' => $applicants->currentPage(),
+                        'last_page' => $applicants->lastPage(),
+                        'per_page' => $applicants->perPage(),
+                        'total' => $applicants->total(),
+                        'from' => $applicants->firstItem(),
+                        'to' => $applicants->lastItem(),
+                    ],
+                    'pagination_html' => $applicants->hasPages() ? $applicants->onEachSide(2)->appends($request->query())->links()->render() : '',
+                ]);
+            }
+        } catch (\Exception $e) {
+            $applicants = collect([])->paginate(20);
+            $statuses = [];
+            $stats = [
+                'qualifiers_count' => 0,
+                'average_overall' => 0,
+                'average_uee' => 0,
+                'average_gwa' => 0,
+            ];
+        }
+
         return view('admin.reports', compact(
             'totalApplicants',
             'examCompleted', 
@@ -67,7 +199,10 @@ class ReportsController extends Controller
             'activeExams',
             'totalQuestions',
             'statusDistribution',
-            'recentApplicants'
+            'recentApplicants',
+            'applicants',
+            'statuses',
+            'stats'
         ));
     }
 
@@ -126,11 +261,11 @@ class ReportsController extends Controller
     }
 
     /**
-     * Download a report
+     * Download a report (including archived reports)
      */
     public function download($reportId)
     {
-        $report = GeneratedReport::findOrFail($reportId);
+        $report = GeneratedReport::withTrashed()->findOrFail($reportId);
 
         if (!$report->fileExists()) {
             return back()->with('error', 'Report file not found. The file may have been deleted or moved.');
@@ -248,5 +383,172 @@ class ReportsController extends Controller
             'success' => true,
             'message' => 'Report deleted successfully.',
         ]);
+    }
+
+    /**
+     * Get statistics for all active reports (for confirmation modal)
+     */
+    public function getStats()
+    {
+        $reports = GeneratedReport::get();
+        
+        $totalCount = $reports->count();
+        $totalFileSize = $reports->sum('file_size');
+        
+        // Format total file size
+        $units = ['B', 'KB', 'MB', 'GB'];
+        $bytes = $totalFileSize;
+        $i = 0;
+        
+        while ($bytes >= 1024 && $i < count($units) - 1) {
+            $bytes /= 1024;
+            $i++;
+        }
+        
+        $formattedSize = round($bytes, 2) . ' ' . $units[$i];
+
+        return response()->json([
+            'success' => true,
+            'total_count' => $totalCount,
+            'total_file_size' => $totalFileSize,
+            'formatted_file_size' => $formattedSize,
+        ]);
+    }
+
+    /**
+     * Archive all reports (soft delete)
+     */
+    public function archiveAll()
+    {
+        try {
+            $reports = GeneratedReport::get();
+            $count = $reports->count();
+            
+            if ($count === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No reports to archive.',
+                ], 400);
+            }
+
+            // Soft delete all reports
+            GeneratedReport::query()->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully archived {$count} report(s).",
+                'archived_count' => $count,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to archive reports: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get archived reports
+     */
+    public function archivedHistory()
+    {
+        $reports = GeneratedReport::onlyTrashed()
+            ->with('generatedBy')
+            ->orderBy('deleted_at', 'desc')
+            ->paginate(10);
+
+        // Transform paginator items safely
+        $items = $reports->getCollection()->map(function ($report) {
+            return [
+                'id' => $report->id,
+                'type' => $report->readable_type,
+                'title' => $report->title,
+                'generated_by' => $report->generatedBy->name ?? 'Unknown',
+                'created_at' => $report->created_at->format('M d, Y g:i A'),
+                'deleted_at' => $report->deleted_at->format('M d, Y g:i A'),
+                'file_size' => $report->formatted_file_size,
+                'filters' => $report->filters_applied,
+            ];
+        })->values();
+
+        return response()->json([
+            'success' => true,
+            'reports' => $items,
+            'pagination' => [
+                'current_page' => $reports->currentPage(),
+                'last_page' => $reports->lastPage(),
+                'total' => $reports->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Restore all archived reports
+     */
+    public function restoreAll()
+    {
+        try {
+            $archivedCount = GeneratedReport::onlyTrashed()->count();
+            
+            if ($archivedCount === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No archived reports to restore.',
+                ], 400);
+            }
+
+            // Restore all archived reports
+            GeneratedReport::onlyTrashed()->restore();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully restored {$archivedCount} report(s).",
+                'restored_count' => $archivedCount,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to restore reports: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Permanently delete all archived reports
+     */
+    public function permanentlyDeleteAll()
+    {
+        try {
+            $archivedReports = GeneratedReport::onlyTrashed()->get();
+            $count = $archivedReports->count();
+            
+            if ($count === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No archived reports to delete.',
+                ], 400);
+            }
+
+            // Delete files from storage
+            foreach ($archivedReports as $report) {
+                if ($report->fileExists()) {
+                    Storage::delete($report->file_path);
+                }
+            }
+
+            // Permanently delete from database
+            GeneratedReport::onlyTrashed()->forceDelete();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully permanently deleted {$count} report(s).",
+                'deleted_count' => $count,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to permanently delete reports: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

@@ -824,6 +824,68 @@ class ApplicantController extends BaseController
     }
 
     /**
+     * Bulk delete applicants
+     */
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'applicant_ids' => 'required|array',
+            'applicant_ids.*' => 'required|exists:applicants,applicant_id',
+        ]);
+
+        try {
+            $deletedCount = 0;
+            $errors = [];
+
+            DB::transaction(function () use ($request, &$deletedCount, &$errors) {
+                $applicants = Applicant::whereIn('applicant_id', $request->applicant_ids)
+                    ->with(['accessCode', 'interviews', 'results'])
+                    ->get();
+
+                foreach ($applicants as $applicant) {
+                    try {
+                        // Delete related records
+                        if ($applicant->accessCode) {
+                            $applicant->accessCode->delete();
+                        }
+                        
+                        // Delete interviews
+                        $applicant->interviews()->delete();
+                        
+                        // Delete results
+                        $applicant->results()->delete();
+                        
+                        // Delete the applicant
+                        $applicant->delete();
+                        $deletedCount++;
+                    } catch (Exception $e) {
+                        $errors[] = "Failed to delete applicant {$applicant->full_name}: " . $e->getMessage();
+                        \Log::error("Bulk delete error for applicant {$applicant->applicant_id}: " . $e->getMessage());
+                    }
+                }
+            });
+
+            $message = "Deleted {$deletedCount} applicant(s) successfully.";
+            if (count($errors) > 0) {
+                $message .= " " . count($errors) . " error(s) occurred.";
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'deleted_count' => $deletedCount,
+                'errors' => $errors
+            ]);
+        } catch (Exception $e) {
+            \Log::error('Bulk delete error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred during bulk delete: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Get applicants eligible for interview (API endpoint)
      */
     public function getEligibleForInterview()

@@ -37,7 +37,7 @@
                 name="status"
                 class="form-select"
                 aria-label="Filter by status"
-                style="width: 180px; min-width: 180px; height: 40px; padding: 4px 28px 4px 8px;"
+                style="width: 180px; min-width: 180px; height: 40px; padding: 4px 36px 4px 8px;"
             >
                 <option value="">All Status</option>
                 <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>

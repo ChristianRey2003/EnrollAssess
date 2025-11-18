@@ -41,6 +41,156 @@
         max-width: 100%;
     }
 
+    /* Tab Navigation */
+    .settings-tabs {
+        display: flex;
+        gap: 8px;
+        border-bottom: 2px solid var(--border-gray);
+        margin-bottom: 24px;
+        padding: 0;
+    }
+
+    .settings-tab {
+        padding: 12px 24px;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: var(--text-gray);
+        font-weight: 500;
+        font-size: 14px;
+        cursor: pointer;
+        transition: var(--transition);
+        position: relative;
+        bottom: -2px;
+    }
+
+    .settings-tab:hover {
+        color: var(--primary-maroon);
+        background: rgba(128, 0, 32, 0.05);
+    }
+
+    .settings-tab.active {
+        color: var(--primary-maroon);
+        border-bottom-color: var(--primary-maroon);
+        font-weight: 600;
+    }
+
+    .settings-tab-pane {
+        display: none;
+    }
+
+    .settings-tab-pane.active {
+        display: block;
+    }
+
+    /* Archived Reports Styles */
+    .archived-reports-section {
+        margin-top: 20px;
+    }
+
+    .archived-reports-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid var(--border-gray);
+    }
+
+    .archived-reports-header h3 {
+        color: var(--primary-maroon);
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .archived-reports-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .btn-archive {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: var(--white);
+    }
+
+    .btn-archive:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    }
+
+    .btn-delete-permanent {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: var(--white);
+    }
+
+    .btn-delete-permanent:hover {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--white);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .data-table thead {
+        background: var(--light-gray);
+    }
+
+    .data-table th {
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text-dark);
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .data-table td {
+        padding: 12px 16px;
+        border-top: 1px solid var(--border-gray);
+        color: var(--text-dark);
+        font-size: 14px;
+    }
+
+    .data-table tbody tr:hover {
+        background: var(--light-gray);
+    }
+
+    .table-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .action-btn {
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        transition: var(--transition);
+    }
+
+    .action-btn-download {
+        background: var(--info-blue);
+        color: var(--white);
+    }
+
+    .action-btn-download:hover {
+        background: #2563EB;
+    }
+
+    .report-type-name {
+        font-weight: 500;
+        color: var(--text-dark);
+    }
+
 
     .settings-card {
         background: var(--white);
@@ -521,13 +671,21 @@
 
 @section('content')
 <div class="settings-container">
-    <!-- Form -->
-    <form method="POST" action="{{ route('admin.settings.update') }}" id="settingsForm">
-        @csrf
-        @method('PUT')
+    <!-- Tab Navigation -->
+    <div class="settings-tabs">
+        <button type="button" class="settings-tab active" onclick="switchTab('email')">Email Settings</button>
+        <button type="button" class="settings-tab" onclick="switchTab('archived-reports')">Archived Reports</button>
+    </div>
 
-        <!-- Email Settings -->
-        <div>
+    <!-- Email Settings Tab Pane -->
+    <div id="email-tab" class="settings-tab-pane active">
+        <!-- Form -->
+        <form method="POST" action="{{ route('admin.settings.update') }}" id="settingsForm">
+            @csrf
+            @method('PUT')
+
+            <!-- Email Settings -->
+            <div>
             <div class="settings-card">
                 <div class="settings-card-header">
                     <h3>Email Configuration</h3>
@@ -624,16 +782,51 @@
             </div>
         </div>
 
-        <!-- Form Actions -->
-        <div class="settings-actions">
-            <button type="button" class="btn btn-secondary" onclick="window.location.href='{{ route('admin.dashboard') }}'">
-                <span></span> Cancel
-            </button>
-            <button type="submit" class="btn btn-primary">
-                <span></span> Save Settings
-            </button>
+            <!-- Form Actions -->
+            <div class="settings-actions">
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='{{ route('admin.dashboard') }}'">
+                    <span></span> Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <span></span> Save Settings
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Archived Reports Tab Pane -->
+    <div id="archived-reports-tab" class="settings-tab-pane">
+        <div class="archived-reports-section">
+            <div class="archived-reports-header">
+                <h3>Archived Reports</h3>
+                <div class="archived-reports-actions">
+                    <button type="button" class="btn btn-archive" onclick="loadArchivedReports()" id="loadArchivedBtn">Load Archived</button>
+                    <button type="button" class="btn btn-archive" onclick="restoreAllArchived()">Restore All</button>
+                    <button type="button" class="btn btn-delete-permanent" onclick="permanentlyDeleteAllArchived()">Permanently Delete All</button>
+                </div>
+            </div>
+            <div class="settings-card">
+                <table class="data-table archived-reports-table">
+                    <thead>
+                        <tr>
+                            <th>Report Type</th>
+                            <th>Generated By</th>
+                            <th>Created</th>
+                            <th>Archived</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 20px; color: #6B7280;">
+                                <p>Click "Load Archived" to view archived reports.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
-    </form>
+    </div>
 </div>
 
 <!-- Amazon SES Setup Guide Modal -->
@@ -879,6 +1072,186 @@
     document.getElementById('settingsForm').addEventListener('submit', function() {
         formChanged = false;
     });
+
+    // Tab Switching Function
+    function switchTab(tabName) {
+        // Remove active class from all tabs and panes
+        document.querySelectorAll('.settings-tab').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.settings-tab-pane').forEach(pane => pane.classList.remove('active'));
+
+        // Add active class to selected tab and pane
+        const clickedTab = event.target;
+        clickedTab.classList.add('active');
+        document.getElementById(tabName + '-tab').classList.add('active');
+    }
+
+    // Get CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+    // Notification function (reuse from reports page style)
+    function showNotification(message, type = 'success') {
+        createFloatingNotification(message, type);
+    }
+
+    // Archived Reports Functions
+    async function loadArchivedReports() {
+        const btn = document.getElementById('loadArchivedBtn');
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+
+        try {
+            const response = await fetch('/admin/reports/archived-history', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+
+            const text = await response.text();
+            const data = JSON.parse(text);
+
+            if (data.success) {
+                if (data.reports.length > 0) {
+                    updateArchivedReportsTable(data.reports);
+                } else {
+                    const tbody = document.querySelector('.archived-reports-table tbody');
+                    if (tbody) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 20px; color: #6B7280;">
+                                    <p>No archived reports found.</p>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                }
+            } else {
+                showNotification('Failed to load archived reports.', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading archived reports:', error);
+            showNotification('Error loading archived reports. Please try again.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    }
+
+    function updateArchivedReportsTable(reports) {
+        const tbody = document.querySelector('.archived-reports-table tbody');
+        if (!tbody) return;
+
+        tbody.innerHTML = reports.map(report => `
+            <tr>
+                <td>
+                    <div class="report-type">
+                        <span class="report-type-name">${report.type}</span>
+                    </div>
+                </td>
+                <td>${report.generated_by}</td>
+                <td>${report.created_at}</td>
+                <td style="color: #6b7280;">${report.deleted_at}</td>
+                <td>
+                    <div class="table-actions">
+                        <button onclick="downloadReport(${report.id})" class="action-btn action-btn-download" title="Download Report">Download</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function downloadReport(id) {
+        if (!id) {
+            alert('Invalid report ID');
+            return;
+        }
+        
+        // Show loading message
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Downloading...';
+        
+        // Direct download
+        window.location.href = `/admin/reports/${id}/download`;
+        
+        // Re-enable button after a short delay
+        setTimeout(() => {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }, 1000);
+    }
+
+    async function restoreAllArchived() {
+        if (!confirm('Are you sure you want to restore all archived reports?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/admin/reports/restore-all', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                credentials: 'same-origin',
+            });
+
+            const text = await response.text();
+            const data = JSON.parse(text);
+
+            if (data.success) {
+                showNotification(data.message || `Successfully restored ${data.restored_count} report(s).`, 'success');
+                loadArchivedReports(); // Refresh archived reports
+            } else {
+                showNotification(data.message || 'Failed to restore reports.', 'error');
+            }
+        } catch (error) {
+            console.error('Error restoring reports:', error);
+            showNotification('Error restoring reports. Please try again.', 'error');
+        }
+    }
+
+    async function permanentlyDeleteAllArchived() {
+        if (!confirm('WARNING: This will permanently delete all archived reports and their files. This action cannot be undone!\n\nAre you absolutely sure?')) {
+            return;
+        }
+
+        const confirmText = prompt('Type "DELETE PERMANENTLY" to confirm permanent deletion:');
+        if (confirmText !== 'DELETE PERMANENTLY') {
+            showNotification('Permanent deletion cancelled.', 'info');
+            return;
+        }
+
+        try {
+            const response = await fetch('/admin/reports/permanently-delete-all', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                credentials: 'same-origin',
+            });
+
+            const text = await response.text();
+            const data = JSON.parse(text);
+
+            if (data.success) {
+                showNotification(data.message || `Successfully permanently deleted ${data.deleted_count} report(s).`, 'success');
+                loadArchivedReports(); // Refresh archived reports table
+            } else {
+                showNotification(data.message || 'Failed to permanently delete reports.', 'error');
+            }
+        } catch (error) {
+            console.error('Error permanently deleting reports:', error);
+            showNotification('Error permanently deleting reports. Please try again.', 'error');
+        }
+    }
 </script>
 @endpush
 

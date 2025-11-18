@@ -7,148 +7,540 @@
     $pageSubtitle = 'Export and analyze examination data for decision making';
 @endphp
 
+@push('styles')
+    <link href="{{ asset('css/admin/applicants.css') }}" rel="stylesheet">
+    <style>
+        .score-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .score-excellent { background: #d1fae5; color: #065f46; }
+        .score-very-good { background: #dbeafe; color: #1e40af; }
+        .score-good { background: #fef3c7; color: #92400e; }
+        .score-satisfactory { background: #fed7aa; color: #9a3412; }
+        .score-fair { background: #fecaca; color: #991b1b; }
+        .score-needs-improvement { background: #f3f4f6; color: #374151; }
+        
+        .floating-actions {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+            display: flex;
+            flex-direction: row;
+        }
+        
+        .floating-actions .action-btn {
+            padding: 6px 8px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: background-color 0.2s;
+            text-decoration: none;
+            color: #374151;
+            white-space: nowrap;
+        }
+        
+        .floating-actions .action-btn:hover {
+            background: #f3f4f6;
+        }
+        
+        .results-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 12px 0;
+            flex-wrap: wrap;
+        }
+        
+        .toolbar-left, .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .form-control {
+            height: 32px;
+            padding: 4px 8px;
+            font-size: 13px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+        }
+        
+        .btn {
+            height: 32px;
+            padding: 8px 14px;
+            font-size: 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .btn-primary {
+            background: #991b1b;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+        
+        .results-table {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .data-table th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .data-table tr:hover {
+            background: rgba(255, 215, 0, 0.1);
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-exam-completed { background: #dbeafe; color: #1e40af; }
+        .status-interview-available { background: #d1fae5; color: #065f46; }
+        .status-interview-claimed { background: #fed7aa; color: #9a3412; }
+        .status-interview-scheduled { background: #e0e7ff; color: #3730a3; }
+        .status-interview-completed { background: #f3e8ff; color: #6b21a8; }
+        .status-admitted { background: #d1fae5; color: #065f46; }
+        .status-rejected { background: #fecaca; color: #991b1b; }
+        
+        /* Drawer Styles */
+        .drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            z-index: 1000;
+            transition: opacity 0.3s ease;
+        }
+
+        .drawer-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .drawer {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            max-width: 85vw;
+            height: 100vh;
+            background: white;
+            box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+            z-index: 1001;
+            overflow-y: auto;
+            transition: right 0.3s ease;
+        }
+
+        .drawer.active {
+            right: 0;
+        }
+
+        .drawer-header {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .drawer-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+
+        .drawer-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .drawer-close:hover {
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .drawer-body {
+            padding: 16px;
+        }
+
+        .drawer-footer {
+            position: sticky;
+            bottom: 0;
+            background: white;
+            padding: 12px 16px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .drawer .form-group {
+            margin-bottom: 12px;
+        }
+
+        .drawer .filter-label {
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .drawer .filter-input,
+        .drawer .filter-select {
+            font-size: 13px;
+            padding: 6px 10px;
+            height: 36px;
+        }
+
+        .drawer .btn-primary-export {
+            padding: 6px 12px;
+            font-size: 12px;
+            height: 36px;
+        }
+
+        .drawer .btn-secondary {
+            padding: 6px 12px;
+            font-size: 12px;
+            height: 36px;
+        }
+        
+        @media (max-width: 768px) {
+            .results-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .toolbar-left, .toolbar-right {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+@endpush
+
 @section('content')
-                <!-- Primary Reports Section -->
+                <!-- Exam Results Table Section -->
                 <div class="content-section">
                     <div class="section-header">
-                        <h2 class="section-title">Primary Reports</h2>
+                        <h2 class="section-title">Exam Results</h2>
                     </div>
-                    <div class="section-content" style="padding: 16px;">
-                        <div class="primary-reports-grid">
-                            <!-- EVSU Entrance Results XLSX -->
-                            <div class="primary-report-card">
-                                <div class="report-card-header">
-                                    <h3 class="report-card-title">EVSU Entrance Results</h3>
+                    <div class="section-content" style="padding: 20px;">
+                        <!-- Statistics Section -->
+                        <section class="stats-section" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                            <div class="stat-card" style="background: white; border-radius: 8px; padding: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #E5E7EB;">
+                                <div class="stat-value" style="font-size: 24px; font-weight: 700; color: #800020;">{{ $stats['qualifiers_count'] ?? 0 }}</div>
+                                <div class="stat-label" style="font-size: 12px; color: #6b7280; margin-top: 4px;">Qualifiers</div>
+                            </div>
+                            <div class="stat-card" style="background: white; border-radius: 8px; padding: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #E5E7EB;">
+                                <div class="stat-value" style="font-size: 24px; font-weight: 700; color: #800020;">{{ $stats['average_overall'] ?? 0 }}</div>
+                                <div class="stat-label" style="font-size: 12px; color: #6b7280; margin-top: 4px;">Avg Overall Rating</div>
+                            </div>
+                            <div class="stat-card" style="background: white; border-radius: 8px; padding: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #E5E7EB;">
+                                <div class="stat-value" style="font-size: 24px; font-weight: 700; color: #800020;">{{ $stats['average_uee'] ?? 0 }}</div>
+                                <div class="stat-label" style="font-size: 12px; color: #6b7280; margin-top: 4px;">Avg UEE</div>
+                            </div>
+                            <div class="stat-card" style="background: white; border-radius: 8px; padding: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #E5E7EB;">
+                                <div class="stat-value" style="font-size: 24px; font-weight: 700; color: #800020;">{{ $stats['average_gwa'] ?? 0 }}</div>
+                                <div class="stat-label" style="font-size: 12px; color: #6b7280; margin-top: 4px;">Avg GWA</div>
+                            </div>
+                        </section>
+
+                        <!-- Results Container -->
+                        <div class="applicants-container" style="background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); border: 1px solid #E5E7EB; overflow: hidden;">
+                            <!-- Results Toolbar -->
+                            <div class="results-toolbar" style="display: flex; justify-content: space-between; align-items: center; gap: 15px; padding: 20px; border-bottom: 1px solid #E5E7EB;">
+                                <div class="toolbar-left" style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="position: relative; width: 220px;">
+                                        <input type="text" 
+                                               id="searchInput" 
+                                               class="form-control form-control-sm" 
+                                               placeholder="Search..." 
+                                               value="{{ request('search') }}"
+                                               style="width: 100%; height: 26px; padding: 4px 32px 4px 8px;"
+                                               aria-label="Search applicants">
+                                        <svg style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <select id="statusFilter" class="form-select form-select-sm" onchange="applyFilter()" style="width: 180px; min-width: 180px; height: 40px; padding: 4px 28px 4px 8px;">
+                                        <option value="">All Status</option>
+                                        @foreach($statuses ?? [] as $status)
+                                            <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : '' }}>
+                                                {{ ucwords(str_replace('-', ' ', $status)) }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <select id="sortFilter" class="form-select form-select-sm" onchange="applySort()" style="width: 180px; min-width: 180px; height: 40px; padding: 4px 28px 4px 8px;">
+                                        <option value="exam_completed_at_desc" {{ request('sort_by') == 'exam_completed_at' && request('sort_order') == 'desc' ? 'selected' : (!request('sort_by') ? 'selected' : '') }}>Newest First</option>
+                                        <option value="exam_completed_at_asc" {{ request('sort_by') == 'exam_completed_at' && request('sort_order') == 'asc' ? 'selected' : '' }}>Oldest First</option>
+                                        <option value="enrollassess_score_desc" {{ request('sort_by') == 'enrollassess_score' && request('sort_order') == 'desc' ? 'selected' : '' }}>Score: High to Low</option>
+                                        <option value="enrollassess_score_asc" {{ request('sort_by') == 'enrollassess_score' && request('sort_order') == 'asc' ? 'selected' : '' }}>Score: Low to High</option>
+                                        <option value="first_name_asc" {{ request('sort_by') == 'first_name' && request('sort_order') == 'asc' ? 'selected' : '' }}>Name: A to Z</option>
+                                        <option value="first_name_desc" {{ request('sort_by') == 'first_name' && request('sort_order') == 'desc' ? 'selected' : '' }}>Name: Z to A</option>
+                                    </select>
                                 </div>
-                                <form id="evsuResultsForm" class="export-form">
-                                    <input type="hidden" name="status" value="interview-completed">
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label for="evsu_limit" class="filter-label">Top N Applicants</label>
-                                            <input id="evsu_limit" name="limit" type="number" min="1" step="1" value="120" class="filter-input">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="evsu_sort" class="filter-label">Sort Order</label>
-                                            <select id="evsu_sort" name="sort" class="filter-select">
-                                                <option value="overall_desc">Overall Rating (High → Low)</option>
-                                                <option value="overall_asc">Overall Rating (Low → High)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div style="display: flex; gap: 10px;">
-                                        <button type="button" onclick="generateEVSUResults('xlsx')" class="btn-primary-export">Export XLSX</button>
-                                        <button type="button" onclick="generateEVSUResults('pdf')" class="btn-primary-export" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">Export PDF</button>
-                                    </div>
-                                </form>
+                                <div class="toolbar-right" style="display: flex; align-items: center; gap: 10px;">
+                                    <button type="button" onclick="openEVSUDrawer()" class="btn-primary-export" style="height: 40px; padding: 8px 16px; font-size: 13px;">EVSU Results</button>
+                                    <button type="button" onclick="openQualifiersDrawer()" class="btn-primary-export" style="height: 40px; padding: 8px 16px; font-size: 13px;">Qualifiers List</button>
+                                </div>
                             </div>
 
-                            <!-- Qualifiers List -->
-                            <div class="primary-report-card">
-                                <div class="report-card-header">
-                                    <h3 class="report-card-title">Qualifiers List</h3>
-                                </div>
-                                <div class="export-form">
-                                    <div class="form-group">
-                                        <label for="qualifiersSlots" class="filter-label">Number of Slots *</label>
-                                        <input type="number" 
-                                               id="qualifiersSlots" 
-                                               name="qualifiersSlots" 
-                                               class="filter-input" 
-                                               placeholder="e.g., 112"
-                                               min="1"
-                                               max="500"
-                                               required>
-                                    </div>
-                                    <div style="display: flex; gap: 10px;">
-                                        <button onclick="generateQualifiersReport('docx')" class="btn-primary-export">Generate DOCX</button>
-                                        <button onclick="generateQualifiersReport('pdf')" class="btn-primary-export" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">Generate PDF</button>
-                                    </div>
-                                </div>
+                            <!-- Results Table -->
+                            <div class="table-responsive">
+                                <table class="table table-hover table-striped align-middle">
+                                <thead style="background-color: white !important; color: #1F2937 !important;">
+                                    <tr>
+                                        <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-left">
+                                            <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'first_name', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
+                                               style="color: inherit; text-decoration: none; font-weight: bold;">
+                                                Applicant
+                                                @if(request('sort_by') == 'first_name')
+                                                    <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
+                                                @endif
+                                            </a>
+                                        </th>
+                                        <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
+                                            <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'score', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
+                                               style="color: inherit; text-decoration: none; font-weight: bold;">
+                                                UEE
+                                                @if(request('sort_by') == 'score')
+                                                    <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
+                                                @endif
+                                            </a>
+                                        </th>
+                                        <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
+                                            <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'card_tor_gwa', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
+                                               style="color: inherit; text-decoration: none; font-weight: bold;">
+                                                GWA
+                                                @if(request('sort_by') == 'card_tor_gwa')
+                                                    <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
+                                                @endif
+                                            </a>
+                                        </th>
+                                        <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
+                                            <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'enrollassess_score', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
+                                               style="color: inherit; text-decoration: none; font-weight: bold;">
+                                                EnrollAssess
+                                                @if(request('sort_by') == 'enrollassess_score')
+                                                    <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
+                                                @endif
+                                            </a>
+                                        </th>
+                                        <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
+                                            <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'interview_score', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
+                                               style="color: inherit; text-decoration: none; font-weight: bold;">
+                                                Interview
+                                                @if(request('sort_by') == 'interview_score')
+                                                    <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
+                                                @endif
+                                            </a>
+                                        </th>
+                                        <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
+                                            <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'overall_rating', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
+                                               style="color: inherit; text-decoration: none; font-weight: bold;">
+                                                Overall
+                                                @if(request('sort_by') == 'overall_rating')
+                                                    <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
+                                                @endif
+                                            </a>
+                                        </th>
+                                        <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
+                                            <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'status', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
+                                               style="color: inherit; text-decoration: none; font-weight: bold;">
+                                                Status
+                                                @if(request('sort_by') == 'status')
+                                                    <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
+                                                @endif
+                                            </a>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($applicants ?? [] as $applicant)
+                                        @php
+                                            $overallRating = $applicant->getOverallRating();
+                                            $hasAllScores = $applicant->hasAllRequiredScores();
+                                        @endphp
+                                        <tr style="position: relative;" 
+                                            onmouseover="showActions({{ $applicant->applicant_id }})" 
+                                            onmouseout="hideActions({{ $applicant->applicant_id }})">
+                                            <td class="text-left" style="font-size: 13px; font-weight: normal;">
+                                                <div>{{ $applicant->full_name }}</div>
+                                                <div style="font-size: 12px; color: #6b7280;">{{ $applicant->application_no }}</div>
+                                                @if(!$hasAllScores)
+                                                    @php
+                                                        $missing = $applicant->getMissingScores();
+                                                    @endphp
+                                                    <div style="font-size: 11px; color: #dc2626; margin-top: 2px;">
+                                                        Missing: {{ implode(', ', array_map(fn($s) => match($s) {
+                                                            'University Entrance Examination' => 'UEE',
+                                                            'CARD/TOR GWA' => 'GWA',
+                                                            'EnrollAssess Exam' => 'Exam',
+                                                            'Interview Evaluation' => 'Interview',
+                                                            default => $s
+                                                        }, $missing)) }}
+                                                    </div>
+                                                @endif
+                                            </td>
+                                            <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                                                @if($applicant->score)
+                                                    <div>{{ round($applicant->score, 2) }}</div>
+                                                @else
+                                                    <span style="color: #9ca3af;">-</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                                                @if($applicant->card_tor_gwa)
+                                                    <div>{{ round($applicant->card_tor_gwa, 2) }}</div>
+                                                @else
+                                                    <span style="color: #9ca3af;">-</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                                                @if($applicant->enrollassess_score)
+                                                    <div>{{ round($applicant->enrollassess_score, 2) }}%</div>
+                                                @else
+                                                    <span style="color: #9ca3af;">-</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                                                @if($applicant->interview_score)
+                                                    <div>{{ round($applicant->interview_score, 2) }}%</div>
+                                                @else
+                                                    <span style="color: #9ca3af;">-</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($overallRating)
+                                                    @php
+                                                        $rating = $overallRating['overall_rating'];
+                                                        $class = 'score-needs-improvement';
+                                                        if ($rating >= 95) $class = 'score-excellent';
+                                                        elseif ($rating >= 90) $class = 'score-very-good';
+                                                        elseif ($rating >= 85) $class = 'score-good';
+                                                        elseif ($rating >= 75) $class = 'score-satisfactory';
+                                                        elseif ($rating >= 70) $class = 'score-fair';
+                                                        
+                                                        $scoringService = app(\App\Services\AdmissionScoringService::class);
+                                                        $verbal = $scoringService->getVerbalDescription($rating);
+                                                    @endphp
+                                                    <div class="score-badge {{ $class }}" style="display: block; margin-bottom: 2px;">
+                                                        {{ round($rating, 2) }}
+                                                    </div>
+                                                    <div style="font-size: 11px; color: #6b7280;">{{ $verbal }}</div>
+                                                @else
+                                                    <span style="color: #9ca3af;">-</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                                                <span class="badge bg-secondary">
+                                                    {{ ucwords(str_replace('-', ' ', $applicant->status)) }}
+                                                </span>
+                                                <!-- Floating Actions -->
+                                                <div id="actions-{{ $applicant->applicant_id }}" class="floating-actions" style="display: none;">
+                                                    <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}" 
+                                                       class="action-btn"
+                                                       title="View Details">
+                                                        View
+                                                    </a>
+                                                    @if($applicant->latestInterview)
+                                                        <a href="{{ route('admin.interviews.show', $applicant->latestInterview->interview_id) }}" 
+                                                           class="action-btn"
+                                                           style="color: #800020;"
+                                                           title="View Interview">
+                                                            Interview
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="8" class="text-center py-5">
+                                                <div class="text-muted">
+                                                    <h5>No exam results found</h5>
+                                                    <p class="mb-0">Only applicants who completed the EnrollAssess exam are shown here.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
                             </div>
+
+                            <!-- Pagination -->
+                            @if(isset($applicants) && $applicants->hasPages())
+                                <div class="pagination-wrapper" style="padding: 20px;">
+                                    {{ $applicants->appends(request()->query())->links() }}
+                                </div>
+                            @endif
                         </div>
-                    </div>
-                </div>
-
-                <!-- Collapsible: Report Filters -->
-                <div class="content-section collapsible-section">
-                    <div class="section-header" onclick="toggleSection('filtersSection')">
-                        <div>
-                            <h2 class="section-title">Advanced Filters</h2>
-                        </div>
-                        <button class="toggle-btn" id="filtersToggle">
-                            <span class="toggle-icon">▼</span>
-                        </button>
-                    </div>
-                    <div class="section-content collapsible-content" id="filtersSection" style="display: none; padding: 20px;">
-                        <form id="reportFiltersForm" class="filters-form">
-                            <div class="filters-grid">
-                                <div class="filter-group">
-                                    <label for="applicantStatus" class="filter-label">Applicant Status</label>
-                                    <select id="applicantStatus" name="applicantStatus" class="filter-select">
-                                        <option value="all">All Applicants</option>
-                                        <option value="recommended">Only Recommended Applicants</option>
-                                        <option value="waitlisted">Only Waitlisted Applicants</option>
-                                        <option value="not-recommended">Only Not Recommended</option>
-                                        <option value="interview-pending">Interview Pending</option>
-                                        <option value="exam-completed">Exam Completed</option>
-                                    </select>
-                                </div>
-
-                                <div class="filter-group">
-                                    <label for="scoreRange" class="filter-label">Score Range</label>
-                                    <select id="scoreRange" name="scoreRange" class="filter-select">
-                                        <option value="all">All Scores</option>
-                                        <option value="excellent">Excellent (90-100%)</option>
-                                        <option value="good">Good (80-89%)</option>
-                                        <option value="satisfactory">Satisfactory (75-79%)</option>
-                                        <option value="below-passing">Below Passing (0-74%)</option>
-                                    </select>
-                                </div>
-
-                                <div class="filter-group">
-                                    <label for="dateRange" class="filter-label">Application Period</label>
-                                    <select id="dateRange" name="dateRange" class="filter-select">
-                                        <option value="all">All Dates</option>
-                                        <option value="this-week">This Week</option>
-                                        <option value="this-month">This Month</option>
-                                        <option value="last-month">Last Month</option>
-                                        <option value="custom">Custom Date Range</option>
-                                    </select>
-                                </div>
-
-                                <div class="filter-group">
-                                    <label for="sortBy" class="filter-label">Sort By</label>
-                                    <select id="sortBy" name="sortBy" class="filter-select">
-                                        <option value="score-desc">Score (Highest First)</option>
-                                        <option value="score-asc">Score (Lowest First)</option>
-                                        <option value="name-asc">Name (A-Z)</option>
-                                        <option value="date-desc">Application Date (Newest)</option>
-                                        <option value="date-asc">Application Date (Oldest)</option>
-                                        <option value="recommendation">Recommendation Status</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <!-- Custom Date Range (hidden by default) -->
-                            <div class="custom-date-range" id="customDateRange" style="display: none;">
-                                <div class="date-inputs">
-                                    <div class="date-group">
-                                        <label for="startDate" class="filter-label">Start Date</label>
-                                        <input type="date" id="startDate" name="startDate" class="filter-input">
-                                    </div>
-                                    <div class="date-group">
-                                        <label for="endDate" class="filter-label">End Date</label>
-                                        <input type="date" id="endDate" name="endDate" class="filter-input">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="filters-actions">
-                                <button type="button" onclick="applyFilters()" class="btn-apply-filters">Apply Filters</button>
-                                <button type="button" onclick="previewReport()" class="btn-preview">Preview Report</button>
-                                <button type="button" onclick="resetFilters()" class="btn-secondary">Reset Filters</button>
-                            </div>
-                        </form>
                     </div>
                 </div>
 
@@ -292,6 +684,66 @@
 @endsection
 
 @push('modals')
+    <!-- EVSU Results Drawer -->
+    <div id="evsuDrawerOverlay" class="drawer-overlay" onclick="closeEVSUDrawer()"></div>
+    <div id="evsuDrawer" class="drawer">
+        <div class="drawer-header">
+            <h3 class="drawer-title">EVSU Entrance Results</h3>
+            <button type="button" class="drawer-close" onclick="closeEVSUDrawer()">×</button>
+        </div>
+        <div class="drawer-body">
+            <form id="evsuResultsForm" class="export-form">
+                <input type="hidden" name="status" value="interview-completed">
+                <div class="form-group">
+                    <label for="evsu_limit" class="filter-label">Top N Applicants</label>
+                    <input id="evsu_limit" name="limit" type="number" min="1" step="1" value="120" class="filter-input" style="width: 100%;">
+                </div>
+                <div class="form-group">
+                    <label for="evsu_sort" class="filter-label">Sort Order</label>
+                    <select id="evsu_sort" name="sort" class="filter-select" style="width: 100%;">
+                        <option value="overall_desc">Overall Rating (High → Low)</option>
+                        <option value="overall_asc">Overall Rating (Low → High)</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+        <div class="drawer-footer">
+            <button type="button" onclick="closeEVSUDrawer()" class="btn-secondary">Cancel</button>
+            <button type="button" onclick="generateEVSUFromDrawer('xlsx')" class="btn-primary-export">Export XLSX</button>
+            <button type="button" onclick="generateEVSUFromDrawer('pdf')" class="btn-primary-export" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">Export PDF</button>
+        </div>
+    </div>
+
+    <!-- Qualifiers List Drawer -->
+    <div id="qualifiersDrawerOverlay" class="drawer-overlay" onclick="closeQualifiersDrawer()"></div>
+    <div id="qualifiersDrawer" class="drawer">
+        <div class="drawer-header">
+            <h3 class="drawer-title">Qualifiers List</h3>
+            <button type="button" class="drawer-close" onclick="closeQualifiersDrawer()">×</button>
+        </div>
+        <div class="drawer-body">
+            <div class="export-form">
+                <div class="form-group">
+                    <label for="qualifiersSlots" class="filter-label">Number of Slots *</label>
+                    <input type="number" 
+                           id="qualifiersSlots" 
+                           name="qualifiersSlots" 
+                           class="filter-input" 
+                           placeholder="e.g., 112"
+                           min="1"
+                           max="500"
+                           required
+                           style="width: 100%;">
+                </div>
+            </div>
+        </div>
+        <div class="drawer-footer">
+            <button type="button" onclick="closeQualifiersDrawer()" class="btn-secondary">Cancel</button>
+            <button onclick="generateQualifiersFromDrawer('docx')" class="btn-primary-export">Generate DOCX</button>
+            <button onclick="generateQualifiersFromDrawer('pdf')" class="btn-primary-export" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">Generate PDF</button>
+        </div>
+    </div>
+
     <!-- Report Preview Modal -->
     <div id="reportPreviewModal" class="modal-overlay">
         <div class="modal-content report-preview-modal">
@@ -305,6 +757,46 @@
             <div class="modal-footer">
                 <button onclick="closeReportPreview()" class="btn-secondary">Close Preview</button>
                 <button onclick="downloadPreviewedReport()" class="btn-primary"> Download Report</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Archive Confirmation Modal -->
+    <div id="archiveConfirmModal" class="modal-overlay" onclick="if(event.target === this) closeArchiveConfirmModal()">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Archive All Reports</h3>
+                <button onclick="closeArchiveConfirmModal()" class="modal-close">×</button>
+            </div>
+            <div class="modal-body" style="padding: 30px;">
+                <div style="margin-bottom: 20px;">
+                    <p style="color: #6b7280; margin-bottom: 16px;">You are about to archive all reports. This will move them to the archived section where they can be restored or permanently deleted later.</p>
+                    <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: #6b7280; font-weight: 500;">Total Reports:</span>
+                            <span style="color: #1f2937; font-weight: 600;" id="archiveModalCount">-</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: #6b7280; font-weight: 500;">Total File Size:</span>
+                            <span style="color: #1f2937; font-weight: 600;" id="archiveModalSize">-</span>
+                        </div>
+                    </div>
+                    <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; border-radius: 4px;">
+                        <p style="margin: 0; color: #92400e; font-size: 13px;">
+                            <strong>Note:</strong> Archived reports can be restored from the "Archived Reports" section below.
+                        </p>
+                    </div>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500; font-size: 14px;">
+                        Type <strong style="color: #dc2626;">ARCHIVE ALL</strong> to confirm:
+                    </label>
+                    <input type="text" id="archiveConfirmInput" placeholder="ARCHIVE ALL" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 14px;" onkeyup="checkArchiveConfirm()">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeArchiveConfirmModal()" class="btn-secondary">Cancel</button>
+                <button onclick="confirmArchiveAll()" class="btn-primary" id="archiveConfirmBtn" disabled style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">Archive All Reports</button>
             </div>
         </div>
     </div>
@@ -326,35 +818,233 @@
             alert(message);
         }
 
-        // Get filters as object
+        // Get filters as object (empty since Advanced Filters removed)
         function getFiltersObject() {
-            const filters = {
-                applicantStatus: document.getElementById('applicantStatus').value,
-                scoreRange: document.getElementById('scoreRange').value,
-                dateRange: document.getElementById('dateRange').value,
-                sortBy: document.getElementById('sortBy').value,
-            };
-
-            if (filters.dateRange === 'custom') {
-                filters.startDate = document.getElementById('startDate').value;
-                filters.endDate = document.getElementById('endDate').value;
-            }
-
-            return filters;
+            return {};
         }
 
         // Get filters as readable string
         function getAppliedFilters() {
-            const filters = getFiltersObject();
-            const parts = [];
-            
-            if (filters.applicantStatus !== 'all') parts.push(`Status: ${filters.applicantStatus}`);
-            if (filters.scoreRange !== 'all') parts.push(`Score: ${filters.scoreRange}`);
-            if (filters.dateRange !== 'all') parts.push(`Period: ${filters.dateRange}`);
-            parts.push(`Sort: ${filters.sortBy}`);
-            
-            return parts.join(', ');
+            return 'Default filters';
         }
+
+        // Drawer Functions
+        function openEVSUDrawer() {
+            const overlay = document.getElementById('evsuDrawerOverlay');
+            const drawer = document.getElementById('evsuDrawer');
+            if (overlay && drawer) {
+                overlay.classList.add('active');
+                drawer.classList.add('active');
+            }
+        }
+
+        function closeEVSUDrawer() {
+            const overlay = document.getElementById('evsuDrawerOverlay');
+            const drawer = document.getElementById('evsuDrawer');
+            if (overlay && drawer) {
+                overlay.classList.remove('active');
+                drawer.classList.remove('active');
+            }
+        }
+
+        function openQualifiersDrawer() {
+            const overlay = document.getElementById('qualifiersDrawerOverlay');
+            const drawer = document.getElementById('qualifiersDrawer');
+            if (overlay && drawer) {
+                overlay.classList.add('active');
+                drawer.classList.add('active');
+            }
+        }
+
+        function closeQualifiersDrawer() {
+            const overlay = document.getElementById('qualifiersDrawerOverlay');
+            const drawer = document.getElementById('qualifiersDrawer');
+            if (overlay && drawer) {
+                overlay.classList.remove('active');
+                drawer.classList.remove('active');
+            }
+        }
+
+        // Exam Results Table Functions
+        function showActions(applicantId) {
+            const actionsDiv = document.getElementById('actions-' + applicantId);
+            if (actionsDiv) {
+                actionsDiv.style.display = 'flex';
+            }
+        }
+
+        function hideActions(applicantId) {
+            const actionsDiv = document.getElementById('actions-' + applicantId);
+            if (actionsDiv) {
+                actionsDiv.style.display = 'none';
+            }
+        }
+
+        // Auto-search functionality
+        let searchTimeout;
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                clearTimeout(searchTimeout);
+                const searchValue = e.target.value.trim();
+                
+                searchTimeout = setTimeout(function() {
+                    updateUrl({ search: searchValue, page: 1 });
+                }, 500); // 500ms debounce
+            });
+        }
+
+        function applyFilter() {
+            const status = document.getElementById('statusFilter').value;
+            
+            updateUrl({
+                status: status,
+                page: 1
+            });
+        }
+
+        function applySort() {
+            const sortValue = document.getElementById('sortFilter').value;
+            
+            // Parse the sort value (format: "field_asc" or "field_desc")
+            const lastUnderscoreIndex = sortValue.lastIndexOf('_');
+            const sortBy = sortValue.substring(0, lastUnderscoreIndex);
+            const sortOrder = sortValue.substring(lastUnderscoreIndex + 1);
+            
+            updateUrl({
+                sort_by: sortBy,
+                sort_order: sortOrder,
+                page: 1
+            });
+        }
+
+        function updateUrl(params) {
+            const url = new URL(window.location);
+            
+            Object.keys(params).forEach(key => {
+                if (params[key] && params[key] !== '') {
+                    url.searchParams.set(key, params[key]);
+                } else {
+                    url.searchParams.delete(key);
+                }
+            });
+            
+            window.location.href = url.toString();
+        }
+
+        // AJAX Pagination
+        document.addEventListener('click', function(e) {
+            const paginationLink = e.target.closest('.pagination a, .pagination-wrapper a');
+            
+            if (paginationLink && paginationLink.href) {
+                e.preventDefault();
+                e.stopPropagation();
+                const url = paginationLink.href;
+                
+                if (!url || url === '#' || url === 'javascript:void(0)') return;
+                
+                const tableBody = document.querySelector('table tbody');
+                const paginationWrapper = document.querySelector('.pagination-wrapper');
+                
+                if (tableBody) {
+                    tableBody.style.opacity = '0.5';
+                    tableBody.style.pointerEvents = 'none';
+                }
+                if (paginationWrapper) {
+                    paginationWrapper.style.opacity = '0.5';
+                    paginationWrapper.style.pointerEvents = 'none';
+                }
+                
+                fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.applicants && tableBody) {
+                        let html = '';
+                        
+                        if (data.applicants.length === 0) {
+                            html = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">No exam results found. Only applicants who completed the EnrollAssess exam are shown here.</td></tr>';
+                        } else {
+                            data.applicants.forEach((applicant) => {
+                                const statusText = (applicant.status || '').split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+                                
+                                const score = applicant.score ? Number(applicant.score).toFixed(2) : '<span style="color: #9ca3af;">-</span>';
+                                const gwa = applicant.card_tor_gwa ? Number(applicant.card_tor_gwa).toFixed(2) : '<span style="color: #9ca3af;">-</span>';
+                                const examScore = applicant.enrollassess_score ? Number(applicant.enrollassess_score).toFixed(2) + '%' : '<span style="color: #9ca3af;">-</span>';
+                                const interviewScore = applicant.interview_score ? Number(applicant.interview_score).toFixed(2) + '%' : '<span style="color: #9ca3af;">-</span>';
+                                
+                                // Build overall rating display
+                                let overallRatingHtml = '<span style="color: #9ca3af;">-</span>';
+                                if (applicant.overall_rating !== null && applicant.overall_rating !== undefined) {
+                                    const rating = Number(applicant.overall_rating);
+                                    let ratingClass = 'score-needs-improvement';
+                                    if (rating >= 95) ratingClass = 'score-excellent';
+                                    else if (rating >= 90) ratingClass = 'score-very-good';
+                                    else if (rating >= 85) ratingClass = 'score-good';
+                                    else if (rating >= 75) ratingClass = 'score-satisfactory';
+                                    else if (rating >= 70) ratingClass = 'score-fair';
+                                    
+                                    overallRatingHtml = `<div class="score-badge ${ratingClass}" style="display: block; margin-bottom: 2px;">${rating.toFixed(2)}</div>`;
+                                }
+                                
+                                // Build floating actions
+                                let interviewLink = '';
+                                if (applicant.latest_interview && applicant.latest_interview.interview_id) {
+                                    interviewLink = `<a href="/admin/interviews/${applicant.latest_interview.interview_id}" class="action-btn" style="color: #800020;" title="View Interview">Interview</a>`;
+                                }
+                                
+                                html += `<tr style="position: relative;" 
+                                    onmouseover="showActions(${applicant.applicant_id})" 
+                                    onmouseout="hideActions(${applicant.applicant_id})">
+                                    <td>
+                                        <div style="font-weight: 500;">${applicant.full_name || ''}</div>
+                                        <div style="font-size: 12px; color: #6b7280;">${applicant.application_no || applicant.formatted_applicant_no || 'N/A'}</div>
+                                    </td>
+                                    <td style="text-align: center;">${score}</td>
+                                    <td style="text-align: center;">${gwa}</td>
+                                    <td style="text-align: center;">${examScore}</td>
+                                    <td style="text-align: center;">${interviewScore}</td>
+                                    <td>${overallRatingHtml}</td>
+                                    <td style="text-align: center;">
+                                        <span class="badge bg-secondary">${statusText}</span>
+                                        <div id="actions-${applicant.applicant_id}" class="floating-actions" style="display: none;">
+                                            <a href="/admin/applicants/${applicant.applicant_id}" class="action-btn" title="View Details">View</a>
+                                            ${interviewLink}
+                                        </div>
+                                    </td>
+                                </tr>`;
+                            });
+                        }
+                        
+                        tableBody.innerHTML = html;
+                        tableBody.style.opacity = '1';
+                        tableBody.style.pointerEvents = '';
+                        
+                        if (data.pagination_html && paginationWrapper) {
+                            paginationWrapper.innerHTML = data.pagination_html;
+                        }
+                        
+                        if (paginationWrapper) {
+                            paginationWrapper.style.opacity = '1';
+                            paginationWrapper.style.pointerEvents = '';
+                        }
+                        
+                        window.history.pushState({}, '', url);
+                    }
+                })
+                .catch(error => {
+                    console.error('Pagination error:', error);
+                    window.location.href = url;
+                });
+            }
+        });
 
         // Generate report function
         async function generateReport(type, buttonElement = null) {
@@ -488,6 +1178,65 @@
             }
         }
 
+        async function generateQualifiersFromDrawer(format = 'docx') {
+            const slotsInput = document.getElementById('qualifiersSlots');
+            const btn = event.target.closest('button');
+            const slots = parseInt(slotsInput.value);
+
+            // Validate slots input
+            if (!slots || slots < 1 || slots > 500) {
+                showNotification('Please enter a valid number of slots (1-500)', 'error');
+                slotsInput.focus();
+                return;
+            }
+
+            const filters = getFiltersObject();
+            filters.slots = slots;
+
+            btn.dataset.originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+
+            const reportType = format === 'pdf' ? 'qualifiers_list_pdf' : 'qualifiers_list';
+
+            try {
+                const response = await fetch('/admin/reports/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        type: reportType,
+                        filters: filters
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification(`Qualifiers list ${format.toUpperCase()} generated successfully!`, 'success');
+                    closeQualifiersDrawer();
+                    await loadReportHistory();
+                    
+                    if (data.report && data.report.id) {
+                        window.location.href = `/admin/reports/${data.report.id}/download`;
+                    }
+                } else {
+                    showNotification(data.message || 'Failed to generate report', 'error');
+                }
+            } catch (error) {
+                console.error('Error generating qualifiers report:', error);
+                showNotification('Failed to generate report. Please try again.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = btn.dataset.originalText || `Generate ${format.toUpperCase()}`;
+            }
+        }
+
         async function generateEVSUResults(format = 'xlsx') {
             const btn = event.target.closest('button');
             const limitInput = document.getElementById('evsu_limit');
@@ -534,6 +1283,63 @@
                     await loadReportHistory();
                     
                     // Download the report
+                    if (data.report && data.report.id) {
+                        window.location.href = `/admin/reports/${data.report.id}/download`;
+                    }
+                } else {
+                    showNotification(data.message || 'Failed to generate report', 'error');
+                }
+            } catch (error) {
+                console.error('Error generating EVSU results:', error);
+                showNotification('Failed to generate report. Please try again.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = btn.dataset.originalText || `Export ${format.toUpperCase()}`;
+            }
+        }
+
+        async function generateEVSUFromDrawer(format = 'xlsx') {
+            const limitInput = document.getElementById('evsu_limit');
+            const sortInput = document.getElementById('evsu_sort');
+            const btn = event.target.closest('button');
+            
+            const limit = parseInt(limitInput.value) || 120;
+            const sort = sortInput.value || 'overall_desc';
+
+            const filters = getFiltersObject();
+            filters.limit = limit;
+            filters.sort = sort;
+            filters.status = 'interview-completed';
+
+            btn.dataset.originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+
+            const reportType = format === 'pdf' ? 'evsu_results_pdf' : 'evsu_results';
+
+            try {
+                const response = await fetch('/admin/reports/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        type: reportType,
+                        filters: filters
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification(`EVSU Results ${format.toUpperCase()} generated successfully!`, 'success');
+                    closeEVSUDrawer();
+                    await loadReportHistory();
+                    
                     if (data.report && data.report.id) {
                         window.location.href = `/admin/reports/${data.report.id}/download`;
                     }
@@ -947,11 +1753,98 @@
             downloadReport(id);
         }
 
+        // Archive Confirmation Modal Functions
         function clearReportHistory() {
-            if (confirm('Are you sure you want to clear all report history? This will delete all generated reports.')) {
-                showNotification('Bulk delete functionality coming soon!', 'info');
+            // Fetch stats first
+            fetch('/admin/reports/stats', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.total_count === 0) {
+                        showNotification('No reports to archive.', 'info');
+                        return;
+                    }
+                    
+                    // Update modal with stats
+                    document.getElementById('archiveModalCount').textContent = data.total_count + ' report(s)';
+                    document.getElementById('archiveModalSize').textContent = data.formatted_file_size;
+                    
+                    // Reset confirmation input
+                    document.getElementById('archiveConfirmInput').value = '';
+                    document.getElementById('archiveConfirmBtn').disabled = true;
+                    
+                    // Show modal
+                    document.getElementById('archiveConfirmModal').classList.add('active');
+                } else {
+                    showNotification('Failed to load report statistics.', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching stats:', error);
+                showNotification('Error loading report statistics. Please try again.', 'error');
+            });
+        }
+
+        function closeArchiveConfirmModal() {
+            document.getElementById('archiveConfirmModal').classList.remove('active');
+            document.getElementById('archiveConfirmInput').value = '';
+            document.getElementById('archiveConfirmBtn').disabled = true;
+        }
+
+        function checkArchiveConfirm() {
+            const input = document.getElementById('archiveConfirmInput');
+            const btn = document.getElementById('archiveConfirmBtn');
+            if (input.value.trim().toUpperCase() === 'ARCHIVE ALL') {
+                btn.disabled = false;
+            } else {
+                btn.disabled = true;
             }
         }
+
+        async function confirmArchiveAll() {
+            const btn = document.getElementById('archiveConfirmBtn');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Archiving...';
+
+            try {
+                const response = await fetch('/admin/reports/archive-all', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                });
+
+                const text = await response.text();
+                const data = JSON.parse(text);
+
+                if (data.success) {
+                    showNotification(data.message || `Successfully archived ${data.archived_count} report(s).`, 'success');
+                    closeArchiveConfirmModal();
+                    loadReportHistory(); // Refresh the history table
+                } else {
+                    showNotification(data.message || 'Failed to archive reports.', 'error');
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                }
+            } catch (error) {
+                console.error('Error archiving reports:', error);
+                showNotification('Error archiving reports. Please try again.', 'error');
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+
 
         function applyFilters() {
             const filters = getAppliedFilters();
@@ -1015,6 +1908,7 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 closeReportPreview();
+                closeArchiveConfirmModal();
             }
         });
     </script>

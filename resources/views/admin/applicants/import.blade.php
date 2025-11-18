@@ -83,7 +83,7 @@
                                         <input type="file" id="csv_file" name="csv_file" accept=".csv,.txt" required class="file-input">
                                         <div class="upload-content">
                                             <div class="upload-icon">
-                                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                                                     <polyline points="14,2 14,8 20,8"/>
                                                     <line x1="16" y1="13" x2="8" y2="13"/>
@@ -91,7 +91,7 @@
                                                     <polyline points="10,9 9,9 8,9"/>
                                                 </svg>
                                             </div>
-                                            <div class="upload-text">
+                                            <div class="upload-text" style="font-size: 13px;">
                                                 <strong>Click to browse</strong> or drag and drop your CSV file here
                                             </div>
                                             <div class="upload-hint">Maximum file size: 2MB</div>
@@ -111,7 +111,6 @@
                                             </option>
                                         @endforeach
                                     </select>
-                                    <div class="form-help">All imported applicants will be assigned to this exam set. You can change assignments later.<br><small class="text-muted">Note: If the exam set has a configured exam window, access will only be allowed during that time period.</small></div>
                                 </div>
 
                                 <!-- Access Code Settings -->
@@ -167,28 +166,21 @@
                     </div>
                 </div>
 
-                <!-- Import Progress Section -->
-                <div class="content-section" id="progressSection" style="display: none;">
+                <!-- Import Progress & Results Section (Merged) -->
+                <div class="content-section" id="progressResultsSection" style="display: none;">
                     <div class="section-header">
-                        <h2 class="section-title">Import Progress</h2>
+                        <h2 class="section-title">Import Status</h2>
                     </div>
                     <div class="section-content">
-                        <div class="import-progress">
+                        <!-- Progress Bar (shown during import) -->
+                        <div class="import-progress" id="progressContainer">
                             <div class="progress-bar">
                                 <div class="progress-fill" id="progressFill"></div>
                             </div>
                             <div class="progress-text" id="progressText">Starting import...</div>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Import Results Section -->
-                <div class="content-section" id="resultsSection" style="display: none;">
-                    <div class="section-header">
-                        <h2 class="section-title">Import Results</h2>
-                    </div>
-                    <div class="section-content">
-                        <div id="resultsContent"></div>
+                        <!-- Results Content (shown after import completes) -->
+                        <div id="resultsContent" style="display: none;"></div>
                     </div>
                 </div>
 @endsection
@@ -432,12 +424,16 @@
         function startImport() {
             isImporting = true;
             
-            // Show progress section
-            const progressSection = document.getElementById('progressSection');
+            // Show progress/results section
+            const progressResultsSection = document.getElementById('progressResultsSection');
+            const progressContainer = document.getElementById('progressContainer');
+            const resultsContent = document.getElementById('resultsContent');
             const progressFill = document.getElementById('progressFill');
             const progressText = document.getElementById('progressText');
             
-            progressSection.style.display = 'block';
+            progressResultsSection.style.display = 'block';
+            progressContainer.style.display = 'block';
+            resultsContent.style.display = 'none';
             progressFill.style.width = '0%';
             progressText.textContent = 'Starting import...';
             
@@ -529,8 +525,14 @@
         }
 
         function showResults(data) {
-            const resultsSection = document.getElementById('resultsSection');
+            const progressResultsSection = document.getElementById('progressResultsSection');
+            const progressContainer = document.getElementById('progressContainer');
             const resultsContent = document.getElementById('resultsContent');
+
+            // Hide progress, show results
+            progressContainer.style.display = 'none';
+            resultsContent.style.display = 'block';
+            progressResultsSection.style.display = 'block';
 
             let html = '';
 
@@ -612,8 +614,7 @@
             }
 
             resultsContent.innerHTML = html;
-            resultsSection.style.display = 'block';
-            resultsSection.scrollIntoView({ behavior: 'smooth' });
+            progressResultsSection.scrollIntoView({ behavior: 'smooth' });
         }
 </script>
 @endpush
@@ -651,39 +652,47 @@
             font-weight: 600;
         }
 
-        /* Import page styles */
+        /* Import page styles - Compact */
         .import-layout {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
+            gap: 16px;
+            margin-bottom: 16px;
         }
 
         .import-layout .content-section {
             margin-bottom: 0;
         }
 
+        .content-section {
+            margin-bottom: 16px;
+        }
+
         .content-section .section-header {
-            padding: 10px 10px;
+            padding: 8px 10px;
         }
 
         .content-section .section-title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
             color: var(--text-dark);
             margin-bottom: 0;
-            padding-bottom: 10px;
+            padding-bottom: 8px;
             border-bottom: 2px solid var(--maroon-primary);
         }
 
-        .import-instructions {
+        .content-section .section-content {
             padding: 12px;
+        }
+
+        .import-instructions {
+            padding: 10px;
         }
 
         .instruction-step {
             display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
+            gap: 10px;
+            margin-bottom: 12px;
             align-items: flex-start;
         }
 
@@ -702,39 +711,39 @@
         }
 
         .step-content h3 {
-            margin: 0 0 6px 0;
+            margin: 0 0 5px 0;
             color: var(--maroon-primary);
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
         }
 
         .step-content p {
-            margin: 0 0 8px 0;
+            margin: 0 0 6px 0;
             color: var(--text-gray);
-            font-size: 13px;
+            font-size: 12px;
             line-height: 1.5;
         }
 
         .required-columns {
-            margin: 8px 0;
+            margin: 6px 0;
             padding-left: 16px;
         }
 
         .required-columns li {
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             color: var(--text-dark);
-            font-size: 13px;
-            line-height: 1.5;
+            font-size: 12px;
+            line-height: 1.4;
         }
 
         .import-form {
-            padding: 16px;
+            padding: 12px;
         }
 
         .file-upload-area {
             border: 2px dashed var(--border-gray);
-            border-radius: 12px;
-            padding: 24px 16px;
+            border-radius: 8px;
+            padding: 12px 10px;
             text-align: center;
             cursor: pointer;
             transition: var(--transition);
@@ -763,14 +772,14 @@
         }
 
         .upload-icon {
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             opacity: 0.7;
             color: var(--text-gray);
         }
         
         .upload-icon svg {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
         }
 
         .upload-text strong {
@@ -779,8 +788,8 @@
 
         .upload-hint {
             color: var(--text-gray);
-            font-size: 12px;
-            margin-top: 8px;
+            font-size: 11px;
+            margin-top: 6px;
         }
 
         .file-info {
@@ -850,27 +859,30 @@
 
         .preview-summary {
             display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-            padding: 20px;
+            gap: 16px;
+            margin-bottom: 16px;
+            padding: 12px 16px;
             background: var(--light-gray);
             border-radius: 8px;
         }
 
         .summary-item {
             color: var(--text-dark);
+            font-size: 13px;
         }
 
         .preview-table {
-            padding: 20px;
+            padding: 12px;
         }
 
         .preview-table h4 {
-            margin: 0 0 16px 0;
+            margin: 0 0 12px 0;
             color: var(--maroon-primary);
+            font-size: 14px;
+            font-weight: 600;
         }
 
-        /* Applicant table styles for preview */
+        /* Applicant table styles for preview - Uniform with other tables */
         .applicants-table {
             background: var(--white);
             border-radius: 8px;
@@ -878,41 +890,81 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table thead {
+            background: white;
+            border-bottom: 2px solid #E5E7EB;
+        }
+
+        .data-table th {
+            padding: 12px 8px;
+            text-align: left;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #1F2937;
+            background-color: white !important;
+            border-color: #E5E7EB !important;
+            text-transform: none;
+        }
+
+        .data-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #F3F4F6;
+            font-size: 13px;
+            font-weight: normal;
+            color: #1F2937;
+        }
+
+        .data-table tbody tr:hover {
+            background: #F9FAFB;
+        }
+
         .applicant-number .font-mono {
             font-family: 'Courier New', monospace;
-            font-size: 0.875rem;
+            font-size: 13px;
         }
 
         .applicant-name .font-medium {
             font-weight: 500;
-            color: #1f2937;
+            color: #1F2937;
+            font-size: 13px;
         }
 
         .applicant-name .text-sm {
-            font-size: 0.875rem;
+            font-size: 13px;
             color: #6b7280;
         }
 
         .contact-info .contact-email {
             font-weight: 500;
-            color: #1f2937;
+            color: #1F2937;
             margin-bottom: 2px;
+            font-size: 13px;
         }
 
         .contact-info .contact-phone {
-            font-size: 0.875rem;
+            font-size: 13px;
             color: #6b7280;
         }
 
         .no-score {
             color: #9ca3af !important;
+            font-size: 13px;
+        }
+
+        .verbal-description {
+            font-size: 13px;
         }
 
         .status-badge {
             display: inline-block;
             padding: 4px 8px;
             border-radius: 4px;
-            font-size: 0.75rem;
+            font-size: 11px;
             font-weight: 500;
             text-transform: uppercase;
         }
@@ -923,7 +975,7 @@
         }
 
         .import-progress {
-            padding: 20px;
+            padding: 12px;
         }
 
         .progress-bar {
@@ -950,11 +1002,11 @@
 
         .import-success, .import-error {
             display: flex;
-            gap: 16px;
+            gap: 12px;
             align-items: center;
-            padding: 20px;
+            padding: 16px;
             border-radius: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .import-success {
@@ -991,9 +1043,9 @@
 
         .import-stats {
             display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-            padding: 20px;
+            gap: 16px;
+            margin-bottom: 16px;
+            padding: 12px 16px;
             background: var(--light-gray);
             border-radius: 8px;
         }
@@ -1025,8 +1077,8 @@
         }
 
         .import-errors {
-            margin-bottom: 20px;
-            padding: 20px;
+            margin-bottom: 16px;
+            padding: 12px 16px;
             background: #fff3e0;
             border: 1px solid #ffcc02;
             border-radius: 8px;
