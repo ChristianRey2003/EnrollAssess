@@ -15,50 +15,77 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: #f5f5f5;
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            overflow: hidden;
         }
 
         .container {
             background: white;
-            max-width: 800px;
+            max-width: 700px;
             width: 100%;
+            max-height: 90vh;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         .header {
             background: #800020;
             color: white;
-            padding: 32px;
+            padding: 20px;
             text-align: center;
+            flex-shrink: 0;
         }
 
         .header h1 {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 600;
-            margin-bottom: 8px;
+            margin-bottom: 2px;
         }
 
         .header p {
-            font-size: 14px;
+            font-size: 12px;
             opacity: 0.9;
         }
 
         .content {
-            padding: 40px;
+            padding: 32px;
+            overflow-y: auto;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* Custom scrollbar styling */
+        .content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .content::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 4px;
+        }
+
+        .content::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
         }
 
         .progress-indicator {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 40px;
-            padding: 0 20px;
+            margin-bottom: 20px;
+            padding: 0 10px;
         }
 
         .progress-step {
@@ -72,7 +99,7 @@
         .progress-step::after {
             content: '';
             position: absolute;
-            top: 15px;
+            top: 12px;
             left: 50%;
             width: 100%;
             height: 2px;
@@ -85,8 +112,8 @@
         }
 
         .progress-number {
-            width: 32px;
-            height: 32px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             background: #e5e7eb;
             color: #6b7280;
@@ -94,8 +121,8 @@
             align-items: center;
             justify-content: center;
             font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 8px;
+            font-size: 11px;
+            margin-bottom: 6px;
         }
 
         .progress-step.completed .progress-number {
@@ -109,7 +136,7 @@
         }
 
         .progress-label {
-            font-size: 12px;
+            font-size: 10px;
             color: #6b7280;
             text-align: center;
         }
@@ -128,7 +155,7 @@
         }
 
         .section-title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
             color: #1f2937;
             margin-bottom: 24px;
@@ -153,22 +180,18 @@
         }
 
         .form-label {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
             color: #374151;
             margin-bottom: 8px;
         }
 
-        .form-label.required::after {
-            content: ' *';
-            color: #dc2626;
-        }
 
         .form-control {
             padding: 10px 12px;
             border: 1px solid #d1d5db;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 13px;
             transition: border-color 0.2s;
         }
 
@@ -188,7 +211,7 @@
 
         textarea.form-control {
             resize: vertical;
-            min-height: 80px;
+            min-height: 60px;
         }
 
         .error-message {
@@ -272,16 +295,24 @@
             cursor: not-allowed;
         }
 
-        .required-note {
-            font-size: 13px;
-            color: #6b7280;
-            margin-bottom: 24px;
-            padding: 12px;
-            background: #f9fafb;
-            border-radius: 6px;
-        }
 
         @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                max-height: 95vh;
+            }
+
+            .header {
+                padding: 24px;
+            }
+
+            .header h1 {
+                font-size: 18px;
+            }
+
             .content {
                 padding: 24px;
             }
@@ -295,7 +326,7 @@
             }
 
             .progress-label {
-                font-size: 10px;
+                font-size: 9px;
             }
         }
     </style>
@@ -346,10 +377,6 @@
                 </div>
             @endif
 
-            <div class="required-note">
-                Fields marked with <span style="color: #dc2626;">*</span> are required.
-            </div>
-
             <form id="basicInfoForm" method="POST" action="{{ route('exam.basic-info.store') }}">
                 @csrf
 
@@ -359,7 +386,7 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="sex" class="form-label required">Sex</label>
+                            <label for="sex" class="form-label">Sex <span style="color: #dc2626;">*</span></label>
                             <select id="sex" name="sex" class="form-control @error('sex') error @enderror" required>
                                 <option value="">Select Sex</option>
                                 @foreach($sexOptions as $option)
@@ -374,8 +401,8 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="civil_status" class="form-label">Civil Status</label>
-                            <select id="civil_status" name="civil_status" class="form-control">
+                            <label for="civil_status" class="form-label">Civil Status <span style="color: #dc2626;">*</span></label>
+                            <select id="civil_status" name="civil_status" class="form-control" required>
                                 <option value="">Select Civil Status</option>
                                 @foreach($civilStatusOptions as $option)
                                     <option value="{{ $option }}" {{ old('civil_status') == $option ? 'selected' : '' }}>
@@ -391,7 +418,7 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="date_of_birth" class="form-label required">Date of Birth</label>
+                            <label for="date_of_birth" class="form-label">Date of Birth <span style="color: #dc2626;">*</span></label>
                             <input 
                                 type="date" 
                                 id="date_of_birth" 
@@ -406,15 +433,16 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="age" class="form-label required">Age</label>
-                            <select id="age" name="age" class="form-control @error('age') error @enderror" required>
-                                <option value="">Select Age</option>
-                                @foreach($ageOptions as $ageOption)
-                                    <option value="{{ $ageOption }}" {{ old('age') == $ageOption ? 'selected' : '' }}>
-                                        {{ $ageOption }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <label for="age" class="form-label">Age <span style="color: #dc2626;">*</span></label>
+                            <input 
+                                type="number" 
+                                id="age" 
+                                name="age" 
+                                class="form-control @error('age') error @enderror"
+                                value="{{ old('age') }}"
+                                min="16"
+                                max="99"
+                                required>
                             <span class="help-text">Auto-filled from date of birth</span>
                             @error('age')
                                 <span class="error-message">{{ $message }}</span>
@@ -424,7 +452,7 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="applicant_type" class="form-label required">Applicant Type</label>
+                            <label for="applicant_type" class="form-label">Applicant Type <span style="color: #dc2626;">*</span></label>
                             <select id="applicant_type" name="applicant_type" class="form-control @error('applicant_type') error @enderror" required>
                                 <option value="">Select Applicant Type</option>
                                 @foreach($applicantTypeOptions as $option)
@@ -439,7 +467,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="is_pwd" class="form-label required">Person with Disability (PWD)</label>
+                            <label for="is_pwd" class="form-label">Person with Disability (PWD) <span style="color: #dc2626;">*</span></label>
                             <select id="is_pwd" name="is_pwd" class="form-control @error('is_pwd') error @enderror" required>
                                 <option value="">Select Option</option>
                                 @foreach($pwdStatusOptions as $option)
@@ -459,24 +487,9 @@
                 <div class="form-section">
                     <div class="section-title">Address Information</div>
 
-                    <div class="form-row single">
-                        <div class="form-group">
-                            <label for="complete_address" class="form-label required">Complete Address</label>
-                            <textarea 
-                                id="complete_address" 
-                                name="complete_address" 
-                                class="form-control @error('complete_address') error @enderror"
-                                placeholder="Street, Barangay, etc."
-                                required>{{ old('complete_address') }}</textarea>
-                            @error('complete_address')
-                                <span class="error-message">{{ $message }}</span>
-                            @enderror
-                        </div>
-                    </div>
-
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="province" class="form-label required">Province</label>
+                            <label for="province" class="form-label">Province <span style="color: #dc2626;">*</span></label>
                             <select id="province" name="province" class="form-control @error('province') error @enderror" required>
                                 <option value="">Select Province</option>
                                 @foreach($provinces as $province)
@@ -491,12 +504,27 @@
                         </div>
 
                         <div class="form-group" id="city_municipality_group">
-                            <label for="city_municipality" class="form-label required">City/Municipality</label>
+                            <label for="city_municipality" class="form-label">City/Municipality <span style="color: #dc2626;">*</span></label>
                             <select id="city_municipality" name="city_municipality" class="form-control @error('city_municipality') error @enderror" required>
                                 <option value="">Select City/Municipality</option>
                             </select>
                             <span class="help-text" id="city_help_text">Select province first</span>
                             @error('city_municipality')
+                                <span class="error-message">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="form-row single">
+                        <div class="form-group">
+                            <label for="complete_address" class="form-label">Complete Address <span style="color: #dc2626;">*</span></label>
+                            <textarea 
+                                id="complete_address" 
+                                name="complete_address" 
+                                class="form-control @error('complete_address') error @enderror"
+                                placeholder="Street, Barangay, etc."
+                                required>{{ old('complete_address') }}</textarea>
+                            @error('complete_address')
                                 <span class="error-message">{{ $message }}</span>
                             @enderror
                         </div>
@@ -509,7 +537,7 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="senior_high_school_strand" class="form-label required">Senior High School Strand</label>
+                            <label for="senior_high_school_strand" class="form-label">Senior High School Strand <span style="color: #dc2626;">*</span></label>
                             <select id="senior_high_school_strand" name="senior_high_school_strand" class="form-control @error('senior_high_school_strand') error @enderror" required>
                                 <option value="">Select Strand</option>
                                 @foreach($strandOptions as $value => $label)
@@ -524,14 +552,15 @@
                         </div>
 
                         <div class="form-group conditional-field" id="strandOtherField">
-                            <label for="senior_high_school_strand_other" class="form-label required">Please Specify Strand</label>
+                            <label for="senior_high_school_strand_other" class="form-label">Please Specify Strand <span style="color: #dc2626;">*</span></label>
                             <input 
                                 type="text" 
                                 id="senior_high_school_strand_other" 
                                 name="senior_high_school_strand_other" 
                                 class="form-control @error('senior_high_school_strand_other') error @enderror"
                                 value="{{ old('senior_high_school_strand_other') }}"
-                                placeholder="Enter your strand">
+                                placeholder="Enter your strand"
+                                required>
                             @error('senior_high_school_strand_other')
                                 <span class="error-message">{{ $message }}</span>
                             @enderror
@@ -540,7 +569,7 @@
 
                     <div class="form-row single">
                         <div class="form-group">
-                            <label for="senior_high_school_name" class="form-label required">Senior High School Name</label>
+                            <label for="senior_high_school_name" class="form-label">Senior High School Name <span style="color: #dc2626;">*</span></label>
                             <input 
                                 type="text" 
                                 id="senior_high_school_name" 
@@ -561,7 +590,7 @@
                     <button type="button" class="btn btn-secondary" onclick="window.history.back()">
                         Back
                     </button>
-                    <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
                         Proceed to Exam
                     </button>
                 </div>
@@ -586,9 +615,9 @@
                 age--;
             }
 
-            const ageSelect = document.getElementById('age');
+            const ageInput = document.getElementById('age');
             if (age >= 16 && age <= 99) {
-                ageSelect.value = age;
+                ageInput.value = age;
             }
 
             validateForm();
@@ -621,7 +650,7 @@
             textInput.id = 'city_municipality';
             textInput.name = 'city_municipality';
             textInput.className = existingClasses;
-            textInput.required = true;
+            textInput.setAttribute('required', 'required');
             textInput.value = currentValue;
             textInput.placeholder = 'Enter City/Municipality';
             
@@ -653,7 +682,7 @@
                 select.id = 'city_municipality';
                 select.name = 'city_municipality';
                 select.className = existingClasses;
-                select.required = true;
+                select.setAttribute('required', 'required');
                 select.innerHTML = '<option value="">Select City/Municipality</option>';
                 
                 // Add event listeners for validation
@@ -764,9 +793,53 @@
             validateForm();
         });
 
-        // Form validation
+        // Function to highlight empty fields in red
+        function highlightEmptyFields() {
+            const requiredFields = [
+                'sex',
+                'civil_status',
+                'date_of_birth',
+                'age',
+                'applicant_type',
+                'is_pwd',
+                'complete_address',
+                'province',
+                'city_municipality',
+                'senior_high_school_strand',
+                'senior_high_school_name'
+            ];
+
+            requiredFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    const value = field.value ? field.value.trim() : '';
+                    if (!value) {
+                        field.classList.add('error');
+                    } else {
+                        field.classList.remove('error');
+                    }
+                }
+            });
+
+            // Check strand "Others" field if applicable
+            const strand = document.getElementById('senior_high_school_strand').value;
+            const strandOtherField = document.getElementById('senior_high_school_strand_other');
+            if (strand === 'Others') {
+                const strandOtherValue = strandOtherField ? strandOtherField.value.trim() : '';
+                if (!strandOtherValue) {
+                    strandOtherField.classList.add('error');
+                } else {
+                    strandOtherField.classList.remove('error');
+                }
+            } else if (strandOtherField) {
+                strandOtherField.classList.remove('error');
+            }
+        }
+
+        // Form validation (without highlighting - just for checking)
         function validateForm() {
             const sex = document.getElementById('sex').value;
+            const civilStatus = document.getElementById('civil_status').value;
             const dob = document.getElementById('date_of_birth').value;
             const age = document.getElementById('age').value;
             const applicantType = document.getElementById('applicant_type').value;
@@ -778,7 +851,7 @@
             const strand = document.getElementById('senior_high_school_strand').value;
             const schoolName = document.getElementById('senior_high_school_name').value.trim();
             
-            let isValid = sex && dob && age && applicantType && isPwd && address && province && city && strand && schoolName;
+            let isValid = sex && civilStatus && dob && age && applicantType && isPwd && address && province && city && strand && schoolName;
 
             // Check strand "Others" field if applicable
             if (strand === 'Others') {
@@ -786,14 +859,47 @@
                 isValid = isValid && strandOther;
             }
 
-            document.getElementById('submitBtn').disabled = !isValid;
+            return isValid;
         }
+
+        // Form submit handler - validate and highlight empty fields ONLY on submit
+        document.getElementById('basicInfoForm').addEventListener('submit', function(e) {
+            // First, remove all existing error classes
+            document.querySelectorAll('.form-control.error').forEach(field => {
+                field.classList.remove('error');
+            });
+
+            // Check if form is valid
+            const isValid = validateForm();
+
+            if (!isValid) {
+                e.preventDefault();
+                // Only highlight empty fields when submit is clicked
+                highlightEmptyFields();
+                
+                // Scroll to first error field
+                const firstError = document.querySelector('.form-control.error');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstError.focus();
+                }
+                return false;
+            }
+        });
 
         // Add event listeners for real-time validation
         const formInputs = document.querySelectorAll('#basicInfoForm input, #basicInfoForm select, #basicInfoForm textarea');
         formInputs.forEach(input => {
-            input.addEventListener('input', validateForm);
-            input.addEventListener('change', validateForm);
+            input.addEventListener('input', function() {
+                // Remove error class when user starts typing
+                this.classList.remove('error');
+                validateForm();
+            });
+            input.addEventListener('change', function() {
+                // Remove error class when user changes value
+                this.classList.remove('error');
+                validateForm();
+            });
         });
 
         // Initialize on page load

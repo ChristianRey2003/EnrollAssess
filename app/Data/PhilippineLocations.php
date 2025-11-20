@@ -256,7 +256,6 @@ class PhilippineLocations
         return [
             'Male',
             'Female',
-            'Other',
         ];
     }
 
@@ -307,7 +306,6 @@ class PhilippineLocations
         return [
             'Yes',
             'No',
-            'Prefer not to answer',
         ];
     }
 }

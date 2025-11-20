@@ -70,9 +70,6 @@ class BasicInfoController extends Controller
             $pwdStatusOptions = PhilippineLocations::pwdStatusOptions();
             $citiesByProvince = PhilippineLocations::citiesByProvince();
 
-            // Generate age options (16-99)
-            $ageOptions = range(16, 99);
-
             return view('exam.basic-info', compact(
                 'applicant',
                 'provinces',
@@ -81,7 +78,6 @@ class BasicInfoController extends Controller
                 'strandOptions',
                 'applicantTypeOptions',
                 'pwdStatusOptions',
-                'ageOptions',
                 'citiesByProvince'
             ));
 
@@ -107,12 +103,12 @@ class BasicInfoController extends Controller
 
         // Validation rules
         $rules = [
-            'sex' => 'required|in:Male,Female,Other',
-            'date_of_birth' => 'required|date|before:today|after:' . now()->subYears(100)->toDateString(),
+            'sex' => 'required|in:Male,Female',
+            'date_of_birth' => 'required|date|before:tomorrow|after:' . now()->subYears(100)->toDateString(),
             'age' => 'required|integer|min:16|max:99',
             'civil_status' => 'nullable|in:Single,Married,Widowed,Separated',
             'applicant_type' => 'required|in:New College Applicant,Transferee,ALS passer',
-            'is_pwd' => 'required|in:Yes,No,Prefer not to answer',
+            'is_pwd' => 'required|in:Yes,No',
             'complete_address' => 'required|string|max:1000',
             'province' => 'required|string|max:255',
             'city_municipality' => 'required|string|max:255',

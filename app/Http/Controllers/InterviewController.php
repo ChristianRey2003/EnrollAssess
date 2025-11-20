@@ -70,6 +70,7 @@ class InterviewController extends Controller
             'total' => Interview::count(),
             'scheduled' => Interview::where('status', 'scheduled')->count(),
             'completed' => Interview::where('status', 'completed')->count(),
+            'cancelled' => Interview::where('status', 'cancelled')->count(),
             'pending_assignment' => Applicant::where('status', 'exam-completed')
                                            ->whereDoesntHave('interviews')->count(),
             // Interview pool deprecated: mirror pending_assignment for compatibility

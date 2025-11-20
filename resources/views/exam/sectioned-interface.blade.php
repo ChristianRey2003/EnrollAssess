@@ -25,14 +25,17 @@
             -webkit-user-select: none;
             -moz-user-select: none;
             user-select: none;
+            height: 100vh;
+            overflow: hidden;
         }
 
         /* Fullscreen exam container */
         .exam-container {
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             background: #ffffff;
+            overflow: hidden;
         }
 
         /* Top header bar */
@@ -47,6 +50,7 @@
             position: sticky;
             top: 0;
             z-index: 100;
+            flex-shrink: 0;
         }
 
         .exam-title {
@@ -113,6 +117,7 @@
         .progress-bar-container {
             height: 4px;
             background: #e5e7eb;
+            flex-shrink: 0;
         }
 
         .progress-bar {
@@ -126,6 +131,26 @@
             flex: 1;
             overflow-y: auto;
             padding: 16px 20px;
+            min-height: 0;
+        }
+
+        /* Custom scrollbar styling */
+        .exam-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .exam-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .exam-content::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 4px;
+        }
+
+        .exam-content::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
         }
 
         .exam-sections {
@@ -133,7 +158,7 @@
             margin: 0 auto;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 16px;
         }
 
         /* Section card */
@@ -204,57 +229,57 @@
 
         /* Section content */
         .section-content {
-            padding: 16px 20px;
+            padding: 14px 18px;
         }
 
         .question-grid {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 12px;
         }
 
         /* Question card */
         .question-item {
-            padding: 14px 16px;
+            padding: 12px 14px;
             background: #f9fafb;
             border-radius: 6px;
             border-left: 3px solid #800020;
         }
 
         .question-number {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             color: #800020;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .question-text {
-            font-size: 15px;
+            font-size: 13px;
             font-weight: 500;
             color: #1f2937;
-            line-height: 1.5;
-            margin-bottom: 12px;
+            line-height: 1.4;
+            margin-bottom: 10px;
         }
 
         /* Options */
         .question-options {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
 
         .option-group {
             background: white;
             border: 2px solid #e5e7eb;
             border-radius: 6px;
-            padding: 10px 12px;
+            padding: 8px 10px;
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
             align-items: flex-start;
-            gap: 10px;
+            gap: 8px;
         }
 
         .option-group:hover {
@@ -286,14 +311,14 @@
         .option-letter {
             font-weight: 600;
             color: #800020;
-            margin-right: 6px;
-            font-size: 14px;
+            margin-right: 5px;
+            font-size: 12px;
         }
 
         .option-text {
             color: #374151;
-            font-size: 14px;
-            line-height: 1.4;
+            font-size: 12px;
+            line-height: 1.35;
             -webkit-user-select: auto;
             -moz-user-select: auto;
             user-select: auto;
@@ -302,13 +327,13 @@
         /* Essay textarea */
         .essay-textarea {
             width: 100%;
-            min-height: 100px;
-            padding: 12px;
+            min-height: 80px;
+            padding: 10px;
             border: 2px solid #e5e7eb;
             border-radius: 6px;
             font-family: inherit;
-            font-size: 14px;
-            line-height: 1.5;
+            font-size: 12px;
+            line-height: 1.4;
             resize: vertical;
             transition: all 0.2s;
             -webkit-user-select: auto;

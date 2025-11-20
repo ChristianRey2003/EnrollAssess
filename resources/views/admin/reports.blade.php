@@ -285,32 +285,36 @@
 @endpush
 
 @section('content')
+                <!-- Statistics Section -->
+                <section class="stats-section">
+                    <div class="stat-card">
+                        <div class="stat-icon" aria-hidden="true"></div>
+                        <div class="stat-value">{{ $stats['qualifiers_count'] ?? 0 }}</div>
+                        <div class="stat-label">Qualifiers</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" aria-hidden="true"></div>
+                        <div class="stat-value">{{ $stats['average_overall'] ?? 0 }}</div>
+                        <div class="stat-label">Avg Overall Rating</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" aria-hidden="true"></div>
+                        <div class="stat-value">{{ $stats['average_uee'] ?? 0 }}</div>
+                        <div class="stat-label">Avg UEE</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" aria-hidden="true"></div>
+                        <div class="stat-value">{{ $stats['average_gwa'] ?? 0 }}</div>
+                        <div class="stat-label">Avg GWA</div>
+                    </div>
+                </section>
+
                 <!-- Exam Results Table Section -->
                 <div class="content-section">
                     <div class="section-header">
                         <h2 class="section-title">Exam Results</h2>
                     </div>
                     <div class="section-content" style="padding: 20px;">
-                        <!-- Statistics Section -->
-                        <section class="stats-section" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                            <div class="stat-card" style="background: white; border-radius: 8px; padding: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #E5E7EB;">
-                                <div class="stat-value" style="font-size: 24px; font-weight: 700; color: #800020;">{{ $stats['qualifiers_count'] ?? 0 }}</div>
-                                <div class="stat-label" style="font-size: 12px; color: #6b7280; margin-top: 4px;">Qualifiers</div>
-                            </div>
-                            <div class="stat-card" style="background: white; border-radius: 8px; padding: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #E5E7EB;">
-                                <div class="stat-value" style="font-size: 24px; font-weight: 700; color: #800020;">{{ $stats['average_overall'] ?? 0 }}</div>
-                                <div class="stat-label" style="font-size: 12px; color: #6b7280; margin-top: 4px;">Avg Overall Rating</div>
-                            </div>
-                            <div class="stat-card" style="background: white; border-radius: 8px; padding: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #E5E7EB;">
-                                <div class="stat-value" style="font-size: 24px; font-weight: 700; color: #800020;">{{ $stats['average_uee'] ?? 0 }}</div>
-                                <div class="stat-label" style="font-size: 12px; color: #6b7280; margin-top: 4px;">Avg UEE</div>
-                            </div>
-                            <div class="stat-card" style="background: white; border-radius: 8px; padding: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #E5E7EB;">
-                                <div class="stat-value" style="font-size: 24px; font-weight: 700; color: #800020;">{{ $stats['average_gwa'] ?? 0 }}</div>
-                                <div class="stat-label" style="font-size: 12px; color: #6b7280; margin-top: 4px;">Avg GWA</div>
-                            </div>
-                        </section>
-
                         <!-- Results Container -->
                         <div class="applicants-container" style="background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); border: 1px solid #E5E7EB; overflow: hidden;">
                             <!-- Results Toolbar -->
@@ -788,10 +792,10 @@
                     </div>
                 </div>
                 <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500; font-size: 14px;">
-                        Type <strong style="color: #dc2626;">ARCHIVE ALL</strong> to confirm:
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #374151; font-weight: 500; font-size: 14px;">
+                        <input type="checkbox" id="archiveConfirmCheckbox" onchange="checkArchiveConfirm()" style="width: 18px; height: 18px; cursor: pointer; accent-color: #dc2626;">
+                        <span>I confirm that I want to archive all reports</span>
                     </label>
-                    <input type="text" id="archiveConfirmInput" placeholder="ARCHIVE ALL" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 14px;" onkeyup="checkArchiveConfirm()">
                 </div>
             </div>
             <div class="modal-footer">
@@ -1776,8 +1780,8 @@
                     document.getElementById('archiveModalCount').textContent = data.total_count + ' report(s)';
                     document.getElementById('archiveModalSize').textContent = data.formatted_file_size;
                     
-                    // Reset confirmation input
-                    document.getElementById('archiveConfirmInput').value = '';
+                    // Reset confirmation checkbox
+                    document.getElementById('archiveConfirmCheckbox').checked = false;
                     document.getElementById('archiveConfirmBtn').disabled = true;
                     
                     // Show modal
@@ -1794,14 +1798,14 @@
 
         function closeArchiveConfirmModal() {
             document.getElementById('archiveConfirmModal').classList.remove('active');
-            document.getElementById('archiveConfirmInput').value = '';
+            document.getElementById('archiveConfirmCheckbox').checked = false;
             document.getElementById('archiveConfirmBtn').disabled = true;
         }
 
         function checkArchiveConfirm() {
-            const input = document.getElementById('archiveConfirmInput');
+            const checkbox = document.getElementById('archiveConfirmCheckbox');
             const btn = document.getElementById('archiveConfirmBtn');
-            if (input.value.trim().toUpperCase() === 'ARCHIVE ALL') {
+            if (checkbox.checked) {
                 btn.disabled = false;
             } else {
                 btn.disabled = true;

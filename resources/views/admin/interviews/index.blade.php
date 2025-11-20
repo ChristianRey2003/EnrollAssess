@@ -17,8 +17,8 @@
 
         /* Center stats section at top */
         .stats-section {
-            display: flex;
-            justify-content: center;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
             gap: 20px;
             margin-bottom: 30px;
             max-width: 100%;
@@ -158,6 +158,11 @@
     <section class="stats-section">
         <div class="stat-card">
             <div class="stat-icon" aria-hidden="true"></div>
+            <div class="stat-value">{{ $stats['total'] }}</div>
+            <div class="stat-label">Total</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" aria-hidden="true"></div>
             <div class="stat-value">{{ $stats['scheduled'] }}</div>
             <div class="stat-label">Scheduled</div>
         </div>
@@ -165,6 +170,11 @@
             <div class="stat-icon" aria-hidden="true"></div>
             <div class="stat-value">{{ $stats['completed'] }}</div>
             <div class="stat-label">Completed</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" aria-hidden="true"></div>
+            <div class="stat-value">{{ $stats['cancelled'] }}</div>
+            <div class="stat-label">Cancelled</div>
         </div>
     </section>
 

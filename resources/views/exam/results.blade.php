@@ -17,28 +17,33 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            background: #f5f5f5;
+            height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 16px;
+            padding: 20px;
+            overflow: hidden;
         }
 
         .results-container {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            max-width: 500px;
+            max-width: 700px;
             width: 100%;
+            max-height: 90vh;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         .results-header {
             background: #800020;
             color: white;
-            padding: 20px 24px;
+            padding: 20px;
             text-align: center;
+            flex-shrink: 0;
         }
 
         .results-header h1 {
@@ -53,7 +58,29 @@
         }
 
         .results-body {
-            padding: 24px;
+            padding: 32px;
+            overflow-y: auto;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* Custom scrollbar styling */
+        .results-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .results-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .results-body::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 4px;
+        }
+
+        .results-body::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
         }
 
         .score-display {
@@ -149,40 +176,42 @@
             letter-spacing: 0.05em;
         }
 
-        .message-box {
-            background: #fef3c7;
-            border: 2px solid #fbbf24;
-            border-radius: 8px;
-            padding: 16px;
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .message-box h3 {
-            font-size: 15px;
+        .confirmation-message {
+            font-size: 14px;
             font-weight: 600;
-            color: #92400e;
-            margin-bottom: 8px;
+            color: #059669;
+            margin-bottom: 16px;
+            text-align: center;
         }
 
-        .message-box p {
-            font-size: 13px;
-            color: #78350f;
-            line-height: 1.5;
+        .applicant-name {
+            text-align: center;
+            font-size: 22px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 24px;
         }
 
-        .info-section {
+        .next-steps-section {
             background: #f0f9ff;
             border-left: 3px solid #3b82f6;
             border-radius: 6px;
             padding: 14px;
-            margin-top: 16px;
+            margin-top: 0;
         }
 
-        .info-section p {
+        .next-steps-section h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+
+        .next-steps-section p {
             font-size: 12px;
             color: #1e40af;
             line-height: 1.5;
+            margin: 0;
         }
 
         .action-buttons {
@@ -213,7 +242,11 @@
 
         @media (max-width: 640px) {
             body {
-                padding: 12px;
+                padding: 10px;
+            }
+
+            .results-container {
+                max-height: 95vh;
             }
 
             .results-header {
@@ -225,7 +258,15 @@
             }
 
             .results-body {
-                padding: 20px 16px;
+                padding: 24px;
+            }
+
+            .confirmation-message {
+                font-size: 13px;
+            }
+
+            .applicant-name {
+                font-size: 20px;
             }
 
             .score-circle {
@@ -247,45 +288,21 @@
     <div class="results-container">
         <div class="results-header">
             <h1>Examination Complete</h1>
-            <p>{{ $applicant->full_name ?? 'Applicant' }}</p>
         </div>
 
         <div class="results-body">
-            <!-- Score Display -->
-            <div class="score-display">
-                <div class="score-circle {{ $stats['passed'] ? 'passed' : 'failed' }}">
-                    <div class="score-percentage">{{ round($stats['percentage']) }}%</div>
-                    <div class="score-label">Your Score</div>
-                </div>
-                <span class="status-badge {{ $stats['passed'] ? 'passed' : 'failed' }}">
-                    {{ $stats['passed'] ? 'Passed' : 'Failed' }}
-                </span>
+            <!-- Confirmation Message -->
+            <div class="confirmation-message">Good job! You've completed the examination.</div>
+
+            <!-- Applicant Name -->
+            <div class="applicant-name">
+                {{ $applicant->full_name ?? 'Applicant' }}
             </div>
 
-            <!-- Statistics -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value">{{ $stats['correct_answers'] }}/{{ $stats['total_questions'] }}</div>
-                    <div class="stat-label">Correct Answers</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">{{ $stats['earned_points'] }}/{{ $stats['total_points'] }}</div>
-                    <div class="stat-label">Points Earned</div>
-                </div>
-            </div>
-
-            <!-- Next Steps Message -->
-            <div class="message-box">
-                <h3> Next Steps</h3>
-                <p>Please wait for the email interview.</p>
-            </div>
-
-            <!-- Additional Information -->
-            <div class="info-section">
-                <p>
-                    <strong>Important:</strong> You will receive an email notification regarding your interview schedule. 
-                    Please check your email regularly and ensure your contact information is up to date.
-                </p>
+            <!-- Next Steps Section -->
+            <div class="next-steps-section">
+                <h3>Next Steps</h3>
+                <p>You will receive an email notification regarding your interview schedule. Please check your email regularly and ensure your contact information is up to date.</p>
             </div>
 
             <!-- Action Buttons -->
