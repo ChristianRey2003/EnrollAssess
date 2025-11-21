@@ -39,6 +39,9 @@ class AdminAuthController extends Controller
         if ($user && Hash::check($request->password, $user->password_hash)) {
             // Check if user has valid role
             if (in_array($user->role, ['department-head', 'instructor'])) {
+                // Update last login timestamp
+                $user->update(['last_login' => now()]);
+                
                 Auth::login($user);
                 
                 $request->session()->regenerate();

@@ -34,9 +34,13 @@ class UserManagementController extends Controller
         // Filter by status (active users have recent login activity)
         if ($request->filled('status')) {
             if ($request->status === 'active') {
-                $query->where('updated_at', '>=', now()->subDays(30));
+                $query->where('last_login', '>=', now()->subDays(30))
+                      ->whereNotNull('last_login');
             } else {
-                $query->where('updated_at', '<', now()->subDays(30));
+                $query->where(function($q) {
+                    $q->where('last_login', '<', now()->subDays(30))
+                      ->orWhereNull('last_login');
+                });
             }
         }
 
@@ -48,7 +52,9 @@ class UserManagementController extends Controller
             'department_heads' => User::where('role', 'department-head')->count(),
             'administrators' => User::where('role', 'administrator')->count(),
             'instructors' => User::where('role', 'instructor')->count(),
-            'recent_logins' => User::where('updated_at', '>=', now()->subDays(7))->count(),
+            'recent_logins' => User::where('last_login', '>=', now()->subDays(7))
+                                   ->whereNotNull('last_login')
+                                   ->count(),
         ];
 
         return view('admin.users.index', compact('users', 'stats'));
@@ -104,8 +110,8 @@ class UserManagementController extends Controller
         // Get user activity stats
         $userStats = [
             'created_date' => $user->created_at,
-            'last_login' => $user->updated_at,
-            'days_since_login' => $user->updated_at->diffInDays(now()),
+            'last_login' => $user->last_login,
+            'days_since_login' => $user->last_login ? $user->last_login->diffInDays(now()) : null,
         ];
 
         // Get user's related data based on role
@@ -318,7 +324,7 @@ class UserManagementController extends Controller
                 $user->email,
                 ucfirst(str_replace('-', ' ', $user->role)),
                 $user->created_at->format('Y-m-d H:i:s'),
-                $user->updated_at->format('Y-m-d H:i:s')
+                $user->last_login ? $user->last_login->format('Y-m-d H:i:s') : 'Never'
             );
         }
 

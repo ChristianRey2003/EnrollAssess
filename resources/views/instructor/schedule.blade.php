@@ -161,6 +161,7 @@
     .interview-actions {
         display: flex;
         gap: 12px;
+        justify-content: flex-end;
     }
 
     .btn {
@@ -196,6 +197,17 @@
     .btn-secondary {
         background: #6B7280;
         color: white;
+    }
+
+    .btn-secondary-light {
+        background: #ffffff;
+        color: #374151;
+        border: 1px solid #D1D5DB;
+    }
+
+    .btn-secondary-light:hover {
+        background: #F9FAFB;
+        color: #111827;
     }
 
     .btn-secondary:hover {
@@ -386,15 +398,6 @@
         justify-content: flex-end;
     }
 
-    .bulk-label {
-        font-weight: 500;
-        color: #374151;
-        font-size: 0.875rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
     .bulk-input {
         padding: 10px 12px;
         border: 1px solid #D1D5DB;
@@ -447,7 +450,7 @@
     }
 
     .bulk-drawer-header {
-        padding: 24px;
+        padding: 15px 22px;
         border-bottom: 1px solid #E5E7EB;
         display: flex;
         align-items: flex-start;
@@ -460,28 +463,6 @@
         font-weight: 600;
         color: #1F2937;
         margin: 0;
-    }
-
-    .bulk-drawer-close {
-        background: none;
-        border: none;
-        font-size: 1.75rem;
-        line-height: 1;
-        cursor: pointer;
-        color: #6B7280;
-        padding: 0;
-        width: 36px;
-        height: 36px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 6px;
-        transition: background 0.2s ease, color 0.2s ease;
-    }
-
-    .bulk-drawer-close:hover {
-        background: #F3F4F6;
-        color: #374151;
     }
 
     .bulk-drawer-body {
@@ -646,33 +627,25 @@
     <div class="bulk-drawer-header">
         <div>
             <h3 class="bulk-drawer-title" id="bulkScheduleTitle">Bulk Scheduling</h3>
-            <p class="bulk-subtitle">Schedule multiple interviews with automatic time distribution</p>
         </div>
-        <button type="button" class="bulk-drawer-close" onclick="closeBulkScheduleDrawer()" aria-label="Close bulk scheduling drawer">&times;</button>
     </div>
     <div class="bulk-drawer-body">
-        <div style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
-            <div style="font-weight: 600; color: #1F2937; margin-bottom: 4px;">How bulk scheduling works</div>
-            <ul style="margin: 0; padding-left: 20px; font-size: 0.875rem; color: #4B5563;">
-                <li>The selected applicants will be scheduled sequentially starting from your chosen date and time.</li>
-                <li>Time intervals are applied between each interview in the order they appear in the pending list.</li>
-                <li>Enable email notifications to automatically inform applicants of their scheduled interview.</li>
-            </ul>
-        </div>
+                <div style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                    <div style="font-weight: 600; color: #1F2937; margin-bottom: 8px;">How bulk scheduling works</div>
+                    <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.875rem; color: #4B5563; list-style: disc;">
+                        <li>The selected applicants will be scheduled sequentially starting from your chosen date and time.</li>
+                        <li>Time intervals are applied between each interview in the order they appear in the pending list.</li>
+                        <li>Enable email notifications to automatically inform applicants of their scheduled interview.</li>
+                    </ul>
+                </div>
         <div class="bulk-schedule-form">
             <div class="bulk-form-grid">
-                <div class="bulk-form-item">
-                    <label class="bulk-label">
-                        <input type="checkbox" id="selectAllPending" onchange="toggleAllPending()">
-                        Select All (<span data-bulk-selected-count>0</span> selected)
-                    </label>
-                </div>
-                <div class="bulk-form-item">
-                    <label class="bulk-label">Start Date & Time *</label>
+                <div class="bulk-form-item" style="grid-column: 1 / -1;">
+                    <label>Start Date & Time *</label>
                     <input type="datetime-local" id="bulkStartTime" class="bulk-input" required>
                 </div>
-                <div class="bulk-form-item">
-                    <label class="bulk-label">Time Interval *</label>
+                <div class="bulk-form-item" style="grid-column: 1 / -1;">
+                    <label>Time Interval *</label>
                     <select id="bulkInterval" class="bulk-input">
                         <option value="15">15 minutes</option>
                         <option value="30" selected>30 minutes</option>
@@ -681,7 +654,7 @@
                     </select>
                 </div>
                 <div class="bulk-form-item">
-                    <label class="bulk-label">
+                    <label>
                         <input type="checkbox" id="bulkNotifyEmail" checked>
                         Send email notifications
                     </label>
@@ -690,7 +663,7 @@
         </div>
     </div>
     <div class="bulk-drawer-footer">
-        <button type="button" class="btn btn-secondary" onclick="closeBulkScheduleDrawer()">Cancel</button>
+        <button type="button" class="btn btn-secondary-light" onclick="closeBulkScheduleDrawer()">Cancel</button>
         <button type="button" onclick="submitBulkSchedule()" class="btn btn-primary" id="bulkScheduleBtn" disabled>
             Bulk Schedule
         </button>
@@ -703,7 +676,6 @@
     <div class="modal-content">
         <div class="modal-header">
             <h3 class="modal-title">Schedule Interview</h3>
-            <button class="close-btn" onclick="closeScheduleModal()">&times;</button>
         </div>
         <form id="scheduleForm">
             @csrf
@@ -727,8 +699,8 @@
             </div>
             
             <div class="interview-actions">
+                <button type="button" class="btn btn-secondary-light" onclick="closeScheduleModal()">Cancel</button>
                 <button type="submit" class="btn btn-primary">Schedule Interview</button>
-                <button type="button" class="btn btn-secondary" onclick="closeScheduleModal()">Cancel</button>
             </div>
         </form>
     </div>

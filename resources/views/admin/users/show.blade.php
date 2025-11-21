@@ -386,11 +386,23 @@
             </div>
             <div class="info-row">
                 <span class="info-label">Last Login</span>
-                <span class="info-value">{{ $userStats['last_login']->format('M d, Y H:i') }}</span>
+                <span class="info-value">
+                    @if($userStats['last_login'])
+                        {{ $userStats['last_login']->format('M d, Y H:i') }}
+                    @else
+                        <span class="text-muted">Never</span>
+                    @endif
+                </span>
             </div>
             <div class="info-row">
                 <span class="info-label">Days Since Login</span>
-                <span class="info-value">{{ $userStats['days_since_login'] }} days ago</span>
+                <span class="info-value">
+                    @if($userStats['days_since_login'] !== null)
+                        {{ $userStats['days_since_login'] }} days ago
+                    @else
+                        <span class="text-muted">N/A</span>
+                    @endif
+                </span>
             </div>
         </div>
     </div>

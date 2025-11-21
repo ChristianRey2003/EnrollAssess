@@ -464,7 +464,13 @@
                         </span>
                     </td>
                     <td class="text-center" style="font-size: 13px; font-weight: normal;">{{ $user->created_at->format('M d, Y') }}</td>
-                    <td class="text-center" style="font-size: 13px; font-weight: normal;">{{ $user->updated_at->diffForHumans() }}</td>
+                    <td class="text-center" style="font-size: 13px; font-weight: normal;">
+                        @if($user->last_login)
+                            {{ $user->last_login->diffForHumans() }}
+                        @else
+                            <span class="text-muted">Never</span>
+                        @endif
+                    </td>
                 </tr>
                 @empty
                 <tr>

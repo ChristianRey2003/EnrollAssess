@@ -25,6 +25,7 @@ class User extends Authenticatable
         'role',
         'email',
         'profile_picture',
+        'last_login',
     ];
 
     /**
@@ -47,6 +48,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'last_login' => 'datetime',
             'password_hash' => 'hashed',
             'password' => 'hashed', // Laravel standard field
         ];
