@@ -12,7 +12,7 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
     <!-- University Theme CSS -->
-    <link href="{{ asset('css/auth/university-auth.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/auth/university-auth.css') }}?v={{ time() }}" rel="stylesheet">
 </head>
 <body class="auth-page">
     <div class="auth-container">
@@ -128,5 +128,104 @@
 
         // Focus animations are now handled by CSS
     </script>
+
+    <style>
+        /* Force refresh styles - Override any cached CSS */
+        body.auth-page {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 50%, #f8f9fa 100%) !important;
+            background-size: 200% 200% !important;
+            animation: gradientShift 15s ease infinite !important;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .auth-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+            box-shadow: 0 8px 24px rgba(128, 0, 32, 0.12) !important;
+            border: 1px solid rgba(128, 0, 32, 0.1) !important;
+            max-width: 420px !important;
+        }
+
+        .auth-card::before {
+            content: '' !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 4px !important;
+            background: linear-gradient(90deg, #800020 0%, #FFD700 100%) !important;
+            z-index: 1 !important;
+        }
+
+        .auth-header {
+            background: transparent !important;
+            border-bottom: 1px solid rgba(128, 0, 32, 0.1) !important;
+        }
+
+        .university-logo {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+            box-shadow: 0 2px 8px rgba(128, 0, 32, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .auth-body {
+            background: transparent !important;
+        }
+
+        .form-control {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+            border: 1px solid rgba(128, 0, 32, 0.2) !important;
+        }
+
+        .form-control:focus {
+            border-color: #800020 !important;
+            box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1) !important;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #800020 0%, #5c0017 100%) !important;
+            box-shadow: 0 2px 8px rgba(128, 0, 32, 0.2), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #5c0017 0%, #800020 100%) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 12px rgba(128, 0, 32, 0.25), 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        /* Info Note Styling */
+        .info-note {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
+            border: 1px solid rgba(128, 0, 32, 0.1) !important;
+            border-radius: 10px !important;
+            padding: 20px !important;
+            margin-top: 25px !important;
+            text-align: center !important;
+            box-shadow: 0 2px 8px rgba(128, 0, 32, 0.08) !important;
+        }
+
+        .info-note-text {
+            color: #800020 !important;
+            font-size: 14px !important;
+            line-height: 1.6 !important;
+            font-weight: 500 !important;
+            margin: 0 !important;
+        }
+
+        .info-note-text strong {
+            font-weight: 700 !important;
+            display: block !important;
+            margin-bottom: 8px !important;
+            color: #5c0017 !important;
+        }
+
+        /* Access Code Input Prefix Styling */
+        .form-group div[style*="position: relative"] span {
+            color: #800020 !important;
+            font-weight: 600 !important;
+        }
+    </style>
 </body>
 </html> 

@@ -23,7 +23,7 @@ return new class extends Migration
 
             // 2. Migrate data from exam_sets to exams
             // For each question, set exam_id based on its exam_set's exam_id
-            if (Schema::hasTable('exam_sets')) {
+            if (Schema::hasTable('exam_sets') && Schema::hasColumn('questions', 'exam_set_id')) {
                 \DB::statement('
                     UPDATE questions q
                     INNER JOIN exam_sets es ON q.exam_set_id = es.exam_set_id
@@ -62,8 +62,10 @@ return new class extends Migration
 
         // 5. Add assigned_instructor_id to applicants table for direct instructor assignment
         if (!Schema::hasColumn('applicants', 'assigned_instructor_id')) {
-            Schema::table('applicants', function (Blueprint $table) {
-                $table->foreignId('assigned_instructor_id')->nullable()->after('exam_set_id')->constrained('users', 'user_id')->onDelete('set null');
+            $afterColumn = Schema::hasColumn('applicants', 'exam_set_id') ? 'exam_set_id' : 'applicant_id';
+
+            Schema::table('applicants', function (Blueprint $table) use ($afterColumn) {
+                $table->foreignId('assigned_instructor_id')->nullable()->after($afterColumn)->constrained('users', 'user_id')->onDelete('set null');
             });
         }
 

@@ -5,6 +5,7 @@ namespace App\Services\Dashboard;
 use App\Models\Applicant;
 use App\Models\ApplicantBasicInfo;
 use App\Models\Interview;
+use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -15,7 +16,7 @@ class BasicInfoAnalyticsService
      */
     public function getDashboardAnalytics(int $days = 30): array
     {
-        $cacheKey = "dashboard_basic_info_analytics_v3_{$days}";
+        $cacheKey = "dashboard_basic_info_analytics_v4_{$days}";
         
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($days) {
             $dateFilter = $days > 0 ? now()->subDays($days) : null;
@@ -27,6 +28,7 @@ class BasicInfoAnalyticsService
                 'cities' => $this->getCityDistribution($dateFilter),
                 'violations' => $this->getViolationDistribution($dateFilter),
                 'status_distribution' => $this->getStatusDistribution($dateFilter),
+                'pending_interview_distribution' => $this->getPendingInterviewDistribution($dateFilter),
             ];
         });
     }
@@ -36,37 +38,35 @@ class BasicInfoAnalyticsService
      */
     public function getKpis($dateFilter = null): array
     {
-        $baseQuery = ApplicantBasicInfo::query();
-        
-        if ($dateFilter) {
-            $baseQuery->where('completed_at', '>=', $dateFilter);
-        }
-        
-        $totalCompleted = (clone $baseQuery)->whereNotNull('completed_at')->count();
-        
-        // Top city/municipality - create fresh query
-        $topCity = (clone $baseQuery)
-            ->select('city_municipality', DB::raw('COUNT(*) as city_count'))
-            ->whereNotNull('city_municipality')
-            ->groupBy('city_municipality')
-            ->orderByRaw('COUNT(*) DESC')
-            ->first();
-        
-        // Male and Female counts - count ALL applicants in the system (not filtered by date)
-        // Join with applicants table to ensure we're counting actual applicants
-        $maleCount = ApplicantBasicInfo::join('applicants', 'applicant_basic_infos.applicant_id', '=', 'applicants.applicant_id')
-            ->where('applicant_basic_infos.sex', 'Male')
-            ->count();
-        
-        $femaleCount = ApplicantBasicInfo::join('applicants', 'applicant_basic_infos.applicant_id', '=', 'applicants.applicant_id')
-            ->where('applicant_basic_infos.sex', 'Female')
-            ->count();
-        
+        // KPIs should reflect overall progress, independent of the dashboard period filter
+        $baseQuery = Applicant::query();
+
+        $totalApplicants = (clone $baseQuery)->count();
+
+        $finishedExamStatuses = [
+            'exam-completed',
+            'interview-available',
+            'interview-claimed',
+            'interview-scheduled',
+            'interview-completed',
+            'admitted',
+            'rejected',
+        ];
+        $finishedExam = (clone $baseQuery)->whereIn('status', $finishedExamStatuses)->count();
+
+        $interviewCompleted = (clone $baseQuery)->whereIn('status', [
+            'interview-completed',
+            'admitted',
+            'rejected',
+        ])->count();
+
+        $fullyScreened = $interviewCompleted;
+
         return [
-            'total_completed' => $totalCompleted,
-            'male_count' => $maleCount,
-            'top_city' => $topCity->city_municipality ?? 'N/A',
-            'female_count' => $femaleCount,
+            'total_applicants' => $totalApplicants,
+            'finished_exam' => $finishedExam,
+            'interview_completed' => $interviewCompleted,
+            'fully_screened' => $fullyScreened,
         ];
     }
 
@@ -334,6 +334,97 @@ class BasicInfoAnalyticsService
             'total' => $total,
         ];
     }
+
+    /**
+     * Get pending vs interview distribution overall and by instructor
+     */
+    public function getPendingInterviewDistribution($dateFilter = null): array
+    {
+        $baseQuery = Applicant::query();
+
+        $pendingStatuses = ['pending'];
+        $interviewStatuses = ['interview-completed', 'admitted', 'rejected'];
+
+        $overallPending = (clone $baseQuery)->whereIn('status', $pendingStatuses)->count();
+        $overallInterview = (clone $baseQuery)->whereIn('status', $interviewStatuses)->count();
+
+        $overall = [
+            'labels' => ['Pending Applicants', 'Interview Completed'],
+            'data' => [$overallPending, $overallInterview],
+            'colors' => ['#9CA3AF', '#06B6D4'],
+            'headline' => sprintf(
+                'Across all instructors: %d pending, %d interview completed.',
+                $overallPending,
+                $overallInterview
+            ),
+        ];
+
+        $instructorCounts = (clone $baseQuery)
+            ->whereNotNull('assigned_instructor_id')
+            ->select(
+                'assigned_instructor_id',
+                DB::raw("SUM(CASE WHEN status IN ('pending') THEN 1 ELSE 0 END) as pending_count"),
+                DB::raw("SUM(CASE WHEN status IN ('interview-completed','admitted','rejected') THEN 1 ELSE 0 END) as interview_count")
+            )
+            ->groupBy('assigned_instructor_id')
+            ->get();
+
+        if ($instructorCounts->isEmpty()) {
+            return [
+                'overall' => $overall,
+                'options' => [],
+                'datasets' => [],
+            ];
+        }
+
+        $instructorIds = $instructorCounts->pluck('assigned_instructor_id')->unique()->values();
+        $instructorNames = User::whereIn('user_id', $instructorIds)
+            ->get()
+            ->mapWithKeys(function ($user) {
+                $displayName = $user->full_name
+                    ?? $user->name
+                    ?? $user->username
+                    ?? "Instructor {$user->user_id}";
+                return [$user->user_id => $displayName];
+            });
+
+        $options = [];
+        $datasets = [];
+
+        foreach ($instructorCounts as $row) {
+            $name = $instructorNames[$row->assigned_instructor_id] ?? "Instructor {$row->assigned_instructor_id}";
+            $options[] = [
+                'id' => (string) $row->assigned_instructor_id,
+                'name' => $name,
+            ];
+
+            $pendingCount = (int) $row->pending_count;
+            $interviewCount = (int) $row->interview_count;
+            $headline = sprintf(
+                '%s: %d pending, %d interview completed.',
+                $name,
+                $pendingCount,
+                $interviewCount
+            );
+
+            $datasets[(string) $row->assigned_instructor_id] = [
+                'labels' => ['Pending Applicants', 'Interview Completed'],
+                'data' => [$pendingCount, $interviewCount],
+                'colors' => ['#9CA3AF', '#06B6D4'],
+                'headline' => $headline,
+                'name' => $name,
+            ];
+        }
+
+        // Sort options alphabetically by instructor name
+        usort($options, fn ($a, $b) => strcmp($a['name'], $b['name']));
+
+        return [
+            'overall' => $overall,
+            'options' => $options,
+            'datasets' => $datasets,
+        ];
+    }
     
     /**
      * Clear cache manually
@@ -346,6 +437,7 @@ class BasicInfoAnalyticsService
             Cache::forget("dashboard_basic_info_analytics_{$period}");
             Cache::forget("dashboard_basic_info_analytics_v2_{$period}");
             Cache::forget("dashboard_basic_info_analytics_v3_{$period}");
+            Cache::forget("dashboard_basic_info_analytics_v4_{$period}");
         }
     }
 }

@@ -10,8 +10,9 @@
 @push('styles')
 <style>
     .schedule-container {
-        max-width: 1400px;
-        margin: 0 auto;
+        width: 100%;
+        max-width: none;
+        margin: 0;
     }
 
 
@@ -161,7 +162,7 @@
     .interview-actions {
         display: flex;
         gap: 12px;
-        justify-content: flex-end;
+        justify-content: flex-start;
     }
 
     .btn {
@@ -398,6 +399,22 @@
         justify-content: flex-end;
     }
 
+    .pending-search-input {
+        width: 220px;
+        height: 40px;
+        padding: 8px 32px 8px 12px;
+        border: 1px solid #D1D5DB;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        background: white;
+    }
+
+    .pending-search-input:focus {
+        outline: none;
+        border-color: var(--maroon-primary);
+        box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1);
+    }
+
     .bulk-input {
         padding: 10px 12px;
         border: 1px solid #D1D5DB;
@@ -479,6 +496,18 @@
         gap: 12px;
     }
 
+    .bulk-drawer-footer .btn-primary {
+        background: var(--maroon-primary) !important;
+        border-color: var(--maroon-primary) !important;
+        color: #fff;
+    }
+
+    .bulk-drawer-footer .btn-primary:hover {
+        background: #5C0016 !important;
+        border-color: #5C0016 !important;
+        color: #fff;
+    }
+
         @media (max-width: 768px) {
         .section-header {
             flex-direction: column;
@@ -520,6 +549,17 @@
                 <div class="bulk-selected-counter" style="font-size: 0.875rem; color: #1F2937; font-weight: 500;">
                     <span data-bulk-selected-count>0</span> selected
                 </div>
+                <div style="position: relative; width: 220px;">
+                    <input
+                        type="text"
+                        id="pendingSearchInput"
+                        class="pending-search-input"
+                        placeholder="Search..."
+                        aria-label="Search pending applicants">
+                    <svg style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
                 <button
                     type="button"
                     class="btn btn-primary"
@@ -536,7 +576,7 @@
         <div class="section-content">
             @if($pendingScheduling->count() > 0)
                 <div class="table-responsive">
-                    <table class="table table-hover table-striped align-middle">
+                    <table class="table table-hover table-striped align-middle" id="pendingScheduleTable">
                         <thead style="background-color: white !important; color: #1F2937 !important;">
                             <tr>
                                 <th style="width: 40px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
@@ -556,7 +596,20 @@
                         </thead>
                         <tbody>
                             @foreach($pendingScheduling as $interview)
-                            <tr>
+                            @php
+                                $searchText = strtolower(
+                                    trim(
+                                        implode(' ', [
+                                            $interview->applicant->first_name ?? '',
+                                            $interview->applicant->last_name ?? '',
+                                            $interview->applicant->email_address ?? '',
+                                            $interview->applicant->application_no ?? '',
+                                            $interview->applicant->preferred_course ?? ''
+                                        ])
+                                    )
+                                );
+                            @endphp
+                            <tr data-pending-row data-search="{{ $searchText }}">
                                 <td class="text-center">
                                     <input type="checkbox" 
                                            class="interview-checkbox form-check-input" 
@@ -721,6 +774,7 @@
             bulkStartTime.min = now.toISOString().slice(0, 16);
         }
         updateBulkSelection();
+        initializePendingSearch();
     });
 
     function openBulkScheduleDrawer() {
@@ -850,6 +904,24 @@
         if (selectAllCheckbox) {
             selectAllCheckbox.checked = allCheckboxes.length > 0 && count === allCheckboxes.length;
         }
+    }
+
+    function initializePendingSearch() {
+        const searchInput = document.getElementById('pendingSearchInput');
+        if (!searchInput) {
+            return;
+        }
+
+        const applySearch = () => {
+            const query = searchInput.value.trim().toLowerCase();
+            document.querySelectorAll('[data-pending-row]').forEach(row => {
+                const text = row.dataset.search || '';
+                row.style.display = text.includes(query) ? '' : 'none';
+            });
+        };
+
+        searchInput.addEventListener('input', applySearch);
+        applySearch();
     }
 
     // Submit bulk schedule

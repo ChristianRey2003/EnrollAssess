@@ -353,6 +353,9 @@
     .bulk-actions-buttons {
         display: flex;
         gap: 12px;
+        margin-left: auto;
+        justify-content: flex-end;
+        align-items: center;
     }
 
     .btn-white {
@@ -405,9 +408,6 @@
     }
 
     .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
         margin-bottom: 20px;
     }
 
@@ -418,18 +418,11 @@
         margin: 0;
     }
 
-    .close-btn {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: #6B7280;
-        padding: 0;
-        width: 32px;
-        height: 32px;
+    .modal-actions {
         display: flex;
-        align-items: center;
-        justify-content: center;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 24px;
     }
 
     .form-checkbox {
@@ -494,6 +487,8 @@
 
         .bulk-actions-buttons {
             flex-direction: column;
+            margin-left: 0;
+            align-items: stretch;
         }
     }
 </style>
@@ -509,7 +504,6 @@
     <div class="modal-content">
         <div class="modal-header">
             <h3 class="modal-title">Schedule Interview</h3>
-            <button class="close-btn" onclick="closeScheduleModal()">&times;</button>
         </div>
         <form id="scheduleForm" onsubmit="submitSchedule(event)">
             @csrf
@@ -536,9 +530,9 @@
                 <label for="notifyEmail">Send email notification to applicant</label>
             </div>
             
-            <div class="bulk-actions-buttons">
-                <button type="submit" class="btn btn-primary">Schedule Interview</button>
+            <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" onclick="closeScheduleModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Schedule Interview</button>
             </div>
         </form>
     </div>
@@ -549,7 +543,6 @@
     <div class="modal-content">
         <div class="modal-header">
             <h3 class="modal-title">Bulk Schedule Interviews</h3>
-            <button class="close-btn" onclick="closeBulkScheduleModal()">&times;</button>
         </div>
         <form id="bulkScheduleForm" onsubmit="submitBulkSchedule(event)">
             @csrf
@@ -580,9 +573,9 @@
                 <label for="bulkNotifyEmail">Send email notifications to all applicants</label>
             </div>
             
-            <div class="bulk-actions-buttons">
-                <button type="submit" class="btn btn-primary">Schedule All</button>
+            <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" onclick="closeBulkScheduleModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Schedule All</button>
             </div>
         </form>
     </div>

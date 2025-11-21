@@ -83,7 +83,11 @@ class ApplicantController extends BaseController
             $stats = [
                 'total_applicants' => Applicant::count(),
                 'exam_completed' => Applicant::where('status', '!=', 'pending')->whereNotNull('enrollassess_score')->count(),
-                'interview_completed' => Applicant::where('status', 'interview-completed')->count(),
+                'interview_completed' => Applicant::whereIn('status', [
+                    'interview-completed',
+                    'admitted',
+                    'rejected',
+                ])->count(),
                 // Use admitted as proxy for qualified since overall_rating is computed, not a DB column
                 'qualified' => Applicant::where('status', 'admitted')->count(),
             ];

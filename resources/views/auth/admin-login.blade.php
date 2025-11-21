@@ -12,7 +12,7 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
     <!-- University Theme CSS -->
-    <link href="{{ asset('css/auth/university-auth.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/auth/university-auth.css') }}?v={{ time() }}" rel="stylesheet">
 </head>
 <body class="auth-page">
     <div class="auth-container">
@@ -111,10 +111,10 @@
         document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
             const submitBtn = document.getElementById('submitBtn');
             const buttonText = document.getElementById('buttonText');
-            const email = document.getElementById('email').value;
+            const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             
-            if (!email || !password) {
+            if (!username || !password) {
                 return; // Let Laravel validation handle this
             }
             
@@ -125,18 +125,86 @@
         });
 
         // Remove error state on input
-        ['email', 'password'].forEach(fieldId => {
-            document.getElementById(fieldId).addEventListener('input', function(e) {
-                e.target.classList.remove('is-invalid');
-                const errorMsg = e.target.parentElement.querySelector('.invalid-feedback');
-                if (errorMsg) {
-                    errorMsg.remove();
-                }
-            });
+        ['username', 'password'].forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.addEventListener('input', function(e) {
+                    e.target.classList.remove('is-invalid');
+                    const errorMsg = e.target.parentElement.querySelector('.invalid-feedback');
+                    if (errorMsg) {
+                        errorMsg.remove();
+                    }
+                });
+            }
         });
     </script>
 
     <style>
+        /* Force refresh styles - Override any cached CSS */
+        body.auth-page {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 50%, #f8f9fa 100%) !important;
+            background-size: 200% 200% !important;
+            animation: gradientShift 15s ease infinite !important;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .auth-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+            box-shadow: 0 8px 24px rgba(128, 0, 32, 0.12) !important;
+            border: 1px solid rgba(128, 0, 32, 0.1) !important;
+            max-width: 420px !important;
+        }
+
+        .auth-card::before {
+            content: '' !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 4px !important;
+            background: linear-gradient(90deg, #800020 0%, #FFD700 100%) !important;
+            z-index: 1 !important;
+        }
+
+        .auth-header {
+            background: transparent !important;
+            border-bottom: 1px solid rgba(128, 0, 32, 0.1) !important;
+        }
+
+        .university-logo {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+            box-shadow: 0 2px 8px rgba(128, 0, 32, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .auth-body {
+            background: transparent !important;
+        }
+
+        .form-control {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+            border: 1px solid rgba(128, 0, 32, 0.2) !important;
+        }
+
+        .form-control:focus {
+            border-color: #800020 !important;
+            box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1) !important;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #800020 0%, #5c0017 100%) !important;
+            box-shadow: 0 2px 8px rgba(128, 0, 32, 0.2), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #5c0017 0%, #800020 100%) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 12px rgba(128, 0, 32, 0.25), 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+        }
+
         /* Additional styles for admin login */
         .admin-input {
             text-align: left !important;
@@ -172,16 +240,31 @@
         }
 
         .forgot-link {
-            color: var(--yellow-primary);
+            color: #800020;
             text-decoration: none;
             font-weight: 600;
             font-size: 14px;
             transition: var(--transition);
+            position: relative;
+        }
+
+        .forgot-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #800020 0%, #FFD700 100%);
+            transition: width 0.3s ease;
         }
 
         .forgot-link:hover {
-            color: var(--yellow-dark);
-            text-decoration: underline;
+            color: #5c0017;
+        }
+
+        .forgot-link:hover::after {
+            width: 100%;
         }
 
         .auth-links {

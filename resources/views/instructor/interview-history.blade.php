@@ -17,16 +17,16 @@
 
     /* Statistics Section */
     .stats-section {
-        display: flex;
-        justify-content: center;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 20px;
         margin-bottom: 30px;
-        max-width: 100%;
-        flex-wrap: wrap;
+        width: 100%;
     }
 
     .stats-section .stat-card {
-        min-width: 200px;
+        width: 100%;
+        min-width: 0;
     }
 
     /* Content Card */
@@ -297,7 +297,6 @@
                             <th style="font-size: 0.85rem; font-weight: bold;" class="text-left">Applicant</th>
                             <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">Schedule date</th>
                             <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">Interview score</th>
-                            <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">Rating</th>
                             <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">Recommendation</th>
                             <th style="font-size: 0.85rem; font-weight: bold;" class="text-center">Status</th>
                         </tr>
@@ -352,18 +351,9 @@
                                     </div>
                                 </td>
                                 <td class="text-center" style="font-size: 13px; font-weight: normal;">
-                                    @if($interview->overall_rating)
-                                        <span class="badge bg-secondary">
-                                            {{ ucfirst(str_replace('_', ' ', $interview->overall_rating)) }}
-                                        </span>
-                                    @else
-                                        <span class="text-muted">N/A</span>
-                                    @endif
-                                </td>
-                                <td class="text-center" style="font-size: 13px; font-weight: normal;">
                                     @if($interview->recommendation)
                                         <span class="badge bg-secondary">
-                                            {{ ucfirst(str_replace('_', ' ', $interview->recommendation)) }}
+                                            {{ \Illuminate\Support\Str::title(str_replace('_', ' ', $interview->recommendation)) }}
                                         </span>
                                     @else
                                         <span class="text-muted">N/A</span>
@@ -371,7 +361,7 @@
                                 </td>
                                 <td class="text-center" style="font-size: 13px; font-weight: normal; position: relative;">
                                     <span class="badge bg-secondary">
-                                        {{ ucfirst(str_replace('-', ' ', $interview->applicant->status ?? 'N/A')) }}
+                                        {{ \Illuminate\Support\Str::title(str_replace('-', ' ', $interview->applicant->status ?? 'N/A')) }}
                                     </span>
                                     
                                     <!-- Floating Actions -->

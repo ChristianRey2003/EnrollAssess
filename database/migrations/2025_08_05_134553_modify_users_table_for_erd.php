@@ -40,10 +40,12 @@ return new class extends Migration
             }
         });
         
-        // Add an alias for user_id to maintain compatibility
-        Schema::table('users', function (Blueprint $table) {
-            $table->renameColumn('id', 'user_id');
-        });
+        // Add an alias for user_id to maintain compatibility when needed
+        if (Schema::hasColumn('users', 'id') && !Schema::hasColumn('users', 'user_id')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->renameColumn('id', 'user_id');
+            });
+        }
     }
 
     /**
@@ -51,9 +53,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->renameColumn('user_id', 'id');
-        });
+        if (Schema::hasColumn('users', 'user_id') && !Schema::hasColumn('users', 'id')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->renameColumn('user_id', 'id');
+            });
+        }
         
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn(['username', 'password_hash', 'full_name', 'role']);

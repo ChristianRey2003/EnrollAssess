@@ -12,7 +12,7 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
     <!-- University Theme CSS -->
-    <link href="{{ asset('css/auth/university-auth.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/auth/university-auth.css') }}?v={{ time() }}" rel="stylesheet">
 </head>
 <body class="auth-page">
     <div class="auth-container">
@@ -20,7 +20,7 @@
             <!-- University Header -->
             <div class="auth-header">
                 <div class="university-logo">
-                    
+                    <img src="{{ asset('images/evsu-logo.png') }}" alt="EVSU Logo" style="width: 60px; height: 60px; object-fit: contain;">
                 </div>
                 <h1 class="university-name">EnrollAssess</h1>
                 <p class="auth-subtitle">University Portal</p>
@@ -75,13 +75,10 @@
                     </div>
 
                     <!-- Remember Me -->
-                    <div class="form-check">
-                        <input id="remember_me" 
-                               type="checkbox" 
-                               class="form-check-input" 
-                               name="remember">
-                        <label for="remember_me" class="form-check-label">
-                            {{ __('Remember me') }}
+                    <div class="form-group remember-group">
+                        <label class="remember-label" for="remember_me">
+                            <input type="checkbox" name="remember" class="remember-checkbox" id="remember_me">
+                            <span class="remember-text">{{ __('Remember me') }}</span>
                         </label>
                     </div>
 
@@ -93,22 +90,176 @@
                     <!-- Links -->
                     <div class="auth-links">
                         @if (Route::has('password.request'))
-                            <a href="{{ route('password.request') }}">
+                            <a href="{{ route('password.request') }}" class="forgot-link">
                                 {{ __('Forgot your password?') }}
                             </a>
                         @endif
                         
                         @if (Route::has('register'))
-                            <br><br>
-                            <span>Don't have an account? </span>
-                            <a href="{{ route('register') }}">
-                                {{ __('Register here') }}
-                            </a>
+                            <div style="margin-top: 15px;">
+                                <span style="color: #6b7280; font-size: 14px;">Don't have an account? </span>
+                                <a href="{{ route('register') }}" class="register-link">
+                                    {{ __('Register here') }}
+                                </a>
+                            </div>
                         @endif
                     </div>
                 </form>
             </div>
         </div>
     </div>
+
+    <style>
+        /* Force refresh styles - Override any cached CSS */
+        body.auth-page {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 50%, #f8f9fa 100%) !important;
+            background-size: 200% 200% !important;
+            animation: gradientShift 15s ease infinite !important;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .auth-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+            box-shadow: 0 8px 24px rgba(128, 0, 32, 0.12) !important;
+            border: 1px solid rgba(128, 0, 32, 0.1) !important;
+            max-width: 420px !important;
+        }
+
+        .auth-card::before {
+            content: '' !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 4px !important;
+            background: linear-gradient(90deg, #800020 0%, #FFD700 100%) !important;
+            z-index: 1 !important;
+        }
+
+        .auth-header {
+            background: transparent !important;
+            border-bottom: 1px solid rgba(128, 0, 32, 0.1) !important;
+        }
+
+        .university-logo {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+            box-shadow: 0 2px 8px rgba(128, 0, 32, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .auth-body {
+            background: transparent !important;
+        }
+
+        .form-control {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+            border: 1px solid rgba(128, 0, 32, 0.2) !important;
+        }
+
+        .form-control:focus {
+            border-color: #800020 !important;
+            box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1) !important;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #800020 0%, #5c0017 100%) !important;
+            box-shadow: 0 2px 8px rgba(128, 0, 32, 0.2), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #5c0017 0%, #800020 100%) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 12px rgba(128, 0, 32, 0.25), 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        /* Remember Me Styling */
+        .remember-group {
+            margin-bottom: 20px;
+        }
+
+        .remember-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 14px;
+            color: #800020;
+        }
+
+        .remember-checkbox {
+            width: 18px;
+            height: 18px;
+            margin-right: 8px;
+            accent-color: #800020;
+        }
+
+        .remember-text {
+            font-weight: 500;
+        }
+
+        /* Links Styling */
+        .forgot-link {
+            color: #800020;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .forgot-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #800020 0%, #FFD700 100%);
+            transition: width 0.3s ease;
+        }
+
+        .forgot-link:hover {
+            color: #5c0017;
+        }
+
+        .forgot-link:hover::after {
+            width: 100%;
+        }
+
+        .register-link {
+            color: #800020;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .register-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #800020 0%, #FFD700 100%);
+            transition: width 0.3s ease;
+        }
+
+        .register-link:hover {
+            color: #5c0017;
+        }
+
+        .register-link:hover::after {
+            width: 100%;
+        }
+
+        .auth-links {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
 </body>
 </html>
