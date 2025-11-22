@@ -143,13 +143,6 @@
 
 @section('content')
 <div class="profile-container">
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show mb-2" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
     <div class="row g-2">
         <!-- Profile Picture Card -->
         <div class="col-md-4">
@@ -217,6 +210,20 @@
                                    class="form-control @error('full_name') is-invalid @enderror"
                                    required>
                             @error('full_name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Username -->
+                        <div class="mb-1">
+                            <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                            <input type="text" 
+                                   id="username" 
+                                   name="username" 
+                                   value="{{ old('username', $user->username) }}" 
+                                   class="form-control @error('username') is-invalid @enderror"
+                                   required>
+                            @error('username')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>

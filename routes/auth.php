@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Auth\AdminAuthController;
+use App\Http\Controllers\Auth\AdminPasswordResetLinkController;
+use App\Http\Controllers\Auth\AdminNewPasswordController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,6 +20,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AdminAuthController::class, 'login'])->name('login.submit')->middleware('rate.limit:login');
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
+    
+    // Admin Password Reset
+    Route::get('/forgot-password', [AdminPasswordResetLinkController::class, 'create'])->name('password.request');
+    Route::post('/forgot-password', [AdminPasswordResetLinkController::class, 'store'])->name('password.email');
+    Route::get('/reset-password/{token}', [AdminNewPasswordController::class, 'create'])->name('password.reset');
+    Route::post('/reset-password', [AdminNewPasswordController::class, 'store'])->name('password.store');
 });
 
 // Applicant Authentication

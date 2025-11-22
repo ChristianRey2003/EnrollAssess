@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>Faculty Portal - {{ config('app.name', 'EnrollAssess') }}</title>
+    <title>Forgot Password - {{ config('app.name', 'EnrollAssess') }}</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -22,11 +22,11 @@
                 <div class="university-logo">
                     <img src="{{ asset('images/evsu-logo.png') }}" alt="EVSU Logo" style="width: 60px; height: 60px; object-fit: contain;">
                 </div>
-                <h1 class="university-name">Faculty Portal</h1>
-                <p class="auth-subtitle">Computer Studies Department</p>
+                <h1 class="university-name">Reset Password</h1>
+                <p class="auth-subtitle">Faculty Portal - Computer Studies Department</p>
             </div>
 
-            <!-- Login Form -->
+            <!-- Forgot Password Form -->
             <div class="auth-body">
                 <!-- Session Status -->
                 @if (session('status'))
@@ -41,62 +41,42 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('admin.login.submit') }}" id="adminLoginForm">
+                <div class="mb-4 text-sm text-gray-600" style="text-align: center; color: #666; margin-bottom: 20px;">
+                    {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
+                    <br><small style="color: #999; margin-top: 8px; display: block;">You can request a password reset once per minute for security purposes.</small>
+                </div>
+
+                <form method="POST" action="{{ route('admin.password.email') }}" id="forgotPasswordForm">
                     @csrf
 
-                    <!-- Username -->
+                    <!-- Email Address -->
                     <div class="form-group">
-                        <label for="username" class="form-label">{{ __('Username') }}</label>
-                        <input id="username" 
-                               class="form-control admin-input @error('username') is-invalid @enderror" 
-                               type="text" 
-                               name="username" 
-                               value="{{ old('username') }}" 
+                        <label for="email" class="form-label">{{ __('Email Address') }}</label>
+                        <input id="email" 
+                               class="form-control admin-input @error('email') is-invalid @enderror" 
+                               type="email" 
+                               name="email" 
+                               value="{{ old('email') }}" 
                                required 
                                autofocus 
-                               autocomplete="username"
-                               placeholder="dept_head or admin1">
-                        @error('username')
+                               autocomplete="email"
+                               placeholder="Enter your email address">
+                        @error('email')
                             <div class="invalid-feedback">
                                 {{ $message }}
                             </div>
                         @enderror
-                    </div>
-
-                    <!-- Password -->
-                    <div class="form-group">
-                        <label for="password" class="form-label">{{ __('Password') }}</label>
-                        <input id="password" 
-                               class="form-control admin-input @error('password') is-invalid @enderror"
-                               type="password"
-                               name="password"
-                               required 
-                               autocomplete="current-password"
-                               placeholder="Enter your password">
-                        @error('password')
-                            <div class="invalid-feedback">
-                                {{ $message }}
-                            </div>
-                        @enderror
-                    </div>
-
-                    <!-- Remember Me -->
-                    <div class="form-group remember-group">
-                        <label class="remember-label">
-                            <input type="checkbox" name="remember" class="remember-checkbox">
-                            <span class="remember-text">{{ __('Remember me') }}</span>
-                        </label>
                     </div>
 
                     <!-- Submit Button -->
                     <button type="submit" class="btn-primary" id="submitBtn">
-                        <span id="buttonText">{{ __('Log In') }}</span>
+                        <span id="buttonText">{{ __('Email Password Reset Link') }}</span>
                     </button>
 
-                    <!-- Forgot Password Link -->
+                    <!-- Back to Login Link -->
                     <div class="auth-links">
-                        <a href="{{ route('admin.password.request') }}" class="forgot-link">
-                            {{ __('Forgot your password?') }}
+                        <a href="{{ route('admin.login') }}" class="forgot-link">
+                            {{ __('Back to Login') }}
                         </a>
                     </div>
                 </form>
@@ -106,35 +86,32 @@
 
     <script>
         // Enhanced form interaction
-        document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
+        document.getElementById('forgotPasswordForm').addEventListener('submit', function(e) {
             const submitBtn = document.getElementById('submitBtn');
             const buttonText = document.getElementById('buttonText');
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+            const email = document.getElementById('email').value;
             
-            if (!username || !password) {
+            if (!email) {
                 return; // Let Laravel validation handle this
             }
             
             submitBtn.disabled = true;
-            buttonText.textContent = 'Logging in...';
+            buttonText.textContent = 'Sending...';
             
             // Form will submit normally, this just provides user feedback
         });
 
         // Remove error state on input
-        ['username', 'password'].forEach(fieldId => {
-            const field = document.getElementById(fieldId);
-            if (field) {
-                field.addEventListener('input', function(e) {
-                    e.target.classList.remove('is-invalid');
-                    const errorMsg = e.target.parentElement.querySelector('.invalid-feedback');
-                    if (errorMsg) {
-                        errorMsg.remove();
-                    }
-                });
-            }
-        });
+        const emailField = document.getElementById('email');
+        if (emailField) {
+            emailField.addEventListener('input', function(e) {
+                e.target.classList.remove('is-invalid');
+                const errorMsg = e.target.parentElement.querySelector('.invalid-feedback');
+                if (errorMsg) {
+                    errorMsg.remove();
+                }
+            });
+        }
     </script>
 
     <style>
@@ -214,29 +191,6 @@
             text-align: left !important;
         }
 
-        .remember-group {
-            margin-bottom: 20px;
-        }
-
-        .remember-label {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            font-size: 14px;
-            color: var(--maroon-primary);
-        }
-
-        .remember-checkbox {
-            width: 18px;
-            height: 18px;
-            margin-right: 8px;
-            accent-color: var(--maroon-primary);
-        }
-
-        .remember-text {
-            font-weight: 500;
-        }
-
         .forgot-link {
             color: #800020;
             text-decoration: none;
@@ -269,6 +223,26 @@
             margin-top: 20px;
             text-align: center;
         }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
     </style>
 </body>
 </html>
+

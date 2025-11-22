@@ -613,6 +613,12 @@ class InterviewController extends Controller
                 'claimed_by' => $user->user_id,
                 'claimed_at' => now(),
             ]);
+            
+            // Update applicant status when interview is being conducted
+            // Only update if status is still 'exam-completed' (hasn't progressed yet)
+            if ($applicant->status === 'exam-completed') {
+                $applicant->update(['status' => 'interview-scheduled']);
+            }
         }
 
         // Allow editing if current user is the interviewer and interview is completed
@@ -758,6 +764,13 @@ class InterviewController extends Controller
                 'claimed_at' => now(),
                 'status' => 'claimed',
             ]);
+            
+            // Update applicant status when interview is claimed by department head
+            // Only update if status is still 'exam-completed' (hasn't progressed yet)
+            $applicant = $interview->applicant;
+            if ($applicant && $applicant->status === 'exam-completed') {
+                $applicant->update(['status' => 'interview-scheduled']);
+            }
 
             return response()->json([
                 'success' => true,

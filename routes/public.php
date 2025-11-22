@@ -12,9 +12,12 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Welcome page - redirect to applicant login
+// Welcome page - redirect to admin login (or dashboard if already logged in)
 Route::get('/', function () {
-    return redirect()->route('applicant.login');
+    if (\Illuminate\Support\Facades\Auth::check()) {
+        return redirect()->route('admin.dashboard');
+    }
+    return redirect()->route('admin.login');
 });
 
 // Exam Interface - Sectioned Exam (with no-cache middleware and rate limiting)

@@ -95,10 +95,7 @@
 
             <!-- Page Content -->
             <div class="main-content">
-                <!-- Success/Error Messages -->
-                @if (session('success'))
-                    <div class="alert alert-success">{{ session('success') }}</div>
-                @endif
+                <!-- Error/Info/Warning Messages (Success messages shown as toast notifications) -->
                 @if (session('error'))
                     <div class="alert alert-error">{{ session('error') }}</div>
                 @endif
@@ -162,6 +159,19 @@
                 localStorage.setItem('instructorSidebarCollapsed', isCollapsed ? 'true' : 'false');
             }
         }
+    </script>
+    
+    <!-- Global Success Message Toast Notifications -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            @if (session('success'))
+                if (window.NotificationSystem) {
+                    window.NotificationSystem.success('{{ session('success') }}');
+                } else if (window.showSuccess) {
+                    window.showSuccess('{{ session('success') }}');
+                }
+            @endif
+        });
     </script>
     
     <!-- Page-specific JavaScript -->

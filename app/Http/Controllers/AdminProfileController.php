@@ -28,6 +28,7 @@ class AdminProfileController extends Controller
         $user = Auth::user();
 
         $request->validate([
+            'username' => 'required|string|max:255|unique:users,username,' . $user->user_id . ',user_id',
             'full_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->user_id . ',user_id',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -36,6 +37,7 @@ class AdminProfileController extends Controller
         ]);
 
         // Update basic information
+        $user->username = $request->username;
         $user->full_name = $request->full_name;
         $user->email = $request->email;
 

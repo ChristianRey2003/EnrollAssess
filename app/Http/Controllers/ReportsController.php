@@ -97,6 +97,7 @@ class ReportsController extends Controller
             
             // Handle overall_rating sorting (calculated field)
             if ($sortBy === 'overall_rating') {
+                // Handle overall_rating sorting (calculated field)
                 $collection = $query->get();
                 $sorted = $collection->sortBy(function($applicant) {
                     $rating = $applicant->getOverallRating();
@@ -135,9 +136,6 @@ class ReportsController extends Controller
 
             $statuses = [
                 'exam-completed',
-                'interview-available',
-                'interview-claimed',
-                'interview-scheduled',
                 'interview-completed'
             ];
 

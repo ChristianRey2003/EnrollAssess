@@ -42,7 +42,8 @@ class AdminAuthController extends Controller
                 // Update last login timestamp
                 $user->update(['last_login' => now()]);
                 
-                Auth::login($user);
+                // Login with remember me functionality
+                Auth::login($user, $request->filled('remember'));
                 
                 $request->session()->regenerate();
                 
