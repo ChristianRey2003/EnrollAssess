@@ -191,6 +191,22 @@
         color: var(--text-dark);
     }
 
+    .question-text {
+        max-width: 400px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .type-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        background: #E5E7EB;
+        color: #374151;
+        font-weight: 500;
+    }
+
 
     .settings-card {
         background: var(--white);
@@ -675,6 +691,7 @@
     <div class="settings-tabs">
         <button type="button" class="settings-tab active" onclick="switchTab('email')">Email Settings</button>
         <button type="button" class="settings-tab" onclick="switchTab('archived-reports')">Archived Reports</button>
+        <button type="button" class="settings-tab" onclick="switchTab('archived-questions')">Archived Question Bank</button>
     </div>
 
     <!-- Email Settings Tab Pane -->
@@ -820,6 +837,40 @@
                         <tr>
                             <td colspan="5" style="text-align: center; padding: 20px; color: #6B7280;">
                                 <p>Click "Load Archived" to view archived reports.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Archived Question Bank Tab Pane -->
+    <div id="archived-questions-tab" class="settings-tab-pane">
+        <div class="archived-reports-section">
+            <div class="archived-reports-header">
+                <h3>Archived Question Bank</h3>
+                <div class="archived-reports-actions">
+                    <button type="button" class="btn btn-archive" onclick="loadArchivedQuestions()" id="loadArchivedQuestionsBtn">Load Archived</button>
+                </div>
+            </div>
+            <div class="settings-card">
+                <table class="data-table archived-questions-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Description</th>
+                            <th>Duration</th>
+                            <th>Total Items</th>
+                            <th>Questions</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 20px; color: #6B7280;">
+                                <p>Click "Load Archived" to view archived question banks.</p>
                             </td>
                         </tr>
                     </tbody>
@@ -1250,6 +1301,113 @@
         } catch (error) {
             console.error('Error permanently deleting reports:', error);
             showNotification('Error permanently deleting reports. Please try again.', 'error');
+        }
+    }
+
+    // Archived Question Bank (Exams) Functions
+    async function loadArchivedQuestions() {
+        const btn = document.getElementById('loadArchivedQuestionsBtn');
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+
+        try {
+            const response = await fetch('{{ route('admin.settings.archived-questions') }}', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+
+            const text = await response.text();
+            const data = JSON.parse(text);
+
+            if (data.success) {
+                if (data.exams.length > 0) {
+                    updateArchivedQuestionsTable(data.exams);
+                } else {
+                    const tbody = document.querySelector('.archived-questions-table tbody');
+                    if (tbody) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 20px; color: #6B7280;">
+                                    <p>No archived question banks found.</p>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                }
+            } else {
+                showNotification('Failed to load archived question banks.', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading archived question banks:', error);
+            showNotification('Error loading archived question banks. Please try again.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    }
+
+    function updateArchivedQuestionsTable(exams) {
+        const tbody = document.querySelector('.archived-questions-table tbody');
+        if (!tbody) return;
+
+        tbody.innerHTML = exams.map(exam => {
+            const duration = exam.duration_minutes >= 60 
+                ? `${Math.floor(exam.duration_minutes / 60)}h ${exam.duration_minutes % 60}m`
+                : `${exam.duration_minutes}m`;
+            
+            return `
+            <tr>
+                <td><strong>${exam.title}</strong></td>
+                <td class="question-text" title="${(exam.description || '').replace(/"/g, '&quot;')}">${exam.description || 'No description'}</td>
+                <td>${duration}</td>
+                <td>${exam.total_items} items</td>
+                <td>${exam.active_questions}/${exam.total_questions} active</td>
+                <td>${exam.created_at}</td>
+                <td>
+                    <div class="table-actions">
+                        <button onclick="restoreExam(${exam.id})" class="action-btn action-btn-download" title="Restore & Publish Exam">Restore & Publish</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+        }).join('');
+    }
+
+    async function restoreExam(examId) {
+        if (!confirm('Are you sure you want to restore and publish this question bank? This will deactivate the current active exam.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('{{ route('admin.settings.restore-archived-questions') }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ exam_id: examId }),
+            });
+
+            const text = await response.text();
+            const data = JSON.parse(text);
+
+            if (data.success) {
+                showNotification(data.message || 'Question bank restored and published successfully.', 'success');
+                loadArchivedQuestions(); // Refresh archived exams table
+            } else {
+                showNotification(data.message || 'Failed to restore question bank.', 'error');
+            }
+        } catch (error) {
+            console.error('Error restoring exam:', error);
+            showNotification('Error restoring question bank. Please try again.', 'error');
         }
     }
 </script>

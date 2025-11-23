@@ -501,4 +501,326 @@ class SetsQuestionsController extends Controller
             ], 500);
         }
     }
+    
+    /**
+     * Download CSV template for bulk question import.
+     */
+    public function downloadTemplate()
+    {
+        $filename = 'question_import_template.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+        
+        $callback = function() {
+            $file = fopen('php://output', 'w');
+            
+            // Write BOM for Excel compatibility
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Header row
+            fputcsv($file, [
+                'Question Text',
+                'Question Type',
+                'Points',
+                'Option 1',
+                'Option 2',
+                'Option 3',
+                'Option 4',
+                'Correct Answer'
+            ]);
+            
+            // Example rows
+            fputcsv($file, [
+                'What is 2+2?',
+                'multiple_choice',
+                '1',
+                '2',
+                '3',
+                '4',
+                '5',
+                'Option 3'
+            ]);
+            
+            fputcsv($file, [
+                'The sky is blue.',
+                'true_false',
+                '1',
+                '',
+                '',
+                '',
+                '',
+                'True'
+            ]);
+            
+            fputcsv($file, [
+                'Which programming language is used for web development?',
+                'multiple_choice',
+                '2',
+                'Python',
+                'JavaScript',
+                'C++',
+                'Java',
+                'Option 2'
+            ]);
+            
+            fclose($file);
+        };
+        
+        return response()->stream($callback, 200, $headers);
+    }
+    
+    /**
+     * Process bulk import from CSV file.
+     */
+    public function processImport(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'csv_file' => 'required|file|mimes:csv,txt|max:2048',
+            'import_as_draft' => 'nullable|boolean',
+        ]);
+        
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()->all(),
+            ], 422);
+        }
+        
+        try {
+            $currentExam = Exam::where('is_active', true)->first();
+            
+            if (!$currentExam) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No active exam found. Please create and activate an exam first.'
+                ], 422);
+            }
+            
+            $file = $request->file('csv_file');
+            $csvContent = file_get_contents($file->getPathname());
+            $lines = explode("\n", $csvContent);
+            
+            if (count($lines) < 2) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'CSV file must contain at least a header row and one data row.'
+                ], 422);
+            }
+            
+            // Parse header - remove BOM and normalize
+            $firstLine = preg_replace('/^\xEF\xBB\xBF/', '', $lines[0]);
+            $header = array_map(function($h) { 
+                return trim($h, " \t\n\r\0\x0B\"'"); 
+            }, str_getcsv($firstLine));
+            
+            // Expected header columns
+            $expectedColumns = [
+                'Question Text',
+                'Question Type',
+                'Points',
+                'Option 1',
+                'Option 2',
+                'Option 3',
+                'Option 4',
+                'Correct Answer'
+            ];
+            
+            // Validate header
+            if (count($header) < 8) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid CSV format. Please download the template and use it as a guide.'
+                ], 422);
+            }
+            
+            $importResults = [
+                'total' => 0,
+                'successful' => 0,
+                'failed' => 0,
+                'errors' => [],
+            ];
+            
+            $importAsDraft = $request->boolean('import_as_draft', false);
+            $maxOrderNumber = Question::where('exam_id', $currentExam->exam_id)->max('order_number') ?? 0;
+            
+            DB::transaction(function () use ($lines, $header, $currentExam, $importAsDraft, &$importResults, &$maxOrderNumber) {
+                for ($i = 1; $i < count($lines); $i++) {
+                    $line = trim($lines[$i]);
+                    if (empty($line)) continue;
+                    
+                    $importResults['total']++;
+                    $lineNumber = $i + 1;
+                    
+                    try {
+                        $data = str_getcsv($line);
+                        
+                        // Ensure we have enough columns
+                        if (count($data) < 8) {
+                            $importResults['errors'][] = "Line {$lineNumber}: Insufficient columns. Expected 8 columns.";
+                            $importResults['failed']++;
+                            continue;
+                        }
+                        
+                        // Map data to named array
+                        $record = [];
+                        foreach ($header as $index => $headerName) {
+                            $record[$headerName] = isset($data[$index]) ? trim($data[$index]) : '';
+                        }
+                        
+                        // Extract values
+                        $questionText = $record['Question Text'] ?? '';
+                        $questionType = strtolower(trim($record['Question Type'] ?? ''));
+                        $points = !empty($record['Points']) ? (int)$record['Points'] : 1;
+                        $option1 = trim($record['Option 1'] ?? '');
+                        $option2 = trim($record['Option 2'] ?? '');
+                        $option3 = trim($record['Option 3'] ?? '');
+                        $option4 = trim($record['Option 4'] ?? '');
+                        $correctAnswer = trim($record['Correct Answer'] ?? '');
+                        
+                        // Validate required fields
+                        if (empty($questionText)) {
+                            $importResults['errors'][] = "Line {$lineNumber}: Question Text is required.";
+                            $importResults['failed']++;
+                            continue;
+                        }
+                        
+                        if (!in_array($questionType, ['multiple_choice', 'true_false'])) {
+                            $importResults['errors'][] = "Line {$lineNumber}: Question Type must be 'multiple_choice' or 'true_false'.";
+                            $importResults['failed']++;
+                            continue;
+                        }
+                        
+                        if ($points < 1 || $points > 100) {
+                            $importResults['errors'][] = "Line {$lineNumber}: Points must be between 1 and 100.";
+                            $importResults['failed']++;
+                            continue;
+                        }
+                        
+                        // Validate based on question type
+                        if ($questionType === 'multiple_choice') {
+                            // Collect non-empty options
+                            $options = array_filter([$option1, $option2, $option3, $option4], function($opt) {
+                                return !empty(trim($opt));
+                            });
+                            
+                            if (count($options) < 2) {
+                                $importResults['errors'][] = "Line {$lineNumber}: Multiple choice questions must have at least 2 options.";
+                                $importResults['failed']++;
+                                continue;
+                            }
+                            
+                            if (count($options) > 6) {
+                                $importResults['errors'][] = "Line {$lineNumber}: Multiple choice questions cannot have more than 6 options.";
+                                $importResults['failed']++;
+                                continue;
+                            }
+                            
+                            // Validate correct answer format
+                            if (!preg_match('/^Option\s*([1-4])$/i', $correctAnswer, $matches)) {
+                                $importResults['errors'][] = "Line {$lineNumber}: Correct Answer must be in format 'Option 1', 'Option 2', 'Option 3', or 'Option 4'.";
+                                $importResults['failed']++;
+                                continue;
+                            }
+                            
+                            $correctOptionIndex = (int)$matches[1] - 1; // Convert to 0-based index
+                            $optionsArray = array_values($options);
+                            
+                            if ($correctOptionIndex >= count($optionsArray)) {
+                                $importResults['errors'][] = "Line {$lineNumber}: Correct Answer refers to an option that doesn't exist.";
+                                $importResults['failed']++;
+                                continue;
+                            }
+                            
+                            // Create question
+                            $maxOrderNumber++;
+                            $question = Question::create([
+                                'exam_id' => $currentExam->exam_id,
+                                'question_text' => $questionText,
+                                'question_type' => 'multiple_choice',
+                                'points' => $points,
+                                'order_number' => $maxOrderNumber,
+                                'explanation' => null,
+                                'is_active' => !$importAsDraft,
+                            ]);
+                            
+                            // Create options
+                            foreach ($optionsArray as $index => $optionText) {
+                                QuestionOption::create([
+                                    'question_id' => $question->question_id,
+                                    'option_text' => $optionText,
+                                    'is_correct' => $index === $correctOptionIndex,
+                                    'order_number' => $index + 1,
+                                ]);
+                            }
+                            
+                        } elseif ($questionType === 'true_false') {
+                            // Validate correct answer for true/false
+                            $correctAnswerLower = strtolower($correctAnswer);
+                            if (!in_array($correctAnswerLower, ['true', 'false'])) {
+                                $importResults['errors'][] = "Line {$lineNumber}: Correct Answer for True/False must be 'True' or 'False'.";
+                                $importResults['failed']++;
+                                continue;
+                            }
+                            
+                            $isTrueCorrect = $correctAnswerLower === 'true';
+                            
+                            // Create question
+                            $maxOrderNumber++;
+                            $question = Question::create([
+                                'exam_id' => $currentExam->exam_id,
+                                'question_text' => $questionText,
+                                'question_type' => 'true_false',
+                                'points' => $points,
+                                'order_number' => $maxOrderNumber,
+                                'explanation' => null,
+                                'is_active' => !$importAsDraft,
+                            ]);
+                            
+                            // Create True and False options
+                            QuestionOption::create([
+                                'question_id' => $question->question_id,
+                                'option_text' => 'True',
+                                'is_correct' => $isTrueCorrect,
+                                'order_number' => 1,
+                            ]);
+                            
+                            QuestionOption::create([
+                                'question_id' => $question->question_id,
+                                'option_text' => 'False',
+                                'is_correct' => !$isTrueCorrect,
+                                'order_number' => 2,
+                            ]);
+                        }
+                        
+                        $importResults['successful']++;
+                        
+                    } catch (\Exception $e) {
+                        $importResults['errors'][] = "Line {$lineNumber}: " . $e->getMessage();
+                        $importResults['failed']++;
+                    }
+                }
+            });
+            
+            $message = "Import completed! {$importResults['successful']} question(s) imported successfully.";
+            if ($importResults['failed'] > 0) {
+                $message .= " {$importResults['failed']} question(s) failed.";
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'results' => $importResults
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to process import: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

@@ -113,6 +113,8 @@ Route::prefix('sets-questions')->name('sets-questions.')->middleware('role:depar
     Route::post('/bulk/update-status', [SetsQuestionsController::class, 'bulkUpdateStatus'])->name('bulk-update-status');
     Route::post('/bulk/delete', [SetsQuestionsController::class, 'bulkDelete'])->name('bulk-delete');
     Route::post('/bulk/duplicate', [SetsQuestionsController::class, 'bulkDuplicate'])->name('bulk-duplicate');
+    Route::get('/import/template', [SetsQuestionsController::class, 'downloadTemplate'])->name('import.template');
+    Route::post('/import', [SetsQuestionsController::class, 'processImport'])->name('import');
 });
 
 // Simplified direct routes - no unnecessary redirects
@@ -202,6 +204,8 @@ Route::middleware(['role:department-head,administrator'])->prefix('settings')->n
     Route::put('/', [\App\Http\Controllers\SettingsController::class, 'update'])->name('.update');
     Route::post('/test-email', [\App\Http\Controllers\SettingsController::class, 'testEmail'])->name('.test-email');
     Route::post('/reset', [\App\Http\Controllers\SettingsController::class, 'reset'])->name('.reset');
+    Route::get('/archived-questions', [\App\Http\Controllers\SettingsController::class, 'archivedQuestions'])->name('.archived-questions');
+    Route::post('/restore-archived-questions', [\App\Http\Controllers\SettingsController::class, 'restoreArchivedQuestions'])->name('.restore-archived-questions');
 });
 
 // Profile Routes

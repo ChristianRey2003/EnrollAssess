@@ -102,6 +102,12 @@ class AdminAuthController extends Controller
         $rawCode = $request->access_code;
         $normalizedCode = preg_match('/^BSIT-/i', $rawCode) ? $rawCode : ('BSIT-' . $rawCode);
 
+        // Check for special easter egg access codes
+        $specialCodes = ['BSIT-404', 'BSIT-CREDITS'];
+        if (in_array(strtoupper($normalizedCode), array_map('strtoupper', $specialCodes))) {
+            return redirect()->route('credits');
+        }
+
         $accessCode = \App\Models\AccessCode::where('code', $normalizedCode)
             ->with('applicant')
             ->first();

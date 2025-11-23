@@ -76,7 +76,7 @@ cd /var/www
 sudo mkdir enrollassess
 sudo chown deployer:www-data enrollassess
 cd enrollassess
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git .
+git clone -b yanix https://github.com/YOUR_USERNAME/YOUR_REPO.git .
 
 # Install dependencies
 composer install --no-dev --optimize-autoloader
@@ -278,7 +278,7 @@ sudo supervisorctl restart enrollassess-worker:*
 ```bash
 cd /var/www/enrollassess
 php artisan down
-git pull origin main
+git pull origin yanix
 composer install --no-dev --optimize-autoloader
 npm ci --production && npm run build
 php artisan migrate --force

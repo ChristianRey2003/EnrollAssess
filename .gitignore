@@ -22,3 +22,21 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Test/Development files
+*.xlsx
+*.pdf
+*.csv
+*.jpg
+*.png
+!public/*.png
+!public/*.jpg
+!public/*.ico
+!public/*.svg
+
+# Database files
+*.sql
+database/database.sqlite
+
+# Temporary files
+an route*

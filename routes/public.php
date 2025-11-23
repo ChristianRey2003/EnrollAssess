@@ -141,3 +141,8 @@ Route::get('/privacy/consent', function () {
 Route::get('/reports/pdf-preview', function () {
     return view('reports.pdf-preview');
 })->name('reports.pdf-preview');
+
+// Team Credits (Easter Egg)
+Route::get('/credits', function () {
+    return view('credits');
+})->name('credits');

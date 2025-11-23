@@ -19,11 +19,11 @@
         <div class="auth-card">
             <!-- University Header -->
             <div class="auth-header">
-                <div class="university-logo">
-                    <img src="{{ asset('images/evsu-logo.png') }}" alt="EVSU Logo" style="width: 60px; height: 60px; object-fit: contain;">
+                <div class="university-logo" id="bsitLogo" style="cursor: pointer; transition: transform 0.2s ease;">
+                    <img src="{{ asset('images/evsu-logo.png') }}" alt="EVSU Logo" style="width: 60px; height: 60px; object-fit: contain; pointer-events: none;">
                 </div>
                 <h1 class="university-name">BSIT Entrance Examination</h1>
-                <p class="auth-subtitle">Computer Studies Department</p>
+                <p class="auth-subtitle hidden-password">Congrats, detective! Now type 404 in the access code.</p>
             </div>
 
             <!-- Access Code Form -->
@@ -88,6 +88,14 @@
         </div>
     </div>
 
+    <!-- Toast Notification -->
+    <div id="easterEggToast" class="easter-egg-toast">
+        <div class="toast-content">
+            <span class="toast-icon">👀</span>
+            <span class="toast-message">Press Ctrl + A</span>
+        </div>
+    </div>
+
     <script>
         // Enhanced form interaction
         document.getElementById('accessForm').addEventListener('submit', function(e) {
@@ -127,6 +135,87 @@
         });
 
         // Focus animations are now handled by CSS
+
+        // Easter Egg: Single Click on BSIT Logo
+        (function() {
+            const logo = document.getElementById('bsitLogo');
+            const toast = document.getElementById('easterEggToast');
+            let hasInteracted = false;
+            let wiggleInterval = null;
+
+            // Track interactions to stop delayed wiggle
+            function markAsInteracted() {
+                hasInteracted = true;
+                if (wiggleInterval) {
+                    clearInterval(wiggleInterval);
+                    wiggleInterval = null;
+                }
+            }
+
+            // Click handler
+            logo.addEventListener('click', function() {
+                markAsInteracted();
+                
+                // Visual feedback on click
+                logo.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    logo.style.transform = 'scale(1)';
+                }, 150);
+                
+                // Show toast every time logo is clicked
+                showToast();
+            });
+
+            // Hover handler - mark as interacted
+            logo.addEventListener('mouseenter', function() {
+                markAsInteracted();
+            });
+
+            // Delayed wiggle effect - starts after 2 seconds, then repeats every 2 seconds if not interacted
+            setTimeout(function() {
+                if (!hasInteracted) {
+                    // Initial wiggle
+                    triggerWiggle();
+                    
+                    // Set up interval to repeat every 2 seconds
+                    wiggleInterval = setInterval(function() {
+                        if (!hasInteracted) {
+                            triggerWiggle();
+                        } else {
+                            clearInterval(wiggleInterval);
+                            wiggleInterval = null;
+                        }
+                    }, 2000);
+                }
+            }, 2000);
+
+            // Function to trigger wiggle animation
+            function triggerWiggle() {
+                logo.classList.add('logo-wiggle');
+                // Remove the class after animation completes (0.8s)
+                setTimeout(function() {
+                    logo.classList.remove('logo-wiggle');
+                }, 800);
+            }
+
+            // Show toast notification
+            function showToast() {
+                toast.classList.add('show');
+                
+                // Auto-dismiss after 5 seconds
+                setTimeout(() => {
+                    hideToast();
+                }, 5000);
+            }
+
+            // Hide toast
+            function hideToast() {
+                toast.classList.remove('show');
+            }
+
+            // Allow manual dismiss on click
+            toast.addEventListener('click', hideToast);
+        })();
     </script>
 
     <style>
@@ -147,6 +236,7 @@
             box-shadow: 0 8px 24px rgba(128, 0, 32, 0.12) !important;
             border: 1px solid rgba(128, 0, 32, 0.1) !important;
             max-width: 420px !important;
+            position: relative !important;
         }
 
         .auth-card::before {
@@ -225,6 +315,159 @@
         .form-group div[style*="position: relative"] span {
             color: #800020 !important;
             font-weight: 600 !important;
+        }
+
+        /* Toast Notification Styles */
+        .easter-egg-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            opacity: 0;
+            transform: translateX(400px);
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            pointer-events: none;
+        }
+
+        .easter-egg-toast.show {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+        }
+
+        .toast-content {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border: 1px solid rgba(128, 0, 32, 0.2);
+            border-left: 4px solid #800020;
+            border-radius: 10px;
+            padding: 16px 20px;
+            box-shadow: 0 8px 24px rgba(128, 0, 32, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            max-width: 350px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .toast-content:hover {
+            box-shadow: 0 12px 32px rgba(128, 0, 32, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .toast-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .toast-message {
+            color: #800020;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        /* Hidden Password - White text, only visible when selected */
+        .auth-subtitle.hidden-password {
+            color: #ffffff;
+            user-select: text;
+            font-size: 14px;
+            font-weight: 500;
+            pointer-events: none;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        /* Logo hover effect */
+        #bsitLogo:hover {
+            transform: scale(1.05);
+        }
+
+        #bsitLogo:active {
+            transform: scale(0.95);
+        }
+
+        /* Delayed wiggle animation - more attention-grabbing, repeats every 2 seconds */
+        @keyframes logoWiggle {
+            0%, 100% { 
+                transform: rotate(0deg) translateX(0) translateY(0) scale(1);
+            }
+            5% { 
+                transform: rotate(-8deg) translateX(-4px) translateY(-2px) scale(1.05);
+            }
+            10% { 
+                transform: rotate(8deg) translateX(4px) translateY(2px) scale(1.05);
+            }
+            15% { 
+                transform: rotate(-6deg) translateX(-3px) translateY(-1px) scale(1.03);
+            }
+            20% { 
+                transform: rotate(6deg) translateX(3px) translateY(1px) scale(1.03);
+            }
+            25% { 
+                transform: rotate(-5deg) translateX(-2px) translateY(-1px) scale(1.02);
+            }
+            30% { 
+                transform: rotate(5deg) translateX(2px) translateY(1px) scale(1.02);
+            }
+            35% { 
+                transform: rotate(-4deg) translateX(-2px) translateY(0) scale(1.01);
+            }
+            40% { 
+                transform: rotate(4deg) translateX(2px) translateY(0) scale(1.01);
+            }
+            45% { 
+                transform: rotate(-3deg) translateX(-1px) translateY(0) scale(1);
+            }
+            50% { 
+                transform: rotate(3deg) translateX(1px) translateY(0) scale(1);
+            }
+            55% { 
+                transform: rotate(-2deg) translateX(-1px) translateY(0) scale(1);
+            }
+            60% { 
+                transform: rotate(2deg) translateX(1px) translateY(0) scale(1);
+            }
+            65% { 
+                transform: rotate(-1deg) translateX(0) translateY(0) scale(1);
+            }
+            70% { 
+                transform: rotate(1deg) translateX(0) translateY(0) scale(1);
+            }
+            75% { 
+                transform: rotate(-1deg) translateX(0) translateY(0) scale(1);
+            }
+            80% { 
+                transform: rotate(1deg) translateX(0) translateY(0) scale(1);
+            }
+            85% { 
+                transform: rotate(0deg) translateX(0) translateY(0) scale(1);
+            }
+            90%, 100% { 
+                transform: rotate(0deg) translateX(0) translateY(0) scale(1);
+            }
+        }
+
+        #bsitLogo.logo-wiggle {
+            animation: logoWiggle 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        /* Responsive toast */
+        @media (max-width: 480px) {
+            .easter-egg-toast {
+                top: 15px;
+                right: 15px;
+                left: 15px;
+                max-width: none;
+            }
+
+            .toast-content {
+                max-width: 100%;
+            }
+
+            .auth-subtitle.hidden-password {
+                font-size: 12px;
+            }
         }
     </style>
 </body>

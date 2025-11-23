@@ -791,6 +791,12 @@
                 </div>
                 @if($currentExam)
                 <div class="toolbar-right">
+                    <button type="button" onclick="showImportDrawer()" class="btn-secondary" style="padding: 8px 14px; border-radius: 6px; border: 1px solid #d1d5db; cursor: pointer; font-size: 12px; font-weight: 500; transition: var(--transition); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: white; color: #374151;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                        </svg>
+                        Import Questions
+                    </button>
                     <button type="button" onclick="showAddQuestionModal()" class="btn-primary" style="padding: 8px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 500; transition: var(--transition); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                         <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -1083,6 +1089,69 @@
         <div class="drawer-footer">
             <button class="btn-secondary" onclick="closeNewSemesterDrawer()">Cancel</button>
             <button class="btn-primary" onclick="saveNewSemester()" id="saveNewSemesterBtn">Create Exam</button>
+        </div>
+    </div>
+</div>
+
+<!-- Import Questions Drawer -->
+<div id="importDrawer" class="drawer-overlay">
+    <div class="drawer-content">
+        <div class="drawer-header">
+            <h3>Import Questions from CSV</h3>
+            <button class="drawer-close" onclick="closeImportDrawer()">×</button>
+        </div>
+        <div class="drawer-body">
+            <div class="form-group">
+                <label class="form-label">
+                    CSV File <span style="color: #ef4444;">*</span>
+                </label>
+                <input type="file" 
+                       id="importCsvFile" 
+                       name="csv_file" 
+                       accept=".csv,.txt"
+                       class="form-control"
+                       required>
+                <small style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">
+                    Upload a CSV file with questions. Maximum file size: 2MB
+                </small>
+                <span class="error-message" id="import_error_file"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    <input type="checkbox" id="importAsDraft" name="import_as_draft" value="1">
+                    <span style="margin-left: 8px;">Import as draft (inactive questions)</span>
+                </label>
+                <small style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">
+                    If checked, imported questions will be inactive and won't appear in exams until activated.
+                </small>
+            </div>
+
+            <div style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin-top: 20px;">
+                <h4 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #1f2937;">CSV Format Requirements:</h4>
+                <ul style="margin: 0; padding-left: 20px; color: #6b7280; font-size: 13px; line-height: 1.8;">
+                    <li><strong>Multiple Choice:</strong> Question Text, Question Type (multiple_choice), Points, Option 1, Option 2, Option 3, Option 4, Correct Answer (Option 1-4)</li>
+                    <li><strong>True/False:</strong> Question Text, Question Type (true_false), Points, Option 1 (empty), Option 2 (empty), Option 3 (empty), Option 4 (empty), Correct Answer (True/False)</li>
+                    <li>Download the template below to see the exact format</li>
+                </ul>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <a href="{{ route('admin.sets-questions.import.template') }}" 
+                   class="btn-secondary" 
+                   style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; text-decoration: none;">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Download CSV Template
+                </a>
+            </div>
+
+            <div id="importResults" style="display: none; margin-top: 20px; padding: 12px; border-radius: 6px; font-size: 13px;"></div>
+        </div>
+        <div class="drawer-footer">
+            <button class="btn-secondary" onclick="closeImportDrawer()">Cancel</button>
+            <button class="btn-primary" onclick="processImport()" id="processImportBtn">Import Questions</button>
         </div>
     </div>
 </div>
@@ -1709,6 +1778,143 @@
         clearExamErrors();
     }
 
+    // Show import drawer
+    function showImportDrawer() {
+        document.getElementById('importDrawer').classList.add('active');
+        document.getElementById('importCsvFile').value = '';
+        document.getElementById('importAsDraft').checked = false;
+        document.getElementById('importResults').style.display = 'none';
+        document.getElementById('importResults').innerHTML = '';
+        document.getElementById('import_error_file').textContent = '';
+    }
+
+    // Close import drawer
+    function closeImportDrawer() {
+        document.getElementById('importDrawer').classList.remove('active');
+        document.getElementById('importCsvFile').value = '';
+        document.getElementById('importAsDraft').checked = false;
+        document.getElementById('importResults').style.display = 'none';
+        document.getElementById('importResults').innerHTML = '';
+        document.getElementById('import_error_file').textContent = '';
+    }
+
+    // Process import
+    function processImport() {
+        const fileInput = document.getElementById('importCsvFile');
+        const importAsDraft = document.getElementById('importAsDraft').checked;
+        const processBtn = document.getElementById('processImportBtn');
+        const resultsDiv = document.getElementById('importResults');
+        const errorSpan = document.getElementById('import_error_file');
+
+        // Clear previous errors
+        errorSpan.textContent = '';
+        resultsDiv.style.display = 'none';
+        resultsDiv.innerHTML = '';
+
+        // Validate file
+        if (!fileInput.files || fileInput.files.length === 0) {
+            errorSpan.textContent = 'Please select a CSV file.';
+            return;
+        }
+
+        const file = fileInput.files[0];
+        if (file.size > 2048 * 1024) {
+            errorSpan.textContent = 'File size must be less than 2MB.';
+            return;
+        }
+
+        // Create form data
+        const formData = new FormData();
+        formData.append('csv_file', file);
+        if (importAsDraft) {
+            formData.append('import_as_draft', '1');
+        }
+        formData.append('_token', '{{ csrf_token() }}');
+
+        // Disable button and show loading
+        processBtn.disabled = true;
+        processBtn.textContent = 'Importing...';
+
+        // Send request
+        fetch('{{ route("admin.sets-questions.import") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                resultsDiv.style.display = 'block';
+                resultsDiv.style.background = '#d1fae5';
+                resultsDiv.style.borderColor = '#10b981';
+                resultsDiv.style.color = '#065f46';
+                
+                let html = '<strong>✓ Import Successful!</strong><br>';
+                html += data.message + '<br><br>';
+                
+                if (data.results) {
+                    html += '<strong>Summary:</strong><br>';
+                    html += `• Total rows processed: ${data.results.total}<br>`;
+                    html += `• Successfully imported: ${data.results.successful}<br>`;
+                    if (data.results.failed > 0) {
+                        html += `• Failed: ${data.results.failed}<br>`;
+                    }
+                    
+                    if (data.results.errors && data.results.errors.length > 0) {
+                        html += '<br><strong>Errors:</strong><br>';
+                        html += '<ul style="margin: 8px 0 0 0; padding-left: 20px;">';
+                        data.results.errors.slice(0, 10).forEach(error => {
+                            html += `<li style="margin: 4px 0;">${error}</li>`;
+                        });
+                        if (data.results.errors.length > 10) {
+                            html += `<li>... and ${data.results.errors.length - 10} more errors</li>`;
+                        }
+                        html += '</ul>';
+                    }
+                }
+                
+                resultsDiv.innerHTML = html;
+                
+                // Reload page after 2 seconds to show new questions
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                // Show error message
+                resultsDiv.style.display = 'block';
+                resultsDiv.style.background = '#fee2e2';
+                resultsDiv.style.borderColor = '#ef4444';
+                resultsDiv.style.color = '#991b1b';
+                resultsDiv.innerHTML = '<strong>✗ Import Failed</strong><br>' + data.message;
+                
+                if (data.errors && data.errors.length > 0) {
+                    resultsDiv.innerHTML += '<br><ul style="margin: 8px 0 0 0; padding-left: 20px;">';
+                    data.errors.forEach(error => {
+                        resultsDiv.innerHTML += `<li>${error}</li>`;
+                    });
+                    resultsDiv.innerHTML += '</ul>';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            resultsDiv.style.display = 'block';
+            resultsDiv.style.background = '#fee2e2';
+            resultsDiv.style.borderColor = '#ef4444';
+            resultsDiv.style.color = '#991b1b';
+            resultsDiv.innerHTML = '<strong>✗ Import Failed</strong><br>An error occurred while processing the import. Please try again.';
+        })
+        .finally(() => {
+            // Re-enable button
+            processBtn.disabled = false;
+            processBtn.textContent = 'Import Questions';
+        });
+    }
+
     // Clear exam form errors
     function clearExamErrors() {
         document.querySelectorAll('#examForm .error-message').forEach(el => el.textContent = '');
@@ -1934,6 +2140,8 @@
         if (event.target.classList.contains('drawer-overlay')) {
             if (event.target.id === 'questionDrawer') {
                 closeQuestionDrawer();
+            } else if (event.target.id === 'importDrawer') {
+                closeImportDrawer();
             } else if (event.target.id === 'settingsDrawer') {
                 closeSettingsDrawer();
             } else if (event.target.id === 'newSemesterDrawer') {
