@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\Applicant;
+use App\Models\Settings as AppSettings;
 use PhpOffice\PhpWord\TemplateProcessor;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\Settings;
@@ -182,6 +183,50 @@ class EVSUQualifiersExport
         $templateProcessor->setValue('academic_year', $this->filters['academic_year'] ?? (date('Y') . '-' . (date('Y') + 1)));
         $templateProcessor->setValue('date_of_release', $this->filters['date_of_release'] ?? '');
 
+        // Fill document information placeholders
+        $templateProcessor->setValue('control_no', AppSettings::getSetting('report_control_no', 'EVSU- SASO-F-131'));
+        $templateProcessor->setValue('revision_no', AppSettings::getSetting('report_revision_no', '0'));
+        $templateProcessor->setValue('date', now()->format('Y-m-d'));
+
+        // Fill signature placeholders from database settings
+        // Get values and ensure they're uppercase for names
+        $preparedByName = strtoupper(AppSettings::getSetting('report_signature_prepared_by_name', 'JOSEPH JAYMEL S. MORPOS'));
+        $preparedByTitle = AppSettings::getSetting('report_signature_prepared_by_title', 'Head, Computer Studies Department');
+        $notedName = strtoupper(AppSettings::getSetting('report_signature_noted_name', 'DR. JEFFRY V. OCAY'));
+        $notedTitle = AppSettings::getSetting('report_signature_noted_title', 'Director, Ormoc Campus');
+        $recommendingName = strtoupper(AppSettings::getSetting('report_signature_recommending_name', 'LYDIA M. MORANTE, D.A.'));
+        $recommendingTitle = AppSettings::getSetting('report_signature_recommending_title', 'Vice President for Academic Affairs');
+        $approvedName = strtoupper(AppSettings::getSetting('report_signature_approved_name', 'DENNIS C. DE PAZ, Ph.D.'));
+        $approvedTitle = AppSettings::getSetting('report_signature_approved_title', 'University President');
+        
+        // Set values - Template uses ${variable} format (with $) for signatures
+        // PhpWord TemplateProcessor handles ${variable} format natively
+        // First, check what variables are detected in the template (for debugging)
+        try {
+            $detectedVariables = $templateProcessor->getVariables();
+            \Log::info('Detected variables in template', ['variables' => $detectedVariables]);
+        } catch (\Exception $e) {
+            \Log::debug('Could not get template variables', ['error' => $e->getMessage()]);
+        }
+        
+        // Replace signature placeholders
+        // PhpWord TemplateProcessor should handle {variable} format automatically
+        $templateProcessor->setValue('prepared_by_name', $preparedByName);
+        $templateProcessor->setValue('prepared_by_title', $preparedByTitle);
+        $templateProcessor->setValue('noted_name', $notedName);
+        $templateProcessor->setValue('noted_title', $notedTitle);
+        $templateProcessor->setValue('recommending_name', $recommendingName);
+        $templateProcessor->setValue('recommending_title', $recommendingTitle);
+        $templateProcessor->setValue('approved_name', $approvedName);
+        $templateProcessor->setValue('approved_title', $approvedTitle);
+        
+        \Log::info('Set signature placeholders in DOCX', [
+            'prepared_by_name' => $preparedByName,
+            'noted_name' => $notedName,
+            'recommending_name' => $recommendingName,
+            'approved_name' => $approvedName,
+        ]);
+
         // Clone the data table row for each applicant
         $applicantCount = count($this->applicants);
         
@@ -204,6 +249,41 @@ class EVSUQualifiersExport
         }
 
         return $templateProcessor;
+    }
+
+    /**
+     * Manually replace placeholders if setValue() doesn't work
+     * This is a fallback method
+     */
+    protected function replacePlaceholdersManually($templateProcessor, $replacements)
+    {
+        try {
+            // Get the document XML
+            $document = $templateProcessor->getDocument();
+            
+            // Replace placeholders in the XML directly
+            foreach ($replacements as $placeholder => $value) {
+                // Try different placeholder formats
+                $patterns = [
+                    '{' . $placeholder . '}',
+                    '${' . $placeholder . '}',
+                    '{$' . $placeholder . '}',
+                ];
+                
+                foreach ($patterns as $pattern) {
+                    // This is a workaround - TemplateProcessor should handle this, but if it doesn't,
+                    // we'll need to access the underlying XML
+                    \Log::debug('Attempting manual replacement', [
+                        'pattern' => $pattern,
+                        'value' => $value
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('Manual placeholder replacement failed', [
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }
 

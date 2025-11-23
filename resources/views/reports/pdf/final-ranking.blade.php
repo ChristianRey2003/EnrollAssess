@@ -261,34 +261,64 @@
         }
 
         .signature-section {
-            margin-top: 20px;
+            margin-top: 40px;
+            width: 100%;
+        }
+
+        .signature-top-section {
             display: table;
             width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .signature-bottom-section {
+            display: table;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .signature-divider {
+            width: 100%;
+            height: 2px;
+            background-color: var(--text-dark);
+            margin: 20px 0;
         }
 
         .signature-block {
             display: table-cell;
-            text-align: center;
+            text-align: left;
             width: 50%;
-            padding: 0 20px;
-        }
-
-        .signature-line {
-            border-bottom: 1px solid var(--text-dark);
-            margin-bottom: 5px;
-            height: 30px;
+            padding: 0 30px;
+            vertical-align: top;
         }
 
         .signature-label {
             font-size: 9pt;
             color: var(--text-dark);
+            font-style: italic;
+            margin-bottom: 8px;
+        }
+
+        .signature-name {
+            font-size: 11pt;
+            color: var(--text-dark);
             font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            padding-bottom: 3px;
+            display: block;
+            width: 250px;
+            border-bottom: 1.5px solid var(--text-dark);
+        }
+
+        .signature-name-line {
+            display: none;
         }
 
         .signature-title {
-            font-size: 8pt;
-            color: var(--text-gray);
-            font-style: italic;
+            font-size: 9pt;
+            color: var(--text-dark);
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -394,15 +424,35 @@
             </ul>
 
             <div class="signature-section">
-                <div class="signature-block">
-                    <div class="signature-line"></div>
-                    <div class="signature-label">Dr. Maria Elena Santos</div>
-                    <div class="signature-title">Department Head, Computer Studies</div>
+                <!-- Top Section: Prepared by and Noted -->
+                <div class="signature-top-section">
+                    <div class="signature-block">
+                        <div class="signature-label">Prepared by:</div>
+                        <div class="signature-name">{{ $signatures['prepared_by_name'] ?? 'JOSEPH JAYMEL S. MORPOS' }}</div>
+                        <div class="signature-title">{{ $signatures['prepared_by_title'] ?? 'Head, Computer Studies Department' }}</div>
+                    </div>
+                    <div class="signature-block">
+                        <div class="signature-label">Noted:</div>
+                        <div class="signature-name">{{ $signatures['noted_name'] ?? 'DR. JEFFRY V. OCAY' }}</div>
+                        <div class="signature-title">{{ $signatures['noted_title'] ?? 'Director, Ormoc Campus' }}</div>
+                    </div>
                 </div>
-                <div class="signature-block">
-                    <div class="signature-line"></div>
-                    <div class="signature-label">Prof. John Ricardo Dela Cruz</div>
-                    <div class="signature-title">Admissions Committee Chair</div>
+
+                <!-- Divider Bar -->
+                <div class="signature-divider"></div>
+
+                <!-- Bottom Section: Recommending Approval and Approved -->
+                <div class="signature-bottom-section">
+                    <div class="signature-block">
+                        <div class="signature-label">Recommending Approval:</div>
+                        <div class="signature-name">{{ $signatures['recommending_name'] ?? 'LYDIA M. MORANTE, D.A.' }}</div>
+                        <div class="signature-title">{{ $signatures['recommending_title'] ?? 'Vice President for Academic Affairs' }}</div>
+                    </div>
+                    <div class="signature-block">
+                        <div class="signature-label">Approved:</div>
+                        <div class="signature-name">{{ $signatures['approved_name'] ?? 'DENNIS C. DE PAZ, PH.D.' }}</div>
+                        <div class="signature-title">{{ $signatures['approved_title'] ?? 'University President' }}</div>
+                    </div>
                 </div>
             </div>
 

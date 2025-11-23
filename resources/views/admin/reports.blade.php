@@ -352,6 +352,7 @@
                                 <div class="toolbar-right" style="display: flex; align-items: center; gap: 10px;">
                                     <button type="button" onclick="openEVSUDrawer()" class="btn-primary-export" style="height: 40px; padding: 8px 16px; font-size: 13px;">EVSU Results</button>
                                     <button type="button" onclick="openQualifiersDrawer()" class="btn-primary-export" style="height: 40px; padding: 8px 16px; font-size: 13px;">Qualifiers List</button>
+                                    <button type="button" onclick="openSignatureSettingsDrawer()" class="btn-secondary" style="height: 40px; padding: 8px 16px; font-size: 13px; background: #6b7280; color: white; width: 40px; display: flex; align-items: center; justify-content: center;">⚙️</button>
                                 </div>
                             </div>
 
@@ -804,6 +805,101 @@
             </div>
         </div>
     </div>
+
+    <!-- Signature Settings Drawer -->
+    <div id="signatureSettingsDrawerOverlay" class="drawer-overlay" onclick="closeSignatureSettingsDrawer()"></div>
+    <div id="signatureSettingsDrawer" class="drawer">
+        <div class="drawer-header">
+            <h3 class="drawer-title">Report Signature Settings</h3>
+            <button type="button" class="drawer-close" onclick="closeSignatureSettingsDrawer()">×</button>
+        </div>
+        <div class="drawer-body">
+            <p style="margin-bottom: 20px; color: #6b7280; font-size: 14px;">
+                Configure the names and titles that appear in report signatures. These settings apply to all future reports (XLSX, DOCX, and PDF).
+            </p>
+
+            <form id="signatureSettingsForm">
+                <!-- Document Information -->
+                <div style="margin-bottom: 25px;">
+                    <h4 style="margin-bottom: 15px; color: #1f2937; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Document Information</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Control No.</label>
+                            <input type="text" id="control_no" name="control_no" class="form-control" style="width: 100%;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Revision No.</label>
+                            <input type="text" id="revision_no" name="revision_no" class="form-control" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prepared By -->
+                <div style="margin-bottom: 25px;">
+                    <h4 style="margin-bottom: 15px; color: #1f2937; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Prepared By</h4>
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Name</label>
+                            <input type="text" id="prepared_by_name" name="prepared_by_name" class="form-control" style="width: 100%;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Title</label>
+                            <input type="text" id="prepared_by_title" name="prepared_by_title" class="form-control" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Noted -->
+                <div style="margin-bottom: 25px;">
+                    <h4 style="margin-bottom: 15px; color: #1f2937; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Noted</h4>
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Name</label>
+                            <input type="text" id="noted_name" name="noted_name" class="form-control" style="width: 100%;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Title</label>
+                            <input type="text" id="noted_title" name="noted_title" class="form-control" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recommending Approval -->
+                <div style="margin-bottom: 25px;">
+                    <h4 style="margin-bottom: 15px; color: #1f2937; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Recommending Approval</h4>
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Name</label>
+                            <input type="text" id="recommending_name" name="recommending_name" class="form-control" style="width: 100%;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Title</label>
+                            <input type="text" id="recommending_title" name="recommending_title" class="form-control" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Approved -->
+                <div style="margin-bottom: 25px;">
+                    <h4 style="margin-bottom: 15px; color: #1f2937; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Approved</h4>
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Name</label>
+                            <input type="text" id="approved_name" name="approved_name" class="form-control" style="width: 100%;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Title</label>
+                            <input type="text" id="approved_title" name="approved_title" class="form-control" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="drawer-footer">
+            <button type="button" onclick="closeSignatureSettingsDrawer()" class="btn-secondary">Cancel</button>
+            <button type="button" onclick="saveSignatureSettings()" class="btn-primary" id="saveSignatureBtn">Save Settings</button>
+        </div>
+    </div>
 @endpush
 
 @push('scripts')
@@ -831,6 +927,103 @@
         function getAppliedFilters() {
             return 'Default filters';
         }
+
+        // Signature Settings Drawer Functions
+        function openSignatureSettingsDrawer() {
+            const overlay = document.getElementById('signatureSettingsDrawerOverlay');
+            const drawer = document.getElementById('signatureSettingsDrawer');
+            if (overlay && drawer) {
+                overlay.classList.add('active');
+                drawer.classList.add('active');
+                loadSignatureSettings();
+            }
+        }
+
+        function closeSignatureSettingsDrawer() {
+            const overlay = document.getElementById('signatureSettingsDrawerOverlay');
+            const drawer = document.getElementById('signatureSettingsDrawer');
+            if (overlay && drawer) {
+                overlay.classList.remove('active');
+                drawer.classList.remove('active');
+            }
+        }
+
+        async function loadSignatureSettings() {
+            try {
+                const response = await fetch('/admin/reports/signature-settings', {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                });
+
+                const data = await response.json();
+                if (data.success && data.settings) {
+                    document.getElementById('control_no').value = data.settings.control_no || '';
+                    document.getElementById('revision_no').value = data.settings.revision_no || '';
+                    document.getElementById('prepared_by_name').value = data.settings.prepared_by_name || '';
+                    document.getElementById('prepared_by_title').value = data.settings.prepared_by_title || '';
+                    document.getElementById('noted_name').value = data.settings.noted_name || '';
+                    document.getElementById('noted_title').value = data.settings.noted_title || '';
+                    document.getElementById('recommending_name').value = data.settings.recommending_name || '';
+                    document.getElementById('recommending_title').value = data.settings.recommending_title || '';
+                    document.getElementById('approved_name').value = data.settings.approved_name || '';
+                    document.getElementById('approved_title').value = data.settings.approved_title || '';
+                }
+            } catch (error) {
+                console.error('Error loading signature settings:', error);
+                showNotification('Failed to load signature settings', 'error');
+            }
+        }
+
+        async function saveSignatureSettings() {
+            const btn = document.getElementById('saveSignatureBtn');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            try {
+                const formData = {
+                    control_no: document.getElementById('control_no').value,
+                    revision_no: document.getElementById('revision_no').value,
+                    prepared_by_name: document.getElementById('prepared_by_name').value,
+                    prepared_by_title: document.getElementById('prepared_by_title').value,
+                    noted_name: document.getElementById('noted_name').value,
+                    noted_title: document.getElementById('noted_title').value,
+                    recommending_name: document.getElementById('recommending_name').value,
+                    recommending_title: document.getElementById('recommending_title').value,
+                    approved_name: document.getElementById('approved_name').value,
+                    approved_title: document.getElementById('approved_title').value,
+                };
+
+                const response = await fetch('/admin/reports/signature-settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showNotification('Signature settings saved successfully!', 'success');
+                    closeSignatureSettingsDrawer();
+                } else {
+                    showNotification(data.message || 'Failed to save signature settings', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving signature settings:', error);
+                showNotification('Failed to save signature settings', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+
+        // Close modal when clicking outside (handled by onclick in modal-overlay)
 
         // Drawer Functions
         function openEVSUDrawer() {

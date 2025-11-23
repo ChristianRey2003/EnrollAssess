@@ -7,6 +7,7 @@ use App\Models\GeneratedReport;
 use App\Models\Interview;
 use App\Models\Result;
 use App\Models\Question;
+use App\Models\Settings;
 use App\Services\AdmissionScoringService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +35,7 @@ class ReportGenerationService
             'averageScore' => $applicants->avg('final_score') ?? 0,
             'generatedAt' => now()->format('F d, Y - g:i A'),
             'generatedBy' => auth()->user()->name ?? 'System',
+            'signatures' => $this->getSignatureSettings(),
         ];
 
         \Log::info('Generating PDF with dompdf');
@@ -1103,6 +1105,23 @@ class ReportGenerationService
         
         \Log::info('Demographic Overview Report generation complete', ['report_id' => $report->id]);
         return $report;
+    }
+
+    /**
+     * Get signature settings from database
+     */
+    protected function getSignatureSettings()
+    {
+        return [
+            'prepared_by_name' => Settings::getSetting('report_signature_prepared_by_name', 'JOSEPH JAYMEL S. MORPOS'),
+            'prepared_by_title' => Settings::getSetting('report_signature_prepared_by_title', 'Head, Computer Studies Department'),
+            'noted_name' => Settings::getSetting('report_signature_noted_name', 'DR. JEFFRY V. OCAY'),
+            'noted_title' => Settings::getSetting('report_signature_noted_title', 'Director, Ormoc Campus'),
+            'recommending_name' => Settings::getSetting('report_signature_recommending_name', 'LYDIA M. MORANTE, D.A.'),
+            'recommending_title' => Settings::getSetting('report_signature_recommending_title', 'Vice President for Academic Affairs'),
+            'approved_name' => Settings::getSetting('report_signature_approved_name', 'DENNIS C. DE PAZ, Ph.D.'),
+            'approved_title' => Settings::getSetting('report_signature_approved_title', 'University President'),
+        ];
     }
 }
 

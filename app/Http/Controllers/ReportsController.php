@@ -7,6 +7,7 @@ use App\Models\Exam;
 use App\Models\Question;
 use App\Models\AccessCode;
 use App\Models\GeneratedReport;
+use App\Models\Settings;
 use App\Services\ReportGenerationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -546,6 +547,75 @@ class ReportsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to permanently delete reports: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get report signature settings
+     */
+    public function getSignatureSettings()
+    {
+        $settings = [
+            'control_no' => Settings::getSetting('report_control_no', 'EVSU- SASO-F-131'),
+            'revision_no' => Settings::getSetting('report_revision_no', '0'),
+            'prepared_by_name' => Settings::getSetting('report_signature_prepared_by_name', 'JOSEPH JAYMEL S. MORPOS'),
+            'prepared_by_title' => Settings::getSetting('report_signature_prepared_by_title', 'Head, Computer Studies Department'),
+            'noted_name' => Settings::getSetting('report_signature_noted_name', 'DR. JEFFRY V. OCAY'),
+            'noted_title' => Settings::getSetting('report_signature_noted_title', 'Director, Ormoc Campus'),
+            'recommending_name' => Settings::getSetting('report_signature_recommending_name', 'LYDIA M. MORANTE, D.A.'),
+            'recommending_title' => Settings::getSetting('report_signature_recommending_title', 'Vice President for Academic Affairs'),
+            'approved_name' => Settings::getSetting('report_signature_approved_name', 'DENNIS C. DE PAZ, Ph.D.'),
+            'approved_title' => Settings::getSetting('report_signature_approved_title', 'University President'),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'settings' => $settings,
+        ]);
+    }
+
+    /**
+     * Update report signature settings
+     */
+    public function updateSignatureSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'control_no' => 'nullable|string|max:255',
+            'revision_no' => 'nullable|string|max:50',
+            'prepared_by_name' => 'nullable|string|max:255',
+            'prepared_by_title' => 'nullable|string|max:255',
+            'noted_name' => 'nullable|string|max:255',
+            'noted_title' => 'nullable|string|max:255',
+            'recommending_name' => 'nullable|string|max:255',
+            'recommending_title' => 'nullable|string|max:255',
+            'approved_name' => 'nullable|string|max:255',
+            'approved_title' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            Settings::setSetting('report_control_no', $validated['control_no'] ?? '', 'reports');
+            Settings::setSetting('report_revision_no', $validated['revision_no'] ?? '', 'reports');
+            Settings::setSetting('report_signature_prepared_by_name', $validated['prepared_by_name'] ?? '', 'reports');
+            Settings::setSetting('report_signature_prepared_by_title', $validated['prepared_by_title'] ?? '', 'reports');
+            Settings::setSetting('report_signature_noted_name', $validated['noted_name'] ?? '', 'reports');
+            Settings::setSetting('report_signature_noted_title', $validated['noted_title'] ?? '', 'reports');
+            Settings::setSetting('report_signature_recommending_name', $validated['recommending_name'] ?? '', 'reports');
+            Settings::setSetting('report_signature_recommending_title', $validated['recommending_title'] ?? '', 'reports');
+            Settings::setSetting('report_signature_approved_name', $validated['approved_name'] ?? '', 'reports');
+            Settings::setSetting('report_signature_approved_title', $validated['approved_title'] ?? '', 'reports');
+
+            // Clear cache
+            Settings::clearCache();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Signature settings updated successfully.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update signature settings: ' . $e->getMessage(),
             ], 500);
         }
     }

@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\Applicant;
+use App\Models\Settings;
 use App\Services\AdmissionScoringService;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -48,8 +49,9 @@ class EVSUResultsExport
         
         // Set column widths matching user's Excel settings exactly
         // Source: Excel Legal Landscape (8.5" x 14") with 130% scale
+        // Note: Column A needs to be wider for signature names
         $columnWidths = [
-            'A' => 6,      // No.
+            'A' => 30,     // No. + Signatures (wider for signature names)
             'B' => 17.5,   // Application No.
             'C' => 9.17,   // Preferred Program
             'D' => 17.17,  // Last Name
@@ -223,14 +225,338 @@ class EVSUResultsExport
         $spreadsheet = IOFactory::load($templatePath);
         $sheet = $spreadsheet->getActiveSheet();
 
-        // DO NOT fill header fields - leave Control No., Date, Academic Year, Date of Release empty
-        // User will manually edit these fields after download
+        // Fill signature settings from database
+        $this->fillSignatureSettings($sheet);
 
         // Fill ONLY the data table rows
         $this->fillDataRows($sheet);
 
         // Do not alter XLSX page setup or margins. The template dictates XLSX layout.
         return $spreadsheet;
+    }
+
+    /**
+     * Fill signature settings in the template
+     */
+    protected function fillSignatureSettings($sheet)
+    {
+        // Get settings from database
+        $controlNo = Settings::getSetting('report_control_no', 'EVSU- SASO-F-131');
+        $revisionNo = Settings::getSetting('report_revision_no', '0');
+        $preparedByName = Settings::getSetting('report_signature_prepared_by_name', 'JOSEPH JAYMEL S. MORPOS');
+        $preparedByTitle = Settings::getSetting('report_signature_prepared_by_title', 'Head, Computer Studies Department');
+        $notedName = Settings::getSetting('report_signature_noted_name', 'DR. JEFFRY V. OCAY');
+        $notedTitle = Settings::getSetting('report_signature_noted_title', 'Director, Ormoc Campus');
+        $recommendingName = Settings::getSetting('report_signature_recommending_name', 'LYDIA M. MORANTE, D.A.');
+        $recommendingTitle = Settings::getSetting('report_signature_recommending_title', 'Vice President for Academic Affairs');
+        $approvedName = Settings::getSetting('report_signature_approved_name', 'DENNIS C. DE PAZ, Ph.D.');
+        $approvedTitle = Settings::getSetting('report_signature_approved_title', 'University President');
+
+        // Fill document information
+        $sheet->setCellValue('I3', $controlNo);
+        $sheet->setCellValue('I4', $revisionNo);
+        $sheet->setCellValue('I5', now()->format('Y-m-d')); // Date
+
+        // Fill signature blocks using exact cell locations with proper formatting
+        // Names should be BOLD and UPPERCASE, titles should match template style
+        
+        // First, read the font size from the template's existing signature cells
+        // This ensures we match the exact formatting from the template
+        $nameFontSize = $this->getTemplateFontSize($sheet, 'A132', 12); // Default to 12 if not found
+        $titleFontSize = $this->getTemplateFontSize($sheet, 'A133', 12);
+        
+        // First, check and copy merge structure from template cells A144 and A149 to A132 and A139
+        // This ensures border width matches the name length
+        $this->copyMergeStructure($sheet, 'A144', 'A132');
+        $this->copyMergeStructure($sheet, 'A149', 'A139');
+        
+        // Prepared By: Label A129, Name A132, Title A133 (with border line)
+        $this->setSignatureName($sheet, 'A132', $preparedByName, $nameFontSize, true);
+        $this->setSignatureTitle($sheet, 'A133', $preparedByTitle, $titleFontSize);
+
+        // Noted: Label A136, Name A139, Title A140 (with border line)
+        $this->setSignatureName($sheet, 'A139', $notedName, $nameFontSize, true);
+        $this->setSignatureTitle($sheet, 'A140', $notedTitle, $titleFontSize);
+
+        // Recommending Approval: Label A142, Name A144, Title A145 (with border line)
+        $this->setSignatureName($sheet, 'A144', $recommendingName, $nameFontSize, true);
+        $this->setSignatureTitle($sheet, 'A145', $recommendingTitle, $titleFontSize);
+
+        // Approved: Label A147, Name A149, Title A150 (with border line)
+        $this->setSignatureName($sheet, 'A149', $approvedName, $nameFontSize, true);
+        $this->setSignatureTitle($sheet, 'A150', $approvedTitle, $titleFontSize);
+        
+        // Re-apply borders after setting values (in case merge structure needs borders on merged range)
+        $this->applyBorderToCellOrRange($sheet, 'A132');
+        $this->applyBorderToCellOrRange($sheet, 'A139');
+        $this->applyBorderToCellOrRange($sheet, 'A144');
+        $this->applyBorderToCellOrRange($sheet, 'A149');
+    }
+
+    /**
+     * Get font size from template cell
+     */
+    protected function getTemplateFontSize($sheet, $cell, $default = 12)
+    {
+        try {
+            $style = $sheet->getStyle($cell);
+            $font = $style->getFont();
+            $size = $font->getSize();
+            return $size > 0 ? $size : $default;
+        } catch (\Exception $e) {
+            return $default;
+        }
+    }
+
+    /**
+     * Apply border to a cell or its merged range
+     */
+    protected function applyBorderToCellOrRange($sheet, $cell)
+    {
+        try {
+            // Check if cell is part of a merged range
+            $mergedRanges = $sheet->getMergeCells();
+            $targetRange = $cell;
+            
+            foreach ($mergedRanges as $range) {
+                if ($sheet->getCell($cell)->isInRange($range)) {
+                    $targetRange = $range;
+                    break;
+                }
+            }
+            
+            // Apply border to the cell or merged range
+            $borders = $sheet->getStyle($targetRange)->getBorders();
+            $borders->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+            $borders->getBottom()->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_BLACK));
+        } catch (\Exception $e) {
+            \Log::debug('Could not apply border to cell', ['cell' => $cell, 'error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Copy merge structure from source cell to target cell
+     * This ensures borders match the text width correctly
+     */
+    protected function copyMergeStructure($sheet, $sourceCell, $targetCell)
+    {
+        try {
+            // Check if source cell is part of a merged range
+            $mergedRanges = $sheet->getMergeCells();
+            
+            // Log all merged ranges for debugging
+            \Log::info('Checking merge structure', [
+                'source_cell' => $sourceCell,
+                'target_cell' => $targetCell,
+                'total_merged_ranges' => count($mergedRanges),
+                'all_ranges' => array_values($mergedRanges)
+            ]);
+            
+            foreach ($mergedRanges as $range) {
+                try {
+                    $isInRange = $sheet->getCell($sourceCell)->isInRange($range);
+                    \Log::info('Checking range', [
+                        'range' => $range,
+                        'source_cell' => $sourceCell,
+                        'is_in_range' => $isInRange
+                    ]);
+                    
+                    if ($isInRange) {
+                        \Log::info('Found merge for source cell', ['source' => $sourceCell, 'range' => $range]);
+                        
+                        // Extract the range and apply same merge to target
+                        // For example, if A144 is merged as A144:B144, merge A132 as A132:B132
+                        $rangeParts = explode(':', $range);
+                        if (count($rangeParts) === 2) {
+                            $sourceStart = $rangeParts[0];
+                            $sourceEnd = $rangeParts[1];
+                            
+                            // Get row numbers
+                            $sourceRow = (int) filter_var($sourceCell, FILTER_SANITIZE_NUMBER_INT);
+                            $targetRow = (int) filter_var($targetCell, FILTER_SANITIZE_NUMBER_INT);
+                            $rowDiff = $targetRow - $sourceRow;
+                            
+                            // Calculate new range for target
+                            $sourceStartCol = preg_replace('/[0-9]/', '', $sourceStart);
+                            $sourceStartRowNum = (int) filter_var($sourceStart, FILTER_SANITIZE_NUMBER_INT);
+                            $sourceEndCol = preg_replace('/[0-9]/', '', $sourceEnd);
+                            $sourceEndRowNum = (int) filter_var($sourceEnd, FILTER_SANITIZE_NUMBER_INT);
+                            
+                            $targetStart = $sourceStartCol . ($sourceStartRowNum + $rowDiff);
+                            $targetEnd = $sourceEndCol . ($sourceEndRowNum + $rowDiff);
+                            $targetRange = $targetStart . ':' . $targetEnd;
+                            
+                            \Log::info('Calculated target merge range', [
+                                'source_range' => $range,
+                                'target_range' => $targetRange,
+                                'row_diff' => $rowDiff
+                            ]);
+                            
+                            // Unmerge target if already merged, then merge with new range
+                            if ($sheet->getMergeCells()) {
+                                foreach ($sheet->getMergeCells() as $existingRange) {
+                                    try {
+                                        if ($sheet->getCell($targetCell)->isInRange($existingRange)) {
+                                            \Log::info('Unmerging existing range', ['range' => $existingRange]);
+                                            $sheet->unmergeCells($existingRange);
+                                            break;
+                                        }
+                                    } catch (\Exception $e) {
+                                        \Log::debug('Error unmerging', ['range' => $existingRange, 'error' => $e->getMessage()]);
+                                    }
+                                }
+                            }
+                            
+                            $sheet->mergeCells($targetRange);
+                            \Log::info('Successfully copied merge structure', [
+                                'source' => $range,
+                                'target' => $targetRange
+                            ]);
+                        }
+                        return; // Found and processed, exit
+                    }
+                } catch (\Exception $e) {
+                    \Log::debug('Error checking range', ['range' => $range, 'error' => $e->getMessage()]);
+                }
+            }
+            
+            \Log::info('No merge found for source cell - it is a single cell', ['source' => $sourceCell]);
+            
+            // If source is not merged, ensure target is not merged either
+            if ($sheet->getMergeCells()) {
+                foreach ($sheet->getMergeCells() as $existingRange) {
+                    try {
+                        if ($sheet->getCell($targetCell)->isInRange($existingRange)) {
+                            \Log::info('Unmerging target cell (source has no merge)', ['range' => $existingRange]);
+                            $sheet->unmergeCells($existingRange);
+                            break;
+                        }
+                    } catch (\Exception $e) {
+                        \Log::debug('Error unmerging target', ['range' => $existingRange, 'error' => $e->getMessage()]);
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // If merge copying fails, continue without it
+            \Log::error('Could not copy cell merge structure', [
+                'source' => $sourceCell,
+                'target' => $targetCell,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
+     * Set signature name with bold and uppercase formatting
+     * Matches template style: BOLD and UPPERCASE
+     * @param bool $addBorder Whether to add bottom border line (default: true)
+     */
+    protected function setSignatureName($sheet, $cell, $name, $fontSize = 12, $addBorder = true)
+    {
+        // Ensure name is uppercase (CAPS LOCK) - preserve full name
+        $name = strtoupper(trim($name));
+        
+        // Set the value - use setValueExplicit to prevent truncation
+        $sheet->setCellValueExplicit($cell, $name, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+        
+        // Get the style from template cell (A132 is the first name cell in template)
+        try {
+            $templateCell = 'A132';
+            $templateStyle = $sheet->getStyle($templateCell);
+            $templateFont = $templateStyle->getFont();
+            
+            // Use provided font size or get from template
+            $finalFontSize = $fontSize > 0 ? $fontSize : ($templateFont->getSize() ?: 12);
+            
+            // Apply template style but force bold and ensure proper size
+            $sheet->getStyle($cell)->getFont()->applyFromArray([
+                'name' => $templateFont->getName() ?: 'Calibri',
+                'size' => $finalFontSize,
+                'bold' => true, // Names are BOLD
+            ]);
+            
+            // Add bottom border (cell line) below the name only if requested
+            // Note: Borders will be re-applied after cell structure is copied
+            if ($addBorder) {
+                $this->applyBorderToCellOrRange($sheet, $cell);
+            }
+            
+            // Also copy alignment if needed
+            $templateAlignment = $templateStyle->getAlignment();
+            $sheet->getStyle($cell)->getAlignment()->applyFromArray([
+                'horizontal' => $templateAlignment->getHorizontal(),
+                'vertical' => $templateAlignment->getVertical(),
+            ]);
+            
+            // Ensure text wrapping is enabled to prevent truncation
+            $sheet->getStyle($cell)->getAlignment()->setWrapText(true);
+        } catch (\Exception $e) {
+            // Fallback: apply bold, proper size, and conditionally add bottom border
+            $sheet->getStyle($cell)->getFont()->setBold(true);
+            $sheet->getStyle($cell)->getFont()->setSize($fontSize);
+            if ($addBorder) {
+                $this->applyBorderToCellOrRange($sheet, $cell);
+            }
+            $sheet->getStyle($cell)->getAlignment()->setWrapText(true);
+        }
+        
+        // Ensure column width is adequate (auto-size or set minimum)
+        $column = preg_replace('/[0-9]/', '', $cell);
+        $currentWidth = $sheet->getColumnDimension($column)->getWidth();
+        if ($currentWidth < 30 || $currentWidth == -1) {
+            // Set minimum width to prevent truncation (30 characters)
+            $sheet->getColumnDimension($column)->setWidth(30);
+        }
+    }
+
+    /**
+     * Set signature title with template-matching formatting
+     * Matches template style: regular font (not bold, not uppercase)
+     */
+    protected function setSignatureTitle($sheet, $cell, $title, $fontSize = 12)
+    {
+        // Set the value (titles keep original case) - use setValueExplicit to prevent truncation
+        $sheet->setCellValueExplicit($cell, trim($title), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+        
+        // Get the style from template cell (A133 is the first title cell in template)
+        try {
+            $templateCell = 'A133';
+            $templateStyle = $sheet->getStyle($templateCell);
+            $templateFont = $templateStyle->getFont();
+            
+            // Use provided font size or get from template
+            $finalFontSize = $fontSize > 0 ? $fontSize : ($templateFont->getSize() ?: 12);
+            
+            // Copy all font properties from template (including not bold)
+            $sheet->getStyle($cell)->getFont()->applyFromArray([
+                'name' => $templateFont->getName() ?: 'Calibri',
+                'size' => $finalFontSize,
+                'bold' => $templateFont->getBold() ?? false, // Usually false for titles
+            ]);
+            
+            // Also copy alignment
+            $templateAlignment = $templateStyle->getAlignment();
+            $sheet->getStyle($cell)->getAlignment()->applyFromArray([
+                'horizontal' => $templateAlignment->getHorizontal(),
+                'vertical' => $templateAlignment->getVertical(),
+            ]);
+            
+            // Ensure text wrapping
+            $sheet->getStyle($cell)->getAlignment()->setWrapText(true);
+        } catch (\Exception $e) {
+            // Fallback: regular font, not bold, proper size
+            $sheet->getStyle($cell)->getFont()->setBold(false);
+            $sheet->getStyle($cell)->getFont()->setSize($fontSize);
+            $sheet->getStyle($cell)->getAlignment()->setWrapText(true);
+        }
+        
+        // Ensure column width is adequate
+        $column = preg_replace('/[0-9]/', '', $cell);
+        $currentWidth = $sheet->getColumnDimension($column)->getWidth();
+        if ($currentWidth < 30 || $currentWidth == -1) {
+            $sheet->getColumnDimension($column)->setWidth(30);
+        }
     }
 
     /**

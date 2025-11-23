@@ -159,6 +159,8 @@ Route::prefix('reports')->name('reports.')->middleware('role:department-head,adm
     Route::get('/archived-history', [ReportsController::class, 'archivedHistory'])->name('archived-history');
     Route::post('/restore-all', [ReportsController::class, 'restoreAll'])->name('restore-all');
     Route::post('/permanently-delete-all', [ReportsController::class, 'permanentlyDeleteAll'])->name('permanently-delete-all');
+    Route::get('/signature-settings', [ReportsController::class, 'getSignatureSettings'])->name('signature-settings');
+    Route::post('/signature-settings', [ReportsController::class, 'updateSignatureSettings'])->name('update-signature-settings');
 });
 
 // User Management (Department Head only)

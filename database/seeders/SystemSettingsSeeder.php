@@ -221,6 +221,78 @@ class SystemSettingsSeeder extends Seeder
                 'type' => 'number',
                 'description' => 'Maximum interview score',
             ],
+
+            // Report Signature Settings
+            [
+                'key' => 'report_control_no',
+                'value' => 'EVSU- SASO-F-131',
+                'group' => 'reports',
+                'type' => 'text',
+                'description' => 'Control number for reports',
+            ],
+            [
+                'key' => 'report_revision_no',
+                'value' => '0',
+                'group' => 'reports',
+                'type' => 'text',
+                'description' => 'Revision number for reports',
+            ],
+            [
+                'key' => 'report_signature_prepared_by_name',
+                'value' => 'JOSEPH JAYMEL S. MORPOS',
+                'group' => 'reports',
+                'type' => 'text',
+                'description' => 'Name of person who prepared the report',
+            ],
+            [
+                'key' => 'report_signature_prepared_by_title',
+                'value' => 'Head, Computer Studies Department',
+                'group' => 'reports',
+                'type' => 'text',
+                'description' => 'Title of person who prepared the report',
+            ],
+            [
+                'key' => 'report_signature_noted_name',
+                'value' => 'DR. JEFFRY V. OCAY',
+                'group' => 'reports',
+                'type' => 'text',
+                'description' => 'Name of person who noted the report',
+            ],
+            [
+                'key' => 'report_signature_noted_title',
+                'value' => 'Director, Ormoc Campus',
+                'group' => 'reports',
+                'type' => 'text',
+                'description' => 'Title of person who noted the report',
+            ],
+            [
+                'key' => 'report_signature_recommending_name',
+                'value' => 'LYDIA M. MORANTE, D.A.',
+                'group' => 'reports',
+                'type' => 'text',
+                'description' => 'Name of person recommending approval',
+            ],
+            [
+                'key' => 'report_signature_recommending_title',
+                'value' => 'Vice President for Academic Affairs',
+                'group' => 'reports',
+                'type' => 'text',
+                'description' => 'Title of person recommending approval',
+            ],
+            [
+                'key' => 'report_signature_approved_name',
+                'value' => 'DENNIS C. DE PAZ, Ph.D.',
+                'group' => 'reports',
+                'type' => 'text',
+                'description' => 'Name of person who approved the report',
+            ],
+            [
+                'key' => 'report_signature_approved_title',
+                'value' => 'University President',
+                'group' => 'reports',
+                'type' => 'text',
+                'description' => 'Title of person who approved the report',
+            ],
         ];
 
         foreach ($settings as $setting) {
