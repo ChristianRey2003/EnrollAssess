@@ -58,7 +58,7 @@ class EVSUResultsExport
             'E' => 19,     // First Name
             'F' => 12.5,   // Middle Name
             'G' => 26.83,  // E-mail
-            'H' => 11.5,   // Contact Number
+            'H' => 16,     // Contact Number (increased to accommodate + prefix and full phone numbers like +639020500174)
             'I' => 18.5,   // UEE (60%)
             'J' => 12,     // Card/TOR GWA (30%)
             'K' => 15.83,  // Interview/Skill Test (10%)
@@ -755,7 +755,11 @@ class EVSUResultsExport
             $sheet->setCellValue('F' . $currentRow, strtoupper($applicant->middle_name ?? ''));
             $sheet->setCellValue('G' . $currentRow, $applicant->email_address);
             // Phone number must be set as STRING to prevent Excel from converting to scientific notation (e.g., 6.39021E+11)
-            $sheet->setCellValueExplicit('H' . $currentRow, (string)($applicant->phone_number ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $phoneNumber = (string)($applicant->phone_number ?? '');
+            $sheet->setCellValueExplicit('H' . $currentRow, $phoneNumber, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            // Ensure phone number cell displays fully without wrapping or truncation
+            $sheet->getStyle('H' . $currentRow)->getAlignment()->setWrapText(false);
+            $sheet->getStyle('H' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
             $sheet->setCellValue('I' . $currentRow, number_format($ueeWeighted, 2));
             $sheet->setCellValue('J' . $currentRow, number_format($gwaWeighted, 2));
             // Column K expects the 10% contribution (0–10)
