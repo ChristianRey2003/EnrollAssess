@@ -747,13 +747,15 @@ class EVSUResultsExport
             }
 
             $sheet->setCellValue('A' . $currentRow, $index + 1);
-            $sheet->setCellValue('B' . $currentRow, $applicant->application_no);
+            // Application number and phone number must be set as STRING to prevent Excel from converting to scientific notation
+            $sheet->setCellValueExplicit('B' . $currentRow, (string)($applicant->application_no ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue('C' . $currentRow, $applicant->preferred_course ?? 'BSIT');
             $sheet->setCellValue('D' . $currentRow, strtoupper($applicant->last_name));
             $sheet->setCellValue('E' . $currentRow, strtoupper($applicant->first_name));
             $sheet->setCellValue('F' . $currentRow, strtoupper($applicant->middle_name ?? ''));
             $sheet->setCellValue('G' . $currentRow, $applicant->email_address);
-            $sheet->setCellValue('H' . $currentRow, $applicant->phone_number);
+            // Phone number must be set as STRING to prevent Excel from converting to scientific notation (e.g., 6.39021E+11)
+            $sheet->setCellValueExplicit('H' . $currentRow, (string)($applicant->phone_number ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue('I' . $currentRow, number_format($ueeWeighted, 2));
             $sheet->setCellValue('J' . $currentRow, number_format($gwaWeighted, 2));
             // Column K expects the 10% contribution (0–10)
