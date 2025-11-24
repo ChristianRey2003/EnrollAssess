@@ -9,21 +9,24 @@
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
 
     <!-- University Theme CSS -->
     <link href="{{ asset('css/auth/university-auth.css') }}?v={{ time() }}" rel="stylesheet">
+    <!-- Admin Login Specific Styles -->
+    <link href="{{ asset('css/auth/admin-login.css') }}?v={{ time() }}" rel="stylesheet">
 </head>
 <body class="auth-page">
+    <canvas id="network-bg"></canvas>
+
     <div class="auth-container">
         <div class="auth-card">
             <!-- University Header -->
             <div class="auth-header">
                 <div class="university-logo">
-                    <img src="{{ asset('images/evsu-logo.png') }}" alt="EVSU Logo" style="width: 60px; height: 60px; object-fit: contain;">
+                    <img src="{{ asset('images/evsu-logo.png') }}" alt="EVSU Logo">
                 </div>
                 <h1 class="university-name">Faculty Portal</h1>
-                <p class="auth-subtitle">Computer Studies Department</p>
             </div>
 
             <!-- Login Form -->
@@ -55,9 +58,11 @@
                                required 
                                autofocus 
                                autocomplete="username"
-                               placeholder="dept_head or admin1">
+                               placeholder="Enter your username"
+                               aria-label="Enter your username"
+                               aria-describedby="username-help">
                         @error('username')
-                            <div class="invalid-feedback">
+                            <div class="invalid-feedback" role="alert">
                                 {{ $message }}
                             </div>
                         @enderror
@@ -72,9 +77,11 @@
                                name="password"
                                required 
                                autocomplete="current-password"
-                               placeholder="Enter your password">
+                               placeholder="Enter your password"
+                               aria-label="Enter your password"
+                               aria-describedby="password-help">
                         @error('password')
-                            <div class="invalid-feedback">
+                            <div class="invalid-feedback" role="alert">
                                 {{ $message }}
                             </div>
                         @enderror
@@ -82,20 +89,20 @@
 
                     <!-- Remember Me -->
                     <div class="form-group remember-group">
-                        <label class="remember-label">
-                            <input type="checkbox" name="remember" class="remember-checkbox">
+                        <label class="remember-label" for="remember">
+                            <input type="checkbox" name="remember" id="remember" class="remember-checkbox" aria-label="Remember me on this device">
                             <span class="remember-text">{{ __('Remember me') }}</span>
                         </label>
                     </div>
 
                     <!-- Submit Button -->
-                    <button type="submit" class="btn-primary" id="submitBtn">
+                    <button type="submit" class="btn-primary" id="submitBtn" aria-label="Log in to faculty portal">
                         <span id="buttonText">{{ __('Log In') }}</span>
                     </button>
 
                     <!-- Forgot Password Link -->
                     <div class="auth-links">
-                        <a href="{{ route('admin.password.request') }}" class="forgot-link">
+                        <a href="{{ route('admin.password.request') }}" class="forgot-link" aria-label="Reset your password">
                             {{ __('Forgot your password?') }}
                         </a>
                     </div>
@@ -105,6 +112,89 @@
     </div>
 
     <script>
+        // Network Animation
+        const canvas = document.getElementById('network-bg');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+        
+        // University Palette (Maroon & Gold)
+        const colors = ['#800020', '#FFD700', '#A00028', '#E6C200'];
+
+        // Configuration
+        const particleCount = 100; // Increased density
+        const connectionDistance = 160; // Longer connections
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.size = Math.random() * 3 + 1.5; // Slightly larger particles
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+        }
+
+        function init() {
+            resize();
+            particles = [];
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+
+                for (let j = i; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < connectionDistance) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = '#800020'; // Maroon connections
+                        ctx.globalAlpha = (1 - distance/connectionDistance) * 0.35; // More visible lines
+                        ctx.lineWidth = 1.5; // Slightly thicker lines
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                        ctx.globalAlpha = 1;
+                    }
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', resize);
+        init();
+        animate();
+
         // Enhanced form interaction
         document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
             const submitBtn = document.getElementById('submitBtn');
@@ -118,8 +208,6 @@
             
             submitBtn.disabled = true;
             buttonText.textContent = 'Logging in...';
-            
-            // Form will submit normally, this just provides user feedback
         });
 
         // Remove error state on input
@@ -136,139 +224,5 @@
             }
         });
     </script>
-
-    <style>
-        /* Force refresh styles - Override any cached CSS */
-        body.auth-page {
-            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 50%, #f8f9fa 100%) !important;
-            background-size: 200% 200% !important;
-            animation: gradientShift 15s ease infinite !important;
-        }
-
-        @keyframes gradientShift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-
-        .auth-card {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
-            box-shadow: 0 8px 24px rgba(128, 0, 32, 0.12) !important;
-            border: 1px solid rgba(128, 0, 32, 0.1) !important;
-            max-width: 420px !important;
-        }
-
-        .auth-card::before {
-            content: '' !important;
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100% !important;
-            height: 4px !important;
-            background: linear-gradient(90deg, #800020 0%, #FFD700 100%) !important;
-            z-index: 1 !important;
-        }
-
-        .auth-header {
-            background: transparent !important;
-            border-bottom: 1px solid rgba(128, 0, 32, 0.1) !important;
-        }
-
-        .university-logo {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
-            box-shadow: 0 2px 8px rgba(128, 0, 32, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-        }
-
-        .auth-body {
-            background: transparent !important;
-        }
-
-        .form-control {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
-            border: 1px solid rgba(128, 0, 32, 0.2) !important;
-        }
-
-        .form-control:focus {
-            border-color: #800020 !important;
-            box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1) !important;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #800020 0%, #5c0017 100%) !important;
-            box-shadow: 0 2px 8px rgba(128, 0, 32, 0.2), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            background: linear-gradient(135deg, #5c0017 0%, #800020 100%) !important;
-            transform: translateY(-2px) !important;
-            box-shadow: 0 4px 12px rgba(128, 0, 32, 0.25), 0 2px 6px rgba(0, 0, 0, 0.15) !important;
-        }
-
-        /* Additional styles for admin login */
-        .admin-input {
-            text-align: left !important;
-            text-transform: none !important;
-            letter-spacing: normal !important;
-        }
-
-        .admin-input::placeholder {
-            text-align: left !important;
-        }
-
-        .remember-group {
-            margin-bottom: 20px;
-        }
-
-        .remember-label {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            font-size: 14px;
-            color: var(--maroon-primary);
-        }
-
-        .remember-checkbox {
-            width: 18px;
-            height: 18px;
-            margin-right: 8px;
-            accent-color: var(--maroon-primary);
-        }
-
-        .remember-text {
-            font-weight: 500;
-        }
-
-        .forgot-link {
-            color: #800020;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 14px;
-            transition: var(--transition);
-            position: relative;
-        }
-
-        .forgot-link::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: linear-gradient(90deg, #800020 0%, #FFD700 100%);
-            transition: width 0.3s ease;
-        }
-
-        .forgot-link:hover {
-            color: #5c0017;
-        }
-
-        .forgot-link:hover::after {
-            width: 100%;
-        }
-
-        .auth-links {
-            margin-top: 20px;
-            text-align: center;
-        }
-    </style>
 </body>
 </html>

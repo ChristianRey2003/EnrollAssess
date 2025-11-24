@@ -1,0 +1,364 @@
+/*===========================================
+  APPLICANT LOGIN PAGE STYLES
+  BSIT Entrance Examination Login
+  Includes: Network animation, glassmorphism, easter egg
+===========================================*/
+
+:root {
+    --primary-color: #800020; /* Maroon */
+    --secondary-color: #FFD700; /* Gold */
+    --bg-light: #f8f9fa;
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --text-main: #333333;
+    --text-muted: #666666;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body.auth-page {
+    font-family: 'Figtree', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-light);
+    position: relative;
+    color: var(--text-main);
+}
+
+#network-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+.auth-container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 20px;
+    box-shadow: 
+        0 10px 40px rgba(128, 0, 32, 0.1),
+        0 1px 0 rgba(255, 255, 255, 0.5) inset;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    padding: 30px;
+    animation: fadeInUp 0.6s ease-out;
+    position: relative;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.university-logo {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 10px;
+    background: white;
+    border-radius: 50%;
+    padding: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+
+.university-logo img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.university-name {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 5px;
+    letter-spacing: -0.5px;
+}
+
+.auth-subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* Hidden Password Easter Egg */
+.auth-subtitle.hidden-password {
+    color: var(--bg-light); /* Hide text by matching bg */
+    user-select: text;
+    font-size: 14px;
+    font-weight: 500;
+    pointer-events: none;
+    line-height: 1.6;
+    margin: 0;
+    transition: color 0.3s;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+    text-align: left;
+}
+
+/* Access Code Input Container */
+.access-code-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.access-code-prefix {
+    position: absolute;
+    left: 16px;
+    font-weight: 600;
+    color: var(--primary-color);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px 12px 60px; /* Left padding for prefix */
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.1);
+    background: rgba(255, 255, 255, 0.9);
+    font-size: 15px;
+    transition: all 0.3s ease;
+    color: var(--text-main);
+    text-align: left;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1);
+    transform: translateY(-1px);
+}
+
+.form-control.is-invalid {
+    border-color: #dc3545;
+    background: #fef2f2;
+}
+
+.invalid-feedback {
+    color: #dc3545;
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 8px;
+    text-align: left;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--primary-color), #5c0017);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(128, 0, 32, 0.2);
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(128, 0, 32, 0.3);
+    background: linear-gradient(135deg, #990026, #800020);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-primary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Auth Links */
+.auth-links {
+    margin-top: 15px;
+    text-align: center;
+}
+
+/* Info Note */
+.info-note {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(128, 0, 32, 0.1);
+    border-radius: 12px;
+    padding: 10px;
+    margin-top: 0;
+    text-align: center;
+}
+
+.info-note-text {
+    color: var(--primary-color);
+    font-size: 12px;
+    line-height: 1.4;
+    font-weight: 500;
+}
+
+.info-note-text strong {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 700;
+}
+
+/* Easter Egg Toast */
+.easter-egg-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    opacity: 0;
+    transform: translateX(400px);
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    pointer-events: none;
+}
+
+.easter-egg-toast.show {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+}
+
+.toast-content {
+    background: white;
+    border: 1px solid rgba(128, 0, 32, 0.2);
+    border-left: 4px solid #800020;
+    border-radius: 10px;
+    padding: 16px 20px;
+    box-shadow: 0 8px 24px rgba(128, 0, 32, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 350px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.toast-content:hover {
+    box-shadow: 0 12px 32px rgba(128, 0, 32, 0.2);
+    transform: translateY(-2px);
+}
+
+.toast-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.toast-message {
+    color: #800020;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+/* Logo Wiggle Animation */
+@keyframes logoWiggle {
+    0%, 100% { transform: rotate(0deg) translateX(0) translateY(0) scale(1); }
+    5% { transform: rotate(-8deg) translateX(-4px) translateY(-2px) scale(1.05); }
+    10% { transform: rotate(8deg) translateX(4px) translateY(2px) scale(1.05); }
+    15% { transform: rotate(-6deg) translateX(-3px) translateY(-1px) scale(1.03); }
+    20% { transform: rotate(6deg) translateX(3px) translateY(1px) scale(1.03); }
+    25% { transform: rotate(-5deg) translateX(-2px) translateY(-1px) scale(1.02); }
+    30% { transform: rotate(5deg) translateX(2px) translateY(1px) scale(1.02); }
+    35% { transform: rotate(-4deg) translateX(-2px) translateY(0) scale(1.01); }
+    40% { transform: rotate(4deg) translateX(2px) translateY(0) scale(1.01); }
+    45% { transform: rotate(-3deg) translateX(-1px) translateY(0) scale(1); }
+    50% { transform: rotate(3deg) translateX(1px) translateY(0) scale(1); }
+    55% { transform: rotate(-2deg) translateX(-1px) translateY(0) scale(1); }
+    60% { transform: rotate(2deg) translateX(1px) translateY(0) scale(1); }
+    65% { transform: rotate(-1deg) translateX(0) translateY(0) scale(1); }
+    70% { transform: rotate(1deg) translateX(0) translateY(0) scale(1); }
+    75% { transform: rotate(-1deg) translateX(0) translateY(0) scale(1); }
+    80% { transform: rotate(1deg) translateX(0) translateY(0) scale(1); }
+    85% { transform: rotate(0deg) translateX(0) translateY(0) scale(1); }
+    90%, 100% { transform: rotate(0deg) translateX(0) translateY(0) scale(1); }
+}
+
+#bsitLogo.logo-wiggle {
+    animation: logoWiggle 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Alerts */
+.alert {
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.alert-success {
+    background: rgba(25, 135, 84, 0.1);
+    color: #198754;
+    border: 1px solid rgba(25, 135, 84, 0.2);
+}
+
+.alert-danger {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+    border: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .auth-card {
+        padding: 30px 20px;
+    }
+    
+    .university-name {
+        font-size: 20px;
+    }
+
+    .easter-egg-toast {
+        top: 15px;
+        right: 15px;
+        left: 15px;
+        max-width: none;
+    }
+
+    .toast-content {
+        max-width: 100%;
+    }
+}
+

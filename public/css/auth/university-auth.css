@@ -163,6 +163,7 @@ body.auth-page {
     margin-bottom: 8px;
     display: block;
     letter-spacing: 0.025em;
+    text-align: left;
 }
 
 .form-control {
@@ -175,16 +176,14 @@ body.auth-page {
     background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
     transition: var(--transition);
     color: #1f2937;
-    
-    /* CENTER EVERYTHING IN THE INPUT */
-    text-align: center;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    text-align: left;
+    letter-spacing: normal;
+    text-transform: none;
 }
 
 .form-control::placeholder {
     color: #6B7280;
-    text-align: center;
+    text-align: left;
     text-transform: none;
     letter-spacing: normal;
     font-weight: 400;
@@ -209,7 +208,7 @@ body.auth-page {
     font-size: 12px;
     font-weight: 500;
     margin-top: 8px;
-    text-align: center;
+    text-align: left;
 }
 
 /* ===== BUTTONS ===== */
