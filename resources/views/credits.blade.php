@@ -17,8 +17,39 @@
             <!-- Team Photo -->
             <div class="team-photo-container">
                 <div class="photo-frame">
-                    <img src="{{ asset('images/team-photo.jpg') }}" alt="Development Team" class="team-photo">
-                    <div class="photo-glow"></div>
+                    @php
+                        // Check if image file exists
+                        $imagePath = public_path('images/team-photo.jpg');
+                        $imageExists = file_exists($imagePath);
+                        
+                        if ($imageExists) {
+                            // Generate absolute URL for the image
+                            $imageUrl = asset('images/team-photo.jpg');
+                            
+                            // If HTTPS is detected, use secure URL
+                            if (request()->secure() || (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on')) {
+                                $imageUrl = str_replace('http://', 'https://', $imageUrl);
+                            }
+                        } else {
+                            // Use placeholder or hide image
+                            $imageUrl = null;
+                        }
+                    @endphp
+                    @if($imageExists)
+                        <img src="{{ $imageUrl }}" 
+                             alt="Development Team" 
+                             class="team-photo"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="photo-glow"></div>
+                    @else
+                        <div class="team-photo-placeholder" style="width: 100%; height: 300px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(0, 243, 255, 0.1), rgba(255, 0, 255, 0.1)); border-radius: 12px; color: var(--text-muted);">
+                            <div style="text-align: center;">
+                                <div style="font-size: 48px; margin-bottom: 10px;">📷</div>
+                                <div style="font-size: 14px;">Team Photo</div>
+                            </div>
+                        </div>
+                        <div class="photo-glow"></div>
+                    @endif
                 </div>
             </div>
 

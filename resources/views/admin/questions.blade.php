@@ -83,7 +83,9 @@
                     <p class="header-subtitle">Manage questions for BSIT entrance examination</p>
                 </div>
                 <div class="header-right">
-                    <div class="header-time">{{ now()->format('M d, Y g:i A') }}</div>
+                    <div class="header-time" id="headerTime" data-server-time="{{ now()->setTimezone(\App\Models\Settings::getSetting('app_timezone', config('app.timezone')))->format('Y-m-d H:i:s') }}" data-timezone="{{ \App\Models\Settings::getSetting('app_timezone', config('app.timezone')) }}">
+                        {{ now()->setTimezone(\App\Models\Settings::getSetting('app_timezone', config('app.timezone')))->format('M d, Y g:i A') }}
+                    </div>
                     <div class="user-dropdown">
                         <button class="user-dropdown-toggle" onclick="toggleUserDropdown()">
                             <div class="user-avatar">
@@ -712,6 +714,50 @@
                 dropdown.style.display = 'none';
             }
         });
+
+        // Real-time clock update
+        (function() {
+            const timeElement = document.getElementById('headerTime');
+            if (!timeElement) return;
+
+            const serverTimeStr = timeElement.getAttribute('data-server-time');
+            const timezone = timeElement.getAttribute('data-timezone');
+            
+            if (!serverTimeStr) return;
+
+            const [datePart, timePart] = serverTimeStr.split(' ');
+            const [year, month, day] = datePart.split('-');
+            const [hour, minute, second] = timePart.split(':');
+            
+            let serverTime = new Date(year, month - 1, day, hour, minute, second);
+            
+            function updateTime() {
+                const now = new Date();
+                const elapsed = now - (window.pageLoadTime || now);
+                const currentTime = new Date(serverTime.getTime() + elapsed);
+                
+                const options = { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                };
+                
+                if (timezone && Intl && Intl.DateTimeFormat) {
+                    try {
+                        options.timeZone = timezone;
+                    } catch(e) {}
+                }
+                
+                timeElement.textContent = currentTime.toLocaleString('en-US', options);
+            }
+
+            window.pageLoadTime = new Date();
+            updateTime();
+            setInterval(updateTime, 1000);
+        })();
     </style>
 </body>
 </html>

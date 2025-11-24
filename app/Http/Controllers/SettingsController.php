@@ -33,10 +33,80 @@ class SettingsController extends Controller
      */
     public function index()
     {
+        // Ensure all required email settings exist
+        $this->ensureEmailSettingsExist();
+        
         // Get only email settings
         $emailSettings = Settings::where('group', 'email')->get();
 
         return view('admin.settings.index', compact('emailSettings'));
+    }
+
+    /**
+     * Ensure all required email settings exist in database
+     * Creates missing settings with default values
+     */
+    protected function ensureEmailSettingsExist()
+    {
+        try {
+            $requiredSettings = [
+                [
+                    'key' => 'mail_mailer',
+                    'value' => 'ses',
+                    'group' => 'email',
+                    'type' => 'select',
+                    'description' => 'Mail driver (ses for Amazon SES, log for testing)',
+                ],
+                [
+                    'key' => 'mail_from_address',
+                    'value' => '',
+                    'group' => 'email',
+                    'type' => 'text',
+                    'description' => 'From email address (must be verified in SES)',
+                ],
+                [
+                    'key' => 'mail_from_name',
+                    'value' => 'EnrollAssess System',
+                    'group' => 'email',
+                    'type' => 'text',
+                    'description' => 'Display name for sent emails',
+                ],
+                [
+                    'key' => 'aws_access_key_id',
+                    'value' => '',
+                    'group' => 'email',
+                    'type' => 'password',
+                    'description' => 'AWS Access Key ID for Amazon SES (required for SES mailer)',
+                ],
+                [
+                    'key' => 'aws_secret_access_key',
+                    'value' => '',
+                    'group' => 'email',
+                    'type' => 'password',
+                    'description' => 'AWS Secret Access Key for Amazon SES (required for SES mailer)',
+                ],
+                [
+                    'key' => 'aws_region',
+                    'value' => 'ap-southeast-1',
+                    'group' => 'email',
+                    'type' => 'select',
+                    'description' => 'AWS Region for SES (ap-southeast-1: Singapore - recommended for Philippines)',
+                ],
+            ];
+
+            foreach ($requiredSettings as $setting) {
+                Settings::updateOrCreate(
+                    ['key' => $setting['key']],
+                    $setting
+                );
+            }
+            
+            // Clear cache to ensure fresh data
+            Settings::clearCache();
+        } catch (\Exception $e) {
+            Log::error('Failed to ensure email settings exist: ' . $e->getMessage());
+            // Don't throw - let the page load even if settings creation fails
+        }
     }
 
     /**

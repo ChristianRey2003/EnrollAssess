@@ -751,12 +751,6 @@
                     <input type="date" id="interview_end_date" class="form-control" required>
                 </div>
                 <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="notify_email" checked>
-                        Notify applicants by email
-                    </label>
-                </div>
-                <div class="form-group">
                     <label for="assignment_message">Assignment Message (Optional)</label>
                     <textarea id="assignment_message" class="form-control" rows="3" placeholder="Add instructions or context for the instructor"></textarea>
                 </div>
@@ -877,7 +871,7 @@
             instructor_id: instructorId,
             interview_start_date: startDate,
             interview_end_date: endDate,
-            notify_email: document.getElementById('notify_email').checked,
+            notify_email: false,
             assignment_message: document.getElementById('assignment_message').value || null
         };
 

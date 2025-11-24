@@ -128,20 +128,79 @@ class EVSUResultsExport
         // Get output directory
         $outputDir = dirname($pdfPath);
         
-        // Build command: convert to PDF in output directory
-        // LibreOffice will create a file with .pdf extension based on the input filename
-        $command = sprintf(
-            '%s --headless --convert-to pdf --outdir %s %s 2>&1',
-            escapeshellarg($soffice),
-            escapeshellarg($outputDir),
-            escapeshellarg($xlsxPath)
-        );
+        // Create a temporary user installation directory for LibreOffice
+        // This prevents permission issues when running as web server user
+        $userInstallDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'libreoffice_user_' . uniqid();
+        if (!is_dir($userInstallDir)) {
+            @mkdir($userInstallDir, 0755, true);
+        }
+
+        // Set environment variables to prevent dconf and Java errors
+        // On Linux, use 'env' command to set environment variables properly
+        $envVars = [
+            'HOME=' . sys_get_temp_dir(),
+            'USER=' . (get_current_user() ?: 'www-data'),
+            'USERNAME=' . (get_current_user() ?: 'www-data'),
+            'NO_AT_BRIDGE=1', // Suppress dconf warnings
+            'SAL_USE_VCLPLUGIN=headless', // Force headless mode
+        ];
+
+        // Build command: convert to PDF with custom user installation directory
+        // Use -env:UserInstallation to specify a writable directory
+        // Convert path to file:// URL format (use file:/// for absolute paths on Linux)
+        $userInstallUrl = 'file://' . (PHP_OS_FAMILY !== 'Windows' ? '/' : '') . str_replace('\\', '/', $userInstallDir);
+        
+        // On Linux, prefix with 'env' to set environment variables
+        if (PHP_OS_FAMILY !== 'Windows') {
+            $envString = 'env ' . implode(' ', array_map('escapeshellarg', $envVars)) . ' ';
+            $command = sprintf(
+                '%s%s --headless -env:UserInstallation=%s --convert-to pdf --outdir %s %s 2>&1',
+                $envString,
+                escapeshellarg($soffice),
+                escapeshellarg($userInstallUrl),
+                escapeshellarg($outputDir),
+                escapeshellarg($xlsxPath)
+            );
+        } else {
+            // Windows: set environment variables using set command
+            $envString = '';
+            foreach ($envVars as $envVar) {
+                list($key, $value) = explode('=', $envVar, 2);
+                $envString .= 'set ' . escapeshellarg($key) . '=' . escapeshellarg($value) . ' && ';
+            }
+            $command = sprintf(
+                '%s%s --headless -env:UserInstallation=%s --convert-to pdf --outdir %s %s 2>&1',
+                $envString,
+                escapeshellarg($soffice),
+                escapeshellarg($userInstallUrl),
+                escapeshellarg($outputDir),
+                escapeshellarg($xlsxPath)
+            );
+        }
 
         \Log::info('LibreOffice conversion command', ['command' => $command]);
 
         // Execute conversion
         exec($command, $output, $returnCode);
 
+        // Clean up temporary user installation directory
+        @$this->removeDirectory($userInstallDir);
+
+        // Check if PDF was created even if return code is non-zero
+        // (LibreOffice sometimes returns non-zero but still creates the PDF)
+        $basename = pathinfo($xlsxPath, PATHINFO_FILENAME);
+        $generatedPdf = $outputDir . DIRECTORY_SEPARATOR . $basename . '.pdf';
+
+        if (file_exists($generatedPdf)) {
+            // Move to the expected output path if different
+            if ($generatedPdf !== $pdfPath) {
+                rename($generatedPdf, $pdfPath);
+            }
+            \Log::info('LibreOffice PDF conversion successful', ['output' => $pdfPath]);
+            return;
+        }
+
+        // If PDF was not created, log error and throw exception
         if ($returnCode !== 0) {
             \Log::error('LibreOffice conversion failed', [
                 'return_code' => $returnCode,
@@ -150,20 +209,26 @@ class EVSUResultsExport
             throw new \RuntimeException('PDF conversion failed: ' . implode("\n", $output));
         }
 
-        // LibreOffice creates filename.pdf in the output directory
-        $basename = pathinfo($xlsxPath, PATHINFO_FILENAME);
-        $generatedPdf = $outputDir . DIRECTORY_SEPARATOR . $basename . '.pdf';
-
-        // Move to the expected output path if different
-        if ($generatedPdf !== $pdfPath && file_exists($generatedPdf)) {
-            rename($generatedPdf, $pdfPath);
-        }
-
         if (!file_exists($pdfPath)) {
             throw new \RuntimeException('PDF file was not created by LibreOffice');
         }
+    }
 
-        \Log::info('LibreOffice PDF conversion successful', ['output' => $pdfPath]);
+    /**
+     * Recursively remove a directory
+     */
+    protected function removeDirectory($dir)
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+        
+        $files = array_diff(scandir($dir), ['.', '..']);
+        foreach ($files as $file) {
+            $path = $dir . DIRECTORY_SEPARATOR . $file;
+            is_dir($path) ? $this->removeDirectory($path) : @unlink($path);
+        }
+        @rmdir($dir);
     }
 
     /**

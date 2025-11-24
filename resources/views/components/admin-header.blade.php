@@ -32,8 +32,8 @@
         </div>
     </div>
     <div class="header-right">
-        <div class="header-time">
-            {{ now()->format('M d, Y g:i A') }}
+        <div class="header-time" id="headerTime" data-server-time="{{ now()->setTimezone(\App\Models\Settings::getSetting('app_timezone', config('app.timezone')))->format('Y-m-d H:i:s') }}" data-timezone="{{ \App\Models\Settings::getSetting('app_timezone', config('app.timezone')) }}">
+            {{ now()->setTimezone(\App\Models\Settings::getSetting('app_timezone', config('app.timezone')))->format('M d, Y g:i A') }}
         </div>
         <div class="user-dropdown">
             <button class="user-dropdown-toggle" 
@@ -122,4 +122,58 @@
             dropdown.style.display = 'none';
         }
     });
+
+    // Real-time clock update
+    (function() {
+        const timeElement = document.getElementById('headerTime');
+        if (!timeElement) return;
+
+        const serverTimeStr = timeElement.getAttribute('data-server-time');
+        const timezone = timeElement.getAttribute('data-timezone');
+        
+        if (!serverTimeStr) return;
+
+        // Parse server time (format: Y-m-d H:i:s)
+        const [datePart, timePart] = serverTimeStr.split(' ');
+        const [year, month, day] = datePart.split('-');
+        const [hour, minute, second] = timePart.split(':');
+        
+        // Create Date object from server time (assume it's already in the correct timezone)
+        let serverTime = new Date(year, month - 1, day, hour, minute, second);
+        
+        function updateTime() {
+            // Calculate elapsed time since page load
+            const now = new Date();
+            const elapsed = now - (window.pageLoadTime || now);
+            const currentTime = new Date(serverTime.getTime() + elapsed);
+            
+            // Format time
+            const options = { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            };
+            
+            // If timezone is specified, try to use it (browser support may vary)
+            if (timezone && Intl && Intl.DateTimeFormat) {
+                try {
+                    options.timeZone = timezone;
+                } catch(e) {
+                    // Timezone not supported, use local
+                }
+            }
+            
+            timeElement.textContent = currentTime.toLocaleString('en-US', options);
+        }
+
+        // Store page load time
+        window.pageLoadTime = new Date();
+        
+        // Update immediately and then every second
+        updateTime();
+        setInterval(updateTime, 1000);
+    })();
 </script>

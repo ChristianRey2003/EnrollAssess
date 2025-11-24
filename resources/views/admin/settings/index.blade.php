@@ -786,6 +786,8 @@
                             <input type="password" name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" value="{{ $setting->value }}" placeholder="Leave blank to keep current">
                         @elseif($setting->type === 'number')
                             <input type="number" name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" value="{{ $setting->value }}">
+                        @elseif($setting->key === 'mail_from_address' || $setting->key === 'mail_username')
+                            <input type="email" name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" value="{{ $setting->value }}" placeholder="your-email@example.com">
                         @else
                             <input type="text" name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" value="{{ $setting->value }}">
                         @endif
