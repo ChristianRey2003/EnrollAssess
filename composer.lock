@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9602cf3dba704335211533ab570a7344",
+    "content-hash": "17f1d23f7e1e858e4afed38356c5f479",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -4986,6 +4986,63 @@
             "time": "2025-09-04T20:59:21+00:00"
         },
         {
+            "name": "resend/resend-php",
+            "version": "v0.10.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/resend/resend-php.git",
+                "reference": "e3ffb2bbcf8dcd498f507e67307b3ca7e3858bca"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/resend/resend-php/zipball/e3ffb2bbcf8dcd498f507e67307b3ca7e3858bca",
+                "reference": "e3ffb2bbcf8dcd498f507e67307b3ca7e3858bca",
+                "shasum": ""
+            },
+            "require": {
+                "guzzlehttp/guzzle": "^7.5",
+                "php": "^8.1.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.13",
+                "mockery/mockery": "^1.6",
+                "pestphp/pest": "^2.0"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/Resend.php"
+                ],
+                "psr-4": {
+                    "Resend\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Resend and contributors",
+                    "homepage": "https://github.com/resend/resend-php/contributors"
+                }
+            ],
+            "description": "Resend PHP library.",
+            "homepage": "https://resend.com/",
+            "keywords": [
+                "api",
+                "client",
+                "php",
+                "resend",
+                "sdk"
+            ],
+            "support": {
+                "issues": "https://github.com/resend/resend-php/issues",
+                "source": "https://github.com/resend/resend-php/tree/v0.10.1"
+            },
+            "time": "2024-01-25T05:41:45+00:00"
+        },
+        {
             "name": "sabberworm/php-css-parser",
             "version": "v8.9.0",
             "source": {
@@ -7002,6 +7059,80 @@
                 }
             ],
             "time": "2025-09-11T10:12:26+00:00"
+        },
+        {
+            "name": "symfony/resend-mailer",
+            "version": "v7.3.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/resend-mailer.git",
+                "reference": "dffa55453571e3a6c161f1c12ee402ca19cb4dd1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/resend-mailer/zipball/dffa55453571e3a6c161f1c12ee402ca19cb4dd1",
+                "reference": "dffa55453571e3a6c161f1c12ee402ca19cb4dd1",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.1",
+                "symfony/mailer": "^7.2"
+            },
+            "conflict": {
+                "symfony/http-foundation": "<7.1"
+            },
+            "require-dev": {
+                "symfony/http-client": "^6.4|^7.0",
+                "symfony/http-foundation": "^7.1",
+                "symfony/webhook": "^6.4|^7.0"
+            },
+            "type": "symfony-mailer-bridge",
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\Component\\Mailer\\Bridge\\Resend\\": ""
+                },
+                "exclude-from-classmap": [
+                    "/Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Mathieu Santostefano",
+                    "homepage": "https://github.com/welcoMattic"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony Resend Mailer Bridge",
+            "homepage": "https://symfony.com",
+            "support": {
+                "source": "https://github.com/symfony/resend-mailer/tree/v7.3.3"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2025-08-05T11:38:12+00:00"
         },
         {
             "name": "symfony/routing",

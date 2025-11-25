@@ -710,6 +710,9 @@
                         <button type="button" class="btn btn-info" onclick="openSesGuide()" id="ses-guide-btn" style="display: none;">
                             <span>☁️</span> Amazon SES Setup Guide
                         </button>
+                        <button type="button" class="btn btn-info" onclick="openResendGuide()" id="resend-guide-btn" style="display: none;">
+                            <span>📧</span> Resend Setup Guide
+                        </button>
                         <button type="button" class="btn btn-test-email" onclick="openTestEmailModal()">
                             <span>🧪</span> Test Email
                         </button>
@@ -718,8 +721,8 @@
                 
                 <div class="form-grid">
                     @php
-                        // Reorder fields for optimal layout: Mailer|Region, From Address|From Name, Access Key ID|Secret Access Key
-                        $orderedKeys = ['mail_mailer', 'aws_region', 'mail_from_address', 'mail_from_name', 'aws_access_key_id', 'aws_secret_access_key'];
+                        // Reorder fields for optimal layout: Mailer|Region, From Address|From Name, Access Key ID|Secret Access Key|Resend API Key
+                        $orderedKeys = ['mail_mailer', 'aws_region', 'mail_from_address', 'mail_from_name', 'aws_access_key_id', 'aws_secret_access_key', 'resend_api_key'];
                         $orderedSettings = [];
                         $otherSettings = [];
                         
@@ -747,11 +750,14 @@
                             // Determine field grouping for show/hide logic
                             $isSmtpField = in_array($setting->key, ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_encryption']);
                             $isSesField = in_array($setting->key, ['aws_access_key_id', 'aws_secret_access_key', 'aws_region']);
+                            $isResendField = in_array($setting->key, ['resend_api_key']);
                             $fieldClass = '';
                             if ($isSmtpField) {
                                 $fieldClass = 'smtp-field';
                             } elseif ($isSesField) {
                                 $fieldClass = 'ses-field';
+                            } elseif ($isResendField) {
+                                $fieldClass = 'resend-field';
                             }
                             // Fields that should be side-by-side (pairs): Mailer|Region, From Address|From Name, Access Key ID|Secret Access Key
                             $sideBySideFields = ['mail_mailer', 'aws_region', 'mail_from_address', 'mail_from_name', 'aws_access_key_id', 'aws_secret_access_key'];
@@ -764,6 +770,7 @@
                         @if($setting->type === 'select')
                             @if($setting->key === 'mail_mailer')
                                 <select name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" onchange="toggleMailerFields()">
+                                    <option value="resend" {{ $setting->value === 'resend' ? 'selected' : '' }}>Resend (Recommended - FREE)</option>
                                     <option value="ses" {{ $setting->value === 'ses' ? 'selected' : '' }}>Amazon SES</option>
                                     <option value="log" {{ $setting->value === 'log' ? 'selected' : '' }}>Log (Testing)</option>
                                 </select>
@@ -783,7 +790,10 @@
                                 </select>
                             @endif
                         @elseif($setting->type === 'password')
-                            <input type="password" name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" value="{{ $setting->value }}" placeholder="Leave blank to keep current">
+                            <input type="password" name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" value="" placeholder="{{ $setting->value ? 'Enter new value to update (leave blank to keep current)' : 'Enter your API key' }}">
+                            @if($setting->value)
+                                <span class="help-text" style="color: var(--success-green); font-size: 11px;">✓ API key is configured (enter new value to change)</span>
+                            @endif
                         @elseif($setting->type === 'number')
                             <input type="number" name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" value="{{ $setting->value }}">
                         @elseif($setting->key === 'mail_from_address' || $setting->key === 'mail_username')
@@ -915,6 +925,62 @@
     </div>
 </div>
 
+<!-- Resend Setup Guide Modal -->
+<div id="resendGuideModal" class="modal-overlay" onclick="closeResendGuide(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3>📧 Resend Setup Guide</h3>
+            <button type="button" class="modal-close" onclick="closeResendGuide()">×</button>
+        </div>
+        <div class="modal-body">
+            <h4>What is Resend?</h4>
+            <p>Resend is a modern email API built for developers. It's perfect for transactional emails with excellent deliverability and a generous free tier (3,000 emails/month).</p>
+            
+            <h4>Setup Steps:</h4>
+            <ol>
+                <li>Sign up for Resend at <a href="https://resend.com/signup" target="_blank">resend.com/signup</a> (FREE - no credit card required)</li>
+                <li>After signup, go to <strong>API Keys</strong> in your dashboard</li>
+                <li>Click <strong>"Create API Key"</strong></li>
+                <li>Give it a name (e.g., "EnrollAssess Production")</li>
+                <li>Select permissions: <strong>"Sending access"</strong></li>
+                <li>Copy the API key (starts with <code>re_</code>)</li>
+                <li>Paste it in the <strong>"Resend API Key"</strong> field below</li>
+                <li>Verify your domain (optional but recommended):
+                    <ul>
+                        <li>Go to <strong>Domains</strong> in Resend dashboard</li>
+                        <li>Click <strong>"Add Domain"</strong></li>
+                        <li>Enter your domain: <code>enrollassess-evsu.com</code></li>
+                        <li>Add the DNS records provided by Resend to Namecheap</li>
+                    </ul>
+                </li>
+            </ol>
+            
+            <h4>✅ Why Resend?</h4>
+            <ul>
+                <li><strong>FREE Tier:</strong> 3,000 emails/month free (perfect for your 600/month volume!)</li>
+                <li><strong>Easy Setup:</strong> Just one API key needed - no complex configuration</li>
+                <li><strong>Great Deliverability:</strong> Excellent inbox placement rates</li>
+                <li><strong>Fast:</strong> Emails delivered in seconds</li>
+                <li><strong>No Approval Needed:</strong> Start sending immediately</li>
+                <li><strong>Developer-Friendly:</strong> Clean API and great documentation</li>
+            </ul>
+            
+            <h4>💰 Pricing:</h4>
+            <ul>
+                <li><strong>Free:</strong> 3,000 emails/month (covers your needs!)</li>
+                <li><strong>Paid:</strong> $20/month for 50,000 emails (if you grow)</li>
+            </ul>
+            
+            <h4>🔗 Useful Links:</h4>
+            <ul>
+                <li><a href="https://resend.com/signup" target="_blank">Sign Up (Free)</a></li>
+                <li><a href="https://resend.com/api-keys" target="_blank">API Keys Dashboard</a></li>
+                <li><a href="https://resend.com/docs" target="_blank">Resend Documentation</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 <!-- Test Email Modal -->
 <div id="testEmailModal" class="modal-overlay" onclick="closeTestEmailModal(event)">
     <div class="modal-content test-email-modal" onclick="event.stopPropagation()">
@@ -961,6 +1027,19 @@
         document.body.style.overflow = '';
     }
 
+    function openResendGuide() {
+        const modal = document.getElementById('resendGuideModal');
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeResendGuide(event) {
+        if (event && event.target !== event.currentTarget) return;
+        const modal = document.getElementById('resendGuideModal');
+        modal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
     function openTestEmailModal() {
         const modal = document.getElementById('testEmailModal');
         modal.classList.add('show');
@@ -986,31 +1065,38 @@
     function toggleMailerFields() {
         const mailerType = document.getElementById('mail_mailer').value;
         
-        // Get all SMTP and SES fields
+        // Get all mailer fields
         const smtpFields = document.querySelectorAll('.smtp-field');
         const sesFields = document.querySelectorAll('.ses-field');
+        const resendFields = document.querySelectorAll('.resend-field');
         
-        // Get guide button
+        // Get guide buttons
         const sesGuideBtn = document.getElementById('ses-guide-btn');
+        const resendGuideBtn = document.getElementById('resend-guide-btn');
         
-        // Show/hide fields based on mailer type
+        // Hide all fields and guides first
+        smtpFields.forEach(field => field.style.display = 'none');
+        sesFields.forEach(field => field.style.display = 'none');
+        resendFields.forEach(field => field.style.display = 'none');
+        if (sesGuideBtn) sesGuideBtn.style.display = 'none';
+        if (resendGuideBtn) resendGuideBtn.style.display = 'none';
+        
+        // Show fields based on mailer type
         if (mailerType === 'ses') {
-            // Show SES fields, hide SMTP fields
-            smtpFields.forEach(field => field.style.display = 'none');
             sesFields.forEach(field => field.style.display = 'block');
             if (sesGuideBtn) sesGuideBtn.style.display = 'inline-flex';
-        } else {
-            // For log (testing), hide both
-            smtpFields.forEach(field => field.style.display = 'none');
-            sesFields.forEach(field => field.style.display = 'none');
-            if (sesGuideBtn) sesGuideBtn.style.display = 'none';
+        } else if (mailerType === 'resend') {
+            resendFields.forEach(field => field.style.display = 'block');
+            if (resendGuideBtn) resendGuideBtn.style.display = 'inline-flex';
         }
+        // For 'log', all fields remain hidden
     }
 
     // Close modals on Escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeSesGuide();
+            closeResendGuide();
             closeTestEmailModal();
         }
     });

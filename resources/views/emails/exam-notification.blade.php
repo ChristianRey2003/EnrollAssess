@@ -202,11 +202,11 @@
                 <p style="margin: 0 0 10px 0; font-weight: 600; color: #166534;">
                     Access Your Exam
                 </p>
-                <a href="{{ url('/applicant/login') }}" class="exam-link">
+                <a href="https://enrollassess-evsu.com/applicant/login" class="exam-link">
                     Go to Exam Portal
                 </a>
                 <p style="margin: 10px 0 0 0; font-size: 12px; color: #6b7280;">
-                    {{ url('/applicant/login') }}
+                    https://enrollassess-evsu.com/applicant/login
                 </p>
             </div>
 

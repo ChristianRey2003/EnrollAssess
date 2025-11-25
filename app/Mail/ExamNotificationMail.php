@@ -5,6 +5,8 @@ namespace App\Mail;
 use App\Models\Applicant;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 class ExamNotificationMail extends Mailable
@@ -34,14 +36,42 @@ class ExamNotificationMail extends Mailable
     }
 
     /**
-     * Build the message.
-     *
-     * @return $this
+     * Get the message envelope.
      */
-    public function build()
+    public function envelope(): Envelope
     {
-        return $this->subject('BSIT Entrance Exam Notification')
-                    ->view('emails.exam-notification');
+        $fromAddress = config('mail.from.address');
+        $fromName = config('mail.from.name', 'EnrollAssess System');
+        
+        // Ensure we have a from address
+        if (empty($fromAddress)) {
+            $fromAddress = 'noreply@evsu.edu.ph';
+        }
+        
+        return new Envelope(
+            subject: 'BSIT Entrance Exam Notification',
+            from: new \Illuminate\Mail\Mailables\Address($fromAddress, $fromName),
+        );
+    }
+
+    /**
+     * Get the message content definition.
+     */
+    public function content(): Content
+    {
+        return new Content(
+            view: 'emails.exam-notification',
+        );
+    }
+
+    /**
+     * Get the attachments for the message.
+     *
+     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     */
+    public function attachments(): array
+    {
+        return [];
     }
 }
 

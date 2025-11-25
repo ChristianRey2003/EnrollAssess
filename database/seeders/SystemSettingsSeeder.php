@@ -14,55 +14,20 @@ class SystemSettingsSeeder extends Seeder
     public function run(): void
     {
         $settings = [
-            // Email Settings - Gmail Defaults (FREE)
+            // Email Settings - Resend Default (FREE)
             [
                 'key' => 'mail_mailer',
-                'value' => 'smtp',
+                'value' => 'resend',
                 'group' => 'email',
                 'type' => 'select',
-                'description' => 'Mail driver (smtp for Gmail, ses for Amazon SES)',
-            ],
-            [
-                'key' => 'mail_host',
-                'value' => 'smtp.gmail.com',
-                'group' => 'email',
-                'type' => 'text',
-                'description' => 'SMTP server hostname (Gmail: smtp.gmail.com)',
-            ],
-            [
-                'key' => 'mail_port',
-                'value' => '587',
-                'group' => 'email',
-                'type' => 'number',
-                'description' => 'SMTP server port (Gmail: 587 for TLS, 465 for SSL)',
-            ],
-            [
-                'key' => 'mail_username',
-                'value' => 'your-email@gmail.com',
-                'group' => 'email',
-                'type' => 'text',
-                'description' => 'Your Gmail address',
-            ],
-            [
-                'key' => 'mail_password',
-                'value' => '',
-                'group' => 'email',
-                'type' => 'password',
-                'description' => 'Gmail App Password (16 characters from Google Account Security)',
-            ],
-            [
-                'key' => 'mail_encryption',
-                'value' => 'tls',
-                'group' => 'email',
-                'type' => 'select',
-                'description' => 'Encryption method (tls for port 587, ssl for port 465)',
+                'description' => 'Mail driver (resend for Resend, ses for Amazon SES)',
             ],
             [
                 'key' => 'mail_from_address',
-                'value' => 'your-email@gmail.com',
+                'value' => '',
                 'group' => 'email',
                 'type' => 'text',
-                'description' => 'From email address (usually same as Gmail username)',
+                'description' => 'From email address (must be verified in Resend or use Resend test domain)',
             ],
             [
                 'key' => 'mail_from_name',
@@ -93,6 +58,15 @@ class SystemSettingsSeeder extends Seeder
                 'group' => 'email',
                 'type' => 'select',
                 'description' => 'AWS Region for SES (ap-southeast-1: Singapore - recommended for Philippines)',
+            ],
+
+            // Resend Settings (only required if mail_mailer is 'resend')
+            [
+                'key' => 'resend_api_key',
+                'value' => '',
+                'group' => 'email',
+                'type' => 'password',
+                'description' => 'Resend API Key (get from https://resend.com/api-keys)',
             ],
 
             // System Settings

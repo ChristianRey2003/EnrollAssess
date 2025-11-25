@@ -23,8 +23,8 @@ class MailConfigurationService
                 return false;
             }
 
-            // Get the mailer type (smtp, ses, log, etc.)
-            $mailerType = $emailSettings->get('mail_mailer', env('MAIL_MAILER', 'smtp'));
+            // Get the mailer type (resend, ses, log, etc.)
+            $mailerType = $emailSettings->get('mail_mailer', env('MAIL_MAILER', 'resend'));
             
             // Set default mailer
             Config::set('mail.default', $mailerType);
@@ -33,9 +33,17 @@ class MailConfigurationService
             $this->configureMailer($mailerType, $emailSettings);
 
             // Configure from address (common to all mailers)
+            $fromAddress = $emailSettings->get('mail_from_address', env('MAIL_FROM_ADDRESS', ''));
+            $fromName = $emailSettings->get('mail_from_name', env('MAIL_FROM_NAME', 'EnrollAssess System'));
+            
+            // Ensure we have a valid from address (required by Resend and other mailers)
+            if (empty($fromAddress)) {
+                $fromAddress = 'noreply@evsu.edu.ph'; // Fallback for EnrollAssess
+            }
+            
             Config::set('mail.from', [
-                'address' => $emailSettings->get('mail_from_address', env('MAIL_FROM_ADDRESS', 'hello@example.com')),
-                'name' => $emailSettings->get('mail_from_name', env('MAIL_FROM_NAME', 'EnrollAssess System')),
+                'address' => $fromAddress,
+                'name' => $fromName,
             ]);
 
             return true;
@@ -62,6 +70,10 @@ class MailConfigurationService
             
             case 'ses':
                 $this->configureSES($settings);
+                break;
+            
+            case 'resend':
+                $this->configureResend($settings);
                 break;
             
             case 'log':
@@ -114,6 +126,23 @@ class MailConfigurationService
     }
 
     /**
+     * Configure Resend mailer
+     *
+     * @param \Illuminate\Support\Collection $settings Email settings from database
+     * @return void
+     */
+    protected function configureResend($settings): void
+    {
+        // Configure Resend API key in services config
+        Config::set('services.resend', [
+            'key' => $settings->get('resend_api_key', env('RESEND_KEY')),
+        ]);
+
+        // Resend mailer configuration is already defined in config/mail.php
+        // It automatically uses the services.resend configuration
+    }
+
+    /**
      * Get current mail configuration summary
      *
      * @return array Configuration summary
@@ -140,6 +169,10 @@ class MailConfigurationService
             $summary['ses'] = [
                 'region' => $emailSettings->get('aws_region', env('AWS_DEFAULT_REGION')),
                 'has_credentials' => !empty($emailSettings->get('aws_access_key_id')) && !empty($emailSettings->get('aws_secret_access_key')),
+            ];
+        } elseif ($mailerType === 'resend') {
+            $summary['resend'] = [
+                'has_api_key' => !empty($emailSettings->get('resend_api_key')),
             ];
         }
 

@@ -32,9 +32,17 @@ class AccessCodeMail extends Mailable implements ShouldQueue
      */
     public function envelope(): Envelope
     {
+        $fromAddress = config('mail.from.address');
+        $fromName = config('mail.from.name', 'EnrollAssess System');
+        
+        // Ensure we have a from address
+        if (empty($fromAddress)) {
+            $fromAddress = 'noreply@evsu.edu.ph';
+        }
+        
         return new Envelope(
             subject: 'Your EnrollAssess Exam Access Code - Computer Studies Department',
-            from: config('mail.from.address', 'noreply@evsu.edu.ph'),
+            from: new \Illuminate\Mail\Mailables\Address($fromAddress, $fromName),
         );
     }
 
@@ -48,7 +56,7 @@ class AccessCodeMail extends Mailable implements ShouldQueue
             with: [
                 'applicant' => $this->applicant,
                 'accessCode' => $this->accessCode,
-                'examUrl' => route('applicant.login'),
+                'examUrl' => 'https://enrollassess-evsu.com/applicant/login',
                 'expiresAt' => $this->accessCode->expires_at,
             ]
         );

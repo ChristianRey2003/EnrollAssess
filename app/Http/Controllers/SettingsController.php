@@ -52,17 +52,17 @@ class SettingsController extends Controller
             $requiredSettings = [
                 [
                     'key' => 'mail_mailer',
-                    'value' => 'ses',
+                    'value' => 'resend',
                     'group' => 'email',
                     'type' => 'select',
-                    'description' => 'Mail driver (ses for Amazon SES, log for testing)',
+                    'description' => 'Mail driver (resend for Resend, ses for Amazon SES)',
                 ],
                 [
                     'key' => 'mail_from_address',
                     'value' => '',
                     'group' => 'email',
                     'type' => 'text',
-                    'description' => 'From email address (must be verified in SES)',
+                    'description' => 'From email address',
                 ],
                 [
                     'key' => 'mail_from_name',
@@ -92,13 +92,33 @@ class SettingsController extends Controller
                     'type' => 'select',
                     'description' => 'AWS Region for SES (ap-southeast-1: Singapore - recommended for Philippines)',
                 ],
+                [
+                    'key' => 'resend_api_key',
+                    'value' => '',
+                    'group' => 'email',
+                    'type' => 'password',
+                    'description' => 'Resend API Key (get from https://resend.com/api-keys)',
+                ],
             ];
 
             foreach ($requiredSettings as $setting) {
-                Settings::updateOrCreate(
-                    ['key' => $setting['key']],
-                    $setting
-                );
+                // Only create if it doesn't exist, don't overwrite existing values
+                $existing = Settings::where('key', $setting['key'])->first();
+                if (!$existing) {
+                    Settings::create($setting);
+                } else {
+                    // Only update type and description if they're missing, preserve value
+                    $update = [];
+                    if (empty($existing->type)) {
+                        $update['type'] = $setting['type'];
+                    }
+                    if (empty($existing->description)) {
+                        $update['description'] = $setting['description'];
+                    }
+                    if (!empty($update)) {
+                        $existing->update($update);
+                    }
+                }
             }
             
             // Clear cache to ensure fresh data
@@ -141,11 +161,33 @@ class SettingsController extends Controller
                     }
                     
                     // Handle password fields - only update if not empty
-                    if ($setting->type === 'password' && empty($value)) {
-                        continue;
+                    // For password fields, empty string means "don't change", so skip it
+                    if ($setting->type === 'password') {
+                        // If value is empty or just whitespace, skip updating (preserve existing value)
+                        if (empty(trim($value ?? ''))) {
+                            continue;
+                        }
+                        // Only update if a new value was provided
+                    }
+                    
+                    // Handle text/email fields - trim whitespace but allow empty strings
+                    if (in_array($setting->type, ['text', 'email'])) {
+                        $value = trim($value ?? '');
                     }
 
                     Settings::setSetting($key, $value, $setting->group);
+                    $updatedCount++;
+                } else {
+                    // Setting doesn't exist, create it
+                    // This shouldn't happen if ensureEmailSettingsExist runs, but handle it anyway
+                    Log::warning("Setting '{$key}' not found, creating it");
+                    Settings::create([
+                        'key' => $key,
+                        'value' => trim($value ?? ''),
+                        'group' => 'email',
+                        'type' => 'text',
+                        'description' => 'Auto-created setting',
+                    ]);
                     $updatedCount++;
                 }
             }
@@ -180,6 +222,27 @@ class SettingsController extends Controller
 
             $testEmail = $request->input('test_email');
 
+            // Check if mail configuration is set up
+            $mailerType = Settings::getSetting('mail_mailer', 'resend');
+            $fromAddress = Settings::getSetting('mail_from_address', '');
+            
+            if (empty($fromAddress)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please set a "From Address" in email settings before testing.'
+                ], 400);
+            }
+            
+            if ($mailerType === 'resend') {
+                $resendApiKey = Settings::getSetting('resend_api_key', '');
+                if (empty($resendApiKey)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Please set your Resend API key in email settings before testing.'
+                    ], 400);
+                }
+            }
+
             // Reload mail configuration to ensure we're using latest settings
             $this->reloadMailConfig();
 
@@ -196,9 +259,22 @@ class SettingsController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Test email failed: ' . $e->getMessage());
+            Log::error('Test email exception: ' . $e->getTraceAsString());
 
             // Check if this is an SES sandbox mode error
             $errorMessage = 'Failed to send test email: ' . $e->getMessage();
+            
+            // Check for common configuration errors
+            if (stripos($e->getMessage(), 'authentication') !== false || 
+                stripos($e->getMessage(), '530') !== false ||
+                stripos($e->getMessage(), 'check configuration') !== false ||
+                stripos($e->getMessage(), 'api key') !== false) {
+                $errorMessage = 'Email configuration error. Please check: ' . 
+                    '<br>1. Resend API key is set correctly' . 
+                    '<br>2. From Address is set' . 
+                    '<br>3. Mail Driver is set to "Resend"' .
+                    '<br><br>Error details: ' . $e->getMessage();
+            }
             
             if ($this->mailConfigService->isSandboxModeError($e)) {
                 $errorMessage = $this->mailConfigService->getSandboxModeErrorMessage();

@@ -48,8 +48,17 @@ class ExamResultNotification extends Mailable
             ? 'Congratulations! Exam Results - PASSED' 
             : 'Exam Results - Review Required';
 
+        $fromAddress = config('mail.from.address');
+        $fromName = config('mail.from.name', 'EnrollAssess System');
+        
+        // Ensure we have a from address
+        if (empty($fromAddress)) {
+            $fromAddress = 'noreply@evsu.edu.ph';
+        }
+
         return new Envelope(
             subject: $subject,
+            from: new \Illuminate\Mail\Mailables\Address($fromAddress, $fromName),
         );
     }
 

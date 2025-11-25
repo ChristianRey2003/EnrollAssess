@@ -33,8 +33,17 @@ class InterviewScheduleMail extends Mailable
      */
     public function envelope(): Envelope
     {
+        $fromAddress = config('mail.from.address');
+        $fromName = config('mail.from.name', 'EnrollAssess System');
+        
+        // Ensure we have a from address
+        if (empty($fromAddress)) {
+            $fromAddress = 'noreply@evsu.edu.ph';
+        }
+
         return new Envelope(
             subject: 'Interview Scheduled - ' . config('app.name'),
+            from: new \Illuminate\Mail\Mailables\Address($fromAddress, $fromName),
         );
     }
 

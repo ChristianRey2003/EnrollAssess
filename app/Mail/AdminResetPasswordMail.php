@@ -34,8 +34,17 @@ class AdminResetPasswordMail extends Mailable
      */
     public function envelope(): Envelope
     {
+        $fromAddress = config('mail.from.address');
+        $fromName = config('mail.from.name', 'EnrollAssess System');
+        
+        // Ensure we have a from address
+        if (empty($fromAddress)) {
+            $fromAddress = 'noreply@evsu.edu.ph';
+        }
+
         $envelope = new Envelope(
             subject: 'Reset Password Notification - Faculty Portal',
+            from: new Address($fromAddress, $fromName),
         );
 
         // Set recipient if provided (Laravel notifications should set this automatically,
