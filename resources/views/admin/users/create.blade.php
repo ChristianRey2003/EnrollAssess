@@ -141,6 +141,12 @@
         box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1);
     }
 
+    .form-group input[readonly] {
+        background-color: var(--light-gray);
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+
     .form-group .help-text {
         display: block;
         font-size: 11px;
@@ -287,7 +293,8 @@
                            name="username" 
                            value="{{ old('username') }}" 
                            class="@error('username') error @enderror"
-                           required>
+                           required
+                           readonly>
                     @error('username')
                         <span class="error-text">{{ $message }}</span>
                     @enderror
@@ -420,15 +427,7 @@
 
 @push('scripts')
 <script>
-    let usernameManuallyEdited = false;
-    let lastGeneratedUsername = '';
-
     function generateUsername() {
-        // Don't auto-generate if user has manually edited the username
-        if (usernameManuallyEdited) {
-            return;
-        }
-
         const firstName = document.getElementById('first_name').value.trim();
         const middleName = document.getElementById('middle_name').value.trim();
         const lastName = document.getElementById('last_name').value.trim();
@@ -450,28 +449,19 @@
         // Generate username: firstInitial + middleInitial + fullLastName + "_ea"
         const username = firstInitial + middleInitial + fullLastName + '_ea';
         
-        lastGeneratedUsername = username;
         usernameField.value = username;
     }
 
-    // Track manual edits to username field
+    // Generate username on page load if name fields are filled but username is empty
     document.addEventListener('DOMContentLoaded', function() {
         const usernameField = document.getElementById('username');
         const firstNameField = document.getElementById('first_name');
-        const middleNameField = document.getElementById('middle_name');
         const lastNameField = document.getElementById('last_name');
 
         // Generate username on page load if name fields are filled but username is empty
         if ((firstNameField.value || lastNameField.value) && !usernameField.value) {
             generateUsername();
         }
-
-        // Track when user manually edits username
-        usernameField.addEventListener('input', function() {
-            if (this.value !== lastGeneratedUsername) {
-                usernameManuallyEdited = true;
-            }
-        });
     });
 </script>
 @endpush
