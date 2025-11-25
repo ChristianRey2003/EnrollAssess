@@ -349,7 +349,6 @@
                             class="@error('role') error @enderror" 
                             required>
                         <option value="department-head" {{ old('role', $user->role) === 'department-head' ? 'selected' : '' }}> Department Head</option>
-                        <option value="administrator" {{ old('role', $user->role) === 'administrator' ? 'selected' : '' }}> Administrator</option>
                         <option value="instructor" {{ old('role', $user->role) === 'instructor' ? 'selected' : '' }}>🧑‍ Instructor</option>
                     </select>
                     @error('role')

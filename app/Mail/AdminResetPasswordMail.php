@@ -63,6 +63,7 @@ class AdminResetPasswordMail extends Mailable
     {
         return new Content(
             view: 'emails.admin-reset-password',
+            text: 'emails.admin-reset-password-text',
         );
     }
 

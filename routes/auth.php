@@ -26,6 +26,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('/forgot-password', [AdminPasswordResetLinkController::class, 'store'])->name('password.email');
     Route::get('/reset-password/{token}', [AdminNewPasswordController::class, 'create'])->name('password.reset');
     Route::post('/reset-password', [AdminNewPasswordController::class, 'store'])->name('password.store');
+    
+    // Forced Password Change (must be authenticated)
+    Route::middleware('auth')->group(function () {
+        Route::get('/password/force-change', [\App\Http\Controllers\Auth\ForcePasswordChangeController::class, 'show'])->name('password.force-change');
+        Route::post('/password/force-change', [\App\Http\Controllers\Auth\ForcePasswordChangeController::class, 'update'])->name('password.force-change.update');
+    });
 });
 
 // Applicant Authentication

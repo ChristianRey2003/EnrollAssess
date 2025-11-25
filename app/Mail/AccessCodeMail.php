@@ -53,6 +53,7 @@ class AccessCodeMail extends Mailable implements ShouldQueue
     {
         return new Content(
             view: 'emails.access-code',
+            text: 'emails.access-code-text',
             with: [
                 'applicant' => $this->applicant,
                 'accessCode' => $this->accessCode,

@@ -158,6 +158,27 @@ class InstructorController extends Controller
             }
         }
         
+        // Guard: Check if applicant has already been interviewed by department head
+        $hasDepartmentHeadInterview = Interview::where('applicant_id', $applicantId)
+            ->where('status', 'completed')
+            ->whereHas('interviewer', function($query) {
+                $query->where('role', 'department-head');
+            })
+            ->exists();
+        
+        if ($hasDepartmentHeadInterview) {
+            // Check if instructor has already completed their interview (allow viewing)
+            $instructorInterview = Interview::where('applicant_id', $applicantId)
+                ->where('interviewer_id', $instructor->user_id)
+                ->where('status', 'completed')
+                ->first();
+            
+            if (!$instructorInterview) {
+                return redirect()->route('instructor.applicants')
+                    ->with('warning', 'Cannot start interview. Applicant has already been interviewed by the department head.');
+            }
+        }
+        
         // Get or create interview record
         $interview = Interview::firstOrCreate(
             [
@@ -176,6 +197,53 @@ class InstructorController extends Controller
     }
 
     /**
+     * View detailed interview summary
+     */
+    public function viewInterviewSummary($applicantId)
+    {
+        $instructor = Auth::user();
+        
+        $applicant = Applicant::with(['latestInterview.interviewer'])->findOrFail($applicantId);
+        
+        // Check if instructor is assigned to this applicant
+        if ($applicant->assigned_instructor_id !== $instructor->user_id) {
+            abort(403, 'You are not assigned to view this applicant.');
+        }
+        
+        // First try to get the instructor's own interview
+        $interview = Interview::where('applicant_id', $applicantId)
+            ->where('interviewer_id', $instructor->user_id)
+            ->where('status', 'completed')
+            ->first();
+        
+        // If no instructor interview found, check for department head interview
+        if (!$interview) {
+            $interview = Interview::where('applicant_id', $applicantId)
+                ->where('status', 'completed')
+                ->whereHas('interviewer', function($query) {
+                    $query->where('role', 'department-head');
+                })
+                ->first();
+        }
+        
+        if (!$interview) {
+            return redirect()->route('instructor.applicants')
+                ->with('error', 'No completed interview found for this applicant.');
+        }
+        
+        // Load interviewer relationship if not already loaded
+        if (!$interview->relationLoaded('interviewer')) {
+            $interview->load('interviewer');
+        }
+        
+        // Calculate exam context
+        $totalQuestions = $applicant->results()->count();
+        $correctAnswers = $applicant->results()->where('is_correct', true)->count();
+        
+        return view('instructor.interview-summary', compact('applicant', 'interview', 'totalQuestions', 'correctAnswers'));
+    }
+
+    /**
      * Submit interview evaluation with BSIT rubric
      */
     public function submitInterview(Request $request, $applicantId)
@@ -183,15 +251,15 @@ class InstructorController extends Controller
         $instructor = Auth::user();
         
         $request->validate([
-            // BSIT Rubric Criteria (8 criteria, 10 points each)
-            'communication_skills' => 'required|integer|min:0|max:10',
-            'motivation_interest' => 'required|integer|min:0|max:10',
-            'problem_solving_attitude' => 'required|integer|min:0|max:10',
-            'program_understanding' => 'required|integer|min:0|max:10',
-            'personality_attitude' => 'required|integer|min:0|max:10',
-            'it_background' => 'required|integer|min:0|max:10',
-            'willingness_to_learn' => 'required|integer|min:0|max:10',
-            'overall_impression' => 'required|integer|min:0|max:10',
+            // BSIT Rubric Criteria (8 criteria, 10 points each) - accepts any numeric value 0-10
+            'communication_skills' => 'required|numeric|min:0|max:10',
+            'motivation_interest' => 'required|numeric|min:0|max:10',
+            'problem_solving_attitude' => 'required|numeric|min:0|max:10',
+            'program_understanding' => 'required|numeric|min:0|max:10',
+            'personality_attitude' => 'required|numeric|min:0|max:10',
+            'it_background' => 'required|numeric|min:0|max:10',
+            'willingness_to_learn' => 'required|numeric|min:0|max:10',
+            'overall_impression' => 'required|numeric|min:0|max:10',
             
             // Overall Assessment
             'recommendation' => 'required|in:highly_recommended,recommended,conditional,not_recommended',
@@ -490,6 +558,21 @@ class InstructorController extends Controller
             ], 400);
         }
 
+        // Guard: Check if applicant has already been interviewed by department head
+        $hasDepartmentHeadInterview = Interview::where('applicant_id', $applicant->applicant_id)
+            ->where('status', 'completed')
+            ->whereHas('interviewer', function($query) {
+                $query->where('role', 'department-head');
+            })
+            ->exists();
+        
+        if ($hasDepartmentHeadInterview) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot schedule interview. Applicant has already been interviewed by the department head.'
+            ], 400);
+        }
+
         // Check for scheduling conflicts
         $conflict = Interview::where('interviewer_id', $instructor->user_id)
             ->where('interview_id', '!=', $interviewId)
@@ -585,6 +668,19 @@ class InstructorController extends Controller
                     $hasCompletedExam = method_exists($applicant, 'hasCompletedExam') ? $applicant->hasCompletedExam() : ($applicant->status === 'exam-completed');
                     if (!$hasCompletedExam) {
                         $errors[] = "Interview #{$interviewId}: Applicant has not completed the exam";
+                        continue;
+                    }
+
+                    // Guard: Check if applicant has already been interviewed by department head
+                    $hasDepartmentHeadInterview = Interview::where('applicant_id', $applicant->applicant_id)
+                        ->where('status', 'completed')
+                        ->whereHas('interviewer', function($query) {
+                            $query->where('role', 'department-head');
+                        })
+                        ->exists();
+                    
+                    if ($hasDepartmentHeadInterview) {
+                        $errors[] = "Interview #{$interviewId}: Applicant has already been interviewed by the department head";
                         continue;
                     }
 
@@ -704,6 +800,22 @@ class InstructorController extends Controller
                 'success' => false,
                 'message' => 'You are not assigned to this interview.'
             ], 403);
+        }
+
+        // Guard: Check if applicant has already been interviewed by department head
+        $applicant = $interview->applicant;
+        $hasDepartmentHeadInterview = Interview::where('applicant_id', $applicant->applicant_id)
+            ->where('status', 'completed')
+            ->whereHas('interviewer', function($query) {
+                $query->where('role', 'department-head');
+            })
+            ->exists();
+        
+        if ($hasDepartmentHeadInterview) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot reschedule interview. Applicant has already been interviewed by the department head.'
+            ], 400);
         }
 
         // Check for scheduling conflicts

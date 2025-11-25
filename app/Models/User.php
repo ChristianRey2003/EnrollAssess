@@ -27,6 +27,7 @@ class User extends Authenticatable
         'email',
         'profile_picture',
         'last_login',
+        'force_password_change',
     ];
 
     /**
@@ -52,6 +53,7 @@ class User extends Authenticatable
             'last_login' => 'datetime',
             'password_hash' => 'hashed',
             'password' => 'hashed', // Laravel standard field
+            'force_password_change' => 'boolean',
         ];
     }
 
@@ -181,5 +183,30 @@ class User extends Authenticatable
     {
         // Use custom admin password reset notification
         $this->notify(new AdminResetPasswordNotification($token));
+    }
+
+    /**
+     * Get the delegations where this user is the delegatee
+     */
+    public function delegatedPermissions()
+    {
+        return $this->hasMany(RoleDelegation::class, 'delegatee_id', 'user_id');
+    }
+
+    /**
+     * Check if user has a specific permission via role or delegation
+     */
+    public function hasPermission($permission)
+    {
+        // Admin and Dept Head have all permissions
+        if (in_array($this->role, ['administrator', 'department-head'])) {
+            return true;
+        }
+
+        // Check for active delegation
+        return $this->delegatedPermissions()
+                    ->active()
+                    ->where('permission', $permission)
+                    ->exists();
     }
 }

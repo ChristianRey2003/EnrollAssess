@@ -194,6 +194,79 @@
         tr:hover {
             background-color: rgba(255, 215, 0, 0.1) !important;
         }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            max-width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            color: #1f2937;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
         
         /* Ensure table stays within container */
         .applicants-table {
@@ -271,6 +344,12 @@
             justify-content: space-between;
             align-items: center;
             z-index: 10;
+        }
+
+        /* Export Access Codes Drawer - Narrower Width */
+        #exportAccessCodesDrawer {
+            width: 450px;
+            max-width: 90vw;
         }
     </style>
 @endpush
@@ -379,6 +458,21 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                                         </svg>
                                         Send Notifications
+                                    </button>
+                                    @if(auth()->user()->role === 'department-head')
+                                    <button type="button" class="dropdown-item" onclick="openExportAccessCodesDrawer(); toggleDropdown('moreActionsDropdown');">
+                                        <svg class="dropdown-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        Export Access Codes
+                                    </button>
+                                    @endif
+                                    <div class="dropdown-divider"></div>
+                                    <button type="button" class="dropdown-item" onclick="showArchiveAllModal(); toggleDropdown('moreActionsDropdown');" style="color: #f59e0b;">
+                                        <svg class="dropdown-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                                        </svg>
+                                        Archive All
                                     </button>
                                 </div>
                             </div>
@@ -651,6 +745,83 @@
             <button type="button" class="btn btn-primary" id="generateCodesButton" onclick="confirmGenerateAccessCodes()">
                 Generate Codes
             </button>
+        </div>
+    </div>
+
+    <!-- Export Access Codes Drawer -->
+    <div id="exportAccessCodesDrawerOverlay" class="drawer-overlay" onclick="closeExportAccessCodesDrawer()"></div>
+    <div id="exportAccessCodesDrawer" class="drawer">
+        <div class="drawer-header">
+            <h3 class="drawer-title">Export Access Codes</h3>
+            <button type="button" class="drawer-close" onclick="closeExportAccessCodesDrawer()">×</button>
+        </div>
+        
+        <div class="drawer-body">
+            <div style="margin-bottom: 20px;">
+                <p style="font-size: 14px; color: #374151; margin: 0 0 12px 0;">
+                    Export a PDF containing all scheduled applicants with their access codes. This PDF can be shared with school officers.
+                </p>
+            </div>
+
+            <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px; margin-bottom: 20px;">
+                <div style="font-weight: 600; color: #1e40af; margin-bottom: 4px;">Export Information</div>
+                <div style="font-size: 13px; color: #1e3a8a;">
+                    The PDF will include:
+                    <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                        <li>Applicant Name</li>
+                        <li>Access Code</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px;">
+                <div style="font-weight: 600; color: #92400e; margin-bottom: 4px;">Note</div>
+                <div style="font-size: 13px; color: #78350f;">
+                    Only applicants with access codes will be included in the export.
+                </div>
+            </div>
+        </div>
+        
+        <div class="drawer-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeExportAccessCodesDrawer()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="exportAccessCodesPDF()">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 6px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Export PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Archive All Confirmation Modal -->
+    <div id="archiveAllModal" class="modal-overlay" onclick="if(event.target === this) closeArchiveAllModal()">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Archive All Applicants</h3>
+                <button onclick="closeArchiveAllModal()" class="modal-close">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 16px;">
+                    <p style="color: #6b7280; margin-bottom: 16px;">You are about to archive all applicants. This will move them to the archived section where they can be restored or permanently deleted later.</p>
+                    <div style="background: #f3f4f6; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: #6b7280;">Total Applicants:</span>
+                            <span style="color: #1f2937; font-weight: 600;" id="archiveModalCount">-</span>
+                        </div>
+                    </div>
+                    <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px; margin-bottom: 16px;">
+                        <strong>Note:</strong> Archived applicants can be restored from the "Archived Applicants" section in Settings.
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px;">
+                    <input type="checkbox" id="archiveConfirmCheckbox" onchange="checkArchiveConfirm()" style="width: 18px; height: 18px; cursor: pointer; accent-color: #dc2626;">
+                    <span>I confirm that I want to archive all applicants</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeArchiveAllModal()" class="btn-secondary">Cancel</button>
+                <button onclick="confirmArchiveAll()" class="btn-primary" id="archiveConfirmBtn" disabled style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">Archive All Applicants</button>
+            </div>
         </div>
     </div>
 
@@ -1051,9 +1222,116 @@
             }
         }
 
+        // Export Access Codes Drawer Functions
+        function openExportAccessCodesDrawer() {
+            const overlay = document.getElementById('exportAccessCodesDrawerOverlay');
+            const drawer = document.getElementById('exportAccessCodesDrawer');
+            
+            if (overlay && drawer) {
+                overlay.classList.add('active');
+                drawer.classList.add('active');
+            }
+        }
+
+        function closeExportAccessCodesDrawer() {
+            const overlay = document.getElementById('exportAccessCodesDrawerOverlay');
+            const drawer = document.getElementById('exportAccessCodesDrawer');
+            
+            if (overlay && drawer) {
+                overlay.classList.remove('active');
+                drawer.classList.remove('active');
+            }
+        }
+
+        function exportAccessCodesPDF() {
+            // Show loading state
+            const exportBtn = event.target.closest('button');
+            const originalText = exportBtn.innerHTML;
+            exportBtn.disabled = true;
+            exportBtn.innerHTML = '<span>Exporting...</span>';
+
+            // Redirect to export route
+            window.location.href = '{{ route("admin.applicants.export.access-codes-pdf") }}';
+
+            // Re-enable button after a delay (in case of error)
+            setTimeout(() => {
+                exportBtn.disabled = false;
+                exportBtn.innerHTML = originalText;
+            }, 3000);
+        }
+
+        // Archive All Functions
+        function showArchiveAllModal() {
+            // Get total count
+            const totalCount = {{ $stats['total_applicants'] ?? 0 }};
+            
+            if (totalCount === 0) {
+                alert('No applicants to archive.');
+                return;
+            }
+            
+            document.getElementById('archiveModalCount').textContent = totalCount + ' applicant(s)';
+            document.getElementById('archiveConfirmCheckbox').checked = false;
+            document.getElementById('archiveConfirmBtn').disabled = true;
+            document.getElementById('archiveAllModal').classList.add('active');
+        }
+
+        function closeArchiveAllModal() {
+            document.getElementById('archiveAllModal').classList.remove('active');
+            document.getElementById('archiveConfirmCheckbox').checked = false;
+            document.getElementById('archiveConfirmBtn').disabled = true;
+        }
+
+        function checkArchiveConfirm() {
+            const checkbox = document.getElementById('archiveConfirmCheckbox');
+            const btn = document.getElementById('archiveConfirmBtn');
+            btn.disabled = !checkbox.checked;
+        }
+
+        async function confirmArchiveAll() {
+            const btn = document.getElementById('archiveConfirmBtn');
+            btn.disabled = true;
+            btn.textContent = 'Archiving...';
+
+            try {
+                const response = await fetch('{{ route("admin.applicants.archive-all") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(data.message || `Successfully archived ${data.archived_count} applicant(s).`);
+                    closeArchiveAllModal();
+                    location.reload();
+                } else {
+                    alert(data.message || 'Failed to archive applicants.');
+                    btn.disabled = false;
+                    btn.textContent = 'Archive All Applicants';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while archiving applicants');
+                btn.disabled = false;
+                btn.textContent = 'Archive All Applicants';
+            }
+        }
+
         // Make functions global
         window.openGenerateCodesDrawer = openGenerateCodesDrawer;
         window.closeGenerateCodesDrawer = closeGenerateCodesDrawer;
+        window.openExportAccessCodesDrawer = openExportAccessCodesDrawer;
+        window.closeExportAccessCodesDrawer = closeExportAccessCodesDrawer;
+        window.exportAccessCodesPDF = exportAccessCodesPDF;
+        window.showArchiveAllModal = showArchiveAllModal;
+        window.closeArchiveAllModal = closeArchiveAllModal;
+        window.checkArchiveConfirm = checkArchiveConfirm;
+        window.confirmArchiveAll = confirmArchiveAll;
 
         // Auto-search functionality
         let searchTimeout;

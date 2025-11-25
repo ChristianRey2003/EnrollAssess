@@ -566,7 +566,16 @@
             </div>
             <div class="data-row">
                 <span class="data-label">EnrollAssess Score</span>
-                <span class="data-value">{{ $applicant->enrollassess_score ? number_format($applicant->enrollassess_score, 2) . '%' : '-' }}</span>
+                <span class="data-value" style="display: flex; align-items: center; gap: 8px;">
+                    {{ $applicant->enrollassess_score ? number_format($applicant->enrollassess_score, 2) . '%' : '-' }}
+                    @if($applicant->enrollassess_score && $totalQuestions > 0)
+                        <a href="{{ route('admin.applicants.exam-details', $applicant->applicant_id) }}" 
+                           class="btn btn-secondary" 
+                           style="padding: 4px 12px; font-size: 12px; text-decoration: none;">
+                            View Exam Details
+                        </a>
+                    @endif
+                </span>
             </div>
             <div class="data-row">
                 <span class="data-label">Interview Score</span>

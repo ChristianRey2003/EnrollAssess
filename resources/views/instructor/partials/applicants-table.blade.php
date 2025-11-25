@@ -76,6 +76,14 @@
                         $interview = $applicant->latestInterview;
                         $canSchedule = $interview && (!$interview->schedule_date || $interview->status === 'assigned');
                         $hasCompletedExam = method_exists($applicant, 'hasCompletedExam') ? $applicant->hasCompletedExam() : ($applicant->status === 'exam-completed');
+                        
+                        // Check if applicant has been interviewed by department head
+                        $hasDepartmentHeadInterview = \App\Models\Interview::where('applicant_id', $applicant->applicant_id)
+                            ->where('status', 'completed')
+                            ->whereHas('interviewer', function($query) {
+                                $query->where('role', 'department-head');
+                            })
+                            ->exists();
                     @endphp
                     <tr style="position: relative;" 
                         onmouseover="showActions({{ $applicant->applicant_id }})" 
@@ -83,15 +91,15 @@
                         <td class="text-center">
                             <input type="checkbox" 
                                    class="form-check-input applicant-checkbox" 
-                                   @if($canSchedule && $interview)
+                                   @if($canSchedule && $interview && !$hasDepartmentHeadInterview)
                                        data-interview-id="{{ $interview->interview_id }}"
                                        data-applicant-name="{{ $applicant->first_name }} {{ $applicant->last_name }}"
                                        onchange="updateBulkActions()"
                                    @else
                                        disabled
-                                       title="{{ !$interview ? 'No interview assigned' : 'Interview already scheduled or cannot be scheduled' }}"
+                                       title="{{ !$interview ? 'No interview assigned' : ($hasDepartmentHeadInterview ? 'Already interviewed by department head' : 'Interview already scheduled or cannot be scheduled') }}"
                                    @endif
-                                   style="cursor: {{ ($canSchedule && $interview) ? 'pointer' : 'not-allowed' }};">
+                                   style="cursor: {{ ($canSchedule && $interview && !$hasDepartmentHeadInterview) ? 'pointer' : 'not-allowed' }};">
                         </td>
                         <td class="text-left" style="font-size: 13px; font-weight: normal;">
                             <div class="applicant-info">
@@ -128,18 +136,19 @@
                         <td class="text-center" style="padding: 6px 4px;">
                             @php
                                 $status = $applicant->status;
-                                $statusMap = [
-                                    'exam-completed' => 'EXAM DONE',
-                                    'interview-available' => 'INTERVIEW READY',
-                                    'interview-scheduled' => 'INTERVIEW SET',
-                                    'interview-completed' => 'INTERVIEW DONE',
-                                    'admitted' => 'ADMITTED',
-                                    'rejected' => 'REJECTED',
-                                    'pending' => 'PENDING'
+                                $statusConfig = [
+                                    'exam-completed' => ['label' => 'FOR INTERVIEW', 'class' => 'status-completed'],
+                                    'interview-available' => ['label' => 'INTERVIEW READY', 'class' => 'status-pending'],
+                                    'interview-scheduled' => ['label' => 'INTERVIEW SET', 'class' => 'status-pending'],
+                                    'interview-completed' => ['label' => 'INTERVIEW DONE', 'class' => 'status-interviewcompleted'],
+                                    'admitted' => ['label' => 'ADMITTED', 'class' => 'status-completed'],
+                                    'rejected' => ['label' => 'REJECTED', 'class' => 'status-examcompleted'],
+                                    'pending' => ['label' => 'PENDING', 'class' => 'status-pending'],
                                 ];
-                                $statusText = $statusMap[$status] ?? strtoupper(str_replace('-', ' ', $status));
+                                $statusText = $statusConfig[$status]['label'] ?? strtoupper(str_replace('-', ' ', $status));
+                                $statusClass = $statusConfig[$status]['class'] ?? 'status-pending';
                             @endphp
-                            <span class="status-badge status-pending" style="font-size: 9px; padding: 2px 4px; border-radius: 3px; background: #fef3c7; color: #92400e; font-weight: 500; white-space: nowrap; display: inline-block;">
+                            <span class="status-badge {{ $statusClass }}" style="font-size: 9px; padding: 2px 8px; border-radius: 3px; font-weight: 600; white-space: nowrap; display: inline-block;">
                                 {{ $statusText }}
                             </span>
                         </td>
@@ -174,11 +183,13 @@
                             <div id="actions-{{ $applicant->applicant_id }}" class="floating-actions" style="display: none;">
                                 @php
                                     // Determine Schedule button state
-                                    $scheduleEnabled = $interview && $canSchedule && $hasCompletedExam;
+                                    $scheduleEnabled = $interview && $canSchedule && $hasCompletedExam && !$hasDepartmentHeadInterview;
                                     $scheduleTooltip = "Schedule Interview";
                                     if (!$scheduleEnabled) {
                                         if (!$interview) {
                                             $scheduleTooltip = "No interview assigned";
+                                        } elseif ($hasDepartmentHeadInterview) {
+                                            $scheduleTooltip = "Already interviewed by department head";
                                         } elseif (!$hasCompletedExam) {
                                             $scheduleTooltip = "Applicant must complete the exam first";
                                         } elseif ($interview->schedule_date) {
@@ -189,10 +200,12 @@
                                     }
                                     
                                     // Determine Start button state
-                                    $startEnabled = in_array($applicant->status, ['exam-completed', 'interview-scheduled']);
+                                    $startEnabled = in_array($applicant->status, ['exam-completed', 'interview-scheduled']) && !$hasDepartmentHeadInterview;
                                     $startTooltip = "Start Interview";
                                     if (!$startEnabled) {
-                                        if ($applicant->status === 'interview-completed') {
+                                        if ($hasDepartmentHeadInterview) {
+                                            $startTooltip = "Already interviewed by department head";
+                                        } elseif ($applicant->status === 'interview-completed') {
                                             $startTooltip = "Interview already completed";
                                         } elseif ($applicant->status === 'pending') {
                                             $startTooltip = "Applicant must complete the exam first";
@@ -201,9 +214,12 @@
                                         }
                                     }
                                     
-                                    // Determine View button state
-                                    $viewEnabled = $applicant->status === 'interview-completed';
-                                    $viewTooltip = "View Interview";
+                                    // Determine View button state - check for any completed interview
+                                    $hasCompletedInterview = \App\Models\Interview::where('applicant_id', $applicant->applicant_id)
+                                        ->where('status', 'completed')
+                                        ->exists();
+                                    $viewEnabled = $hasCompletedInterview;
+                                    $viewTooltip = "View Interview Summary";
                                     if (!$viewEnabled) {
                                         if (in_array($applicant->status, ['exam-completed', 'interview-scheduled'])) {
                                             $viewTooltip = "Interview not completed yet";
@@ -251,7 +267,7 @@
                                 
                                 <!-- View Button -->
                                 @if($viewEnabled)
-                                    <a href="{{ route('instructor.interview.show', $applicant->applicant_id) }}" 
+                                    <a href="{{ route('instructor.interview.summary', $applicant->applicant_id) }}" 
                                        class="action-btn action-btn-secondary"
                                        title="{{ $viewTooltip }}">
                                         View

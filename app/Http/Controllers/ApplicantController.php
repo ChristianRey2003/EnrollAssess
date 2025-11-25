@@ -48,6 +48,7 @@ class ApplicantController extends BaseController
     public function index(Request $request)
     {
         try {
+            // Exclude archived applicants by default
             $query = Applicant::with(['assignedInstructor', 'accessCode', 'accessCode.exam']);
 
             // Search functionality
@@ -79,9 +80,9 @@ class ApplicantController extends BaseController
 
             $applicants = $query->orderBy('created_at', 'desc')->paginate(20);
 
-            // Meaningful Statistics
+            // Meaningful Statistics (exclude archived applicants)
             $stats = [
-                'total_applicants' => Applicant::count(),
+                'total_applicants' => Applicant::count(), // Already excludes archived due to SoftDeletes
                 'exam_completed' => Applicant::where('status', '!=', 'pending')->whereNotNull('enrollassess_score')->count(),
                 'interview_completed' => Applicant::whereIn('status', [
                     'interview-completed',
@@ -309,6 +310,45 @@ class ApplicantController extends BaseController
             'examDuration',
             'overallRating',
             'timeline'
+        ));
+    }
+
+    /**
+     * Show exam details for a specific applicant
+     */
+    public function showExamDetails($id)
+    {
+        try {
+            $applicant = Applicant::with([
+                'results.question.options',
+                'accessCode.exam',
+                'basicInfo'
+            ])->findOrFail($id);
+        } catch (ModelNotFoundException $e) {
+            return back()->with('error', 'Applicant not found.');
+        }
+
+        // Get exam results
+        $results = $applicant->results()->with('question.options')->orderBy('created_at', 'asc')->get();
+        
+        // Calculate statistics
+        $totalQuestions = $results->count();
+        $correctAnswers = $results->where('is_correct', true)->count();
+        $incorrectAnswers = $totalQuestions - $correctAnswers;
+        
+        // Get exam attempt info
+        $examAttempt = \App\Models\ExamAttempt::where('applicant_id', $applicant->applicant_id)
+            ->where('status', 'completed')
+            ->latest('completed_at')
+            ->first();
+
+        return view('admin.applicants.exam-details', compact(
+            'applicant',
+            'results',
+            'totalQuestions',
+            'correctAnswers',
+            'incorrectAnswers',
+            'examAttempt'
         ));
     }
 
@@ -972,6 +1012,43 @@ class ApplicantController extends BaseController
                 ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
     }
 
+    /**
+     * Export scheduled applicants with access codes as PDF
+     * Only accessible by department-head
+     */
+    public function exportAccessCodesPDF()
+    {
+        // Check if user is department-head
+        if (auth()->user()->role !== 'department-head') {
+            abort(403, 'Only department heads can export access codes.');
+        }
+
+        // Get all applicants with access codes
+        $applicants = Applicant::with(['accessCode', 'accessCode.exam'])
+            ->whereHas('accessCode')
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get();
+
+        // Prepare data for PDF
+        $data = $applicants->map(function ($applicant) {
+            return [
+                'name' => $applicant->full_name,
+                'access_code' => $applicant->accessCode ? $applicant->accessCode->code : 'N/A',
+            ];
+        });
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.applicants.export.access-codes-pdf', [
+            'applicants' => $data,
+            'generated_at' => now()->format('F d, Y - g:i A'),
+            'generated_by' => auth()->user()->full_name,
+        ]);
+
+        $filename = 'access_codes_export_' . now()->format('Y-m-d_H-i-s') . '.pdf';
+
+        return $pdf->download($filename);
+    }
+
 
     /**
      * Display exam results page with EnrollAssess and interview scores
@@ -1408,6 +1485,7 @@ class ApplicantController extends BaseController
      */
     protected function dispatchStatisticsUpdate()
     {
+        // Statistics exclude archived applicants (SoftDeletes automatically excludes them)
         $stats = [
             'total' => Applicant::count(),
             'pending' => Applicant::where('status', 'pending')->count(),
@@ -1421,5 +1499,174 @@ class ApplicantController extends BaseController
         ];
 
         \App\Helpers\BroadcastHelper::safeDispatch(new \App\Events\StatisticsUpdated($stats));
+    }
+
+    /**
+     * Archive all applicants (soft delete)
+     */
+    public function archiveAll()
+    {
+        try {
+            $applicants = Applicant::get();
+            $count = $applicants->count();
+            
+            if ($count === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No applicants to archive.',
+                ], 400);
+            }
+
+            // Soft delete all applicants
+            Applicant::query()->delete();
+
+            // Dispatch statistics update event
+            $this->dispatchStatisticsUpdate();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully archived {$count} applicant(s).",
+                'archived_count' => $count,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to archive applicants: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to archive applicants: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get archived applicants
+     */
+    public function archivedHistory(Request $request)
+    {
+        try {
+            $query = Applicant::onlyTrashed()
+                ->with(['assignedInstructor', 'accessCode'])
+                ->orderBy('deleted_at', 'desc');
+
+            // Search functionality
+            if ($request->filled('search')) {
+                $search = $request->get('search');
+                $query->where(function($q) use ($search) {
+                    $q->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('middle_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhere('email_address', 'like', "%{$search}%")
+                      ->orWhere('application_no', 'like', "%{$search}%");
+                });
+            }
+
+            $applicants = $query->paginate(20);
+
+            // Transform paginator items
+            $items = $applicants->getCollection()->map(function ($applicant) {
+                return [
+                    'applicant_id' => $applicant->applicant_id,
+                    'application_no' => $applicant->application_no ?: $applicant->formatted_applicant_no,
+                    'full_name' => $applicant->full_name,
+                    'email_address' => $applicant->email_address,
+                    'phone_number' => $applicant->phone_number,
+                    'status' => $applicant->status,
+                    'assigned_instructor' => $applicant->assignedInstructor ? [
+                        'user_id' => $applicant->assignedInstructor->user_id,
+                        'full_name' => $applicant->assignedInstructor->full_name,
+                    ] : null,
+                    'created_at' => $applicant->created_at->format('M d, Y g:i A'),
+                    'deleted_at' => $applicant->deleted_at->format('M d, Y g:i A'),
+                ];
+            })->values();
+
+            return response()->json([
+                'success' => true,
+                'applicants' => $items,
+                'pagination' => [
+                    'current_page' => $applicants->currentPage(),
+                    'last_page' => $applicants->lastPage(),
+                    'per_page' => $applicants->perPage(),
+                    'total' => $applicants->total(),
+                    'from' => $applicants->firstItem(),
+                    'to' => $applicants->lastItem(),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to load archived applicants: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load archived applicants: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Restore all archived applicants
+     */
+    public function restoreAll()
+    {
+        try {
+            $archivedCount = Applicant::onlyTrashed()->count();
+            
+            if ($archivedCount === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No archived applicants to restore.',
+                ], 400);
+            }
+
+            // Restore all archived applicants
+            Applicant::onlyTrashed()->restore();
+
+            // Dispatch statistics update event
+            $this->dispatchStatisticsUpdate();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully restored {$archivedCount} applicant(s).",
+                'restored_count' => $archivedCount,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to restore archived applicants: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to restore applicants: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Permanently delete all archived applicants
+     */
+    public function permanentlyDeleteAll()
+    {
+        try {
+            $archivedCount = Applicant::onlyTrashed()->count();
+            
+            if ($archivedCount === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No archived applicants to delete.',
+                ], 400);
+            }
+
+            // Permanently delete all archived applicants
+            Applicant::onlyTrashed()->forceDelete();
+
+            // Dispatch statistics update event
+            $this->dispatchStatisticsUpdate();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully permanently deleted {$archivedCount} applicant(s).",
+                'deleted_count' => $archivedCount,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to permanently delete archived applicants: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to permanently delete applicants: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

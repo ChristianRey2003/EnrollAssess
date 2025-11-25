@@ -29,6 +29,7 @@ class InstructorProfileController extends Controller
 
         $request->validate([
             'full_name' => 'required|string|max:255',
+            'username' => 'required|string|max:255|unique:users,username,' . $user->user_id . ',user_id',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->user_id . ',user_id',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'current_password' => 'nullable|required_with:password',
@@ -37,6 +38,7 @@ class InstructorProfileController extends Controller
 
         // Update basic information
         $user->full_name = $request->full_name;
+        $user->username = $request->username;
         $user->email = $request->email;
 
         // Handle profile picture upload

@@ -40,3 +40,4 @@ Best regards,
   - Personal touch (appreciation for the approach)
 - **Next Steps**: You can copy this and customize with your name/signature
 
+

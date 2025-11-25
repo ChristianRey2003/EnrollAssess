@@ -61,6 +61,7 @@ class ExamNotificationMail extends Mailable
     {
         return new Content(
             view: 'emails.exam-notification',
+            text: 'emails.exam-notification-text',
         );
     }
 

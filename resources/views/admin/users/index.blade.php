@@ -332,6 +332,16 @@
         color: var(--white);
     }
 
+    .btn-info {
+        background: rgba(59, 130, 246, 0.1);
+        color: #2563EB;
+    }
+
+    .btn-info:hover {
+        background: #2563EB;
+        color: var(--white);
+    }
+
     /* Pagination spacing */
     .pagination-wrapper {
         padding: 20px;
@@ -449,6 +459,19 @@
                                    class="btn btn-sm btn-secondary">
                                     Edit
                                 </a>
+                                @if($user->role === 'instructor')
+                                    <button type="button" 
+                                            class="btn btn-sm btn-warning"
+                                            onclick="openDelegationDrawer('{{ $user->user_id }}', '{{ $user->full_name }}')">
+                                        Delegate
+                                    </button>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-info"
+                                            onclick="sendCredentials(event, '{{ $user->user_id }}', '{{ $user->full_name }}')"
+                                            title="Email credentials to instructor">
+                                        <i class="fas fa-envelope"></i> Email Credentials
+                                    </button>
+                                @endif
                             @endif
                         </div>
                     </td>
@@ -462,6 +485,21 @@
                                 Instructor
                             @endif
                         </span>
+                        @foreach($user->delegatedPermissions as $delegation)
+                            @if($delegation->status === 'active' && ($delegation->expires_at === null || $delegation->expires_at > now()))
+                                <div style="display: inline-block;">
+                                    <span class="badge bg-warning text-dark" title="Delegated: {{ $delegation->permission }} until {{ $delegation->expires_at->format('M d, H:i') }}">
+                                        <i class="fas fa-key"></i> {{ $delegation->permission }}
+                                    </span>
+                                    <form action="{{ route('admin.users.revoke-delegation', $user->user_id) }}" method="POST" style="display: inline;">
+                                        @csrf
+                                        <button type="submit" class="btn btn-xs btn-danger" style="padding: 0px 4px; font-size: 10px; line-height: 1.2; margin-left: -2px; border-top-left-radius: 0; border-bottom-left-radius: 0;" title="Revoke Permission" onclick="return confirm('Are you sure you want to revoke this permission?')">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            @endif
+                        @endforeach
                     </td>
                     <td class="text-center" style="font-size: 13px; font-weight: normal;">{{ $user->created_at->format('M d, Y') }}</td>
                     <td class="text-center" style="font-size: 13px; font-weight: normal;">
@@ -497,7 +535,145 @@
         @endif
     </div>
 </div>
+
+<!-- Delegation Drawer -->
+<div id="delegationDrawerOverlay" class="drawer-overlay" onclick="closeDelegationDrawer()"></div>
+<div id="delegationDrawer" class="drawer">
+    <div class="drawer-header">
+        <h5 class="drawer-title">Delegate Permissions</h5>
+        <button type="button" class="btn-close-drawer" onclick="closeDelegationDrawer()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <form id="delegationForm" method="POST">
+        @csrf
+        <div class="drawer-body">
+            <div class="alert alert-info mb-4">
+                <i class="fas fa-info-circle me-2"></i>
+                Delegating permissions allows <strong id="delegateeName"></strong> to perform actions on your behalf for a limited time.
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label">Permission Scope</label>
+                <select name="permission" class="form-select" required>
+                    <option value="assign_applicants">Assign Applicants</option>
+                    <!-- Add more permissions here as needed -->
+                </select>
+                <div class="form-text">Select the specific capability to grant.</div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label">Duration (Hours)</label>
+                <div class="input-group">
+                    <button type="button" class="btn btn-outline-secondary" onclick="adjustDuration(-1)">-</button>
+                    <input type="number" id="durationInput" name="duration" class="form-control text-center" value="24" min="1" required>
+                    <button type="button" class="btn btn-outline-secondary" onclick="adjustDuration(1)">+</button>
+                </div>
+                <div class="form-text">Permission will automatically expire after this time.</div>
+            </div>
+        </div>
+        <div class="drawer-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeDelegationDrawer()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Grant Permission</button>
+        </div>
+    </form>
+</div>
+
 @endsection
+
+@push('styles')
+<style>
+    /* Drawer Styles */
+    .drawer-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(2px);
+    }
+
+    .drawer-overlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .drawer {
+        position: fixed;
+        top: 0;
+        right: -400px;
+        width: 400px;
+        height: 100%;
+        background: white;
+        z-index: 1050;
+        box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+        transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .drawer.show {
+        right: 0;
+    }
+
+    .drawer-header {
+        padding: 20px;
+        border-bottom: 1px solid var(--border-gray);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--light-gray);
+    }
+
+    .drawer-title {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+    .btn-close-drawer {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        color: var(--text-gray);
+        cursor: pointer;
+        transition: color 0.2s;
+        padding: 5px;
+    }
+
+    .btn-close-drawer:hover {
+        color: var(--danger-red);
+    }
+
+    .drawer-body {
+        padding: 20px;
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .drawer-footer {
+        padding: 20px;
+        border-top: 1px solid var(--border-gray);
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        background: white;
+    }
+
+    @media (max-width: 576px) {
+        .drawer {
+            width: 100%;
+            right: -100%;
+        }
+    }
+</style>
+@endpush
 
 @push('scripts')
 <script>
@@ -519,6 +695,74 @@
                 url.searchParams.delete('page'); // Reset to first page
                 window.location.href = url.toString();
             }, 500); // 500ms debounce
+        });
+    }
+
+    // Drawer Functions
+    function openDelegationDrawer(userId, userName) {
+        document.getElementById('delegateeName').textContent = userName;
+        document.getElementById('delegationForm').action = `/admin/users/${userId}/delegate`;
+        
+        document.getElementById('delegationDrawerOverlay').classList.add('show');
+        document.getElementById('delegationDrawer').classList.add('show');
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+
+    function closeDelegationDrawer() {
+        document.getElementById('delegationDrawerOverlay').classList.remove('show');
+        document.getElementById('delegationDrawer').classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    function adjustDuration(amount) {
+        const input = document.getElementById('durationInput');
+        let val = parseInt(input.value) || 0;
+        val += amount;
+        if (val < 1) val = 1;
+        input.value = val;
+    }
+
+    // Close drawer on escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeDelegationDrawer();
+        }
+    });
+
+    // Send credentials email
+    function sendCredentials(event, userId, userName) {
+        if (!confirm(`Send credentials email to ${userName}? This will generate a new temporary password and require them to change it on first login.`)) {
+            return;
+        }
+
+        // Show loading state
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+        fetch(`/admin/users/${userId}/send-credentials`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while sending the email.');
+        })
+        .finally(() => {
+            button.disabled = false;
+            button.innerHTML = originalText;
         });
     }
 </script>

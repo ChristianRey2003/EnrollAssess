@@ -47,6 +47,11 @@ class AdminAuthController extends Controller
                 
                 $request->session()->regenerate();
                 
+                // Check if user must change password
+                if ($user->force_password_change) {
+                    return redirect()->route('admin.password.force-change');
+                }
+                
                 // Role-based redirect
                 $redirectRoute = match($user->role) {
                     'department-head' => 'admin.dashboard',

@@ -164,6 +164,9 @@
                             <p class="text-muted mb-2" style="font-size: 11px; line-height: 1.3;">
                                 Upload a profile picture. Accepted formats: JPG, PNG, GIF. Maximum size: 2MB.
                             </p>
+                            <p id="profilePictureWarning" class="text-danger mb-2" style="font-size: 11px; display: none;">
+                                The selected file exceeds the 2MB limit. Please choose a smaller image.
+                            </p>
                             
                             <div class="file-upload-wrapper d-inline-block">
                                 <input type="file" 
@@ -216,15 +219,17 @@
 
                         <!-- Username -->
                         <div class="mb-1">
-                            <label for="username" class="form-label">Username</label>
+                            <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
                             <input type="text" 
                                    id="username" 
                                    name="username" 
                                    value="{{ old('username', $user->username) }}" 
-                                   class="form-control"
-                                   disabled
-                                   readonly>
-                            <div class="form-text">Username cannot be changed</div>
+                                   class="form-control @error('username') is-invalid @enderror"
+                                   required>
+                            @error('username')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <div class="form-text">This username is used to sign in and must be unique.</div>
                         </div>
 
                         <!-- Email -->
@@ -307,12 +312,27 @@
 @push('scripts')
 <script>
     function previewProfilePicture(input) {
+        const warningEl = document.getElementById('profilePictureWarning');
+        const formInput = document.getElementById('profile_picture');
+        const maxBytes = 2 * 1024 * 1024; // 2MB limit
+
         if (input.files && input.files[0]) {
+            const file = input.files[0];
+
+            if (file.size > maxBytes) {
+                warningEl.style.display = 'block';
+                input.value = '';
+                formInput.value = '';
+                return;
+            }
+
+            warningEl.style.display = 'none';
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 const preview = document.getElementById('profilePreview');
                 const initials = document.getElementById('profileInitials');
-                const image = document.getElementById('profileImage');
+                let image = document.getElementById('profileImage');
                 
                 if (image) {
                     image.src = e.target.result;
@@ -320,19 +340,18 @@
                     if (initials) {
                         initials.style.display = 'none';
                     }
-                    const img = document.createElement('img');
-                    img.id = 'profileImage';
-                    img.src = e.target.result;
-                    img.alt = 'Profile Picture';
-                    preview.appendChild(img);
+                    image = document.createElement('img');
+                    image.id = 'profileImage';
+                    image.src = e.target.result;
+                    image.alt = 'Profile Picture';
+                    preview.appendChild(image);
                 }
             };
-            reader.readAsDataURL(input.files[0]);
+            reader.readAsDataURL(file);
             
             // Sync with form input - create a new FileList
-            const formInput = document.getElementById('profile_picture');
             const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(input.files[0]);
+            dataTransfer.items.add(file);
             formInput.files = dataTransfer.files;
         }
     }

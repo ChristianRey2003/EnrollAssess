@@ -367,7 +367,7 @@
                                     <!-- Floating Actions -->
                                     @if($interview->applicant)
                                     <div class="floating-actions">
-                                        <a href="{{ route('instructor.interview.show', $interview->applicant->applicant_id) }}" 
+                                        <a href="{{ route('instructor.interview.summary', $interview->applicant->applicant_id) }}" 
                                            class="action-btn action-btn-view">
                                             View Details
                                         </a>

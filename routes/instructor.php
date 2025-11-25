@@ -28,6 +28,7 @@ Route::get('/applicants', [InstructorController::class, 'applicants'])
 // Interview Management
 Route::prefix('interview')->name('interview.')->middleware('role:instructor')->group(function () {
     Route::get('/applicants/{applicant}', [InstructorController::class, 'showInterview'])->name('show');
+    Route::get('/applicants/{applicant}/summary', [InstructorController::class, 'viewInterviewSummary'])->name('summary');
     Route::post('/applicants/{applicant}', [InstructorController::class, 'submitInterview'])->name('submit');
 });
 

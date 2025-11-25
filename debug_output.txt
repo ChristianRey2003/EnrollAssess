@@ -1,0 +1,36 @@
+User: Prof. Michael Angelo Garcia (ID: 2)
+  Raw Delegations Found: 1
+    - ID: 1, Permission: assign_applicants, Status: active
+      Starts: 2025-11-25 18:56:49, Expires: 2025-11-26 18:56:49
+      Now: 2025-11-25 19:06:31
+      Is Active (Manual Check): YES
+  User::hasPermission('assign_applicants'): YES
+---------------------------------------------------
+User: Prof. Lisa Marie Torress (ID: 3)
+  Raw Delegations Found: 0
+  User::hasPermission('assign_applicants'): NO
+---------------------------------------------------
+User: Prof. Robert James Villanueva (ID: 4)
+  Raw Delegations Found: 0
+  User::hasPermission('assign_applicants'): NO
+---------------------------------------------------
+User: Prof. Sarah Jane Mendoza (ID: 5)
+  Raw Delegations Found: 0
+  User::hasPermission('assign_applicants'): NO
+---------------------------------------------------
+User: Prof. Christopher Paul Ramos (ID: 6)
+  Raw Delegations Found: 0
+  User::hasPermission('assign_applicants'): NO
+---------------------------------------------------
+User: Marjorie G. Bebanco (ID: 7)
+  Raw Delegations Found: 0
+  User::hasPermission('assign_applicants'): NO
+---------------------------------------------------
+User: christian rey (ID: 8)
+  Raw Delegations Found: 0
+  User::hasPermission('assign_applicants'): NO
+---------------------------------------------------
+User: christian rey alegs (ID: 9)
+  Raw Delegations Found: 0
+  User::hasPermission('assign_applicants'): NO
+---------------------------------------------------

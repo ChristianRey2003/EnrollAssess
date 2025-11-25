@@ -107,6 +107,18 @@
                 </a>
             </div>
             
+            @if(auth()->user()->hasPermission('assign_applicants'))
+            <div class="nav-item" role="listitem">
+                <a href="{{ route('admin.applicants.assign') }}" 
+                   class="nav-link {{ str_starts_with($currentRoute, 'admin.applicants.assign') ? 'active' : '' }}"
+                   @if(str_starts_with($currentRoute, 'admin.applicants.assign')) aria-current="page" @endif
+                   aria-label="Assign applicants to instructors">
+                    <span class="nav-icon" aria-hidden="true"><i class="fas fa-user-plus"></i></span>
+                    <span class="nav-text">Assign Applicants</span>
+                </a>
+            </div>
+            @endif
+            
             <div class="nav-item" role="listitem">
                 <a href="{{ route('instructor.applicants') }}" 
                    class="nav-link {{ str_starts_with($currentRoute, 'instructor.applicants') ? 'active' : '' }}"

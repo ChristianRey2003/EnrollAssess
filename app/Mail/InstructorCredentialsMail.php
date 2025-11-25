@@ -2,30 +2,27 @@
 
 namespace App\Mail;
 
-use App\Models\Applicant;
-use App\Models\Interview;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use App\Models\User;
 
-class InterviewScheduleMail extends Mailable
+class InstructorCredentialsMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $applicant;
-    public $interview;
-    public $instructor;
+    public $user;
+    public $password;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(Applicant $applicant, Interview $interview)
+    public function __construct(User $user, string $password)
     {
-        $this->applicant = $applicant;
-        $this->interview = $interview;
-        $this->instructor = $interview->interviewer;
+        $this->user = $user;
+        $this->password = $password;
     }
 
     /**
@@ -40,9 +37,9 @@ class InterviewScheduleMail extends Mailable
         if (empty($fromAddress)) {
             $fromAddress = 'noreply@evsu.edu.ph';
         }
-
+        
         return new Envelope(
-            subject: 'Interview Scheduled - ' . config('app.name'),
+            subject: 'Your EnrollAssess Account Credentials - Action Required',
             from: new \Illuminate\Mail\Mailables\Address($fromAddress, $fromName),
         );
     }
@@ -53,15 +50,8 @@ class InterviewScheduleMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.interview-schedule',
-            text: 'emails.interview-schedule-text',
-            with: [
-                'applicant' => $this->applicant,
-                'interview' => $this->interview,
-                'instructor' => $this->instructor,
-                'scheduleDate' => $this->interview->schedule_date->format('F d, Y'),
-                'scheduleTime' => $this->interview->schedule_date->format('g:i A'),
-            ],
+            view: 'emails.instructor-credentials',
+            text: 'emails.instructor-credentials-text',
         );
     }
 
@@ -75,4 +65,3 @@ class InterviewScheduleMail extends Mailable
         return [];
     }
 }
-

@@ -92,6 +92,15 @@
         margin-bottom: 12px;
     }
 
+    .form-row.name-fields {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+    }
+
+    .form-group.name-field {
+        flex: 1;
+    }
+
     .form-group {
         margin-bottom: 0;
     }
@@ -233,6 +242,10 @@
             gap: 12px;
         }
 
+        .form-row.name-fields {
+            grid-template-columns: 1fr;
+        }
+
         .form-group.full-width {
             grid-column: 1;
         }
@@ -264,7 +277,7 @@
         <form method="POST" action="{{ route('admin.users.store') }}">
             @csrf
 
-            <!-- Row 1: Username | Full Name -->
+            <!-- Row 1: Username -->
             <div class="form-row">
                 <!-- Username -->
                 <div class="form-group">
@@ -278,26 +291,58 @@
                     @error('username')
                         <span class="error-text">{{ $message }}</span>
                     @enderror
-                    <span class="help-text">Unique username for login</span>
-                </div>
-
-                <!-- Full Name -->
-                <div class="form-group">
-                    <label for="full_name">Full Name <span class="required">*</span></label>
-                    <input type="text" 
-                           id="full_name" 
-                           name="full_name" 
-                           value="{{ old('full_name') }}" 
-                           class="@error('full_name') error @enderror"
-                           required>
-                    @error('full_name')
-                        <span class="error-text">{{ $message }}</span>
-                    @enderror
-                    <span class="help-text">Complete name as it should appear</span>
+                    <span class="help-text">Auto-generated from name</span>
                 </div>
             </div>
 
-            <!-- Row 2: Email Address | Role -->
+            <!-- Row 2: First Name | Middle Name | Last Name -->
+            <div class="form-row name-fields">
+                <!-- First Name -->
+                <div class="form-group name-field">
+                    <label for="first_name">First Name <span class="required">*</span></label>
+                    <input type="text" 
+                           id="first_name" 
+                           name="first_name" 
+                           value="{{ old('first_name') }}" 
+                           class="@error('first_name') error @enderror"
+                           required
+                           oninput="generateUsername()">
+                    @error('first_name')
+                        <span class="error-text">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- Middle Name -->
+                <div class="form-group name-field">
+                    <label for="middle_name">Middle Name</label>
+                    <input type="text" 
+                           id="middle_name" 
+                           name="middle_name" 
+                           value="{{ old('middle_name') }}" 
+                           class="@error('middle_name') error @enderror"
+                           oninput="generateUsername()">
+                    @error('middle_name')
+                        <span class="error-text">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- Last Name -->
+                <div class="form-group name-field">
+                    <label for="last_name">Last Name <span class="required">*</span></label>
+                    <input type="text" 
+                           id="last_name" 
+                           name="last_name" 
+                           value="{{ old('last_name') }}" 
+                           class="@error('last_name') error @enderror"
+                           required
+                           oninput="generateUsername()">
+                    @error('last_name')
+                        <span class="error-text">{{ $message }}</span>
+                    @enderror
+                </div>
+            </div>
+
+            <!-- Row 3: Email Address | Role -->
             <div class="form-row">
                 <!-- Email -->
                 <div class="form-group">
@@ -320,11 +365,9 @@
                     <select id="role" 
                             name="role" 
                             class="@error('role') error @enderror" 
-                            required
-                            onchange="showRoleDescription()">
+                            required>
                         <option value="">Select a role...</option>
                         <option value="department-head" {{ old('role') === 'department-head' ? 'selected' : '' }}> Department Head</option>
-                        <option value="administrator" {{ old('role') === 'administrator' ? 'selected' : '' }}> Administrator</option>
                         <option value="instructor" {{ old('role') === 'instructor' ? 'selected' : '' }}>🧑‍ Instructor</option>
                     </select>
                     @error('role')
@@ -334,15 +377,7 @@
                 </div>
             </div>
 
-            <!-- Role Descriptions (Full Width) -->
-            <div class="form-group full-width">
-                <div class="role-descriptions" id="role-description" style="display: none;">
-                    <h4>Role Permissions:</h4>
-                    <ul id="role-permissions"></ul>
-                </div>
-            </div>
-
-            <!-- Row 3: Password | Confirm Password -->
+            <!-- Row 4: Password | Confirm Password -->
             <div class="form-row">
                 <!-- Password -->
                 <div class="form-group">
@@ -385,51 +420,58 @@
 
 @push('scripts')
 <script>
-    const rolePermissions = {
-        'department-head': [
-            'Full system administration',
-            'Manage all users and roles',
-            'Generate final reports',
-            'Configure system settings',
-            'Access all applicant data',
-            'Override exam and interview scores'
-        ],
-        'administrator': [
-            'Manage exam questions',
-            'View and manage applicants',
-            'Generate access codes',
-            'Schedule interviews',
-            'Update applicant status',
-            'Export applicant data'
-        ],
-        'instructor': [
-            'View assigned applicants',
-            'Conduct interviews',
-            'Submit interview scores',
-            'Add interview notes',
-            'View exam results',
-            'Generate basic reports'
-        ]
-    };
+    let usernameManuallyEdited = false;
+    let lastGeneratedUsername = '';
 
-    function showRoleDescription() {
-        const role = document.getElementById('role').value;
-        const descriptionDiv = document.getElementById('role-description');
-        const permissionsList = document.getElementById('role-permissions');
-
-        if (role && rolePermissions[role]) {
-            permissionsList.innerHTML = rolePermissions[role]
-                .map(perm => `<li>${perm}</li>`)
-                .join('');
-            descriptionDiv.style.display = 'block';
-        } else {
-            descriptionDiv.style.display = 'none';
+    function generateUsername() {
+        // Don't auto-generate if user has manually edited the username
+        if (usernameManuallyEdited) {
+            return;
         }
+
+        const firstName = document.getElementById('first_name').value.trim();
+        const middleName = document.getElementById('middle_name').value.trim();
+        const lastName = document.getElementById('last_name').value.trim();
+        const usernameField = document.getElementById('username');
+
+        if (!firstName || !lastName) {
+            return;
+        }
+
+        // Get first initial of first name
+        const firstInitial = firstName.charAt(0).toLowerCase();
+        
+        // Get first initial of middle name (if provided)
+        const middleInitial = middleName ? middleName.charAt(0).toLowerCase() : '';
+        
+        // Get full last name (lowercase, remove spaces)
+        const fullLastName = lastName.toLowerCase().replace(/\s+/g, '');
+        
+        // Generate username: firstInitial + middleInitial + fullLastName + "_ea"
+        const username = firstInitial + middleInitial + fullLastName + '_ea';
+        
+        lastGeneratedUsername = username;
+        usernameField.value = username;
     }
 
-    // Show role description if role is already selected (after validation error)
+    // Track manual edits to username field
     document.addEventListener('DOMContentLoaded', function() {
-        showRoleDescription();
+        const usernameField = document.getElementById('username');
+        const firstNameField = document.getElementById('first_name');
+        const middleNameField = document.getElementById('middle_name');
+        const lastNameField = document.getElementById('last_name');
+
+        // Generate username on page load if name fields are filled but username is empty
+        if ((firstNameField.value || lastNameField.value) && !usernameField.value) {
+            generateUsername();
+        }
+
+        // Track when user manually edits username
+        usernameField.addEventListener('input', function() {
+            if (this.value !== lastGeneratedUsername) {
+                usernameManuallyEdited = true;
+            }
+        });
     });
 </script>
 @endpush

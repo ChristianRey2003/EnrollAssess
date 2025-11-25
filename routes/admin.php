@@ -36,6 +36,13 @@ Route::get('/dashboard', function (Illuminate\Http\Request $request) {
     return view('admin.dashboard', compact('analytics', 'period'));
 })->middleware('role:department-head,administrator')->name('dashboard');
 
+// Routes requiring specific capabilities (Delegation or Role)
+// MUST BE BEFORE the main applicants group to avoid matching {id} wildcard
+Route::middleware(['auth', 'capability:assign_applicants'])->prefix('applicants')->name('applicants.')->group(function () {
+    Route::get('/assign', [ApplicantController::class, 'assignPage'])->name('assign');
+    Route::post('/bulk/assign-instructors', [ApplicantController::class, 'bulkAssignInstructors'])->name('bulk.assign-instructors');
+});
+
 // Applicant Management Routes
 Route::prefix('applicants')->name('applicants.')->middleware('role:department-head,administrator')->group(function () {
     Route::get('/', [ApplicantController::class, 'index'])->name('index');
@@ -51,18 +58,23 @@ Route::prefix('applicants')->name('applicants.')->middleware('role:department-he
     // Direct template download route for backward compatibility  
     Route::get('/download-template', [ApplicantController::class, 'downloadTemplate'])->name('download-template');
     
-    // Dedicated Assignment Page
-    Route::get('/assign', [ApplicantController::class, 'assignPage'])->name('assign');
+    // Dedicated Assignment Page (Moved to capability middleware group)
+    // Route::get('/assign', [ApplicantController::class, 'assignPage'])->name('assign');
     
     // Bulk Operations
     Route::prefix('bulk')->name('bulk.')->group(function () {
         Route::get('/import', [ApplicantController::class, 'import'])->name('import');
         Route::post('/import', [ApplicantController::class, 'processImport'])->name('process-import');
         Route::post('/generate-access-codes', [ApplicantController::class, 'generateAccessCodes'])->name('generate-access-codes');
-        Route::post('/assign-instructors', [ApplicantController::class, 'bulkAssignInstructors'])->name('assign-instructors');
         Route::post('/send-exam-notifications', [ApplicantController::class, 'sendExamNotifications'])->name('send-exam-notifications');
         Route::post('/delete', [ApplicantController::class, 'bulkDelete'])->name('delete');
     });
+    
+    // Archive Operations
+    Route::post('/archive-all', [ApplicantController::class, 'archiveAll'])->name('archive-all');
+    Route::get('/archived-history', [ApplicantController::class, 'archivedHistory'])->name('archived-history');
+    Route::post('/restore-all', [ApplicantController::class, 'restoreAll'])->name('restore-all');
+    Route::post('/permanently-delete-all', [ApplicantController::class, 'permanentlyDeleteAll'])->name('permanently-delete-all');
     
     // Exam Assignment Routes
     Route::post('/assign-exam', [ApplicantController::class, 'assignExamToApplicants'])->name('assign-exam');
@@ -73,7 +85,12 @@ Route::prefix('applicants')->name('applicants.')->middleware('role:department-he
         Route::get('/template', [ApplicantController::class, 'downloadTemplate'])->name('template');
         Route::get('/with-access-codes', [ApplicantController::class, 'exportWithAccessCodes'])->name('with-access-codes');
         Route::get('/evsu-results', [ApplicantController::class, 'exportEVSUResults'])->name('evsu-results');
+        // Department Head Only: Export Access Codes PDF
+        Route::get('/access-codes-pdf', [ApplicantController::class, 'exportAccessCodesPDF'])
+            ->middleware('role:department-head')
+            ->name('access-codes-pdf');
     });
+
 
     // API Endpoints
     Route::prefix('api')->name('api.')->group(function () {
@@ -82,6 +99,9 @@ Route::prefix('applicants')->name('applicants.')->middleware('role:department-he
     
     // Exam Results Route
     Route::get('/exam-results', [ApplicantController::class, 'examResults'])->name('exam-results');
+    
+    // Exam Details Route
+    Route::get('/{id}/exam-details', [ApplicantController::class, 'showExamDetails'])->name('exam-details');
     
     // Individual Applicant Detail Route
     Route::get('/{id}', [ApplicantController::class, 'show'])->name('show');
@@ -174,8 +194,15 @@ Route::middleware(['role:department-head'])->prefix('users')->name('users.')->gr
     Route::delete('/{user}', [UserManagementController::class, 'destroy'])->name('destroy');
     Route::post('/{user}/reset-password', [UserManagementController::class, 'resetPassword'])->name('reset-password');
     Route::post('/{user}/toggle-status', [UserManagementController::class, 'toggleStatus'])->name('toggle-status');
+    Route::post('/{user}/send-credentials', [UserManagementController::class, 'sendCredentials'])->name('send-credentials');
     Route::get('/export/csv', [UserManagementController::class, 'export'])->name('export');
+    
+    // Delegation Routes
+    Route::post('/{user}/delegate', [UserManagementController::class, 'delegate'])->name('delegate');
+    Route::post('/{user}/revoke-delegation', [UserManagementController::class, 'revokeDelegation'])->name('revoke-delegation');
 });
+
+
 
 // Department Head Specific Features
 Route::get('/department-head-dashboard', [DepartmentHeadController::class, 'dashboard'])

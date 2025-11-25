@@ -433,6 +433,43 @@
         font-size: 0.8125rem;
         font-weight: 600;
         color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .criterion-manual-input {
+        width: 50px;
+        padding: 3px 6px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-align: center;
+        background: white;
+        transition: all 0.2s;
+    }
+
+    .criterion-manual-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(128, 0, 32, 0.1);
+    }
+
+    .criterion-manual-input:invalid {
+        border-color: #DC2626;
+    }
+
+    .criterion-manual-input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .criterion-manual-input-label {
+        font-size: 0.6875rem;
+        color: var(--text-secondary);
+        font-weight: 400;
     }
 
     .criterion-badge {
@@ -491,17 +528,18 @@
 
     .rating-option.selected {
         border-width: 2px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
     }
 
     .rating-option.excellent {
         border-color: #10B981;
-        background: #F0FDF4;
+        background: #ECFDF5;
     }
 
     .rating-option.excellent.selected {
-        border-color: #059669;
-        background: #D1FAE5;
+        border-color: #047857;
+        background: #A7F3D0;
     }
 
     .rating-option.good {
@@ -510,8 +548,8 @@
     }
 
     .rating-option.good.selected {
-        border-color: #2563EB;
-        background: #DBEAFE;
+        border-color: #1D4ED8;
+        background: #BFDBFE;
     }
 
     .rating-option.fair {
@@ -520,8 +558,8 @@
     }
 
     .rating-option.fair.selected {
-        border-color: #D97706;
-        background: #FEF3C7;
+        border-color: #B45309;
+        background: #FCD34D;
     }
 
     .rating-option.poor {
@@ -530,8 +568,8 @@
     }
 
     .rating-option.poor.selected {
-        border-color: #DC2626;
-        background: #FEE2E2;
+        border-color: #B91C1C;
+        background: #FECACA;
     }
 
     .rating-option input {
@@ -699,11 +737,17 @@
         font-family: inherit;
     }
 
+    .textarea-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 6px;
+    }
+
     .char-count {
         text-align: right;
         font-size: 0.8125rem;
         color: var(--text-secondary);
-        margin-top: 6px;
     }
 
     /* Sentence choices styles */
@@ -1009,6 +1053,9 @@
                 <div class="gwa-help-text">
                     Enter the applicant's General Weighted Average from their CARD/TOR as a percentage (0-100). This is required before submission.
                 </div>
+                <div id="gwaError" class="gwa-status warning" style="display: none;">
+                    Please enter a value between 0 and 100%.
+                </div>
                 @if($applicant->card_tor_gwa)
                 <div class="gwa-status success">
                     <strong>Current GWA:</strong> {{ number_format($applicant->card_tor_gwa, 2) }}%
@@ -1045,7 +1092,24 @@
                             @endphp
                             <div class="criterion">
                                 <div class="criterion-header">
-                                    <span class="criterion-label">{{ $criteria['label'] }}</span>
+                                    <span class="criterion-label">
+                                        {{ $criteria['label'] }}
+                                        <div class="criterion-manual-input-wrapper">
+                                            <input 
+                                                type="number" 
+                                                class="criterion-manual-input" 
+                                                id="manual-{{ $criteriaKey }}"
+                                                data-criterion="{{ $criteriaKey }}"
+                                                min="0" 
+                                                max="10" 
+                                                step="0.1"
+                                                value="{{ old($criteriaKey, $interview->$criteriaKey ?? '') }}"
+                                                placeholder="?"
+                                                title="Optional: Enter manual score (0-10)"
+                                            >
+                                            <span class="criterion-manual-input-label">/10</span>
+                                        </div>
+                                    </span>
                                     <span class="criterion-badge" id="badge-{{ $criteriaKey }}"></span>
                                 </div>
                                 <div class="rating-options" data-crit="{{ $criteriaKey }}">
@@ -1106,10 +1170,6 @@
                     
                     <!-- Auto-generated sentence choices -->
                     <div class="sentence-choices">
-                        <div class="choices-header">
-                            <span class="choices-label">Quick Add:</span>
-                            <button type="button" class="choices-toggle" onclick="toggleChoices()">Show Options</button>
-                        </div>
                         <div class="choices-container" id="choicesContainer" style="display: none;">
                             <div class="choice-group">
                                 <span class="choice-group-label">Strengths:</span>
@@ -1147,8 +1207,11 @@
                     <textarea name="final_comments" id="final_comments" class="form-textarea" required 
                               placeholder="Provide your overall assessment, key observations, strengths, areas for improvement, and any additional notes about the applicant..." 
                               maxlength="5000">{{ old('final_comments', $interview->final_comments) }}</textarea>
-                    <div class="char-count">
-                        <span id="charCount">0</span>/5000 characters
+                    <div class="textarea-footer">
+                        <button type="button" class="choices-toggle" onclick="toggleChoices()">Show Options</button>
+                        <div class="char-count">
+                            <span id="charCount">0</span>/5000 characters
+                        </div>
                     </div>
                 </div>
 
@@ -1185,6 +1248,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const totalScoreEl = document.getElementById('totalScore');
     const charCountEl = document.getElementById('charCount');
     const textarea = document.getElementById('final_comments');
+    let suppressManualSync = false;
     
     const requiredFields = [
         'communication_skills', 'motivation_interest', 'problem_solving_attitude', 'program_understanding',
@@ -1201,8 +1265,40 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
         updateSelection(radio);
         updateBadge(radio);
+        syncManualInput(radio);
     });
     
+    // Initialize manual inputs with existing values
+    document.querySelectorAll('.criterion-manual-input').forEach(input => {
+        const criterion = input.dataset.criterion;
+        const radio = form.querySelector(`input[name="${criterion}"]:checked`);
+        
+        // If input doesn't have a value yet, sync from radio button
+        if (!input.value || input.value === '') {
+            if (radio) {
+                input.value = radio.value;
+            }
+        } else {
+            // If input has a value, sync radio to match
+            const value = parseFloat(input.value);
+            if (!isNaN(value) && value >= 0 && value <= 10) {
+                syncRadioFromManual(input);
+                updateBadgeFromManual(input);
+            }
+        }
+        
+        // Add validation and sync handlers
+        input.addEventListener('input', function() {
+            validateManualInput(this);
+            syncRadioFromManual(this);
+            updateBadgeFromManual(this);
+            checkCompletion();
+            calculateScore();
+        });
+        input.addEventListener('blur', function() {
+            validateManualInput(this);
+        });
+    });
 
     // Rating selection
     document.querySelectorAll('.rating-option').forEach(option => {
@@ -1213,10 +1309,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 radio.checked = true;
                 updateSelection(radio);
                 updateBadge(radio);
+                syncManualInput(radio);
                 checkCompletion();
                 calculateScore();
             }
         });
+    });
+
+    // Radio button change handler - use event delegation for dynamically added elements
+    form.addEventListener('change', function(e) {
+        if (e.target.type === 'radio' && e.target.name && ['communication_skills', 'motivation_interest', 'problem_solving_attitude', 'program_understanding', 
+            'personality_attitude', 'it_background', 'willingness_to_learn', 'overall_impression'].includes(e.target.name)) {
+            if (e.target.checked) {
+                updateSelection(e.target);
+                updateBadge(e.target);
+                if (!suppressManualSync) {
+                    syncManualInput(e.target);
+                }
+                checkCompletion();
+                calculateScore();
+            }
+        }
     });
 
     // Recommendation change
@@ -1225,10 +1338,45 @@ document.addEventListener('DOMContentLoaded', function() {
     // GWA change (sync input to hidden field inside form)
     const gwaInput = document.getElementById('card_tor_gwa_input');
     const gwaHidden = document.getElementById('card_tor_gwa');
+    const gwaError = document.getElementById('gwaError');
+
+    function enforceGwaLimits() {
+        if (!gwaInput) return;
+        let value = parseFloat(gwaInput.value);
+
+        if (isNaN(value)) {
+            if (gwaError) gwaError.style.display = 'none';
+            if (gwaHidden) gwaHidden.value = '';
+            return;
+        }
+
+        if (value > 100) {
+            value = 100;
+            gwaInput.value = 100;
+            if (gwaError) {
+                gwaError.textContent = 'Maximum allowed GWA is 100%.';
+                gwaError.style.display = 'block';
+            }
+        } else if (value < 0) {
+            value = 0;
+            gwaInput.value = 0;
+            if (gwaError) {
+                gwaError.textContent = 'Minimum allowed GWA is 0%.';
+                gwaError.style.display = 'block';
+            }
+        } else if (gwaError) {
+            gwaError.style.display = 'none';
+        }
+
+        if (gwaHidden) gwaHidden.value = value;
+    }
+
     gwaInput?.addEventListener('input', function() {
-        if (gwaHidden) gwaHidden.value = this.value;
+        enforceGwaLimits();
         checkCompletion();
     });
+
+    gwaInput?.addEventListener('blur', enforceGwaLimits);
 
     function updateSelection(radio) {
         const container = radio.closest('.rating-options');
@@ -1240,17 +1388,95 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateBadge(radio) {
         if (!radio.checked) return;
-        const value = parseInt(radio.value);
+        const value = parseFloat(radio.value);
         const badge = document.getElementById(`badge-${radio.name}`);
         if (badge) {
             let className = '', text = '';
-            if (value === 10) { className = 'excellent'; text = '10'; }
-            else if (value === 8) { className = 'good'; text = '8'; }
-            else if (value === 6) { className = 'fair'; text = '6'; }
-            else if (value === 4) { className = 'poor'; text = '4'; }
+            if (value >= 9) { className = 'excellent'; text = value.toString(); }
+            else if (value >= 7) { className = 'good'; text = value.toString(); }
+            else if (value >= 5) { className = 'fair'; text = value.toString(); }
+            else { className = 'poor'; text = value.toString(); }
             badge.className = `criterion-badge ${className} show`;
             badge.textContent = text;
         }
+    }
+
+    function syncManualInput(radio) {
+        if (!radio.checked) return;
+        const manualInput = document.getElementById(`manual-${radio.name}`);
+        if (manualInput) {
+            manualInput.value = radio.value;
+        }
+    }
+
+    function syncRadioFromManual(manualInput) {
+        const criterion = manualInput.dataset.criterion;
+        const value = parseFloat(manualInput.value);
+        if (!isNaN(value) && value >= 0 && value <= 10) {
+            // Find closest radio button value
+            const radioValues = [10, 8, 6, 4];
+            let closest = radioValues[0];
+            let minDiff = Math.abs(value - closest);
+            radioValues.forEach(rv => {
+                const diff = Math.abs(value - rv);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closest = rv;
+                }
+            });
+            const radio = form.querySelector(`input[name="${criterion}"][value="${closest}"]`);
+            if (radio) {
+                suppressManualSync = true;
+                radio.checked = true;
+                updateSelection(radio);
+                setTimeout(() => { suppressManualSync = false; }, 0);
+            }
+        }
+    }
+
+    function updateBadgeFromManual(manualInput) {
+        const criterion = manualInput.dataset.criterion;
+        const value = parseFloat(manualInput.value);
+        const badge = document.getElementById(`badge-${criterion}`);
+        if (badge && !isNaN(value) && value >= 0 && value <= 10) {
+            let className = '', text = '';
+            if (value >= 9) { className = 'excellent'; text = value.toString(); }
+            else if (value >= 7) { className = 'good'; text = value.toString(); }
+            else if (value >= 5) { className = 'fair'; text = value.toString(); }
+            else { className = 'poor'; text = value.toString(); }
+            badge.className = `criterion-badge ${className} show`;
+            badge.textContent = text;
+        } else if (badge) {
+            badge.className = 'criterion-badge';
+            badge.textContent = '';
+        }
+    }
+
+    function validateManualInput(input) {
+        if (input.value === '' || input.value === '?') {
+            input.setCustomValidity('');
+            input.style.borderColor = '';
+            return true;
+        }
+        
+        let value = parseFloat(input.value);
+        if (isNaN(value)) {
+            input.setCustomValidity('Value must be numeric');
+            input.style.borderColor = '#DC2626';
+            return false;
+        }
+
+        if (value > 10) {
+            value = 10;
+            input.value = 10;
+        } else if (value < 0) {
+            value = 0;
+            input.value = 0;
+        }
+
+        input.setCustomValidity('');
+        input.style.borderColor = '';
+        return true;
     }
 
     function checkCompletion() {
@@ -1259,7 +1485,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const element = document.getElementById(field);
                 return element?.value && element.value.trim() !== '';
             }
-            return form.querySelector(`input[name="${field}"]:checked`);
+            // Check if either radio is checked OR manual input has valid value
+            const radio = form.querySelector(`input[name="${field}"]:checked`);
+            const manualInput = document.getElementById(`manual-${field}`);
+            if (manualInput && manualInput.value !== '' && manualInput.value !== '?') {
+                const value = parseFloat(manualInput.value);
+                return !isNaN(value) && value >= 0 && value <= 10;
+            }
+            return radio !== null;
         });
 
         submitBtn.disabled = !allCompleted;
@@ -1269,9 +1502,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function calculateScore() {
         let totalRaw = 0; // out of 80
-        document.querySelectorAll('[data-crit] input:checked').forEach(radio => {
-            totalRaw += parseInt(radio.value) || 0;
+        const criteria = ['communication_skills', 'motivation_interest', 'problem_solving_attitude', 'program_understanding', 
+                          'personality_attitude', 'it_background', 'willingness_to_learn', 'overall_impression'];
+        
+        criteria.forEach(criterion => {
+            const manualInput = document.getElementById(`manual-${criterion}`);
+            let value = 0;
+            
+            // Use manual input if provided and valid, otherwise use radio
+            if (manualInput && manualInput.value !== '' && manualInput.value !== '?') {
+                const manualValue = parseFloat(manualInput.value);
+                if (!isNaN(manualValue) && manualValue >= 0 && manualValue <= 10) {
+                    value = manualValue;
+                } else {
+                    // Fallback to radio if manual is invalid
+                    const radio = form.querySelector(`input[name="${criterion}"]:checked`);
+                    value = radio ? parseFloat(radio.value) || 0 : 0;
+                }
+            } else {
+                // Use radio button value
+                const radio = form.querySelector(`input[name="${criterion}"]:checked`);
+                value = radio ? parseFloat(radio.value) || 0 : 0;
+            }
+            
+            totalRaw += value;
         });
+        
         const totalPercent = Math.round((totalRaw / 80) * 100);
         totalScoreEl.textContent = totalPercent;
         
@@ -1293,6 +1549,32 @@ document.addEventListener('DOMContentLoaded', function() {
         // Ensure hidden GWA is synced before submit
         if (gwaHidden && gwaInput) gwaHidden.value = gwaInput.value;
         
+        // Sync manual input values before submission
+        const criteria = ['communication_skills', 'motivation_interest', 'problem_solving_attitude', 'program_understanding', 
+                          'personality_attitude', 'it_background', 'willingness_to_learn', 'overall_impression'];
+        criteria.forEach(criterion => {
+            const manualInput = document.getElementById(`manual-${criterion}`);
+            const existingHidden = form.querySelector(`input[name="${criterion}"][type="hidden"]`);
+            if (existingHidden) {
+                existingHidden.remove();
+            }
+            
+            if (manualInput && manualInput.value !== '' && manualInput.value !== '?') {
+                const value = parseFloat(manualInput.value);
+                if (!isNaN(value) && value >= 0 && value <= 10) {
+                    form.querySelectorAll(`input[name="${criterion}"][type="radio"]`).forEach(radio => {
+                        radio.checked = false;
+                        radio.removeAttribute('required');
+                    });
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = criterion;
+                    hiddenInput.value = value;
+                    form.appendChild(hiddenInput);
+                }
+            }
+        });
+        
         if (action === 'submit_final') {
             const total = parseInt(totalScoreEl.textContent); // percent out of 100
             const passing = total >= 70;
@@ -1313,6 +1595,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (gwaHidden && gwaInput) gwaHidden.value = gwaInput.value;
 
+        // Sync manual input values before submission - create hidden inputs to override radio values
+        const criteria = ['communication_skills', 'motivation_interest', 'problem_solving_attitude', 'program_understanding', 
+                          'personality_attitude', 'it_background', 'willingness_to_learn', 'overall_impression'];
+        criteria.forEach(criterion => {
+            const manualInput = document.getElementById(`manual-${criterion}`);
+            // Remove any existing hidden inputs for this criterion
+            const existingHidden = form.querySelector(`input[name="${criterion}"][type="hidden"]`);
+            if (existingHidden) {
+                existingHidden.remove();
+            }
+            
+            if (manualInput && manualInput.value !== '' && manualInput.value !== '?') {
+                const value = parseFloat(manualInput.value);
+                if (!isNaN(value) && value >= 0 && value <= 10) {
+                    // Uncheck all radios for this criterion (hidden input will take precedence)
+                    form.querySelectorAll(`input[name="${criterion}"][type="radio"]`).forEach(radio => {
+                        radio.checked = false;
+                        radio.removeAttribute('required');
+                    });
+                    // Create a hidden input with the manual value (will override radio in form submission)
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = criterion;
+                    hiddenInput.value = value;
+                    form.appendChild(hiddenInput);
+                }
+            }
+        });
+
         const total = parseInt(totalScoreEl.textContent); // percent out of 100
         const passing = total >= 70;
         const message = passing 
@@ -1323,6 +1634,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     @endif
 
+    enforceGwaLimits();
     calculateScore();
     checkCompletion();
     

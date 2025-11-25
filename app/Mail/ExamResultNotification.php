@@ -69,6 +69,7 @@ class ExamResultNotification extends Mailable
     {
         return new Content(
             view: 'emails.exam-result',
+            text: 'emails.exam-result-text',
         );
     }
 

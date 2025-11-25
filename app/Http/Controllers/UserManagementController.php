@@ -3,19 +3,39 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Settings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules;
+use App\Mail\InstructorCredentialsMail;
+use App\Services\MailConfigurationService;
 
 class UserManagementController extends Controller
 {
+    /**
+     * Mail Configuration Service
+     *
+     * @var MailConfigurationService
+     */
+    protected $mailConfigService;
+
+    /**
+     * Constructor
+     */
+    public function __construct(MailConfigurationService $mailConfigService)
+    {
+        $this->mailConfigService = $mailConfigService;
+    }
+
     /**
      * Display a listing of users
      */
     public function index(Request $request)
     {
-        $query = User::query();
+        $query = User::with('delegatedPermissions');
 
         // Search functionality
         if ($request->filled('search')) {
@@ -75,16 +95,42 @@ class UserManagementController extends Controller
     {
         $request->validate([
             'username' => 'required|string|max:255|unique:users,username',
-            'full_name' => 'required|string|max:255',
+            'first_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+            'last_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email',
-            'role' => 'required|in:department-head,administrator,instructor',
+            'role' => 'required|in:department-head,instructor',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         try {
+            $formatNamePart = function (?string $value) {
+                if ($value === null) {
+                    return null;
+                }
+
+                $trimmed = trim($value);
+                if ($trimmed === '') {
+                    return null;
+                }
+
+                return ucfirst(strtolower($trimmed));
+            };
+
+            $firstName = $formatNamePart($request->first_name);
+            $middleName = $formatNamePart($request->middle_name);
+            $lastName = $formatNamePart($request->last_name);
+
+            // Combine first, middle, and last name into full_name
+            $fullName = trim(
+                collect([$firstName, $middleName, $lastName])
+                    ->filter(fn ($part) => !empty($part))
+                    ->implode(' ')
+            );
+
             $user = User::create([
                 'username' => $request->username,
-                'full_name' => $request->full_name,
+                'full_name' => $fullName,
                 'email' => $request->email,
                 'role' => $request->role,
                 'password_hash' => Hash::make($request->password),
@@ -159,7 +205,7 @@ class UserManagementController extends Controller
             'username' => 'required|string|max:255|unique:users,username,' . $user->user_id . ',user_id',
             'full_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->user_id . ',user_id',
-            'role' => 'required|in:department-head,administrator,instructor',
+            'role' => 'required|in:department-head,instructor',
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -333,5 +379,155 @@ class UserManagementController extends Controller
         return response($csv)
                 ->header('Content-Type', 'text/csv')
                 ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
+    }
+    /**
+     * Delegate a permission to a user
+     */
+    public function delegate(Request $request, $id)
+    {
+        $request->validate([
+            'permission' => 'required|string',
+            'duration' => 'required|integer|min:1', // Duration in hours
+        ]);
+
+        try {
+            $delegatee = User::findOrFail($id);
+            
+            // Only allow delegation to instructors
+            if ($delegatee->role !== 'instructor') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Permissions can only be delegated to instructors.'
+                ]);
+            }
+
+            // Create delegation
+            \App\Models\RoleDelegation::create([
+                'delegator_id' => Auth::id(),
+                'delegatee_id' => $delegatee->user_id,
+                'permission' => $request->permission,
+                'starts_at' => now(),
+                'expires_at' => now()->addHours((int)$request->duration),
+                'status' => 'active'
+            ]);
+
+            return redirect()->back()->with('success', "Successfully delegated '{$request->permission}' to {$delegatee->full_name} for {$request->duration} hours.");
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to delegate permission: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Revoke a delegation
+     */
+    public function revokeDelegation($id)
+    {
+        try {
+            // Find active delegations for this user
+            $updated = \App\Models\RoleDelegation::where('delegatee_id', $id)
+                ->where('status', 'active')
+                ->update(['status' => 'revoked']);
+
+            if ($updated > 0) {
+                return redirect()->back()->with('success', 'Successfully revoked all delegations for this user.');
+            } else {
+                 return redirect()->back()->with('warning', 'No active delegations found for this user.');
+            }
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to revoke delegations.');
+        }
+    }
+
+    /**
+     * Send credentials email to instructor
+     */
+    public function sendCredentials($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+
+            // Only allow sending credentials to instructors
+            if ($user->role !== 'instructor') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Credentials can only be sent to instructors.'
+                ], 400);
+            }
+
+            // Check if user has email
+            if (empty($user->email)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User does not have an email address configured.'
+                ], 400);
+            }
+
+            // Generate a temporary password
+            $tempPassword = 'Temp' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT) . '!';
+
+            // Update user password and set force password change flag
+            $user->update([
+                'password_hash' => Hash::make($tempPassword),
+                'force_password_change' => true,
+            ]);
+
+            // Reload mail configuration to ensure we're using latest settings
+            $this->mailConfigService->loadFromDatabase();
+
+            // Verify mail configuration before sending
+            $mailerType = Settings::getSetting('mail_mailer', 'resend');
+            $fromAddress = Settings::getSetting('mail_from_address', '');
+            
+            if (empty($fromAddress)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Email configuration error: Please set a "From Address" in email settings before sending credentials.'
+                ], 400);
+            }
+            
+            if ($mailerType === 'resend') {
+                $resendApiKey = Settings::getSetting('resend_api_key', '');
+                if (empty($resendApiKey)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Email configuration error: Please set your Resend API key in email settings before sending credentials.'
+                    ], 400);
+                }
+            }
+
+            // Send email with credentials
+            Mail::to($user->email)->send(new InstructorCredentialsMail($user, $tempPassword));
+
+            return response()->json([
+                'success' => true,
+                'message' => "Credentials email sent successfully to {$user->email}. The user will be required to change their password on first login."
+            ]);
+
+        } catch (\Illuminate\Mail\SendException $e) {
+            Log::error('Failed to send credentials email (SendException): ' . $e->getMessage());
+            Log::error('Exception trace: ' . $e->getTraceAsString());
+            
+            // Check if this is a Resend API error
+            $errorMessage = 'Failed to send credentials email. ';
+            if (str_contains($e->getMessage(), 'Resend')) {
+                $errorMessage .= 'Resend API error: ' . $e->getMessage();
+            } else {
+                $errorMessage .= $e->getMessage();
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => $errorMessage
+            ], 500);
+        } catch (\Exception $e) {
+            Log::error('Failed to send credentials email: ' . $e->getMessage());
+            Log::error('Exception trace: ' . $e->getTraceAsString());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send credentials email: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

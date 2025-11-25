@@ -690,6 +690,7 @@
     <!-- Tab Navigation -->
     <div class="settings-tabs">
         <button type="button" class="settings-tab active" onclick="switchTab('email')">Email Settings</button>
+        <button type="button" class="settings-tab" onclick="switchTab('archived-applicants')">Archived Applicants</button>
         <button type="button" class="settings-tab" onclick="switchTab('archived-reports')">Archived Reports</button>
         <button type="button" class="settings-tab" onclick="switchTab('archived-questions')">Archived Question Bank</button>
     </div>
@@ -821,6 +822,42 @@
                 </button>
             </div>
         </form>
+    </div>
+
+    <!-- Archived Applicants Tab Pane -->
+    <div id="archived-applicants-tab" class="settings-tab-pane">
+        <div class="archived-reports-section">
+            <div class="archived-reports-header">
+                <h3>Archived Applicants</h3>
+                <div class="archived-reports-actions">
+                    <button type="button" class="btn btn-archive" onclick="loadArchivedApplicants()" id="loadArchivedApplicantsBtn">Load Archived</button>
+                    <button type="button" class="btn btn-archive" onclick="restoreAllArchivedApplicants()">Restore All</button>
+                    <button type="button" class="btn btn-delete-permanent" onclick="permanentlyDeleteAllArchivedApplicants()">Permanently Delete All</button>
+                </div>
+            </div>
+            <div class="settings-card">
+                <table class="data-table archived-applicants-table">
+                    <thead>
+                        <tr>
+                            <th>Application No.</th>
+                            <th>Full Name</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Archived</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 20px; color: #6B7280;">
+                                <p>Click "Load Archived" to view archived applicants.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- Archived Reports Tab Pane -->
@@ -1496,6 +1533,192 @@
         } catch (error) {
             console.error('Error restoring exam:', error);
             showNotification('Error restoring question bank. Please try again.', 'error');
+        }
+    }
+
+    // Archived Applicants Functions
+    async function loadArchivedApplicants() {
+        const btn = document.getElementById('loadArchivedApplicantsBtn');
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+
+        try {
+            const response = await fetch('{{ route("admin.applicants.archived-history") }}', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+
+            const text = await response.text();
+            const data = JSON.parse(text);
+
+            if (data.success) {
+                if (data.applicants.length > 0) {
+                    updateArchivedApplicantsTable(data.applicants);
+                } else {
+                    const tbody = document.querySelector('.archived-applicants-table tbody');
+                    if (tbody) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 20px; color: #6B7280;">
+                                    <p>No archived applicants found.</p>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                }
+            } else {
+                showNotification('Failed to load archived applicants.', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading archived applicants:', error);
+            showNotification('Error loading archived applicants. Please try again.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    }
+
+    function updateArchivedApplicantsTable(applicants) {
+        const tbody = document.querySelector('.archived-applicants-table tbody');
+        if (!tbody) return;
+
+        if (applicants.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 20px; color: #6B7280;">
+                        <p>No archived applicants found.</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        let html = '';
+        applicants.forEach(applicant => {
+            const statusMap = {
+                'exam-completed': 'EXAM DONE',
+                'interview-available': 'INTERVIEW READY',
+                'interview-scheduled': 'INTERVIEW SET',
+                'interview-completed': 'INTERVIEW DONE',
+                'admitted': 'ADMITTED',
+                'rejected': 'REJECTED',
+                'pending': 'PENDING'
+            };
+            const statusText = statusMap[applicant.status] || applicant.status.replace(/-/g, ' ').toUpperCase();
+
+            html += `
+                <tr>
+                    <td>${applicant.application_no || 'N/A'}</td>
+                    <td>${applicant.full_name || 'N/A'}</td>
+                    <td>${applicant.email_address || 'N/A'}</td>
+                    <td><span style="font-size: 11px; padding: 4px 8px; border-radius: 4px; background: #fef3c7; color: #92400e; font-weight: 500;">${statusText}</span></td>
+                    <td>${applicant.created_at || 'N/A'}</td>
+                    <td>${applicant.deleted_at || 'N/A'}</td>
+                    <td>
+                        <button onclick="restoreArchivedApplicant(${applicant.applicant_id})" class="btn btn-archive" style="padding: 4px 12px; font-size: 12px;">Restore</button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = html;
+    }
+
+    async function restoreAllArchivedApplicants() {
+        if (!confirm('Are you sure you want to restore all archived applicants?')) {
+            return;
+        }
+
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Restoring...';
+
+        try {
+            const response = await fetch('{{ route("admin.applicants.restore-all") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                },
+                credentials: 'same-origin',
+            });
+
+            const text = await response.text();
+            const data = JSON.parse(text);
+
+            if (data.success) {
+                showNotification(data.message || `Successfully restored ${data.restored_count} applicant(s).`, 'success');
+                loadArchivedApplicants(); // Refresh archived applicants table
+            } else {
+                showNotification(data.message || 'Failed to restore archived applicants.', 'error');
+            }
+        } catch (error) {
+            console.error('Error restoring archived applicants:', error);
+            showNotification('Error restoring archived applicants. Please try again.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    }
+
+    async function permanentlyDeleteAllArchivedApplicants() {
+        if (!confirm('WARNING: This will permanently delete all archived applicants. This action cannot be undone!\n\nAre you absolutely sure?')) {
+            return;
+        }
+
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Deleting...';
+
+        try {
+            const response = await fetch('{{ route("admin.applicants.permanently-delete-all") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                },
+                credentials: 'same-origin',
+            });
+
+            const text = await response.text();
+            const data = JSON.parse(text);
+
+            if (data.success) {
+                showNotification(data.message || `Successfully permanently deleted ${data.deleted_count} applicant(s).`, 'success');
+                loadArchivedApplicants(); // Refresh archived applicants table
+            } else {
+                showNotification(data.message || 'Failed to permanently delete archived applicants.', 'error');
+            }
+        } catch (error) {
+            console.error('Error permanently deleting archived applicants:', error);
+            showNotification('Error permanently deleting archived applicants. Please try again.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    }
+
+    async function restoreArchivedApplicant(applicantId) {
+        if (!confirm('Are you sure you want to restore this applicant?')) {
+            return;
+        }
+
+        try {
+            // For individual restore, we'll need to add a route for this
+            // For now, use restore all as a workaround or add individual restore route
+            showNotification('Individual restore not yet implemented. Please use "Restore All" or contact administrator.', 'info');
+        } catch (error) {
+            console.error('Error restoring archived applicant:', error);
+            showNotification('Error restoring archived applicant. Please try again.', 'error');
         }
     }
 </script>
