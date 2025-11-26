@@ -567,7 +567,6 @@
             <div class="data-row">
                 <span class="data-label">EnrollAssess Score</span>
                 <span class="data-value" style="display: flex; align-items: center; gap: 8px;">
-                    {{ $applicant->enrollassess_score ? number_format($applicant->enrollassess_score, 2) . '%' : '-' }}
                     @if($applicant->enrollassess_score && $totalQuestions > 0)
                         <a href="{{ route('admin.applicants.exam-details', $applicant->applicant_id) }}" 
                            class="btn btn-secondary" 
@@ -575,6 +574,7 @@
                             View Exam Details
                         </a>
                     @endif
+                    {{ $applicant->enrollassess_score ? number_format($applicant->enrollassess_score, 2) . '%' : '-' }}
                 </span>
             </div>
             <div class="data-row">

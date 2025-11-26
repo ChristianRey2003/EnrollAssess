@@ -286,23 +286,21 @@
 @endpush
 
 @section('content')
+<!-- Breadcrumb -->
+<div class="breadcrumb">
+    <a href="{{ route('admin.applicants.index') }}" class="breadcrumb-link">Applicants</a>
+    <span class="breadcrumb-separator">›</span>
+    <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}" class="breadcrumb-link">{{ $applicant->full_name }}</a>
+    <span class="breadcrumb-separator">›</span>
+    <span class="breadcrumb-current">Exam Details</span>
+</div>
+
 <div class="exam-details-container">
-    <!-- Breadcrumb -->
-    <nav class="breadcrumb" aria-label="Breadcrumb">
-        <a href="{{ route('admin.applicants.index') }}" class="breadcrumb-link">Applicants</a>
-        <span class="breadcrumb-separator">/</span>
-        <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}" class="breadcrumb-link">{{ $applicant->full_name }}</a>
-        <span class="breadcrumb-separator">/</span>
-        <span class="breadcrumb-current">Exam Details</span>
-    </nav>
 
     <!-- Summary Card -->
     <div class="summary-card">
         <div class="summary-header">
             <h1 class="summary-title">Exam Details - {{ $applicant->full_name }}</h1>
-            <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}" class="btn btn-secondary">
-                ← Back to Applicant
-            </a>
         </div>
 
         <div class="stats-grid">
@@ -408,6 +406,32 @@
                                         @endforeach
                                     </div>
                                 </div>
+                            @elseif($question->question_type === 'true_false')
+                                <div style="margin-bottom: 12px;">
+                                    <div class="answer-label">Applicant's Answer:</div>
+                                    <div class="answer-value {{ $isCorrect ? 'correct-answer' : 'incorrect-answer' }}">
+                                        @if($selectedOption)
+                                            {{ $selectedOption->option_text }}
+                                        @elseif($result->answer_text)
+                                            {{ $result->answer_text }}
+                                        @else
+                                            <span style="color: #9ca3af;">No answer selected</span>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                @if(!$isCorrect)
+                                <div>
+                                    <div class="answer-label">Correct Answer:</div>
+                                    <div class="answer-value correct-answer">
+                                        @if($correctOption)
+                                            {{ $correctOption->option_text }}
+                                        @else
+                                            {{ $question->correct_answer ?? 'N/A' }}
+                                        @endif
+                                    </div>
+                                </div>
+                                @endif
                             @elseif($question->question_type === 'essay' || $question->question_type === 'short_answer')
                                 <div style="margin-bottom: 12px;">
                                     <div class="answer-label">Applicant's Answer:</div>

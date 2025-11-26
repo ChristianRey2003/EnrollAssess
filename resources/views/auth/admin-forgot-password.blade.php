@@ -13,8 +13,11 @@
 
     <!-- University Theme CSS -->
     <link href="{{ asset('css/auth/university-auth.css') }}?v={{ time() }}" rel="stylesheet">
+    <!-- Admin Login Specific Styles -->
+    <link href="{{ asset('css/auth/admin-login.css') }}?v={{ time() }}" rel="stylesheet">
 </head>
 <body class="auth-page">
+    <canvas id="network-bg"></canvas>
     <div class="auth-container">
         <div class="auth-card">
             <!-- University Header -->
@@ -23,7 +26,6 @@
                     <img src="{{ asset('images/evsu-logo.png') }}" alt="EVSU Logo" style="width: 60px; height: 60px; object-fit: contain;">
                 </div>
                 <h1 class="university-name">Reset Password</h1>
-                <p class="auth-subtitle">Faculty Portal - Computer Studies Department</p>
             </div>
 
             <!-- Forgot Password Form -->
@@ -85,6 +87,89 @@
     </div>
 
     <script>
+        // Network Animation
+        const canvas = document.getElementById('network-bg');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+        
+        // University Palette (Maroon & Gold)
+        const colors = ['#800020', '#FFD700', '#A00028', '#E6C200'];
+
+        // Configuration
+        const particleCount = 100; // Increased density
+        const connectionDistance = 160; // Longer connections
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.size = Math.random() * 3 + 1.5; // Slightly larger particles
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+        }
+
+        function init() {
+            resize();
+            particles = [];
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+
+                for (let j = i; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < connectionDistance) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = '#800020'; // Maroon connections
+                        ctx.globalAlpha = (1 - distance/connectionDistance) * 0.35; // More visible lines
+                        ctx.lineWidth = 1.5; // Slightly thicker lines
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                        ctx.globalAlpha = 1;
+                    }
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', resize);
+        init();
+        animate();
+
         // Enhanced form interaction
         document.getElementById('forgotPasswordForm').addEventListener('submit', function(e) {
             const submitBtn = document.getElementById('submitBtn');
@@ -116,7 +201,7 @@
 
     <style>
         /* Force refresh styles - Override any cached CSS */
-        body.auth-page {
+        /* body.auth-page {
             background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 50%, #f8f9fa 100%) !important;
             background-size: 200% 200% !important;
             animation: gradientShift 15s ease infinite !important;
@@ -125,7 +210,7 @@
         @keyframes gradientShift {
             0%, 100% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
-        }
+        } */
 
         .auth-card {
             background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;

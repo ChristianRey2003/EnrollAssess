@@ -462,7 +462,8 @@
                                 @if($user->role === 'instructor')
                                     <button type="button" 
                                             class="btn btn-sm btn-warning"
-                                            onclick="openDelegationDrawer('{{ $user->user_id }}', '{{ $user->full_name }}')">
+                                            data-delegations="{{ json_encode($user->delegatedPermissions) }}"
+                                            onclick="openDelegationDrawer(this, '{{ $user->user_id }}', '{{ $user->full_name }}')">
                                         Delegate
                                     </button>
                                     <button type="button" 
@@ -488,15 +489,10 @@
                         @foreach($user->delegatedPermissions as $delegation)
                             @if($delegation->status === 'active' && ($delegation->expires_at === null || $delegation->expires_at > now()))
                                 <div style="display: inline-block;">
-                                    <span class="badge bg-warning text-dark" title="Delegated: {{ $delegation->permission }} until {{ $delegation->expires_at->format('M d, H:i') }}">
-                                        <i class="fas fa-key"></i> {{ $delegation->permission }}
+                                    <div class="delegation-chip" title="Delegated: {{ ucwords(str_replace('_', ' ', $delegation->permission)) }} until {{ $delegation->expires_at->format('M d, H:i') }}">
+                                    <span class="delegation-label" style="margin-right: 0;">
+                                        <i class="fas fa-key"></i> {{ ucwords(str_replace('_', ' ', $delegation->permission)) }}
                                     </span>
-                                    <form action="{{ route('admin.users.revoke-delegation', $user->user_id) }}" method="POST" style="display: inline;">
-                                        @csrf
-                                        <button type="submit" class="btn btn-xs btn-danger" style="padding: 0px 4px; font-size: 10px; line-height: 1.2; margin-left: -2px; border-top-left-radius: 0; border-bottom-left-radius: 0;" title="Revoke Permission" onclick="return confirm('Are you sure you want to revoke this permission?')">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </form>
                                 </div>
                             @endif
                         @endforeach
@@ -548,6 +544,13 @@
     <form id="delegationForm" method="POST">
         @csrf
         <div class="drawer-body">
+            <!-- Active Delegations Section -->
+            <div id="activeDelegationsSection" style="display: none; margin-bottom: 24px;">
+                <h6 style="font-size: 0.75rem; text-transform: uppercase; color: #6B7280; font-weight: 700; margin-bottom: 12px; letter-spacing: 0.05em;">Active Delegations</h6>
+                <div id="activeDelegationsList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                <hr style="margin: 20px 0; border-color: #E5E7EB;">
+            </div>
+
             <div class="alert alert-info mb-4">
                 <i class="fas fa-info-circle me-2"></i>
                 Delegating permissions allows <strong id="delegateeName"></strong> to perform actions on your behalf for a limited time.
@@ -699,10 +702,45 @@
     }
 
     // Drawer Functions
-    function openDelegationDrawer(userId, userName) {
+    function openDelegationDrawer(btn, userId, userName) {
         document.getElementById('delegateeName').textContent = userName;
         document.getElementById('delegationForm').action = `/admin/users/${userId}/delegate`;
         
+        // Handle Active Delegations
+        const delegations = JSON.parse(btn.getAttribute('data-delegations') || '[]');
+        const activeDelegations = delegations.filter(d => d.status === 'active' && (d.expires_at === null || new Date(d.expires_at) > new Date()));
+        
+        const list = document.getElementById('activeDelegationsList');
+        const section = document.getElementById('activeDelegationsSection');
+        list.innerHTML = '';
+
+        if (activeDelegations.length > 0) {
+            section.style.display = 'block';
+            activeDelegations.forEach(d => {
+                const permissionName = d.permission.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                const expiry = new Date(d.expires_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                
+                const item = document.createElement('div');
+                item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; background: #F9FAFB; padding: 10px 12px; border-radius: 8px; border: 1px solid #E5E7EB;';
+                
+                item.innerHTML = `
+                    <div>
+                        <div style="font-weight: 600; font-size: 13px; color: #374151;">${permissionName}</div>
+                        <div style="font-size: 11px; color: #6B7280;">Expires: ${expiry}</div>
+                    </div>
+                    <form action="/admin/users/${userId}/revoke-delegation" method="POST" style="margin: 0;">
+                        <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
+                        <button type="submit" class="btn btn-sm" style="color: #DC2626; background: #FEF2F2; border: 1px solid #FECACA; padding: 4px 8px; font-size: 11px;" onclick="return confirm('Revoke this permission?')">
+                            Revoke
+                        </button>
+                    </form>
+                `;
+                list.appendChild(item);
+            });
+        } else {
+            section.style.display = 'none';
+        }
+
         document.getElementById('delegationDrawerOverlay').classList.add('show');
         document.getElementById('delegationDrawer').classList.add('show');
         document.body.style.overflow = 'hidden'; // Prevent background scrolling

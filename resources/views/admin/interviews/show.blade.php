@@ -8,15 +8,16 @@
 @endphp
 
 @section('content')
+<!-- Breadcrumb -->
+<div class="breadcrumb">
+    <a href="{{ route('admin.applicants.index') }}" class="breadcrumb-link">Applicants</a>
+    <span class="breadcrumb-separator">›</span>
+    <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}" class="breadcrumb-link">{{ $applicant->full_name }}</a>
+    <span class="breadcrumb-separator">›</span>
+    <span class="breadcrumb-current">Interview</span>
+</div>
+
 <div class="interview-detail-container">
-    <!-- Breadcrumb -->
-    <nav class="breadcrumb" aria-label="Breadcrumb">
-        <a href="{{ route('admin.applicants.index') }}" class="breadcrumb-link">Applicants</a>
-        <span class="breadcrumb-separator">/</span>
-        <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}" class="breadcrumb-link">{{ $applicant->full_name }}</a>
-        <span class="breadcrumb-separator">/</span>
-        <span class="breadcrumb-current">Interview</span>
-    </nav>
 
     <!-- 1. Header Section -->
     <div class="detail-card header-card">
@@ -202,7 +203,7 @@
             </a>
         @else
             <div class="actions-group">
-                <a href="{{ route('admin.applicants.show', $applicant->applicant_id) }}" class="btn btn-secondary">
+                <a href="{{ url()->previous() }}" class="btn btn-secondary">
                     Cancel
                 </a>
                 <a href="{{ route('admin.interviews.conduct', $interview->interview_id) }}" class="btn btn-outline">

@@ -364,7 +364,6 @@
         <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #e5e7eb;">
                 <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Edit Interview</h3>
-                <button onclick="closeEditModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">&times;</button>
             </div>
             <form id="editInterviewForm" style="padding: 20px;">
                 <input type="hidden" id="edit_interview_id" name="interview_id">
