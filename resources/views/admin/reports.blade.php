@@ -249,6 +249,8 @@
         .drawer .filter-label {
             font-size: 12px;
             margin-bottom: 4px;
+            font-weight: 500;
+            color: var(--maroon-primary, #800020);
         }
 
         .drawer .filter-input,
@@ -818,86 +820,61 @@
                 Configure the names and titles that appear in report signatures. These settings apply to all future reports (XLSX, DOCX, and PDF).
             </p>
 
-            <form id="signatureSettingsForm">
+            <form id="signatureSettingsForm" class="export-form">
                 <!-- Document Information -->
-                <div style="margin-bottom: 25px;">
-                    <h4 style="margin-bottom: 15px; color: #1f2937; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Document Information</h4>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Control No.</label>
-                            <input type="text" id="control_no" name="control_no" class="form-control" style="width: 100%;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Revision No.</label>
-                            <input type="text" id="revision_no" name="revision_no" class="form-control" style="width: 100%;">
-                        </div>
-                    </div>
+                <div class="form-group">
+                    <label for="control_no" class="filter-label">Control No.</label>
+                    <input type="text" id="control_no" name="control_no" class="filter-input" style="width: 100%;">
+                </div>
+                <div class="form-group">
+                    <label for="revision_no" class="filter-label">Revision No.</label>
+                    <input type="text" id="revision_no" name="revision_no" class="filter-input" style="width: 100%;">
                 </div>
 
                 <!-- Prepared By -->
-                <div style="margin-bottom: 25px;">
-                    <h4 style="margin-bottom: 15px; color: #1f2937; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Prepared By</h4>
-                    <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Name</label>
-                            <input type="text" id="prepared_by_name" name="prepared_by_name" class="form-control" style="width: 100%;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Title</label>
-                            <input type="text" id="prepared_by_title" name="prepared_by_title" class="form-control" style="width: 100%;">
-                        </div>
-                    </div>
+                <div class="form-group">
+                    <label for="prepared_by_name" class="filter-label">Prepared By - Name</label>
+                    <input type="text" id="prepared_by_name" name="prepared_by_name" class="filter-input" style="width: 100%;">
+                </div>
+                <div class="form-group">
+                    <label for="prepared_by_title" class="filter-label">Prepared By - Title</label>
+                    <input type="text" id="prepared_by_title" name="prepared_by_title" class="filter-input" style="width: 100%;">
                 </div>
 
                 <!-- Noted -->
-                <div style="margin-bottom: 25px;">
-                    <h4 style="margin-bottom: 15px; color: #1f2937; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Noted</h4>
-                    <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Name</label>
-                            <input type="text" id="noted_name" name="noted_name" class="form-control" style="width: 100%;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Title</label>
-                            <input type="text" id="noted_title" name="noted_title" class="form-control" style="width: 100%;">
-                        </div>
-                    </div>
+                <div class="form-group">
+                    <label for="noted_name" class="filter-label">Noted - Name</label>
+                    <input type="text" id="noted_name" name="noted_name" class="filter-input" style="width: 100%;">
+                </div>
+                <div class="form-group">
+                    <label for="noted_title" class="filter-label">Noted - Title</label>
+                    <input type="text" id="noted_title" name="noted_title" class="filter-input" style="width: 100%;">
                 </div>
 
                 <!-- Recommending Approval -->
-                <div style="margin-bottom: 25px;">
-                    <h4 style="margin-bottom: 15px; color: #1f2937; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Recommending Approval</h4>
-                    <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Name</label>
-                            <input type="text" id="recommending_name" name="recommending_name" class="form-control" style="width: 100%;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Title</label>
-                            <input type="text" id="recommending_title" name="recommending_title" class="form-control" style="width: 100%;">
-                        </div>
-                    </div>
+                <div class="form-group">
+                    <label for="recommending_name" class="filter-label">Recommending Approval - Name</label>
+                    <input type="text" id="recommending_name" name="recommending_name" class="filter-input" style="width: 100%;">
+                </div>
+                <div class="form-group">
+                    <label for="recommending_title" class="filter-label">Recommending Approval - Title</label>
+                    <input type="text" id="recommending_title" name="recommending_title" class="filter-input" style="width: 100%;">
                 </div>
 
                 <!-- Approved -->
-                <div style="margin-bottom: 25px;">
-                    <h4 style="margin-bottom: 15px; color: #1f2937; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Approved</h4>
-                    <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Name</label>
-                            <input type="text" id="approved_name" name="approved_name" class="form-control" style="width: 100%;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Title</label>
-                            <input type="text" id="approved_title" name="approved_title" class="form-control" style="width: 100%;">
-                        </div>
-                    </div>
+                <div class="form-group">
+                    <label for="approved_name" class="filter-label">Approved - Name</label>
+                    <input type="text" id="approved_name" name="approved_name" class="filter-input" style="width: 100%;">
+                </div>
+                <div class="form-group">
+                    <label for="approved_title" class="filter-label">Approved - Title</label>
+                    <input type="text" id="approved_title" name="approved_title" class="filter-input" style="width: 100%;">
                 </div>
             </form>
         </div>
         <div class="drawer-footer">
             <button type="button" onclick="closeSignatureSettingsDrawer()" class="btn-secondary">Cancel</button>
-            <button type="button" onclick="saveSignatureSettings()" class="btn-primary" id="saveSignatureBtn">Save Settings</button>
+            <button type="button" onclick="saveSignatureSettings()" class="btn-primary-export" id="saveSignatureBtn">Save Settings</button>
         </div>
     </div>
 @endpush

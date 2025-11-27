@@ -271,13 +271,34 @@ class Applicant extends Model
 
     /**
      * Generate unique application number
+     * Format: 0-25-11-00314-0314
+     * Where: 0-prefix, 25-year, 11-month, 00314-sequence, 0314-checksum
      */
     public static function generateApplicationNumber()
     {
-        $year = date('Y');
-        $count = self::whereYear('created_at', $year)->count() + 1;
+        // Get the next applicant_id (max + 1 or 1 if no records)
+        $maxId = self::withTrashed()->max('applicant_id');
+        $nextId = $maxId ? $maxId + 1 : 1;
         
-        return $year . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+        // Format components
+        $year = date('y'); // 2-digit year (25 for 2025)
+        $month = date('m'); // Month with leading zero (11 for November)
+        $sequence = str_pad($nextId, 5, '0', STR_PAD_LEFT); // 5-digit sequence
+        $checksum = str_pad(($nextId % 10000), 4, '0', STR_PAD_LEFT); // 4-digit checksum
+        
+        $applicationNo = "0-{$year}-{$month}-{$sequence}-{$checksum}";
+        
+        // Ensure uniqueness (in case of race conditions or manual entries)
+        $attempts = 0;
+        while (self::where('application_no', $applicationNo)->exists() && $attempts < 100) {
+            $nextId++;
+            $sequence = str_pad($nextId, 5, '0', STR_PAD_LEFT);
+            $checksum = str_pad(($nextId % 10000), 4, '0', STR_PAD_LEFT);
+            $applicationNo = "0-{$year}-{$month}-{$sequence}-{$checksum}";
+            $attempts++;
+        }
+        
+        return $applicationNo;
     }
 
     /**
