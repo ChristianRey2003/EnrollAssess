@@ -40,6 +40,24 @@ class ReportsController extends Controller
     {
         $schoolYearId = session('school_year_id');
         
+        // Get delegation info if user is accessing via delegation
+        $delegation = null;
+        $isDelegated = false;
+        if (auth()->check() && auth()->user()->role === 'instructor') {
+            $delegation = auth()->user()->delegatedPermissions()
+                ->where('permission', 'view_reports')
+                ->where('status', 'active')
+                ->where(function($q) {
+                    $q->whereNull('starts_at')
+                      ->orWhere('starts_at', '<=', now());
+                })
+                ->first();
+            
+            if ($delegation && !$delegation->isExpired()) {
+                $isDelegated = true;
+            }
+        }
+        
         // Overall statistics (filtered by school year)
         $applicantQuery = Applicant::query();
         $this->applySchoolYearFilter($applicantQuery);
@@ -239,7 +257,11 @@ class ReportsController extends Controller
             'recentApplicants',
             'applicants',
             'statuses',
-            'stats'
+            'applicants',
+            'statuses',
+            'stats',
+            'delegation',
+            'isDelegated'
         ));
     }
 
@@ -422,6 +444,7 @@ class ReportsController extends Controller
         ]);
     }
 
+    
     /**
      * Get statistics for all active reports (for confirmation modal)
      */

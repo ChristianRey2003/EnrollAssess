@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Settings;
 use App\Models\Exam;
+use App\Models\ActivityLog;
 use App\Services\MailConfigurationService;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
@@ -39,7 +41,10 @@ class SettingsController extends Controller
         // Get only email settings
         $emailSettings = Settings::where('group', 'email')->get();
 
-        return view('admin.settings.index', compact('emailSettings'));
+        // Get recent audit logs (limit to 20 for initial load)
+        $auditLogs = ActivityLog::with('user')->latest()->take(20)->get();
+
+        return view('admin.settings.index', compact('emailSettings', 'auditLogs'));
     }
 
     /**
@@ -197,6 +202,8 @@ class SettingsController extends Controller
 
             // Reload mail configuration from database
             $this->reloadMailConfig();
+
+            ActivityLogger::log('update_settings', "Updated {$updatedCount} system settings.", ['count' => $updatedCount], Auth::id());
 
             return redirect()->route('admin.settings.index')
                 ->with('success', "Successfully updated {$updatedCount} settings. Mail configuration reloaded.");

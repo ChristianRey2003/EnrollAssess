@@ -75,7 +75,25 @@ class SetsQuestionsController extends Controller
             ];
         }
         
-        return view('admin.sets-questions', compact('currentExam', 'questions', 'stats', 'quotaProgress'));
+        // Get delegation info if user is accessing via delegation
+        $delegation = null;
+        $isDelegated = false;
+        if (auth()->check() && auth()->user()->role === 'instructor') {
+            $delegation = auth()->user()->delegatedPermissions()
+                ->where('permission', 'manage_questions')
+                ->where('status', 'active')
+                ->where(function($q) {
+                    $q->whereNull('starts_at')
+                      ->orWhere('starts_at', '<=', now());
+                })
+                ->first();
+            
+            if ($delegation && !$delegation->isExpired()) {
+                $isDelegated = true;
+            }
+        }
+
+        return view('admin.sets-questions', compact('currentExam', 'questions', 'stats', 'quotaProgress', 'delegation', 'isDelegated'));
     }
     
     /**

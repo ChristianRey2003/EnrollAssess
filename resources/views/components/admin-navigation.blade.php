@@ -139,6 +139,30 @@
                 </a>
             </div>
             @endif
+
+            @if(auth()->user()->hasPermission('view_reports'))
+            <div class="nav-item" role="listitem">
+                <a href="{{ route('admin.reports.index') }}" 
+                   class="nav-link {{ str_starts_with($currentRoute, 'admin.reports') ? 'active' : '' }}"
+                   @if(str_starts_with($currentRoute, 'admin.reports')) aria-current="page" @endif
+                   aria-label="Reports - View system reports and analytics">
+                    <span class="nav-icon" aria-hidden="true"><i class="fas fa-chart-bar"></i></span>
+                    <span class="nav-text">Reports</span>
+                </a>
+            </div>
+            @endif
+
+            @if(auth()->user()->hasPermission('manage_questions'))
+            <div class="nav-item" role="listitem">
+                <a href="{{ route('admin.sets-questions.index') }}" 
+                   class="nav-link {{ str_starts_with($currentRoute, 'admin.sets-questions') || str_starts_with($currentRoute, 'admin.exams') || str_starts_with($currentRoute, 'admin.questions') ? 'active' : '' }}"
+                   @if(str_starts_with($currentRoute, 'admin.sets-questions') || str_starts_with($currentRoute, 'admin.exams') || str_starts_with($currentRoute, 'admin.questions')) aria-current="page" @endif
+                   aria-label="Question Bank - Manage exam questions and sets">
+                    <span class="nav-icon" aria-hidden="true"><i class="fas fa-book"></i></span>
+                    <span class="nav-text">Question Bank</span>
+                </a>
+            </div>
+            @endif
             
             <div class="nav-item" role="listitem">
                 <a href="{{ route('instructor.applicants') }}" 

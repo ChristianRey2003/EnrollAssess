@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use App\Services\ActivityLogger;
 
 class AdminAuthController extends Controller
 {
@@ -60,6 +61,8 @@ class AdminAuthController extends Controller
                 
                 $request->session()->regenerate();
                 
+                ActivityLogger::log('login', "User logged in via Admin Login", ['role' => $user->role], $user->user_id);
+                
                 // Check if user must change password
                 if ($user->force_password_change) {
                     return redirect()->route('admin.password.force-change');
@@ -90,6 +93,8 @@ class AdminAuthController extends Controller
      */
     public function logout(Request $request)
     {
+        $userId = Auth::id();
+        ActivityLogger::log('logout', "User logged out", [], $userId);
         Auth::logout();
 
         $request->session()->invalidate();

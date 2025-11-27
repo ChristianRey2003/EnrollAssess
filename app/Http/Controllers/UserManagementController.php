@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules;
 use App\Mail\InstructorCredentialsMail;
 use App\Services\MailConfigurationService;
+use App\Services\ActivityLogger;
+use Illuminate\Support\Facades\DB;
 
 class UserManagementController extends Controller
 {
@@ -136,6 +138,8 @@ class UserManagementController extends Controller
                 'password_hash' => Hash::make($request->password),
             ]);
 
+            ActivityLogger::log('create_user', "Created user account for {$user->full_name}", ['user_id' => $user->user_id, 'role' => $user->role]);
+
             return redirect()->route('admin.users.index')
                            ->with('success', 'User account created successfully for ' . $user->full_name . '!');
 
@@ -224,6 +228,8 @@ class UserManagementController extends Controller
 
             $user->update($updateData);
 
+            ActivityLogger::log('update_user', "Updated user account for {$user->full_name}", ['user_id' => $user->user_id, 'changes' => array_keys($updateData)]);
+
             return redirect()->route('admin.users.show', $user->user_id)
                            ->with('success', 'User account updated successfully!');
 
@@ -264,6 +270,8 @@ class UserManagementController extends Controller
             $userName = $user->full_name;
             $user->delete();
 
+            ActivityLogger::log('delete_user', "Deleted user account for {$userName}", ['user_id' => $id]);
+
             return response()->json([
                 'success' => true,
                 'message' => "User account for {$userName} has been deleted successfully."
@@ -299,6 +307,8 @@ class UserManagementController extends Controller
             $user->update([
                 'password_hash' => Hash::make($tempPassword)
             ]);
+
+            ActivityLogger::log('reset_password', "Reset password for {$user->full_name}", ['user_id' => $user->user_id]);
 
             return response()->json([
                 'success' => true,
@@ -386,7 +396,8 @@ class UserManagementController extends Controller
     public function delegate(Request $request, $id)
     {
         $request->validate([
-            'permission' => 'required|string',
+            'permissions' => 'required|array|min:1',
+            'permissions.*' => 'required|string',
             'duration' => 'required|integer|min:1', // Duration in hours
         ]);
 
@@ -401,20 +412,37 @@ class UserManagementController extends Controller
                 ]);
             }
 
-            // Create delegation
-            \App\Models\RoleDelegation::create([
-                'delegator_id' => Auth::id(),
-                'delegatee_id' => $delegatee->user_id,
-                'permission' => $request->permission,
-                'starts_at' => now(),
-                'expires_at' => now()->addHours((int)$request->duration),
-                'status' => 'active'
+            $delegatedCount = 0;
+            $delegatedNames = [];
+
+            DB::transaction(function () use ($request, $delegatee, &$delegatedCount, &$delegatedNames) {
+                foreach ($request->permissions as $permission) {
+                    // Create delegation
+                    \App\Models\RoleDelegation::create([
+                        'delegator_id' => Auth::id(),
+                        'delegatee_id' => $delegatee->user_id,
+                        'permission' => $permission,
+                        'starts_at' => now(),
+                        'expires_at' => now()->addHours((int)$request->duration),
+                        'status' => 'active'
+                    ]);
+                    
+                    $delegatedCount++;
+                    $delegatedNames[] = ucwords(str_replace('_', ' ', $permission));
+                }
+            });
+
+            $permissionList = implode(', ', $delegatedNames);
+            
+            ActivityLogger::log('delegate_permission', "Delegated permissions: {$permissionList} to {$delegatee->full_name}", [
+                'delegatee_id' => $delegatee->user_id, 
+                'permissions' => $request->permissions
             ]);
 
-            return redirect()->back()->with('success', "Successfully delegated '{$request->permission}' to {$delegatee->full_name} for {$request->duration} hours.");
+            return redirect()->back()->with('success', "Successfully delegated: {$permissionList} to {$delegatee->full_name} for {$request->duration} hours.");
 
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to delegate permission: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to delegate permissions: ' . $e->getMessage());
         }
     }
 
@@ -430,6 +458,7 @@ class UserManagementController extends Controller
                 ->update(['status' => 'revoked']);
 
             if ($updated > 0) {
+                ActivityLogger::log('revoke_delegation', "Revoked delegations for user ID {$id}", ['delegatee_id' => $id]);
                 return redirect()->back()->with('success', 'Successfully revoked all delegations for this user.');
             } else {
                  return redirect()->back()->with('warning', 'No active delegations found for this user.');
@@ -499,6 +528,8 @@ class UserManagementController extends Controller
 
             // Send email with credentials
             Mail::to($user->email)->send(new InstructorCredentialsMail($user, $tempPassword));
+
+            ActivityLogger::log('send_credentials', "Sent credentials to {$user->email}", ['user_id' => $user->user_id]);
 
             return response()->json([
                 'success' => true,

@@ -599,11 +599,64 @@
             bottom: 0;
             background: white;
         }
-    }
 </style>
 @endpush
 
 @section('content')
+    <!-- Delegation Expiration Indicator -->
+    @if(isset($isDelegated) && $isDelegated && isset($delegation))
+        @php
+            $effectiveExpiresAt = $delegation->getEffectiveExpiresAt();
+            $isExpiringSoon = false;
+            $timeRemainingText = '';
+            
+            if ($effectiveExpiresAt) {
+                $isExpiringSoon = $effectiveExpiresAt->diffInHours(now()) < 2 && $effectiveExpiresAt->isFuture();
+                $timeRemaining = now()->diff($effectiveExpiresAt);
+                
+                if ($timeRemaining->invert === 0) {
+                    // Future expiration
+                    if ($timeRemaining->days > 0) {
+                        $timeRemainingText = $timeRemaining->days . 'd ' . $timeRemaining->h . 'h';
+                    } elseif ($timeRemaining->h > 0) {
+                        $timeRemainingText = $timeRemaining->h . 'h ' . $timeRemaining->i . 'm';
+                    } elseif ($timeRemaining->i > 0) {
+                        $timeRemainingText = $timeRemaining->i . 'm';
+                    } else {
+                        $timeRemainingText = 'Less than a minute';
+                    }
+                } else {
+                    // Past expiration
+                    $timeRemainingText = 'Expired';
+                }
+            }
+        @endphp
+        <div class="delegation-indicator {{ $isExpiringSoon ? 'expiring-soon' : '' }}" style="margin-bottom: 20px; padding: 12px 16px; background: {{ $isExpiringSoon ? '#FEF3C7' : '#EFF6FF' }}; border: 2px solid {{ $isExpiringSoon ? '#FDE68A' : '#BFDBFE' }}; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <svg style="width: 20px; height: 20px; color: {{ $isExpiringSoon ? '#F59E0B' : '#3B82F6' }};" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span style="font-weight: 600; color: {{ $isExpiringSoon ? '#92400E' : '#1E40AF' }}; font-size: 14px;">
+                    Delegation Access
+                </span>
+            </div>
+            @if($effectiveExpiresAt)
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="color: {{ $isExpiringSoon ? '#92400E' : '#1E40AF' }}; font-size: 13px;">
+                        @if($timeRemainingText === 'Expired')
+                            <strong>Expired</strong>
+                        @else
+                            Expires in: <strong>{{ $timeRemainingText }}</strong>
+                        @endif
+                    </span>
+                    <span style="color: {{ $isExpiringSoon ? '#92400E' : '#60A5FA' }}; font-size: 12px;">
+                        ({{ $effectiveExpiresAt->format('M d, Y g:i A') }})
+                    </span>
+                </div>
+            @endif
+        </div>
+    @endif
+
 <div class="content-section">
     <!-- Header -->
     <div class="section-header">
@@ -616,7 +669,16 @@
         </div>
         <div class="section-actions">
             @if($currentExam)
-                <button type="button" onclick="openEditSettingsDrawer()" class="btn-secondary" style="display: inline-flex; align-items: center; gap: 6px;">
+                <button type="button" 
+                        @if(auth()->user()->hasPermission('manage_exam_settings'))
+                            onclick="openEditSettingsDrawer()" 
+                        @else
+                            disabled
+                            title="You do not have permission to manage exam settings"
+                            style="opacity: 0.6; cursor: not-allowed; display: inline-flex; align-items: center; gap: 6px;"
+                        @endif
+                        class="btn-secondary" 
+                        style="display: inline-flex; align-items: center; gap: 6px;">
                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -631,7 +693,17 @@
                         Actions
                     </button>
                     <div class="dropdown-menu">
-                        <button type="button" class="dropdown-item" onclick="showNewSemesterDrawer(); toggleDropdown('headerActionsDropdown');">
+                        <button type="button" 
+                                @if(auth()->user()->hasPermission('manage_exam_settings'))
+                                    onclick="showNewSemesterDrawer(); toggleDropdown('headerActionsDropdown');"
+                                    class="dropdown-item"
+                                @else
+                                    class="dropdown-item"
+                                    disabled
+                                    style="opacity: 0.6; cursor: not-allowed;"
+                                    title="You do not have permission to create question banks"
+                                @endif
+                                >
                             <svg width="16" height="16" style="display: inline-block; margin-right: 8px; vertical-align: middle;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                             </svg>
@@ -640,7 +712,15 @@
                     </div>
                 </div>
             @else
-                <button onclick="showCreateExamModal()" class="btn-primary">
+                <button 
+                    @if(auth()->user()->hasPermission('manage_exam_settings'))
+                        onclick="showCreateExamModal()" 
+                    @else
+                        disabled
+                        title="You do not have permission to create exams"
+                        style="opacity: 0.6; cursor: not-allowed;"
+                    @endif
+                    class="btn-primary">
                     Setup First Exam
                 </button>
             @endif
@@ -664,7 +744,16 @@
                     <span id="overviewToggleIcon">▼</span>
                 </button>
                 @if(!$currentExam->is_active)
-                    <button onclick="publishExam({{ $currentExam->exam_id }})" class="btn-success" style="padding: 4px 10px; font-size: 13px;">
+                    <button 
+                        @if(auth()->user()->hasPermission('manage_exam_settings'))
+                            onclick="publishExam({{ $currentExam->exam_id }})" 
+                        @else
+                            disabled
+                            title="You do not have permission to publish exams"
+                            style="opacity: 0.6; cursor: not-allowed; padding: 4px 10px; font-size: 13px;"
+                        @endif
+                        class="btn-success" 
+                        style="padding: 4px 10px; font-size: 13px;">
                         Publish
                     </button>
                 @endif

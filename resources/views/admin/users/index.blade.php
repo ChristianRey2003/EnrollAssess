@@ -541,43 +541,91 @@
             <i class="fas fa-times"></i>
         </button>
     </div>
-    <form id="delegationForm" method="POST">
+    <form id="delegationForm" method="POST" style="display: flex; flex-direction: column; height: 100%; overflow: hidden;">
         @csrf
         <div class="drawer-body">
             <!-- Active Delegations Section -->
-            <div id="activeDelegationsSection" style="display: none; margin-bottom: 24px;">
-                <h6 style="font-size: 0.75rem; text-transform: uppercase; color: #6B7280; font-weight: 700; margin-bottom: 12px; letter-spacing: 0.05em;">Active Delegations</h6>
-                <div id="activeDelegationsList" style="display: flex; flex-direction: column; gap: 8px;"></div>
-                <hr style="margin: 20px 0; border-color: #E5E7EB;">
+            <div id="activeDelegationsSection" style="display: none; margin-bottom: 20px;">
+                <h6 class="section-label">Active Delegations</h6>
+                <div id="activeDelegationsList" class="active-delegations-list"></div>
+                <hr class="divider">
             </div>
 
-            <div class="alert alert-info mb-4">
-                <i class="fas fa-info-circle me-2"></i>
-                Delegating permissions allows <strong id="delegateeName"></strong> to perform actions on your behalf for a limited time.
+            <div class="alert alert-info mb-3 p-2 d-flex align-items-start" style="font-size: 0.85rem;">
+                <i class="fas fa-info-circle mt-1 me-2"></i>
+                <div>
+                    Delegating permissions allows <strong id="delegateeName"></strong> to perform actions on your behalf.
+                </div>
             </div>
             
-            <div class="mb-4">
-                <label class="form-label">Permission Scope</label>
-                <select name="permission" class="form-select" required>
-                    <option value="assign_applicants">Assign Applicants</option>
-                    <!-- Add more permissions here as needed -->
+            <div class="mb-3">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Category</label>
+                <select id="delegationCategory" class="form-select form-select-sm" onchange="updateCapabilityOptions()">
+                    <option value="">Select a category...</option>
+                    <option value="applicant_management">Applicant Management</option>
+                    <option value="reports_analytics">Reports & Analytics</option>
+                    <option value="question_bank_exams">Question Bank & Exams</option>
                 </select>
-                <div class="form-text">Select the specific capability to grant.</div>
             </div>
 
-            <div class="mb-4">
-                <label class="form-label">Duration (Hours)</label>
-                <div class="input-group">
+            <div id="capabilitiesSection" class="mb-3" style="display: none;">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Capabilities</label>
+                <div class="capabilities-container">
+                    <!-- Applicant Management Capabilities -->
+                    <div id="cap_applicant_management" class="capability-group" style="display: none;">
+                        <div class="form-check custom-checkbox">
+                            <input class="form-check-input" type="checkbox" name="permissions[]" value="assign_applicants" id="perm_assign_applicants">
+                            <label class="form-check-label" for="perm_assign_applicants">
+                                <span class="d-block fw-medium text-dark">Assign Applicants</span>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Allow assigning applicants to instructors.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Reports & Analytics Capabilities -->
+                    <div id="cap_reports_analytics" class="capability-group" style="display: none;">
+                        <div class="form-check custom-checkbox">
+                            <input class="form-check-input" type="checkbox" name="permissions[]" value="view_reports" id="perm_view_reports">
+                            <label class="form-check-label" for="perm_view_reports">
+                                <span class="d-block fw-medium text-dark">View & Generate Reports</span>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Access to system reports and analytics.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question Bank & Exams Capabilities -->
+                    <div id="cap_question_bank_exams" class="capability-group" style="display: none;">
+                        <div class="form-check custom-checkbox mb-2">
+                            <input class="form-check-input" type="checkbox" name="permissions[]" value="manage_questions" id="perm_manage_questions">
+                            <label class="form-check-label" for="perm_manage_questions">
+                                <span class="d-block fw-medium text-dark">Manage Question Bank</span>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Create, edit, and delete questions.</span>
+                            </label>
+                        </div>
+                        <div class="form-check custom-checkbox">
+                            <input class="form-check-input" type="checkbox" name="permissions[]" value="manage_exam_settings" id="perm_manage_exam_settings">
+                            <label class="form-check-label" for="perm_manage_exam_settings">
+                                <span class="d-block fw-medium text-dark">Manage Exam Settings</span>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Create exams and modify exam settings.</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Duration (Hours)</label>
+                <div class="input-group input-group-sm">
                     <button type="button" class="btn btn-outline-secondary" onclick="adjustDuration(-1)">-</button>
                     <input type="number" id="durationInput" name="duration" class="form-control text-center" value="24" min="1" required>
                     <button type="button" class="btn btn-outline-secondary" onclick="adjustDuration(1)">+</button>
                 </div>
-                <div class="form-text">Permission will automatically expire after this time.</div>
+                <div class="form-text" style="font-size: 0.7rem;">Auto-expires after this time.</div>
             </div>
         </div>
         <div class="drawer-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeDelegationDrawer()">Cancel</button>
-            <button type="submit" class="btn btn-primary">Grant Permission</button>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="closeDelegationDrawer()">Cancel</button>
+            <button type="submit" class="btn btn-sm btn-primary">Grant Permission</button>
         </div>
     </form>
 </div>
@@ -625,17 +673,17 @@
     }
 
     .drawer-header {
-        padding: 20px;
+        padding: 15px 20px;
         border-bottom: 1px solid var(--border-gray);
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background: var(--light-gray);
+        background: #fff;
     }
 
     .drawer-title {
         margin: 0;
-        font-size: 1.1rem;
+        font-size: 1rem;
         font-weight: 600;
         color: var(--text-dark);
     }
@@ -643,11 +691,12 @@
     .btn-close-drawer {
         background: none;
         border: none;
-        font-size: 1.2rem;
+        font-size: 1rem;
         color: var(--text-gray);
         cursor: pointer;
         transition: color 0.2s;
-        padding: 5px;
+        padding: 4px;
+        line-height: 1;
     }
 
     .btn-close-drawer:hover {
@@ -661,12 +710,59 @@
     }
 
     .drawer-footer {
-        padding: 20px;
+        padding: 15px 20px;
         border-top: 1px solid var(--border-gray);
         display: flex;
         justify-content: flex-end;
         gap: 10px;
-        background: white;
+        background: #f9fafb;
+    }
+
+    .section-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        color: #6B7280;
+        font-weight: 700;
+        margin-bottom: 10px;
+        letter-spacing: 0.05em;
+    }
+
+    .divider {
+        margin: 15px 0;
+        border-color: #E5E7EB;
+    }
+
+    .capabilities-container {
+        border: 1px solid #E5E7EB;
+        border-radius: 6px;
+        padding: 12px;
+        background: #fff;
+    }
+
+    .custom-checkbox .form-check-input {
+        margin-top: 0.25em;
+    }
+
+    .custom-checkbox .form-check-label {
+        cursor: pointer;
+    }
+    
+    /* Scrollbar styling for drawer body */
+    .drawer-body::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .drawer-body::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    
+    .drawer-body::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 3px;
+    }
+    
+    .drawer-body::-webkit-scrollbar-thumb:hover {
+        background: #9ca3af;
     }
 
     @media (max-width: 576px) {
@@ -758,6 +854,35 @@
         val += amount;
         if (val < 1) val = 1;
         input.value = val;
+    }
+
+    function updateCapabilityOptions() {
+        const category = document.getElementById('delegationCategory').value;
+        const capabilitiesSection = document.getElementById('capabilitiesSection');
+        const groups = document.querySelectorAll('.capability-group');
+        
+        // Hide all groups first
+        groups.forEach(g => g.style.display = 'none');
+        
+        // Uncheck all hidden checkboxes to prevent accidental submission
+        document.querySelectorAll('input[name="permissions[]"]').forEach(cb => {
+            // Optional: uncheck when switching categories? 
+            // The user might want to mix and match if we allowed multiple categories, 
+            // but the UI implies one category at a time. 
+            // Let's uncheck to be safe and avoid confusion, or keep them if we want to allow accumulation.
+            // Given the prompt "when its choosen it shows checkbox", let's assume strict category switching.
+            cb.checked = false; 
+        });
+
+        if (category) {
+            capabilitiesSection.style.display = 'block';
+            const selectedGroup = document.getElementById('cap_' + category);
+            if (selectedGroup) {
+                selectedGroup.style.display = 'block';
+            }
+        } else {
+            capabilitiesSection.style.display = 'none';
+        }
     }
 
     // Close drawer on escape key

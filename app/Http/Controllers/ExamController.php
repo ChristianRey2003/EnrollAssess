@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Session;
+use App\Services\ActivityLogger;
 
 class ExamController extends Controller
 {
@@ -89,6 +90,8 @@ class ExamController extends Controller
                 'duration_minutes' => $request->duration_minutes,
                 'is_active' => (bool) $request->input('is_active', false),
             ]);
+
+            ActivityLogger::log('create_exam', "Created exam '{$exam->title}'", ['exam_id' => $exam->exam_id]);
 
             if ($request->expectsJson()) {
                 return response()->json([
@@ -261,6 +264,8 @@ class ExamController extends Controller
 
             $exam->update($updateData);
 
+            ActivityLogger::log('update_exam', "Updated exam '{$exam->title}'", ['exam_id' => $exam->exam_id, 'changes' => array_keys($updateData)]);
+
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => true,
@@ -305,6 +310,8 @@ class ExamController extends Controller
 
             $exam->delete();
 
+            ActivityLogger::log('delete_exam', "Deleted exam '{$exam->title}'", ['exam_id' => $id]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Exam deleted successfully!'
@@ -326,6 +333,9 @@ class ExamController extends Controller
         try {
             $exam = Exam::findOrFail($id);
             $exam->update(['is_active' => !$exam->is_active]);
+
+            $status = $exam->is_active ? 'activated' : 'deactivated';
+            ActivityLogger::log('toggle_exam_status', "Exam '{$exam->title}' was {$status}", ['exam_id' => $exam->exam_id, 'status' => $status]);
 
             return response()->json([
                 'success' => true,
@@ -384,6 +394,8 @@ class ExamController extends Controller
 
                 return $newExam;
             });
+
+            ActivityLogger::log('duplicate_exam', "Duplicated exam '{$originalExam->title}'", ['original_exam_id' => $id]);
 
             return response()->json([
                 'success' => true,

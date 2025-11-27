@@ -827,6 +827,7 @@
         <button type="button" class="settings-tab" onclick="switchTab('school-years')">School Years</button>
         <button type="button" class="settings-tab" onclick="switchTab('archived-reports')">Archived Reports</button>
         <button type="button" class="settings-tab" onclick="switchTab('archived-questions')">Archived Question Bank</button>
+        <button type="button" class="settings-tab" onclick="switchTab('audit-logs')">Audit Logs</button>
     </div>
 
     <!-- Email Settings Tab Pane -->
@@ -1038,6 +1039,64 @@
                                 <p>Click "Load Archived" to view archived question banks.</p>
                             </td>
                         </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audit Logs Tab Pane -->
+    <div id="audit-logs-tab" class="settings-tab-pane">
+        <div class="settings-card">
+            <div class="settings-card-header">
+                <h3>System Audit Logs</h3>
+                <div class="settings-card-actions">
+                    <button type="button" class="btn btn-secondary" onclick="window.location.reload()">
+                        <span>🔄</span> Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Action</th>
+                            <th>Description</th>
+                            <th>IP Address</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($auditLogs as $log)
+                            <tr>
+                                <td>
+                                    @if($log->user)
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div style="width: 24px; height: 24px; background: var(--primary-maroon); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">
+                                                {{ substr($log->user->first_name, 0, 1) }}{{ substr($log->user->last_name, 0, 1) }}
+                                            </div>
+                                            <span>{{ $log->user->first_name }} {{ $log->user->last_name }}</span>
+                                        </div>
+                                    @else
+                                        <span style="color: var(--text-gray);">System / Guest</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <span class="type-badge">{{ $log->action }}</span>
+                                </td>
+                                <td>{{ $log->description }}</td>
+                                <td>{{ $log->ip_address }}</td>
+                                <td>{{ $log->created_at->format('M d, Y g:i A') }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 20px; color: var(--text-gray);">
+                                    No audit logs found.
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>

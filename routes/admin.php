@@ -116,7 +116,7 @@ Route::prefix('applicants')->name('applicants.')->middleware('role:department-he
 
 
 // Question Management Routes
-Route::prefix('questions')->name('questions.')->middleware('role:department-head,administrator')->group(function () {
+Route::prefix('questions')->name('questions.')->middleware(['role:department-head,administrator,instructor', 'capability:manage_questions'])->group(function () {
     Route::get('/', [QuestionController::class, 'index'])->name('index');
     Route::get('/create', [QuestionController::class, 'create'])->name('create');
     Route::post('/', [QuestionController::class, 'store'])->name('store');
@@ -130,7 +130,7 @@ Route::prefix('questions')->name('questions.')->middleware('role:department-head
 });
 
 // Sets & Questions Management Routes (Primary Interface)
-Route::prefix('sets-questions')->name('sets-questions.')->middleware('role:department-head,administrator')->group(function () {
+Route::prefix('sets-questions')->name('sets-questions.')->middleware(['role:department-head,administrator,instructor', 'capability:manage_questions'])->group(function () {
     Route::get('/', [SetsQuestionsController::class, 'index'])->name('index');
     Route::post('/new-semester', [SetsQuestionsController::class, 'newSemester'])->name('new-semester');
     Route::post('/{id}/publish', [SetsQuestionsController::class, 'publishExam'])->name('publish-exam');
@@ -146,12 +146,12 @@ Route::prefix('sets-questions')->name('sets-questions.')->middleware('role:depar
 // Simplified direct routes - no unnecessary redirects
 
 // Backend CRUD Routes (for AJAX calls from the interface)
-Route::prefix('exams')->name('exams.')->middleware('role:department-head,administrator')->group(function () {
-    Route::post('/', [ExamController::class, 'store'])->name('store');
-    Route::get('/{id}', [ExamController::class, 'show'])->name('show');
-    Route::put('/{id}', [ExamController::class, 'update'])->name('update');
-    Route::delete('/{id}', [ExamController::class, 'destroy'])->name('destroy');
-    Route::post('/{id}/toggle-status', [ExamController::class, 'toggleStatus'])->name('toggle-status');
+Route::prefix('exams')->name('exams.')->middleware('role:department-head,administrator,instructor')->group(function () {
+    Route::post('/', [ExamController::class, 'store'])->middleware('capability:manage_exam_settings')->name('store');
+    Route::get('/{id}', [ExamController::class, 'show'])->name('show'); // Viewing might be allowed for all? Let's restrict to manage_exam_settings for consistency or maybe manage_questions? Let's use manage_exam_settings for now as it shows settings.
+    Route::put('/{id}', [ExamController::class, 'update'])->middleware('capability:manage_exam_settings')->name('update');
+    Route::delete('/{id}', [ExamController::class, 'destroy'])->middleware('capability:manage_exam_settings')->name('destroy');
+    Route::post('/{id}/toggle-status', [ExamController::class, 'toggleStatus'])->middleware('capability:manage_exam_settings')->name('toggle-status');
 });
 
 
@@ -173,7 +173,7 @@ Route::prefix('interviews')->name('interviews.')->middleware('role:department-he
 });
 
 // Reports
-Route::prefix('reports')->name('reports.')->middleware('role:department-head,administrator')->group(function () {
+Route::prefix('reports')->name('reports.')->middleware(['role:department-head,administrator,instructor', 'capability:view_reports'])->group(function () {
     Route::get('/', [ReportsController::class, 'index'])->name('index');
     Route::post('/generate', [ReportsController::class, 'generate'])->name('generate');
     Route::get('/{id}/download', [ReportsController::class, 'download'])->name('download');
@@ -239,8 +239,8 @@ Route::middleware(['role:department-head,administrator'])->prefix('settings')->n
     Route::put('/', [\App\Http\Controllers\SettingsController::class, 'update'])->name('update');
     Route::post('/test-email', [\App\Http\Controllers\SettingsController::class, 'testEmail'])->name('test-email');
     Route::post('/reset', [\App\Http\Controllers\SettingsController::class, 'reset'])->name('reset');
-    Route::get('/archived-questions', [\App\Http\Controllers\SettingsController::class, 'archivedQuestions'])->name('archived-questions');
-    Route::post('/restore-archived-questions', [\App\Http\Controllers\SettingsController::class, 'restoreArchivedQuestions'])->name('restore-archived-questions');
+    Route::get('/archived-questions', [\App\Http\Controllers\SettingsController::class, 'archivedQuestions'])->middleware('capability:manage_questions')->name('archived-questions');
+    Route::post('/restore-archived-questions', [\App\Http\Controllers\SettingsController::class, 'restoreArchivedQuestions'])->middleware('capability:manage_questions')->name('restore-archived-questions');
     
     // School Year Management Routes
     Route::prefix('school-years')->name('school-years.')->group(function () {
