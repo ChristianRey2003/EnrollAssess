@@ -24,7 +24,7 @@ class InstructorController extends Controller
     /**
      * Display the instructor dashboard
      */
-    public function dashboard()
+    public function dashboard(Request $request)
     {
         $instructor = Auth::user();
         
@@ -40,13 +40,16 @@ class InstructorController extends Controller
             'completed_interviews' => $assignedApplicants->where('status', 'interview-completed')->count(),
         ];
 
-        // Get upcoming interviews with scheduled dates
+        // Determine sort order for upcoming interviews (default: oldest first)
+        $upcomingSort = $request->get('upcoming_sort', 'asc') === 'desc' ? 'desc' : 'asc';
+
+        // Get scheduled interviews for this instructor (regardless of whether the date is past or future)
+        // so instructors can still see recently set interviews even if the date has passed.
         $upcomingInterviews = Interview::where('interviewer_id', $instructor->user_id)
             ->where('status', 'scheduled')
             ->whereNotNull('schedule_date')
-            ->where('schedule_date', '>=', now())
             ->with('applicant')
-            ->orderBy('schedule_date', 'asc')
+            ->orderBy('schedule_date', $upcomingSort)
             ->get();
 
         // Recent activity (interviews in last 7 days)
@@ -573,13 +576,31 @@ class InstructorController extends Controller
             ], 400);
         }
 
+        // Guard: Respect interview window if defined
+        $scheduleDate = \Carbon\Carbon::parse($request->schedule_date);
+        if ($interview->interview_deadline_start && $scheduleDate->lt($interview->interview_deadline_start)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot schedule interview. Selected time is before the allowed interview window.'
+            ], 400);
+        }
+        if ($interview->interview_deadline_end) {
+            // Allow any time on the deadline end day (treat as end-of-day)
+            $deadlineEnd = $interview->interview_deadline_end->copy()->endOfDay();
+            if ($scheduleDate->gt($deadlineEnd)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot schedule interview. Selected time is beyond the allowed interview window.'
+                ], 400);
+            }
+        }
+
         // Check for scheduling conflicts
         $conflict = Interview::where('interviewer_id', $instructor->user_id)
             ->where('interview_id', '!=', $interviewId)
             ->where('status', 'scheduled')
             ->whereNotNull('schedule_date')
-            ->where(function($q) use ($request) {
-                $scheduleDate = \Carbon\Carbon::parse($request->schedule_date);
+            ->where(function($q) use ($scheduleDate) {
                 $q->whereBetween('schedule_date', [
                     $scheduleDate->copy()->subMinutes(30),
                     $scheduleDate->copy()->addMinutes(30)
@@ -682,6 +703,19 @@ class InstructorController extends Controller
                     if ($hasDepartmentHeadInterview) {
                         $errors[] = "Interview #{$interviewId}: Applicant has already been interviewed by the department head";
                         continue;
+                    }
+
+                    // Guard: Respect interview window if defined
+                    if ($interview->interview_deadline_start && $currentDateTime->lt($interview->interview_deadline_start)) {
+                        $errors[] = "Interview #{$interviewId}: Scheduled time is before the allowed interview window";
+                        continue;
+                    }
+                    if ($interview->interview_deadline_end) {
+                        $deadlineEnd = $interview->interview_deadline_end->copy()->endOfDay();
+                        if ($currentDateTime->gt($deadlineEnd)) {
+                            $errors[] = "Interview #{$interviewId}: Scheduled time is beyond the allowed interview window";
+                            continue;
+                        }
                     }
 
                     // Check if already scheduled

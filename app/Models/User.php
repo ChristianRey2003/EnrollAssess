@@ -204,9 +204,53 @@ class User extends Authenticatable
         }
 
         // Check for active delegation
-        return $this->delegatedPermissions()
-                    ->active()
+        $delegation = $this->delegatedPermissions()
                     ->where('permission', $permission)
-                    ->exists();
+                    ->where('status', 'active')
+                    ->where(function($q) {
+                        $q->whereNull('starts_at')
+                          ->orWhere('starts_at', '<=', now());
+                    })
+                    ->first();
+
+        if (!$delegation) {
+            return false;
+        }
+
+        // Check expiration based on activation time
+        return !$delegation->isExpired();
+    }
+
+    /**
+     * Activate delegations on first login
+     * This should be called when instructor logs in
+     */
+    public function activateDelegations()
+    {
+        // Get all active delegations that haven't been activated yet
+        $delegations = $this->delegatedPermissions()
+            ->where('status', 'active')
+            ->whereNull('activated_at')
+            ->where(function($q) {
+                $q->whereNull('starts_at')
+                  ->orWhere('starts_at', '<=', now());
+            })
+            ->where(function($q) {
+                $q->whereNull('expires_at')
+                  ->orWhere('expires_at', '>', now());
+            })
+            ->with('delegator')
+            ->get();
+
+        foreach ($delegations as $delegation) {
+            $delegation->update(['activated_at' => now()]);
+            
+            // Notify the delegator (admin) that the instructor has logged in
+            if ($delegation->delegator) {
+                $delegation->delegator->notify(
+                    new \App\Notifications\DelegationActivatedNotification($this, $delegation)
+                );
+            }
+        }
     }
 }

@@ -30,11 +30,11 @@
     }
 
     .users-container {
-        padding: 0;
+        padding: 8px 0 0 0; /* Add slight top padding to align visually with other pages */
         max-width: 100%;
         width: 100%;
     }
-
+    
     .users-header {
         display: flex;
         justify-content: space-between;

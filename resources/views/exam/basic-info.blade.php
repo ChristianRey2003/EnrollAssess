@@ -186,6 +186,24 @@
             margin-bottom: 8px;
         }
 
+        .form-label-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .form-label-hint {
+            font-size: 12px;
+            color: #b91c1c;
+            font-weight: 600;
+            background: #fee2e2;
+            padding: 2px 10px;
+            border-radius: 999px;
+            border: 1px solid #fecaca;
+            text-transform: uppercase;
+        }
+
 
         .form-control {
             padding: 10px 12px;
@@ -297,6 +315,17 @@
 
 
         @media (max-width: 768px) {
+            .form-label-container {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+
+            .form-label-hint {
+                font-size: 11px;
+                width: 100%;
+                text-align: left;
+            }
             body {
                 padding: 10px;
             }
@@ -569,7 +598,10 @@
 
                     <div class="form-row single">
                         <div class="form-group">
-                            <label for="senior_high_school_name" class="form-label">Senior High School Name <span style="color: #dc2626;">*</span></label>
+                            <div class="form-label-container">
+                                <label for="senior_high_school_name" class="form-label">Senior High School Name <span style="color: #dc2626;">*</span></label>
+                                <span class="form-label-hint">Do not use abbreviations</span>
+                            </div>
                             <input 
                                 type="text" 
                                 id="senior_high_school_name" 

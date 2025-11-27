@@ -41,11 +41,9 @@
             >
                 <option value="">All Status</option>
                 <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                <option value="exam-completed" {{ request('status') == 'exam-completed' ? 'selected' : '' }}>Exam Completed</option>
-                <option value="interview-available" {{ request('status') == 'interview-available' ? 'selected' : '' }}>Interview Ready</option>
+                <option value="needs-scheduling" {{ request('status') == 'needs-scheduling' ? 'selected' : '' }}>Need to be Scheduled</option>
                 <option value="interview-scheduled" {{ request('status') == 'interview-scheduled' ? 'selected' : '' }}>Interview Scheduled</option>
                 <option value="interview-completed" {{ request('status') == 'interview-completed' ? 'selected' : '' }}>Interview Completed</option>
-                <option value="needs-scheduling" {{ request('status') == 'needs-scheduling' ? 'selected' : '' }}>Need to be Scheduled</option>
             </select>
         </form>
     </div>
@@ -94,6 +92,8 @@
                                    @if($canSchedule && $interview && !$hasDepartmentHeadInterview)
                                        data-interview-id="{{ $interview->interview_id }}"
                                        data-applicant-name="{{ $applicant->first_name }} {{ $applicant->last_name }}"
+                                       data-deadline-start="{{ $interview->interview_deadline_start ? $interview->interview_deadline_start->toIso8601String() : '' }}"
+                                       data-deadline-end="{{ $interview->interview_deadline_end ? $interview->interview_deadline_end->toIso8601String() : '' }}"
                                        onchange="updateBulkActions()"
                                    @else
                                        disabled
@@ -235,7 +235,12 @@
                                 @if($scheduleEnabled)
                                     <button type="button" 
                                             class="action-btn action-btn-primary" 
-                                            onclick="openScheduleModal({{ $interview->interview_id }}, '{{ $applicant->first_name }} {{ $applicant->last_name }}')"
+                                            onclick="openScheduleModal(
+                                                {{ $interview->interview_id }}, 
+                                                '{{ $applicant->first_name }} {{ $applicant->last_name }}',
+                                                '{{ $interview->interview_deadline_start ? $interview->interview_deadline_start->toIso8601String() : '' }}',
+                                                '{{ $interview->interview_deadline_end ? $interview->interview_deadline_end->toIso8601String() : '' }}'
+                                            )"
                                             title="{{ $scheduleTooltip }}">
                                         Schedule
                                     </button>

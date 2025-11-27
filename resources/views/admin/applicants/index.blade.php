@@ -467,13 +467,6 @@
                                         Export Access Codes
                                     </button>
                                     @endif
-                                    <div class="dropdown-divider"></div>
-                                    <button type="button" class="dropdown-item" onclick="showArchiveAllModal(); toggleDropdown('moreActionsDropdown');" style="color: #f59e0b;">
-                                        <svg class="dropdown-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
-                                        </svg>
-                                        Archive All
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -793,37 +786,6 @@
         </div>
     </div>
 
-    <!-- Archive All Confirmation Modal -->
-    <div id="archiveAllModal" class="modal-overlay" onclick="if(event.target === this) closeArchiveAllModal()">
-        <div class="modal-content" style="max-width: 500px;">
-            <div class="modal-header">
-                <h3>Archive All Applicants</h3>
-                <button onclick="closeArchiveAllModal()" class="modal-close">×</button>
-            </div>
-            <div class="modal-body">
-                <div style="margin-bottom: 16px;">
-                    <p style="color: #6b7280; margin-bottom: 16px;">You are about to archive all applicants. This will move them to the archived section where they can be restored or permanently deleted later.</p>
-                    <div style="background: #f3f4f6; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                            <span style="color: #6b7280;">Total Applicants:</span>
-                            <span style="color: #1f2937; font-weight: 600;" id="archiveModalCount">-</span>
-                        </div>
-                    </div>
-                    <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px; margin-bottom: 16px;">
-                        <strong>Note:</strong> Archived applicants can be restored from the "Archived Applicants" section in Settings.
-                    </div>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px;">
-                    <input type="checkbox" id="archiveConfirmCheckbox" onchange="checkArchiveConfirm()" style="width: 18px; height: 18px; cursor: pointer; accent-color: #dc2626;">
-                    <span>I confirm that I want to archive all applicants</span>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button onclick="closeArchiveAllModal()" class="btn-secondary">Cancel</button>
-                <button onclick="confirmArchiveAll()" class="btn-primary" id="archiveConfirmBtn" disabled style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">Archive All Applicants</button>
-            </div>
-        </div>
-    </div>
 
 @endsection
 
@@ -1261,77 +1223,12 @@
         }
 
         // Archive All Functions
-        function showArchiveAllModal() {
-            // Get total count
-            const totalCount = {{ $stats['total_applicants'] ?? 0 }};
-            
-            if (totalCount === 0) {
-                alert('No applicants to archive.');
-                return;
-            }
-            
-            document.getElementById('archiveModalCount').textContent = totalCount + ' applicant(s)';
-            document.getElementById('archiveConfirmCheckbox').checked = false;
-            document.getElementById('archiveConfirmBtn').disabled = true;
-            document.getElementById('archiveAllModal').classList.add('active');
-        }
-
-        function closeArchiveAllModal() {
-            document.getElementById('archiveAllModal').classList.remove('active');
-            document.getElementById('archiveConfirmCheckbox').checked = false;
-            document.getElementById('archiveConfirmBtn').disabled = true;
-        }
-
-        function checkArchiveConfirm() {
-            const checkbox = document.getElementById('archiveConfirmCheckbox');
-            const btn = document.getElementById('archiveConfirmBtn');
-            btn.disabled = !checkbox.checked;
-        }
-
-        async function confirmArchiveAll() {
-            const btn = document.getElementById('archiveConfirmBtn');
-            btn.disabled = true;
-            btn.textContent = 'Archiving...';
-
-            try {
-                const response = await fetch('{{ route("admin.applicants.archive-all") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept': 'application/json'
-                    }
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    alert(data.message || `Successfully archived ${data.archived_count} applicant(s).`);
-                    closeArchiveAllModal();
-                    location.reload();
-                } else {
-                    alert(data.message || 'Failed to archive applicants.');
-                    btn.disabled = false;
-                    btn.textContent = 'Archive All Applicants';
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('An error occurred while archiving applicants');
-                btn.disabled = false;
-                btn.textContent = 'Archive All Applicants';
-            }
-        }
-
         // Make functions global
         window.openGenerateCodesDrawer = openGenerateCodesDrawer;
         window.closeGenerateCodesDrawer = closeGenerateCodesDrawer;
         window.openExportAccessCodesDrawer = openExportAccessCodesDrawer;
         window.closeExportAccessCodesDrawer = closeExportAccessCodesDrawer;
         window.exportAccessCodesPDF = exportAccessCodesPDF;
-        window.showArchiveAllModal = showArchiveAllModal;
-        window.closeArchiveAllModal = closeArchiveAllModal;
-        window.checkArchiveConfirm = checkArchiveConfirm;
-        window.confirmArchiveAll = confirmArchiveAll;
 
         // Auto-search functionality
         let searchTimeout;

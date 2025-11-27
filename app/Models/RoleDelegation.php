@@ -14,12 +14,14 @@ class RoleDelegation extends Model
         'delegatee_id',
         'permission',
         'starts_at',
+        'activated_at',
         'expires_at',
         'status',
     ];
 
     protected $casts = [
         'starts_at' => 'datetime',
+        'activated_at' => 'datetime',
         'expires_at' => 'datetime',
     ];
 
@@ -47,5 +49,44 @@ class RoleDelegation extends Model
                          $q->whereNull('expires_at')
                            ->orWhere('expires_at', '>', now());
                      });
+    }
+
+    /**
+     * Get the effective expiration time based on activation
+     * If activated_at is set, expiration is based on activation time + duration
+     * Otherwise, expiration is based on expires_at
+     */
+    public function getEffectiveExpiresAt()
+    {
+        if ($this->activated_at) {
+            // Calculate duration from original delegation
+            $duration = $this->starts_at && $this->expires_at 
+                ? $this->starts_at->diffInHours($this->expires_at)
+                : 0;
+            
+            // Return activation time + duration
+            return $this->activated_at->copy()->addHours($duration);
+        }
+        
+        // If not activated yet, return original expiration
+        return $this->expires_at;
+    }
+
+    /**
+     * Check if delegation is expired based on activation
+     */
+    public function isExpired()
+    {
+        if ($this->status !== 'active') {
+            return true;
+        }
+
+        $effectiveExpiresAt = $this->getEffectiveExpiresAt();
+        
+        if (!$effectiveExpiresAt) {
+            return false; // No expiration set
+        }
+
+        return $effectiveExpiresAt->isPast();
     }
 }

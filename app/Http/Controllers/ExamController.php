@@ -483,10 +483,12 @@ class ExamController extends Controller
                     'attempt_token' => $existingAttempt->attempt_token,
                     'question_ids' => $existingAttempt->question_ids,
                     'started_at' => $existingAttempt->started_at->toDateTimeString(),
+                    'actual_started_at' => $existingAttempt->actual_started_at ? $existingAttempt->actual_started_at->toDateTimeString() : null,
                     'duration_minutes' => $existingAttempt->duration_minutes,
                     'current_section' => $existingAttempt->current_section,
                     'sections_completed' => $existingAttempt->sections_completed ?? [],
-                    'answers' => $existingAttempt->answers ?? []
+                    'answers' => $existingAttempt->answers ?? [],
+                    'violation_count' => $existingAttempt->violation_count ?? 0
                 ];
                 
                 session(['exam_session' => $examSession]);
@@ -572,12 +574,28 @@ class ExamController extends Controller
                         ->with('info', 'You have already completed the exam.');
                 }
                 
+                // IMPORTANT: Check if applicant has already completed the exam BEFORE trying to resume
+                // This prevents resume after exam completion (e.g., after violations auto-submit)
+                if ($applicant && $applicant->exam_completed_at) {
+                    Session::forget('exam_session');
+                    return redirect()->route('exam.results')
+                        ->with('info', 'You have already completed the exam.');
+                }
+                
                 // Try to find active exam attempt in database
                 $exam = Exam::where('is_active', true)->first();
                 if ($exam) {
                     $activeAttempt = ExamAttempt::getActiveAttempt($applicantId, $exam->exam_id);
                     
                     if ($activeAttempt && $activeAttempt->canBeResumed()) {
+                        // Double-check: Ensure applicant hasn't completed exam (race condition protection)
+                        $applicant->refresh();
+                        if ($applicant->exam_completed_at) {
+                            Session::forget('exam_session');
+                            return redirect()->route('exam.results')
+                                ->with('info', 'You have already completed the exam.');
+                        }
+                        
                         // Restore exam session from database
                         $examSession = [
                             'applicant_id' => $applicant->applicant_id,
@@ -586,6 +604,7 @@ class ExamController extends Controller
                             'attempt_token' => $activeAttempt->attempt_token,
                             'question_ids' => $activeAttempt->question_ids,
                             'started_at' => $activeAttempt->started_at->toDateTimeString(),
+                            'actual_started_at' => $activeAttempt->actual_started_at ? $activeAttempt->actual_started_at->toDateTimeString() : null,
                             'duration_minutes' => $activeAttempt->duration_minutes,
                             'current_section' => $activeAttempt->current_section,
                             'sections_completed' => $activeAttempt->sections_completed ?? [],
@@ -697,6 +716,19 @@ class ExamController extends Controller
             if ($attemptId) {
                 $attempt = ExamAttempt::find($attemptId);
                 if ($attempt) {
+                    // Refresh answers from database to ensure we have latest saved answers
+                    if ($attempt->answers) {
+                        $examSession['answers'] = array_merge(
+                            $examSession['answers'] ?? [],
+                            $attempt->answers
+                        );
+                    }
+                    // Update session with actual_started_at if available
+                    if ($attempt->actual_started_at) {
+                        $examSession['actual_started_at'] = $attempt->actual_started_at->toDateTimeString();
+                    }
+                    session(['exam_session' => $examSession]);
+                    
                     $timeRemaining = $attempt->time_remaining;
                     // Update last activity
                     $attempt->updateActivity();
@@ -845,11 +877,65 @@ class ExamController extends Controller
     }
 
     /**
+     * Mark exam as actually started (when fullscreen is entered)
+     */
+    public function markExamStarted(Request $request)
+    {
+        $examSession = session('exam_session');
+        
+        if (!$examSession) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Exam session not found.'
+            ], 400);
+        }
+
+        try {
+            $attemptId = $examSession['attempt_id'] ?? null;
+            if ($attemptId) {
+                $attempt = ExamAttempt::find($attemptId);
+                if ($attempt && $attempt->status === 'in_progress') {
+                    $attempt->markAsActuallyStarted();
+                    
+                    // Update session with actual_started_at
+                    $examSession['actual_started_at'] = $attempt->actual_started_at->toDateTimeString();
+                    session(['exam_session' => $examSession]);
+                    
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Exam started successfully.',
+                        'actual_started_at' => $attempt->actual_started_at->toDateTimeString(),
+                        'time_remaining' => $attempt->time_remaining
+                    ]);
+                }
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Exam attempt not found or invalid.'
+            ], 400);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to start exam: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Calculate remaining time in seconds
      */
     private function calculateTimeRemaining($examSession)
     {
-        $startTime = strtotime($examSession['started_at']);
+        // Use actual_started_at if available, otherwise use started_at
+        $startTimeStr = $examSession['actual_started_at'] ?? $examSession['started_at'] ?? null;
+        if (!$startTimeStr) {
+            // Exam hasn't actually started yet
+            return ($examSession['duration_minutes'] ?? 30) * 60;
+        }
+        
+        $startTime = strtotime($startTimeStr);
         $durationSeconds = ($examSession['duration_minutes'] ?? 30) * 60;
         $elapsed = time() - $startTime;
         

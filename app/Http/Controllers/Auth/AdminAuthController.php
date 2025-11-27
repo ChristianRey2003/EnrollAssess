@@ -28,19 +28,32 @@ class AdminAuthController extends Controller
      */
     public function login(Request $request)
     {
+        // Validate credentials input (username or email + password)
         $request->validate([
             'username' => 'required|string',
             'password' => 'required|string',
         ]);
 
-        // Find user by username
-        $user = User::where('username', $request->username)->first();
+        $identifier = $request->username;
+
+        // Allow login using either username or email while keeping a single input field
+        $user = User::when(
+                filter_var($identifier, FILTER_VALIDATE_EMAIL),
+                fn ($query) => $query->where('email', $identifier),
+                fn ($query) => $query->where('username', $identifier)
+            )
+            ->first();
 
         if ($user && Hash::check($request->password, $user->password_hash)) {
             // Check if user has valid role
             if (in_array($user->role, ['department-head', 'instructor'])) {
                 // Update last login timestamp
                 $user->update(['last_login' => now()]);
+                
+                // Activate delegations on first login (for instructors)
+                if ($user->role === 'instructor') {
+                    $user->activateDelegations();
+                }
                 
                 // Login with remember me functionality
                 Auth::login($user, $request->filled('remember'));

@@ -27,7 +27,6 @@
                     <img src="{{ asset('images/evsu-logo.png') }}" alt="EVSU Logo">
                 </div>
                 <h1 class="university-name">BSIT Entrance Examination</h1>
-                <p class="auth-subtitle hidden-password" aria-hidden="true">Congrats, detective! Now type 404 in the access code.</p>
             </div>
 
             <!-- Access Code Form -->
@@ -83,7 +82,7 @@
                         <div class="info-note">
                             <div class="info-note-text">
                                 <strong>Important:</strong>
-                                You will receive your access code from the Computer Studies Department.<br>
+                                You will receive your access code from the Information Technology Department.<br>
                                 Please ensure you have a stable internet connection before beginning the examination.
                             </div>
                         </div>
@@ -97,7 +96,7 @@
     <div id="easterEggToast" class="easter-egg-toast" role="alert" aria-live="polite" aria-atomic="true">
         <div class="toast-content">
             <span class="toast-icon" aria-hidden="true">👀</span>
-            <span class="toast-message">Press Ctrl + A</span>
+            <span class="toast-message">type 404</span>
         </div>
     </div>
 

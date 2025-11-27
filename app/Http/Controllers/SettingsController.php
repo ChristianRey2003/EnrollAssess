@@ -198,7 +198,7 @@ class SettingsController extends Controller
             // Reload mail configuration from database
             $this->reloadMailConfig();
 
-            return redirect()->route('admin.settings')
+            return redirect()->route('admin.settings.index')
                 ->with('success', "Successfully updated {$updatedCount} settings. Mail configuration reloaded.");
 
         } catch (\Exception $e) {
@@ -321,7 +321,7 @@ class SettingsController extends Controller
 
             Settings::clearCache();
 
-            return redirect()->route('admin.settings')
+            return redirect()->route('admin.settings.index')
                 ->with('success', 'Settings have been reset to default values.');
 
         } catch (\Exception $e) {

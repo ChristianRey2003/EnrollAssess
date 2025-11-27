@@ -28,6 +28,27 @@
     <div class="nav-menu" role="list">
         {{-- Common Navigation Items --}}
         @if($userRole === 'department-head')
+            {{-- School Year Dropdown - Above Dashboard (Visible on all pages for consistency) --}}
+            @if(isset($schoolYears) && $schoolYears->count() > 0)
+            <div class="nav-item school-year-nav-item" role="listitem">
+                <form method="POST" action="{{ route('admin.school-year.switch') }}" id="schoolYearNavForm" class="school-year-nav-form">
+                    @csrf
+                    <select name="school_year_id" 
+                            id="schoolYearNavSelect" 
+                            class="school-year-nav-select"
+                            onchange="document.getElementById('schoolYearNavForm').submit();"
+                            aria-label="Select school year">
+                        @foreach($schoolYears ?? [] as $schoolYear)
+                            <option value="{{ $schoolYear->school_year_id }}" 
+                                    {{ ($currentSchoolYearId ?? null) == $schoolYear->school_year_id ? 'selected' : '' }}>
+                                {{ $schoolYear->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </form>
+            </div>
+            @endif
+            
             <div class="nav-item" role="listitem">
                 <a href="{{ route('admin.dashboard') }}" 
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.dashboard') ? 'active' : '' }}"
@@ -86,7 +107,7 @@
             </div>
             
             <div class="nav-item" role="listitem">
-                <a href="{{ route('admin.settings') }}" 
+                <a href="{{ route('admin.settings.index') }}" 
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.settings') ? 'active' : '' }}"
                    @if(str_starts_with($currentRoute, 'admin.settings')) aria-current="page" @endif
                    aria-label="Settings - System configuration and preferences">

@@ -766,6 +766,7 @@
             if (requestFullscreen) {
                 requestFullscreen.call(elem).then(() => {
                     fullscreenActive = true;
+                    wasFullscreen = true;
                     removeFullscreenPrompt();
                     startExam();
                 }).catch(err => {
@@ -786,16 +787,62 @@
         }
 
         function startExam() {
-            examStarted = true;
-            initializeTimer();
-            initializeViolationSystem();
-            initializeSectionAnswers();
-            updateSectionStates();
-            
-            // Setup violation monitoring after exam starts
-            setTimeout(() => {
-                setupViolationMonitoring();
-            }, 500);
+            // Mark exam as actually started (starts the timer)
+            fetch('{{ route('exam.mark-started') }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update time remaining if provided
+                    if (data.time_remaining !== undefined) {
+                        timeRemaining = Math.floor(data.time_remaining);
+                    }
+                    
+                    examStarted = true;
+                    initializeTimer();
+                    initializeViolationSystem();
+                    initializeSectionAnswers();
+                    updateSectionStates();
+                    
+                    // Initialize fullscreen state tracking
+                    const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
+                                           document.mozFullScreenElement || document.msFullscreenElement);
+                    wasFullscreen = isFullscreen;
+                    fullscreenActive = isFullscreen;
+                    
+                    // Setup violation monitoring after exam starts
+                    setTimeout(() => {
+                        setupViolationMonitoring();
+                    }, 500);
+                } else {
+                    console.error('Failed to start exam:', data.message);
+                    alert('Failed to start exam. Please refresh the page and try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error starting exam:', error);
+                // Still allow exam to proceed, but timer might not be accurate
+                examStarted = true;
+                initializeTimer();
+                initializeViolationSystem();
+                initializeSectionAnswers();
+                updateSectionStates();
+                
+                const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
+                                       document.mozFullScreenElement || document.msFullscreenElement);
+                wasFullscreen = isFullscreen;
+                fullscreenActive = isFullscreen;
+                
+                setTimeout(() => {
+                    setupViolationMonitoring();
+                }, 500);
+            });
         }
 
         // Monitor fullscreen changes
@@ -807,6 +854,8 @@
         let fullscreenReEntryAttempts = 0;
         const MAX_FULLSCREEN_ATTEMPTS = 10;
 
+        let wasFullscreen = false;
+
         function handleFullscreenChange() {
             const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
                                    document.mozFullScreenElement || document.msFullscreenElement);
@@ -814,11 +863,44 @@
             if (isFullscreen) {
                 // Reset attempts when fullscreen is successfully entered
                 fullscreenReEntryAttempts = 0;
+                wasFullscreen = true;
+                fullscreenActive = true;
+                
+                // Remove any fullscreen required modal
+                const modal = document.getElementById('fullscreenRequiredModal');
+                if (modal) {
+                    modal.remove();
+                }
+                
+                // Stop persistent retry
+                if (persistentFullscreenInterval) {
+                    clearInterval(persistentFullscreenInterval);
+                    persistentFullscreenInterval = null;
+                }
+            } else {
+                // Fullscreen was exited - record violation if exam is active
+                if (examStarted && timeRemaining > 0) {
+                    // Only record violation if we were previously in fullscreen (to avoid false positives on initial load)
+                    if (wasFullscreen || fullscreenActive) {
+                        // Record violation for exiting fullscreen
+                        recordViolation('FULLSCREEN_EXIT', 'Fullscreen mode was exited. You must remain in fullscreen during the exam.');
+                    }
+                    // Start persistent retry to force fullscreen back
+                    startPersistentFullscreenRetry();
+                }
+                wasFullscreen = false;
+                fullscreenActive = false;
             }
         }
 
+        let persistentFullscreenInterval = null;
+
         function reEnterFullscreen() {
             if (!examStarted || timeRemaining <= 0) {
+                if (persistentFullscreenInterval) {
+                    clearInterval(persistentFullscreenInterval);
+                    persistentFullscreenInterval = null;
+                }
                 return;
             }
 
@@ -826,22 +908,156 @@
             const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
                                    document.mozFullScreenElement || document.msFullscreenElement);
             
-            // If already in fullscreen, don't try again
+            // If already in fullscreen, stop persistent retry
             if (isFullscreen) {
                 fullscreenReEntryAttempts = 0;
+                if (persistentFullscreenInterval) {
+                    clearInterval(persistentFullscreenInterval);
+                    persistentFullscreenInterval = null;
+                }
                 return;
             }
 
-            // Limit re-entry attempts to prevent infinite loops (but don't record as violation)
-            if (fullscreenReEntryAttempts >= MAX_FULLSCREEN_ATTEMPTS) {
-                console.warn('Maximum fullscreen re-entry attempts reached - user must manually re-enter fullscreen');
-                fullscreenReEntryAttempts = 0; // Reset for next attempt
-                return;
-            }
-
-            fullscreenReEntryAttempts++;
-            
             // Try all fullscreen methods
+            const requestFullscreen = elem.requestFullscreen || 
+                                      elem.webkitRequestFullscreen || 
+                                      elem.mozRequestFullScreen || 
+                                      elem.msRequestFullscreen;
+            
+            if (requestFullscreen) {
+                try {
+                    requestFullscreen.call(elem)
+                        .then(() => {
+                            fullscreenReEntryAttempts = 0;
+                            fullscreenActive = true;
+                            wasFullscreen = true;
+                            if (persistentFullscreenInterval) {
+                                clearInterval(persistentFullscreenInterval);
+                                persistentFullscreenInterval = null;
+                            }
+                            console.log('Successfully re-entered fullscreen');
+                        })
+                        .catch(err => {
+                            console.warn('Re-entering fullscreen failed:', err);
+                            // Start persistent retry if not already running
+                            if (!persistentFullscreenInterval && examStarted && timeRemaining > 0) {
+                                startPersistentFullscreenRetry();
+                            }
+                        });
+                } catch (err) {
+                    console.warn('Error calling requestFullscreen:', err);
+                    // Start persistent retry if not already running
+                    if (!persistentFullscreenInterval && examStarted && timeRemaining > 0) {
+                        startPersistentFullscreenRetry();
+                    }
+                }
+            }
+        }
+
+        function startPersistentFullscreenRetry() {
+            // Clear any existing interval
+            if (persistentFullscreenInterval) {
+                clearInterval(persistentFullscreenInterval);
+            }
+
+            let retryCount = 0;
+            const maxRetries = 50; // Try for 5 seconds (50 * 100ms)
+
+            persistentFullscreenInterval = setInterval(function() {
+                if (!examStarted || timeRemaining <= 0) {
+                    clearInterval(persistentFullscreenInterval);
+                    persistentFullscreenInterval = null;
+                    return;
+                }
+
+                const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
+                                       document.mozFullScreenElement || document.msFullscreenElement);
+
+                if (isFullscreen) {
+                    // Success! Stop retrying
+                    clearInterval(persistentFullscreenInterval);
+                    persistentFullscreenInterval = null;
+                    fullscreenReEntryAttempts = 0;
+                    fullscreenActive = true;
+                    wasFullscreen = true;
+                } else {
+                    retryCount++;
+                    if (retryCount <= maxRetries) {
+                        // Try to enter fullscreen
+                        const elem = document.documentElement;
+                        const requestFullscreen = elem.requestFullscreen || 
+                                                  elem.webkitRequestFullscreen || 
+                                                  elem.mozRequestFullScreen || 
+                                                  elem.msRequestFullscreen;
+                        
+                        if (requestFullscreen) {
+                            requestFullscreen.call(elem).catch(() => {
+                                // Ignore errors, will retry
+                            });
+                        }
+                    } else {
+                        // Max retries reached, show modal requiring user interaction
+                        clearInterval(persistentFullscreenInterval);
+                        persistentFullscreenInterval = null;
+                        showFullscreenRequiredModal();
+                    }
+                }
+            }, 100); // Try every 100ms
+        }
+
+        function showFullscreenRequiredModal() {
+            // Check if modal already exists
+            if (document.getElementById('fullscreenRequiredModal')) {
+                return;
+            }
+
+            const modal = document.createElement('div');
+            modal.id = 'fullscreenRequiredModal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.95);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 99999;
+            `;
+            modal.innerHTML = `
+                <div style="background: white; padding: 48px; border-radius: 16px; text-align: center; max-width: 500px;">
+                    <h2 style="font-size: 24px; font-weight: 600; color: #dc2626; margin: 0 0 16px 0;">
+                        Fullscreen Mode Required
+                    </h2>
+                    <p style="font-size: 16px; color: #6b7280; line-height: 1.6; margin: 0 0 24px 0;">
+                        You must remain in fullscreen mode during the exam. Please click the button below to re-enter fullscreen.
+                    </p>
+                    <button id="reEnterFullscreenBtn" 
+                            style="padding: 14px 32px; background: #800020; color: white; border: none; 
+                                   border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;
+                                   transition: all 0.2s;">
+                        Re-enter Fullscreen
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            // Add click handler to button
+            document.getElementById('reEnterFullscreenBtn').addEventListener('click', function() {
+                enterFullscreenAndRemoveModal();
+            });
+
+            // Also try to enter fullscreen on any click on the modal
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    enterFullscreenAndRemoveModal();
+                }
+            });
+        }
+
+        function enterFullscreenAndRemoveModal() {
+            const elem = document.documentElement;
             const requestFullscreen = elem.requestFullscreen || 
                                       elem.webkitRequestFullscreen || 
                                       elem.mozRequestFullScreen || 
@@ -850,13 +1066,16 @@
             if (requestFullscreen) {
                 requestFullscreen.call(elem)
                     .then(() => {
-                        fullscreenReEntryAttempts = 0;
                         fullscreenActive = true;
-                        console.log('Successfully re-entered fullscreen');
+                        wasFullscreen = true;
+                        const modal = document.getElementById('fullscreenRequiredModal');
+                        if (modal) {
+                            modal.remove();
+                        }
                     })
                     .catch(err => {
-                        console.warn('Re-entering fullscreen failed, attempt', fullscreenReEntryAttempts, err);
-                        // Don't retry automatically - wait for user to click back into the page
+                        console.error('Failed to enter fullscreen:', err);
+                        showNotification('Please allow fullscreen access to continue the exam.', 'error');
                     });
             }
         }
@@ -1015,32 +1234,71 @@
 
             // Keyboard shortcuts - ENHANCED blocking
             document.addEventListener('keydown', function(e) {
-                // ESC KEY - Block exiting fullscreen (this CAN be blocked)
+                // ESC KEY - Always violate when pressed during exam, regardless of fullscreen state
                 if (e.key === 'Escape' || e.keyCode === 27) {
                     if (examStarted && timeRemaining > 0) {
                         e.preventDefault();
                         e.stopPropagation();
                         e.stopImmediatePropagation();
+                        
+                        // Always record violation for ESC key press
                         recordViolationWithCooldown('ESC_PRESSED', 'ESC key is disabled during the exam. You cannot exit fullscreen mode.');
-                        // Immediately re-enter fullscreen if somehow exited
-                        setTimeout(() => reEnterFullscreen(), 50);
+                        
+                        // Try to re-enter fullscreen immediately (while we still have user gesture context)
+                        // Use the ESC key press as the user gesture
+                        reEnterFullscreen();
+                        
+                        // Also start persistent retry in case immediate attempt fails
+                        setTimeout(() => {
+                            const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
+                                                   document.mozFullScreenElement || document.msFullscreenElement);
+                            if (!isFullscreen) {
+                                startPersistentFullscreenRetry();
+                            }
+                        }, 100);
+                        
                         return false;
                     }
                 }
 
-                // Alt+Tab detection (cannot block, but can detect and record)
+                // Alt+Tab detection - Always violate when detected
                 if (e.altKey && (e.key === 'Tab' || e.keyCode === 9)) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    recordViolationWithCooldown('ALT_TAB_ATTEMPT', 'Alt+Tab detected. Application switching is not allowed.');
-                    
-                    // Try to regain focus and fullscreen after short delay
-                    setTimeout(() => {
-                        window.focus();
-                        reEnterFullscreen();
-                    }, 100);
-                    
-                    return false;
+                    if (examStarted && timeRemaining > 0) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                        recordViolationWithCooldown('ALT_TAB_ATTEMPT', 'Alt+Tab detected. Application switching is not allowed.');
+                        
+                        // Try to regain focus and fullscreen after short delay
+                        setTimeout(() => {
+                            window.focus();
+                            reEnterFullscreen();
+                        }, 100);
+                        
+                        return false;
+                    }
+                }
+
+                // Ctrl+Shift+S (Windows Snipping Tool) detection
+                if (e.ctrlKey && e.shiftKey && (e.key === 'S' || e.key === 's' || e.keyCode === 83)) {
+                    if (examStarted && timeRemaining > 0) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                        recordViolationWithCooldown('SNIPPING_TOOL', 'Snipping tool shortcut (Ctrl+Shift+S) detected. Screen capture tools are not allowed.');
+                        return false;
+                    }
+                }
+
+                // Print Screen (PrtSc) detection - Screen capture
+                if (e.key === 'PrintScreen' || e.key === 'Print' || e.keyCode === 44) {
+                    if (examStarted && timeRemaining > 0) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                        recordViolationWithCooldown('PRINT_SCREEN', 'Print Screen key detected. Screen capture is not allowed during the exam.');
+                        return false;
+                    }
                 }
 
                 // Dev tools
@@ -1103,6 +1361,20 @@
                 }
             }, true); // Use capture phase for better interception
 
+            // Also listen for keyup events (Print Screen often only fires on keyup)
+            document.addEventListener('keyup', function(e) {
+                // Print Screen (PrtSc) detection - Screen capture
+                if (e.key === 'PrintScreen' || e.key === 'Print' || e.keyCode === 44) {
+                    if (examStarted && timeRemaining > 0) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                        recordViolationWithCooldown('PRINT_SCREEN', 'Print Screen key detected. Screen capture is not allowed during the exam.');
+                        return false;
+                    }
+                }
+            }, true);
+
             // Right-click
             document.addEventListener('contextmenu', function(e) {
                 e.preventDefault();
@@ -1111,9 +1383,37 @@
                 return false;
             }, true);
 
+            // Continuous fullscreen monitoring - Check every 100ms to catch any fullscreen exits
+            let fullscreenCheckInterval = setInterval(function() {
+                if (!examStarted || timeRemaining <= 0) {
+                    clearInterval(fullscreenCheckInterval);
+                    return;
+                }
+
+                const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
+                                       document.mozFullScreenElement || document.msFullscreenElement);
+
+                // If we were in fullscreen but now we're not, record violation and force back
+                if (wasFullscreen && !isFullscreen) {
+                    recordViolationWithCooldown('FULLSCREEN_EXIT', 'Fullscreen mode was exited. You must remain in fullscreen during the exam.');
+                    // Start persistent retry
+                    if (!persistentFullscreenInterval) {
+                        startPersistentFullscreenRetry();
+                    }
+                    wasFullscreen = false;
+                    fullscreenActive = false;
+                } else if (isFullscreen) {
+                    // Update tracking state
+                    wasFullscreen = true;
+                    fullscreenActive = true;
+                }
+            }, 100);
+
             // Cleanup intervals when exam ends
             window.addEventListener('beforeunload', function() {
                 if (fullscreenRetryInterval) clearInterval(fullscreenRetryInterval);
+                if (fullscreenCheckInterval) clearInterval(fullscreenCheckInterval);
+                if (persistentFullscreenInterval) clearInterval(persistentFullscreenInterval);
             });
         }
 
@@ -1156,24 +1456,47 @@
 
         // Section management
         function initializeSectionAnswers() {
+            // Log for debugging
+            console.log('Restoring answers:', Object.keys(sectionAnswers).length, 'answers found');
+            
             Object.keys(sectionAnswers).forEach(questionId => {
-                const input = document.querySelector(`input[name="question_${questionId}"], textarea[name="question_${questionId}"]`);
+                // Try multiple selectors to find the input
+                let input = document.querySelector(`input[name="question_${questionId}"]`);
+                if (!input) {
+                    input = document.querySelector(`textarea[data-question-id="${questionId}"]`);
+                }
+                if (!input) {
+                    input = document.querySelector(`textarea[name="question_${questionId}"]`);
+                }
+                
                 if (input) {
                     if (input.type === 'radio') {
                         const radioInput = document.querySelector(`input[name="question_${questionId}"][value="${sectionAnswers[questionId]}"]`);
                         if (radioInput) {
                             radioInput.checked = true;
-                            selectOption(radioInput.closest('.option-group'));
+                            const optionGroup = radioInput.closest('.option-group');
+                            if (optionGroup) {
+                                selectOption(optionGroup);
+                            }
                         }
+                    } else if (input.tagName === 'TEXTAREA') {
+                        input.value = sectionAnswers[questionId];
+                        // Trigger input event to update any listeners
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
                     } else {
                         input.value = sectionAnswers[questionId];
                     }
+                } else {
+                    console.warn('Could not find input for question:', questionId);
                 }
             });
 
+            // Update section progress after restoring answers
             document.querySelectorAll('.section-form').forEach((form, index) => {
                 updateSectionProgress(index);
             });
+            
+            console.log('Answer restoration complete');
         }
 
         function updateSectionStates() {
@@ -1408,8 +1731,11 @@
             isSubmittingExam = true; // Disable beforeunload warning
             showNotification(`${reason}! Automatically submitting your exam...`, 'error');
             
-            // Collect all current answers
-            const allAnswers = {};
+            // IMPORTANT: Merge answers from saved session with current DOM answers
+            // Start with previously saved answers (from auto-save or section submissions)
+            const allAnswers = Object.assign({}, sectionAnswers || {});
+            
+            // Then collect all current answers from DOM (these override saved answers if changed)
             document.querySelectorAll('.section-form').forEach(form => {
                 form.querySelectorAll('.question-item').forEach(question => {
                     const radioInputs = question.querySelectorAll('input[type="radio"]');
@@ -1430,6 +1756,13 @@
                     }
                 });
             });
+            
+            // Also merge with window.allExamAnswers if available (from manual submission attempts)
+            if (window.allExamAnswers && typeof window.allExamAnswers === 'object') {
+                Object.assign(allAnswers, window.allExamAnswers);
+            }
+            
+            console.log(`Auto-submitting exam with ${Object.keys(allAnswers).length} answers collected`);
             
             fetch('{{ route('exam.complete') }}', {
                 method: 'POST',

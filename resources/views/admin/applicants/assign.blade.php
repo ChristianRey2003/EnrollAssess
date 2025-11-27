@@ -608,12 +608,68 @@
 
 @section('content')
 <div class="assign-container">
-    <!-- Breadcrumb -->
+    <!-- Breadcrumb - Hidden if accessed via delegation -->
+    @if(!$isDelegated)
     <div class="breadcrumb">
         <a href="{{ route('admin.applicants.index') }}" class="breadcrumb-link">Applicants</a>
         <span class="breadcrumb-separator">›</span>
         <span class="breadcrumb-current">Assign</span>
     </div>
+    @endif
+
+    <!-- Delegation Expiration Indicator -->
+    @if($isDelegated && $delegation)
+        @php
+            $effectiveExpiresAt = $delegation->getEffectiveExpiresAt();
+            $isExpiringSoon = false;
+            $timeRemainingText = '';
+            
+            if ($effectiveExpiresAt) {
+                $isExpiringSoon = $effectiveExpiresAt->diffInHours(now()) < 2 && $effectiveExpiresAt->isFuture();
+                $timeRemaining = now()->diff($effectiveExpiresAt);
+                
+                if ($timeRemaining->invert === 0) {
+                    // Future expiration
+                    if ($timeRemaining->days > 0) {
+                        $timeRemainingText = $timeRemaining->days . 'd ' . $timeRemaining->h . 'h';
+                    } elseif ($timeRemaining->h > 0) {
+                        $timeRemainingText = $timeRemaining->h . 'h ' . $timeRemaining->i . 'm';
+                    } elseif ($timeRemaining->i > 0) {
+                        $timeRemainingText = $timeRemaining->i . 'm';
+                    } else {
+                        $timeRemainingText = 'Less than a minute';
+                    }
+                } else {
+                    // Past expiration
+                    $timeRemainingText = 'Expired';
+                }
+            }
+        @endphp
+        <div class="delegation-indicator {{ $isExpiringSoon ? 'expiring-soon' : '' }}" style="margin-bottom: 20px; padding: 12px 16px; background: {{ $isExpiringSoon ? '#FEF3C7' : '#EFF6FF' }}; border: 2px solid {{ $isExpiringSoon ? '#FDE68A' : '#BFDBFE' }}; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <svg style="width: 20px; height: 20px; color: {{ $isExpiringSoon ? '#F59E0B' : '#3B82F6' }};" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span style="font-weight: 600; color: {{ $isExpiringSoon ? '#92400E' : '#1E40AF' }}; font-size: 14px;">
+                    Delegation Access
+                </span>
+            </div>
+            @if($effectiveExpiresAt)
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="color: {{ $isExpiringSoon ? '#92400E' : '#1E40AF' }}; font-size: 13px;">
+                        @if($timeRemainingText === 'Expired')
+                            <strong>Expired</strong>
+                        @else
+                            Expires in: <strong>{{ $timeRemainingText }}</strong>
+                        @endif
+                    </span>
+                    <span style="color: {{ $isExpiringSoon ? '#92400E' : '#60A5FA' }}; font-size: 12px;">
+                        ({{ $effectiveExpiresAt->format('M d, Y g:i A') }})
+                    </span>
+                </div>
+            @endif
+        </div>
+    @endif
 
     <div class="assign-grid">
         <!-- Left Panel: Applicants List -->

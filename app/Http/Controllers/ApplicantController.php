@@ -11,6 +11,7 @@ use App\Services\ApplicantService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
@@ -40,6 +41,43 @@ class ApplicantController extends BaseController
     }
 
     /**
+     * Apply school year filter to query if needed
+     * 
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    protected function applySchoolYearFilter($query)
+    {
+        $currentRoute = request()->route()->getName() ?? '';
+        
+        // Routes that should NOT be filtered by school year
+        $excludedRoutes = [
+            'admin.settings',
+            'admin.questions',
+            'admin.users',
+        ];
+        
+        // Check if current route should be excluded
+        $shouldExclude = false;
+        foreach ($excludedRoutes as $excludedPrefix) {
+            if (str_starts_with($currentRoute, $excludedPrefix)) {
+                $shouldExclude = true;
+                break;
+            }
+        }
+        
+        // Apply filter if not excluded
+        if (!$shouldExclude) {
+            $schoolYearId = session('school_year_id');
+            if ($schoolYearId) {
+                $query->forSchoolYear($schoolYearId);
+            }
+        }
+        
+        return $query;
+    }
+
+    /**
      * Display a listing of applicants
      *
      * @param Request $request
@@ -50,6 +88,9 @@ class ApplicantController extends BaseController
         try {
             // Exclude archived applicants by default
             $query = Applicant::with(['assignedInstructor', 'accessCode', 'accessCode.exam']);
+            
+            // Apply school year filter
+            $this->applySchoolYearFilter($query);
 
             // Search functionality
             if ($request->filled('search')) {
@@ -80,17 +121,20 @@ class ApplicantController extends BaseController
 
             $applicants = $query->orderBy('created_at', 'desc')->paginate(20);
 
-            // Meaningful Statistics (exclude archived applicants)
+            // Meaningful Statistics (exclude archived applicants, filter by school year)
+            $statsQuery = Applicant::query();
+            $this->applySchoolYearFilter($statsQuery);
+            
             $stats = [
-                'total_applicants' => Applicant::count(), // Already excludes archived due to SoftDeletes
-                'exam_completed' => Applicant::where('status', '!=', 'pending')->whereNotNull('enrollassess_score')->count(),
-                'interview_completed' => Applicant::whereIn('status', [
+                'total_applicants' => (clone $statsQuery)->count(),
+                'exam_completed' => (clone $statsQuery)->where('status', '!=', 'pending')->whereNotNull('enrollassess_score')->count(),
+                'interview_completed' => (clone $statsQuery)->whereIn('status', [
                     'interview-completed',
                     'admitted',
                     'rejected',
                 ])->count(),
                 // Use admitted as proxy for qualified since overall_rating is computed, not a DB column
-                'qualified' => Applicant::where('status', 'admitted')->count(),
+                'qualified' => (clone $statsQuery)->where('status', 'admitted')->count(),
             ];
 
             $instructors = User::where('role', 'instructor')->get();
@@ -158,6 +202,14 @@ class ApplicantController extends BaseController
             DB::transaction(function () use ($validated, $request, &$applicant) {
                 // Generate application number
                 $validated['application_no'] = Applicant::generateApplicationNumber();
+                
+                // Assign school year from session or get current
+                $schoolYearId = session('school_year_id');
+                if (!$schoolYearId) {
+                    $currentSchoolYear = \App\Models\SchoolYear::getCurrent();
+                    $schoolYearId = $currentSchoolYear ? $currentSchoolYear->school_year_id : null;
+                }
+                $validated['school_year_id'] = $schoolYearId;
 
                 // Create applicant
                 $applicant = Applicant::create($validated);
@@ -331,23 +383,35 @@ class ApplicantController extends BaseController
         // Get exam results
         $results = $applicant->results()->with('question.options')->orderBy('created_at', 'asc')->get();
         
-        // Calculate statistics
-        $totalQuestions = $results->count();
-        $correctAnswers = $results->where('is_correct', true)->count();
-        $incorrectAnswers = $totalQuestions - $correctAnswers;
-        
         // Get exam attempt info
         $examAttempt = \App\Models\ExamAttempt::where('applicant_id', $applicant->applicant_id)
             ->where('status', 'completed')
             ->latest('completed_at')
             ->first();
+        
+        // Calculate statistics
+        // IMPORTANT: Get total assigned questions from ExamAttempt, not just answered questions
+        $totalAssignedQuestions = 0;
+        if ($examAttempt && $examAttempt->question_ids && is_array($examAttempt->question_ids)) {
+            $totalAssignedQuestions = count($examAttempt->question_ids);
+        } else {
+            // Fallback to results count if attempt data not available
+            $totalAssignedQuestions = $results->count();
+        }
+        
+        $answeredQuestions = $results->count();
+        $correctAnswers = $results->where('is_correct', true)->count();
+        $incorrectAnswers = $answeredQuestions - $correctAnswers;
+        $unansweredQuestions = $totalAssignedQuestions - $answeredQuestions;
 
         return view('admin.applicants.exam-details', compact(
             'applicant',
             'results',
-            'totalQuestions',
+            'totalAssignedQuestions',
+            'answeredQuestions',
             'correctAnswers',
             'incorrectAnswers',
+            'unansweredQuestions',
             'examAttempt'
         ));
     }
@@ -548,6 +612,14 @@ class ApplicantController extends BaseController
                         }
                         
                         $applicantData['assigned_instructor_id'] = $request->assigned_instructor_id;
+                        
+                        // Assign school year from session or get current
+                        $schoolYearId = session('school_year_id');
+                        if (!$schoolYearId) {
+                            $currentSchoolYear = \App\Models\SchoolYear::getCurrent();
+                            $schoolYearId = $currentSchoolYear ? $currentSchoolYear->school_year_id : null;
+                        }
+                        $applicantData['school_year_id'] = $schoolYearId;
 
                         $applicant = Applicant::create($applicantData);
 
@@ -719,6 +791,9 @@ class ApplicantController extends BaseController
 
         // Build applicants query with filters
         $query = Applicant::with(['assignedInstructor', 'accessCode']);
+        
+        // Apply school year filter
+        $this->applySchoolYearFilter($query);
 
         // Search filter
         if ($request->filled('q')) {
@@ -785,7 +860,25 @@ class ApplicantController extends BaseController
             ]);
         }
 
-        return view('admin.applicants.assign', compact('applicants', 'instructors'));
+        // Get delegation info if user is accessing via delegation
+        $delegation = null;
+        $isDelegated = false;
+        if (Auth::check() && Auth::user()->role === 'instructor') {
+            $delegation = Auth::user()->delegatedPermissions()
+                ->where('permission', 'assign_applicants')
+                ->where('status', 'active')
+                ->where(function($q) {
+                    $q->whereNull('starts_at')
+                      ->orWhere('starts_at', '<=', now());
+                })
+                ->first();
+            
+            if ($delegation && !$delegation->isExpired()) {
+                $isDelegated = true;
+            }
+        }
+
+        return view('admin.applicants.assign', compact('applicants', 'instructors', 'delegation', 'isDelegated'));
     }
 
     /**
@@ -951,6 +1044,9 @@ class ApplicantController extends BaseController
     public function exportWithAccessCodes(Request $request)
     {
         $query = Applicant::with(['assignedInstructor', 'accessCode', 'accessCode.exam']);
+        
+        // Apply school year filter
+        $this->applySchoolYearFilter($query);
 
         // If specific applicant IDs are provided, filter by those IDs first
         if ($request->has('applicant_ids') && $request->applicant_ids) {
@@ -1061,6 +1157,9 @@ class ApplicantController extends BaseController
         try {
             $query = Applicant::with(['assignedInstructor', 'accessCode', 'latestInterview'])
                 ->whereNotNull('enrollassess_score'); // Only show applicants who completed EnrollAssess exam
+            
+            // Apply school year filter
+            $this->applySchoolYearFilter($query);
 
             // Search functionality
             if ($request->filled('search')) {
@@ -1143,9 +1242,11 @@ class ApplicantController extends BaseController
                 'interview-completed'
             ];
 
-            // Statistics - 4 most important metrics
+            // Statistics - 4 most important metrics (filtered by school year)
             $scoringService = app(\App\Services\AdmissionScoringService::class);
-            $allApplicants = Applicant::whereNotNull('enrollassess_score')->get();
+            $allApplicantsQuery = Applicant::whereNotNull('enrollassess_score');
+            $this->applySchoolYearFilter($allApplicantsQuery);
+            $allApplicants = $allApplicantsQuery->get();
             
             $qualifiersCount = $allApplicants->filter(function($applicant) use ($scoringService) {
                 return $scoringService->hasAllRequiredScores($applicant);
@@ -1156,11 +1257,14 @@ class ApplicantController extends BaseController
                 return $rating ? $rating['overall_rating'] : null;
             })->filter()->values();
             
+            $statsQuery = Applicant::query();
+            $this->applySchoolYearFilter($statsQuery);
+            
             $stats = [
                 'qualifiers_count' => $qualifiersCount,
                 'average_overall' => $overallRatings->count() > 0 ? round($overallRatings->avg(), 2) : 0,
-                'average_uee' => round(Applicant::whereNotNull('score')->avg('score'), 2),
-                'average_gwa' => round(Applicant::whereNotNull('card_tor_gwa')->avg('card_tor_gwa'), 2),
+                'average_uee' => round((clone $statsQuery)->whereNotNull('score')->avg('score') ?? 0, 2),
+                'average_gwa' => round((clone $statsQuery)->whereNotNull('card_tor_gwa')->avg('card_tor_gwa') ?? 0, 2),
             ];
 
             // Return JSON for AJAX pagination requests only
@@ -1202,6 +1306,9 @@ class ApplicantController extends BaseController
         try {
             // Build query with filters
             $query = Applicant::with(['assignedInstructor', 'accessCode']);
+            
+            // Apply school year filter
+            $this->applySchoolYearFilter($query);
 
             // Filter by status (only interview-completed by default)
             $status = $request->get('status', 'interview-completed');
@@ -1503,45 +1610,42 @@ class ApplicantController extends BaseController
 
     /**
      * Archive all applicants (soft delete)
+     * 
+     * DEPRECATED: Archiving applicants is no longer used.
+     * Applicants are now filtered by school year instead.
+     * This method is kept for backward compatibility but returns an error.
      */
     public function archiveAll()
     {
-        try {
-            $applicants = Applicant::get();
-            $count = $applicants->count();
-            
-            if ($count === 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No applicants to archive.',
-                ], 400);
-            }
-
-            // Soft delete all applicants
-            Applicant::query()->delete();
-
-            // Dispatch statistics update event
-            $this->dispatchStatisticsUpdate();
-
-            return response()->json([
-                'success' => true,
-                'message' => "Successfully archived {$count} applicant(s).",
-                'archived_count' => $count,
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Failed to archive applicants: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to archive applicants: ' . $e->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'success' => false,
+            'message' => 'Archiving applicants is no longer available. Use the school year filter to view applicants by academic year.',
+        ], 410); // 410 Gone - resource no longer available
     }
 
     /**
      * Get archived applicants
+     * 
+     * DEPRECATED: Archiving applicants is no longer used.
+     * Applicants are now filtered by school year instead.
      */
     public function archivedHistory(Request $request)
     {
+        return response()->json([
+            'success' => false,
+            'message' => 'Archiving applicants is no longer available. Use the school year filter to view applicants by academic year.',
+            'applicants' => [],
+            'pagination' => [
+                'current_page' => 1,
+                'last_page' => 1,
+                'per_page' => 20,
+                'total' => 0,
+                'from' => null,
+                'to' => null,
+            ],
+        ], 410);
+        
+        /* OLD CODE - DISABLED
         try {
             $query = Applicant::onlyTrashed()
                 ->with(['assignedInstructor', 'accessCode'])
@@ -1598,75 +1702,34 @@ class ApplicantController extends BaseController
                 'message' => 'Failed to load archived applicants: ' . $e->getMessage(),
             ], 500);
         }
+        */
     }
 
     /**
      * Restore all archived applicants
+     * 
+     * DEPRECATED: Archiving applicants is no longer used.
+     * Applicants are now filtered by school year instead.
      */
     public function restoreAll()
     {
-        try {
-            $archivedCount = Applicant::onlyTrashed()->count();
-            
-            if ($archivedCount === 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No archived applicants to restore.',
-                ], 400);
-            }
-
-            // Restore all archived applicants
-            Applicant::onlyTrashed()->restore();
-
-            // Dispatch statistics update event
-            $this->dispatchStatisticsUpdate();
-
-            return response()->json([
-                'success' => true,
-                'message' => "Successfully restored {$archivedCount} applicant(s).",
-                'restored_count' => $archivedCount,
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Failed to restore archived applicants: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to restore applicants: ' . $e->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'success' => false,
+            'message' => 'Archiving applicants is no longer available. Use the school year filter to view applicants by academic year.',
+        ], 410);
     }
 
     /**
      * Permanently delete all archived applicants
+     * 
+     * DEPRECATED: Archiving applicants is no longer used.
+     * Applicants are now filtered by school year instead.
      */
     public function permanentlyDeleteAll()
     {
-        try {
-            $archivedCount = Applicant::onlyTrashed()->count();
-            
-            if ($archivedCount === 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No archived applicants to delete.',
-                ], 400);
-            }
-
-            // Permanently delete all archived applicants
-            Applicant::onlyTrashed()->forceDelete();
-
-            // Dispatch statistics update event
-            $this->dispatchStatisticsUpdate();
-
-            return response()->json([
-                'success' => true,
-                'message' => "Successfully permanently deleted {$archivedCount} applicant(s).",
-                'deleted_count' => $archivedCount,
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Failed to permanently delete archived applicants: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to permanently delete applicants: ' . $e->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'success' => false,
+            'message' => 'Archiving applicants is no longer available. Use the school year filter to view applicants by academic year.',
+        ], 410);
     }
 }

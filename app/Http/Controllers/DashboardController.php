@@ -13,20 +13,48 @@ use Illuminate\Support\Facades\DB;
 class DashboardController extends Controller
 {
     /**
+     * Apply school year filter to query if needed
+     */
+    protected function applySchoolYearFilter($query)
+    {
+        $schoolYearId = session('school_year_id');
+        if ($schoolYearId) {
+            $query->forSchoolYear($schoolYearId);
+        }
+        return $query;
+    }
+
+    /**
      * Get live dashboard statistics
      */
     public function getLiveStats()
     {
+        $schoolYearId = session('school_year_id');
+        $cacheKey = 'dashboard_stats_' . ($schoolYearId ?? 'all');
+        
         // Cache for 30 seconds to reduce database load
-        $stats = Cache::remember('dashboard_stats', 30, function () {
+        $stats = Cache::remember($cacheKey, 30, function () use ($schoolYearId) {
+            $applicantQuery = Applicant::query();
+            if ($schoolYearId) {
+                $applicantQuery->forSchoolYear($schoolYearId);
+            }
+            
+            // Filter interviews by school year through applicants
+            $interviewQuery = Interview::query();
+            if ($schoolYearId) {
+                $interviewQuery->whereHas('applicant', function($q) use ($schoolYearId) {
+                    $q->where('school_year_id', $schoolYearId);
+                });
+            }
+            
             return [
-                'total_applicants' => Applicant::count(),
-                'exam_completed' => Applicant::where('status', '!=', 'pending')->count(),
-                'interviews_scheduled' => Interview::where('status', 'scheduled')->count(),
-                'pending_reviews' => Applicant::where('status', 'exam-completed')->count(),
-                'admitted' => Applicant::where('status', 'admitted')->count(),
-                'rejected' => Applicant::where('status', 'rejected')->count(),
-                'interviews_completed' => Interview::where('status', 'completed')->count(),
+                'total_applicants' => (clone $applicantQuery)->count(),
+                'exam_completed' => (clone $applicantQuery)->where('status', '!=', 'pending')->count(),
+                'interviews_scheduled' => (clone $interviewQuery)->where('status', 'scheduled')->count(),
+                'pending_reviews' => (clone $applicantQuery)->where('status', 'exam-completed')->count(),
+                'admitted' => (clone $applicantQuery)->where('status', 'admitted')->count(),
+                'rejected' => (clone $applicantQuery)->where('status', 'rejected')->count(),
+                'interviews_completed' => (clone $interviewQuery)->where('status', 'completed')->count(),
                 'active_exams' => Exam::where('is_active', true)->count(),
             ];
         });
@@ -44,9 +72,14 @@ class DashboardController extends Controller
     public function getRecentActivity(Request $request)
     {
         $limit = $request->get('limit', 10);
+        $schoolYearId = session('school_year_id');
 
-        $recentApplicants = Applicant::with(['assignedInstructor', 'accessCode'])
-            ->latest()
+        $applicantQuery = Applicant::with(['assignedInstructor', 'accessCode']);
+        if ($schoolYearId) {
+            $applicantQuery->forSchoolYear($schoolYearId);
+        }
+        
+        $recentApplicants = $applicantQuery->latest()
             ->take($limit)
             ->get()
             ->map(function ($applicant) {
@@ -118,13 +151,19 @@ class DashboardController extends Controller
     private function getApplicantTrends($days)
     {
         $startDate = now()->subDays($days);
+        $schoolYearId = session('school_year_id');
 
-        $applicants = Applicant::select(
+        $query = Applicant::select(
                 DB::raw('DATE(created_at) as date'),
                 DB::raw('COUNT(*) as count')
             )
-            ->where('created_at', '>=', $startDate)
-            ->groupBy('date')
+            ->where('created_at', '>=', $startDate);
+            
+        if ($schoolYearId) {
+            $query->where('school_year_id', $schoolYearId);
+        }
+        
+        $applicants = $query->groupBy('date')
             ->orderBy('date')
             ->get();
 
@@ -162,14 +201,20 @@ class DashboardController extends Controller
     private function getExamTrends($days)
     {
         $startDate = now()->subDays($days);
+        $schoolYearId = session('school_year_id');
 
-        $completions = Applicant::select(
+        $query = Applicant::select(
                 DB::raw('DATE(updated_at) as date'),
                 DB::raw('COUNT(*) as count')
             )
             ->where('status', '!=', 'pending')
-            ->where('updated_at', '>=', $startDate)
-            ->groupBy('date')
+            ->where('updated_at', '>=', $startDate);
+            
+        if ($schoolYearId) {
+            $query->where('school_year_id', $schoolYearId);
+        }
+        
+        $completions = $query->groupBy('date')
             ->orderBy('date')
             ->get();
 
@@ -269,8 +314,15 @@ class DashboardController extends Controller
      */
     private function getStatusDistribution()
     {
-        $distribution = Applicant::select('status', DB::raw('COUNT(*) as count'))
-            ->groupBy('status')
+        $schoolYearId = session('school_year_id');
+        
+        $query = Applicant::select('status', DB::raw('COUNT(*) as count'));
+        
+        if ($schoolYearId) {
+            $query->where('school_year_id', $schoolYearId);
+        }
+        
+        $distribution = $query->groupBy('status')
             ->get();
 
         $statusLabels = [

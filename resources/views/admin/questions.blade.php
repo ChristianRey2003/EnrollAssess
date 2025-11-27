@@ -150,7 +150,7 @@
                                 @endif
                             </div>
                             <div style="display: flex; gap: 10px;">
-                                <a href="{{ route('admin.settings') }}" class="section-action" style="background: #6b7280;">Exam Settings</a>
+                                <a href="{{ route('admin.settings.index') }}" class="section-action" style="background: #6b7280;">Exam Settings</a>
                                 <a href="{{ route('admin.questions.create') }}" class="section-action">Add Question</a>
                             </div>
                         </div>

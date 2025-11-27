@@ -12,11 +12,24 @@ use Illuminate\Support\Facades\DB;
 class BasicInfoAnalyticsService
 {
     /**
+     * Apply school year filter to query if needed
+     */
+    protected function applySchoolYearFilter($query)
+    {
+        $schoolYearId = session('school_year_id');
+        if ($schoolYearId) {
+            $query->forSchoolYear($schoolYearId);
+        }
+        return $query;
+    }
+
+    /**
      * Get all dashboard analytics in one call
      */
     public function getDashboardAnalytics(int $days = 30): array
     {
-        $cacheKey = "dashboard_basic_info_analytics_v4_{$days}";
+        $schoolYearId = session('school_year_id');
+        $cacheKey = "dashboard_basic_info_analytics_v4_{$days}_sy_{$schoolYearId}";
         
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($days) {
             $dateFilter = $days > 0 ? now()->subDays($days) : null;
@@ -40,6 +53,7 @@ class BasicInfoAnalyticsService
     {
         // KPIs should reflect overall progress, independent of the dashboard period filter
         $baseQuery = Applicant::query();
+        $this->applySchoolYearFilter($baseQuery);
 
         $totalApplicants = (clone $baseQuery)->count();
 
@@ -81,6 +95,8 @@ class BasicInfoAnalyticsService
             ->whereNotNull('abi.sex')
             ->whereNotNull('applicants.enrollassess_score');
         
+        $this->applySchoolYearFilter($query);
+        
         if ($dateFilter) {
             $query->whereNotNull('applicants.exam_completed_at')
                 ->where('applicants.exam_completed_at', '>=', $dateFilter);
@@ -114,12 +130,21 @@ class BasicInfoAnalyticsService
      */
     public function getTopInterviewScoresBySex($dateFilter = null): array
     {
+        $schoolYearId = session('school_year_id');
+        
         $query = Interview::query()
             ->join('applicant_basic_infos as abi', 'abi.applicant_id', '=', 'interviews.applicant_id')
             ->select('abi.sex', DB::raw('MAX(interviews.overall_score) as max_score'))
             ->whereNotNull('abi.sex')
             ->whereNotNull('interviews.overall_score')
             ->where('interviews.status', 'completed');
+        
+        // Filter by school year through applicants
+        if ($schoolYearId) {
+            $query->whereHas('applicant', function($q) use ($schoolYearId) {
+                $q->where('school_year_id', $schoolYearId);
+            });
+        }
         
         if ($dateFilter) {
             $query->where('interviews.updated_at', '>=', $dateFilter);
@@ -153,7 +178,16 @@ class BasicInfoAnalyticsService
      */
     public function getCityDistribution($dateFilter = null, int $limit = 10): array
     {
+        $schoolYearId = session('school_year_id');
+        
         $query = ApplicantBasicInfo::query();
+        
+        // Filter by school year through applicants
+        if ($schoolYearId) {
+            $query->whereHas('applicant', function($q) use ($schoolYearId) {
+                $q->where('school_year_id', $schoolYearId);
+            });
+        }
         
         if ($dateFilter) {
             $query->where('completed_at', '>=', $dateFilter);
@@ -218,6 +252,8 @@ class BasicInfoAnalyticsService
         $query = Applicant::query()
             ->whereNotNull('exam_completed_at');
         
+        $this->applySchoolYearFilter($query);
+        
         if ($dateFilter) {
             $query->where('exam_completed_at', '>=', $dateFilter);
         }
@@ -264,6 +300,7 @@ class BasicInfoAnalyticsService
     {
         // Build base query
         $baseQuery = Applicant::query();
+        $this->applySchoolYearFilter($baseQuery);
         
         if ($dateFilter) {
             $baseQuery->where('created_at', '>=', $dateFilter);
@@ -341,6 +378,7 @@ class BasicInfoAnalyticsService
     public function getPendingInterviewDistribution($dateFilter = null): array
     {
         $baseQuery = Applicant::query();
+        $this->applySchoolYearFilter($baseQuery);
 
         $pendingStatuses = ['pending'];
         $interviewStatuses = ['interview-completed', 'admitted', 'rejected'];

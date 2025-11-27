@@ -22,6 +22,7 @@ Route::get('/', function () {
 
 // Exam Interface - Sectioned Exam (with no-cache middleware and rate limiting)
 Route::post('/exam/start', [App\Http\Controllers\ExamController::class, 'startExam'])->name('exam.start')->middleware(['no.cache', 'rate.limit:exam-submit']);
+Route::post('/exam/mark-started', [App\Http\Controllers\ExamController::class, 'markExamStarted'])->name('exam.mark-started')->middleware(['no.cache']);
 Route::get('/exam', [App\Http\Controllers\ExamController::class, 'getExamInterface'])->name('exam.interface')->middleware('no.cache');
 Route::post('/exam/submit-section', [App\Http\Controllers\ExamController::class, 'submitSection'])->name('exam.submit-section')->middleware(['no.cache', 'rate.limit:exam-submit']);
 Route::post('/exam/auto-save', [App\Http\Controllers\ExamController::class, 'autoSave'])->name('exam.auto-save')->middleware(['no.cache']);

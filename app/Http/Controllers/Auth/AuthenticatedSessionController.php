@@ -26,9 +26,15 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
-        // Update last login timestamp
+        // Update last login timestamp and activate delegations
         if (Auth::check()) {
-            Auth::user()->update(['last_login' => now()]);
+            $user = Auth::user();
+            $user->update(['last_login' => now()]);
+            
+            // Activate delegations on first login (for instructors)
+            if ($user->role === 'instructor') {
+                $user->activateDelegations();
+            }
         }
 
         $request->session()->regenerate();

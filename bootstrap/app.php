@@ -18,6 +18,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'no.cache' => \App\Http\Middleware\NoCacheMiddleware::class,
             'rate.limit' => \App\Http\Middleware\RateLimitPublicRoutes::class,
             'capability' => \App\Http\Middleware\CheckDelegatedPermission::class,
+            'school.year' => \App\Http\Middleware\SetSchoolYear::class,
+        ]);
+        
+        // Apply school year middleware to admin routes
+        $middleware->web(append: [
+            \App\Http\Middleware\SetSchoolYear::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

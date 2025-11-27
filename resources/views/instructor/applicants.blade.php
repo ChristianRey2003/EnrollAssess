@@ -508,6 +508,8 @@
         <form id="scheduleForm" onsubmit="submitSchedule(event)">
             @csrf
             <input type="hidden" id="interviewId" name="interview_id">
+            <input type="hidden" id="scheduleDeadlineStart" name="schedule_deadline_start">
+            <input type="hidden" id="scheduleDeadlineEnd" name="schedule_deadline_end">
             
             <div class="form-group">
                 <label class="form-label">Applicant</label>
@@ -515,8 +517,12 @@
             </div>
             
             <div class="form-group">
-                <label class="form-label">Interview Date & Time *</label>
-                <input type="datetime-local" id="scheduleDate" name="schedule_date" class="form-input" required>
+                <label class="form-label">Interview Date *</label>
+                <input type="date" id="scheduleDate" name="schedule_date" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Interview Time *</label>
+                <input type="time" id="scheduleTime" name="schedule_time" class="form-input" required>
             </div>
             
             <div class="form-group">
@@ -553,8 +559,12 @@
             </div>
             
             <div class="form-group">
-                <label class="form-label">Start Date & Time *</label>
-                <input type="datetime-local" id="bulkScheduleDate" name="schedule_date_start" class="form-input" required>
+                <label class="form-label">Start Date *</label>
+                <input type="date" id="bulkScheduleDate" name="schedule_date_start" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Start Time *</label>
+                <input type="time" id="bulkScheduleTime" name="schedule_time_start" class="form-input" required>
             </div>
             
             <div class="form-group">
@@ -808,16 +818,46 @@
     }
 
 
+    function formatDateForInput(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
     // Individual schedule modal
-    function openScheduleModal(interviewId, applicantName) {
+    function openScheduleModal(interviewId, applicantName, deadlineStart, deadlineEnd) {
         document.getElementById('interviewId').value = interviewId;
         document.getElementById('applicantName').value = applicantName;
+        document.getElementById('scheduleDeadlineStart').value = deadlineStart || '';
+        document.getElementById('scheduleDeadlineEnd').value = deadlineEnd || '';
         document.getElementById('scheduleModal').classList.add('show');
         
-        // Set minimum date to current time + 1 hour
+        const dateInput = document.getElementById('scheduleDate');
+        const timeInput = document.getElementById('scheduleTime');
+
         const now = new Date();
         now.setHours(now.getHours() + 1);
-        document.getElementById('scheduleDate').min = now.toISOString().slice(0, 16);
+
+        // Default min date is today (local)
+        const todayStr = formatDateForInput(now);
+        dateInput.min = todayStr;
+
+        // Apply interview window limits if provided
+        if (deadlineStart) {
+            const startDate = new Date(deadlineStart);
+            const startStr = formatDateForInput(startDate);
+            // max of (today, start date)
+            dateInput.min = startStr > todayStr ? startStr : todayStr;
+        }
+        if (deadlineEnd) {
+            const endDate = new Date(deadlineEnd);
+            const endStr = formatDateForInput(endDate);
+            dateInput.max = endStr;
+        }
+
+        // Reset time field
+        timeInput.value = '';
     }
 
     function closeScheduleModal() {
@@ -831,9 +871,41 @@
         const form = event.target;
         const formData = new FormData(form);
         const interviewId = formData.get('interview_id');
-        
+
+        const dateValue = formData.get('schedule_date');
+        const timeValue = formData.get('schedule_time');
+        if (!dateValue || !timeValue) {
+            alert('Please select both interview date and time.');
+            return;
+        }
+
+        // Combine date and time into ISO-like string (YYYY-MM-DDTHH:MM)
+        const scheduleDateTime = `${dateValue}T${timeValue}`;
+
+        // Validate against interview window if provided
+        const deadlineStart = formData.get('schedule_deadline_start');
+        const deadlineEnd = formData.get('schedule_deadline_end');
+        const scheduleDateObj = new Date(scheduleDateTime);
+
+        if (deadlineStart) {
+            const startObj = new Date(deadlineStart);
+            if (scheduleDateObj < startObj) {
+                alert('Selected time is before the allowed interview window.');
+                return;
+            }
+        }
+        if (deadlineEnd) {
+            const endObj = new Date(deadlineEnd);
+            // Allow any time on the deadline day by pushing to end-of-day
+            endObj.setHours(23, 59, 59, 999);
+            if (scheduleDateObj > endObj) {
+                alert('Selected time is beyond the allowed interview window.');
+                return;
+            }
+        }
+
         const data = {
-            schedule_date: formData.get('schedule_date'),
+            schedule_date: scheduleDateTime,
             notes: formData.get('notes'),
             notify_email: formData.get('notify_email') ? 1 : 0
         };
@@ -882,10 +954,10 @@
         
         document.getElementById('bulkScheduleModal').classList.add('show');
         
-        // Set minimum date
+        // Set minimum start date to today
         const now = new Date();
-        now.setHours(now.getHours() + 1);
-        document.getElementById('bulkScheduleDate').min = now.toISOString().slice(0, 16);
+        const todayStr = now.toISOString().slice(0, 10);
+        document.getElementById('bulkScheduleDate').min = todayStr;
     }
 
     function closeBulkScheduleModal() {
@@ -908,10 +980,19 @@
         
         const form = event.target;
         const formData = new FormData(form);
-        
+
+        const dateValue = formData.get('schedule_date_start');
+        const timeValue = formData.get('schedule_time_start');
+        if (!dateValue || !timeValue) {
+            alert('Please select both start date and time.');
+            return;
+        }
+
+        const scheduleDateTimeStart = `${dateValue}T${timeValue}`;
+
         const data = {
             interview_ids: interviewIds,
-            schedule_date_start: formData.get('schedule_date_start'),
+            schedule_date_start: scheduleDateTimeStart,
             time_interval: parseInt(formData.get('time_interval')),
             notify_email: formData.get('notify_email') ? 1 : 0
         };

@@ -36,12 +36,14 @@
     }
 
     .section-header {
-        padding: 24px;
+        padding: 20px 24px;
         background: #F9FAFB;
         border-bottom: 1px solid #E5E7EB;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
     }
 
     .section-title {
@@ -296,7 +298,21 @@
         <div class="dashboard-section">
             <div class="section-header">
                 <h2 class="section-title">Upcoming Interviews</h2>
-                <a href="{{ route('instructor.schedule') }}" class="btn-small btn-primary">View Schedule</a>
+                <form method="GET"
+                      action="{{ route('instructor.dashboard') }}"
+                      class="table-header-controls">
+                    <div class="form-group" style="min-width: 180px;">
+                        <label for="upcoming_sort" class="form-label" style="font-size: 0.875rem;">
+                        </label>
+                        <select id="upcoming_sort"
+                                name="upcoming_sort"
+                                class="form-select"
+                                onchange="this.form.submit()">
+                            <option value="asc" {{ request('upcoming_sort', 'asc') === 'asc' ? 'selected' : '' }}>Oldest to newest</option>
+                            <option value="desc" {{ request('upcoming_sort') === 'desc' ? 'selected' : '' }}>Newest to oldest</option>
+                        </select>
+                    </div>
+                </form>
             </div>
             <div class="section-content">
                 @if($upcomingInterviews->count() > 0)
@@ -325,6 +341,13 @@
                                         <td class="text-center">
                                             <div>{{ $interview->schedule_date->format('M d, Y') }}</div>
                                             <div style="font-size: 0.875rem; color: #6B7280;">{{ $interview->schedule_date->format('g:i A') }}</div>
+                                            @if($interview->schedule_date->isPast())
+                                                <div style="margin-top: 4px;">
+                                                    <span class="status-badge status-examcompleted" style="font-size: 0.7rem;">
+                                                        Past schedule date
+                                                    </span>
+                                                </div>
+                                            @endif
                                         </td>
                                         <td class="text-center">
                                             @php

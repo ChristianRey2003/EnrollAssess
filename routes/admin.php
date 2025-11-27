@@ -10,6 +10,7 @@ use App\Http\Controllers\InterviewController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\SetsQuestionsController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
@@ -24,6 +25,11 @@ use Illuminate\Support\Facades\Route;
 | Requires authentication and appropriate role permissions.
 |
 */
+
+// School Year Management Routes
+Route::prefix('school-year')->name('school-year.')->middleware('role:department-head,administrator')->group(function () {
+    Route::post('/switch', [SchoolYearController::class, 'switch'])->name('switch');
+});
 
 // Admin Dashboard - Main admin dashboard with stats
 Route::get('/dashboard', function (Illuminate\Http\Request $request) {
@@ -70,11 +76,11 @@ Route::prefix('applicants')->name('applicants.')->middleware('role:department-he
         Route::post('/delete', [ApplicantController::class, 'bulkDelete'])->name('delete');
     });
     
-    // Archive Operations
-    Route::post('/archive-all', [ApplicantController::class, 'archiveAll'])->name('archive-all');
-    Route::get('/archived-history', [ApplicantController::class, 'archivedHistory'])->name('archived-history');
-    Route::post('/restore-all', [ApplicantController::class, 'restoreAll'])->name('restore-all');
-    Route::post('/permanently-delete-all', [ApplicantController::class, 'permanentlyDeleteAll'])->name('permanently-delete-all');
+    // Archive Operations - DISABLED: Applicants are now filtered by school year instead of archiving
+    // Route::post('/archive-all', [ApplicantController::class, 'archiveAll'])->name('archive-all');
+    // Route::get('/archived-history', [ApplicantController::class, 'archivedHistory'])->name('archived-history');
+    // Route::post('/restore-all', [ApplicantController::class, 'restoreAll'])->name('restore-all');
+    // Route::post('/permanently-delete-all', [ApplicantController::class, 'permanentlyDeleteAll'])->name('permanently-delete-all');
     
     // Exam Assignment Routes
     Route::post('/assign-exam', [ApplicantController::class, 'assignExamToApplicants'])->name('assign-exam');
@@ -228,13 +234,22 @@ Route::get('/export-interview-results', [DepartmentHeadController::class, 'expor
     ->name('export-interview-results');
 
 // Settings
-Route::middleware(['role:department-head,administrator'])->prefix('settings')->name('settings')->group(function () {
-    Route::get('/', [\App\Http\Controllers\SettingsController::class, 'index']);
-    Route::put('/', [\App\Http\Controllers\SettingsController::class, 'update'])->name('.update');
-    Route::post('/test-email', [\App\Http\Controllers\SettingsController::class, 'testEmail'])->name('.test-email');
-    Route::post('/reset', [\App\Http\Controllers\SettingsController::class, 'reset'])->name('.reset');
-    Route::get('/archived-questions', [\App\Http\Controllers\SettingsController::class, 'archivedQuestions'])->name('.archived-questions');
-    Route::post('/restore-archived-questions', [\App\Http\Controllers\SettingsController::class, 'restoreArchivedQuestions'])->name('.restore-archived-questions');
+Route::middleware(['role:department-head,administrator'])->prefix('settings')->name('settings.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\SettingsController::class, 'index'])->name('index');
+    Route::put('/', [\App\Http\Controllers\SettingsController::class, 'update'])->name('update');
+    Route::post('/test-email', [\App\Http\Controllers\SettingsController::class, 'testEmail'])->name('test-email');
+    Route::post('/reset', [\App\Http\Controllers\SettingsController::class, 'reset'])->name('reset');
+    Route::get('/archived-questions', [\App\Http\Controllers\SettingsController::class, 'archivedQuestions'])->name('archived-questions');
+    Route::post('/restore-archived-questions', [\App\Http\Controllers\SettingsController::class, 'restoreArchivedQuestions'])->name('restore-archived-questions');
+    
+    // School Year Management Routes
+    Route::prefix('school-years')->name('school-years.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\SchoolYearController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\SchoolYearController::class, 'store'])->name('store');
+        Route::put('/{schoolYear}', [\App\Http\Controllers\SchoolYearController::class, 'update'])->name('update');
+        Route::delete('/{schoolYear}', [\App\Http\Controllers\SchoolYearController::class, 'destroy'])->name('destroy');
+        Route::post('/{schoolYear}/set-current', [\App\Http\Controllers\SchoolYearController::class, 'setAsCurrent'])->name('set-current');
+    });
 });
 
 // Profile Routes

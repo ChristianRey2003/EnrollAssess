@@ -695,6 +695,26 @@
         color: #92400E;
     }
 
+    .recommendation-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+        flex-wrap: wrap;
+    }
+
+    .recommendation-suggestion {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        padding: 4px 8px;
+        border-radius: 9999px;
+        background: var(--bg-light);
+        border: 1px dashed var(--border);
+        text-align: right;
+        max-width: 260px;
+    }
+
     .recommendation-section,
     .comments-section {
         background: white;
@@ -1154,7 +1174,10 @@
 
                 <!-- Recommendation -->
                 <div class="recommendation-section">
-                    <label class="section-label" for="recommendation">Final Recommendation</label>
+                    <div class="recommendation-header-row">
+                        <label class="section-label" for="recommendation">Final Recommendation</label>
+                        <div class="recommendation-suggestion" id="recommendationSuggestion" style="display: none;"></div>
+                    </div>
                     <select name="recommendation" id="recommendation" class="form-select" required>
                         <option value="">Select Recommendation</option>
                         <option value="highly_recommended" {{ old('recommendation', $interview->recommendation) == 'highly_recommended' ? 'selected' : '' }}>Highly Recommended</option>
@@ -1334,6 +1357,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Recommendation change
     document.getElementById('recommendation')?.addEventListener('change', checkCompletion);
+    document.getElementById('recommendation')?.addEventListener('change', function () {
+        const total = parseInt(totalScoreEl.textContent);
+        if (!isNaN(total)) {
+            updateRecommendationSuggestion(total);
+        }
+    });
     
     // GWA change (sync input to hidden field inside form)
     const gwaInput = document.getElementById('card_tor_gwa_input');
@@ -1530,9 +1559,50 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const totalPercent = Math.round((totalRaw / 80) * 100);
         totalScoreEl.textContent = totalPercent;
-        
+
+        updateRecommendationSuggestion(totalPercent);
+
         const color = totalPercent >= 70 ? '#059669' : totalPercent >= 50 ? '#2563EB' : totalPercent >= 35 ? '#F59E0B' : '#DC2626';
         totalScoreEl.style.color = color;
+    }
+
+    function updateRecommendationSuggestion(totalPercent) {
+        const suggestionEl = document.getElementById('recommendationSuggestion');
+        if (!suggestionEl || isNaN(totalPercent)) {
+            if (suggestionEl) suggestionEl.style.display = 'none';
+            return;
+        }
+
+        let suggestedKey = null;
+        let suggestedLabel = null;
+
+        if (totalPercent >= 90) {
+            suggestedKey = 'highly_recommended';
+            suggestedLabel = 'Highly Recommended';
+        } else if (totalPercent >= 80) {
+            suggestedKey = 'recommended';
+            suggestedLabel = 'Recommended';
+        } else if (totalPercent >= 70) {
+            suggestedKey = 'recommended';
+            suggestedLabel = 'Recommended';
+        } else if (totalPercent >= 60) {
+            suggestedKey = 'conditional';
+            suggestedLabel = 'Conditional';
+        } else {
+            suggestedKey = 'not_recommended';
+            suggestedLabel = 'Not Recommended';
+        }
+
+        const currentSelect = document.getElementById('recommendation');
+        const currentValue = currentSelect ? currentSelect.value : '';
+
+        let note = '';
+        if (currentValue && currentValue !== suggestedKey) {
+            note = ' (different from current selection)';
+        }
+
+        suggestionEl.textContent = `Suggested: ${suggestedLabel} based on ${totalPercent}/100${note}`;
+        suggestionEl.style.display = 'block';
     }
 
     window.toggleSection = function(sectionId) {

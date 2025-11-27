@@ -21,6 +21,7 @@ class Applicant extends Model
         'email_address',
         'phone_number',
         'assigned_instructor_id',
+        'school_year_id',
         'score',
         'enrollassess_score',
         'interview_score',
@@ -42,6 +43,14 @@ class Applicant extends Model
     /**
      * Relationships
      */
+
+    /**
+     * Get the school year for this applicant.
+     */
+    public function schoolYear()
+    {
+        return $this->belongsTo(SchoolYear::class, 'school_year_id', 'school_year_id');
+    }
 
     /**
      * Get the assigned instructor for this applicant.
@@ -106,6 +115,29 @@ class Applicant extends Model
     public function scopeByStatus($query, $status)
     {
         return $query->where('status', $status);
+    }
+
+    /**
+     * Scope to filter by school year
+     */
+    public function scopeForSchoolYear($query, $schoolYearId)
+    {
+        if ($schoolYearId) {
+            return $query->where('school_year_id', $schoolYearId);
+        }
+        return $query;
+    }
+
+    /**
+     * Scope to filter by current school year from session
+     */
+    public function scopeForCurrentSchoolYear($query)
+    {
+        $schoolYearId = session('school_year_id');
+        if ($schoolYearId) {
+            return $query->where('school_year_id', $schoolYearId);
+        }
+        return $query;
     }
 
     /**

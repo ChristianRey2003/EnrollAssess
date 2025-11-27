@@ -101,10 +101,40 @@ class ExamSubmissionController extends Controller
                 $attemptToken = Str::uuid()->toString();
             }
             
+            // IMPORTANT: Merge answers from ExamAttempt with request answers
+            // This ensures we capture all answers even when auto-submitting due to violations
+            // Priority: ExamAttempt answers (more complete) > Request answers (current state)
+            $mergedAnswers = $answers;
+            if ($attemptId) {
+                $attempt = ExamAttempt::find($attemptId);
+                if ($attempt && $attempt->answers && is_array($attempt->answers)) {
+                    // Merge: ExamAttempt answers take priority, but request answers can override
+                    // This handles cases where student changed an answer after auto-save
+                    $mergedAnswers = array_merge($attempt->answers, $answers);
+                    Log::info("Merged answers from ExamAttempt {$attemptId}: " . count($attempt->answers) . " saved answers + " . count($answers) . " request answers = " . count($mergedAnswers) . " total");
+                }
+            }
+            
             // Calculate score (using only assigned questions from session)
-            $scoreData = $this->calculateExamScore($answers, $examSession['question_ids']);
+            // Use merged answers to ensure all answered questions are scored
+            try {
+                $scoreData = $this->calculateExamScore($mergedAnswers, $examSession['question_ids']);
+            } catch (\Exception $e) {
+                Log::error("Score calculation failed for applicant {$applicantId}: " . $e->getMessage());
+                // Fallback to zero score if calculation fails
+                $scoreData = [
+                    'total_score' => 0,
+                    'max_score' => 0,
+                    'percentage' => 0,
+                    'correct_answers' => 0,
+                    'total_questions' => count($examSession['question_ids'] ?? []),
+                    'verbal_description' => 'Needs Improvement'
+                ];
+            }
             
             // Update applicant with exam results
+            // IMPORTANT: Always update status to 'exam-completed' even if score is 0
+            // This ensures the exam shows as completed in admin panel
             $applicant->update([
                 'enrollassess_score' => $scoreData['percentage'],
                 'status' => 'exam-completed',
@@ -112,17 +142,27 @@ class ExamSubmissionController extends Controller
                 'verbal_description' => $scoreData['verbal_description'],
                 'violation_count' => $request->input('violation_count', 0)
             ]);
-
-            // Store detailed results (only for assigned questions) with attempt token
-            $this->storeExamResults($applicantId, $answers, $scoreData, $examSession['question_ids'], false, null, $attemptToken);
             
-            // Mark exam attempt as completed
+            Log::info("Exam status updated to 'exam-completed' for applicant {$applicantId} with score {$scoreData['percentage']}% ({$scoreData['correct_answers']}/{$scoreData['total_questions']} correct)");
+
+            // IMPORTANT: Mark exam attempt as completed FIRST (before storing results)
+            // This ensures the attempt is marked as completed even if result storage fails
             if ($attemptId) {
                 $attempt = ExamAttempt::find($attemptId);
                 if ($attempt) {
                     $attempt->markAsCompleted();
                     Log::info("Exam attempt {$attemptId} marked as completed for applicant {$applicantId}");
                 }
+            }
+            
+            // Store detailed results (only for assigned questions) with attempt token
+            // Use merged answers to store all answered questions
+            try {
+                $this->storeExamResults($applicantId, $mergedAnswers, $scoreData, $examSession['question_ids'], false, null, $attemptToken);
+            } catch (\Exception $e) {
+                // Log error but don't fail the exam completion
+                // The attempt is already marked as completed above
+                Log::error("Failed to store exam results for applicant {$applicantId}: " . $e->getMessage());
             }
             
             // Store attempt token in session for results page
@@ -195,6 +235,8 @@ class ExamSubmissionController extends Controller
 
     /**
      * Calculate exam score from answers (only for assigned questions)
+     * Fair scoring: calculates percentage based on total assigned questions,
+     * but only scores questions that were answered
      */
     private function calculateExamScore($answers, $assignedQuestionIds)
     {
@@ -210,14 +252,21 @@ class ExamSubmissionController extends Controller
         
         $totalQuestions = $assignedQuestionIds->count();
 
+        // First, calculate maxScore for ALL assigned questions (for fair percentage calculation)
+        foreach ($assignedQuestionIds as $questionId) {
+            $question = Question::find($questionId);
+            if ($question) {
+                $maxScore += $question->points ?? 1;
+            }
+        }
+
+        // Then, calculate score only for answered questions
         foreach ($filteredAnswers as $questionId => $selectedAnswer) {
             $question = Question::with('options')->find($questionId);
             
             if (!$question) {
                 continue;
             }
-
-            $maxScore += $question->points ?? 1;
 
             // Handle different question types
             if ($question->question_type === 'essay') {
@@ -273,6 +322,8 @@ class ExamSubmissionController extends Controller
             }
         }
 
+        // Calculate percentage based on total assigned questions (fair scoring)
+        // Example: If student answered 15/30 correctly, they get 50%, not 100%
         $percentage = $maxScore > 0 ? round(($totalScore / $maxScore) * 100, 2) : 0;
         
         // Determine verbal description

@@ -23,7 +23,16 @@ class InterviewController extends Controller
      */
     public function index(Request $request)
     {
+        $schoolYearId = session('school_year_id');
+        
         $query = Interview::with(['applicant', 'interviewer']);
+        
+        // Filter by school year through applicants
+        if ($schoolYearId) {
+            $query->whereHas('applicant', function($q) use ($schoolYearId) {
+                $q->where('school_year_id', $schoolYearId);
+            });
+        }
 
         // Search functionality
         if ($request->has('search') && $request->search != '') {
@@ -65,16 +74,28 @@ class InterviewController extends Controller
             ]);
         }
 
-        // Statistics
+        // Statistics (filtered by school year)
+        $interviewStatsQuery = Interview::query();
+        if ($schoolYearId) {
+            $interviewStatsQuery->whereHas('applicant', function($q) use ($schoolYearId) {
+                $q->where('school_year_id', $schoolYearId);
+            });
+        }
+        
+        $applicantStatsQuery = Applicant::query();
+        if ($schoolYearId) {
+            $applicantStatsQuery->where('school_year_id', $schoolYearId);
+        }
+        
         $stats = [
-            'total' => Interview::count(),
-            'scheduled' => Interview::where('status', 'scheduled')->count(),
-            'completed' => Interview::where('status', 'completed')->count(),
-            'cancelled' => Interview::where('status', 'cancelled')->count(),
-            'pending_assignment' => Applicant::where('status', 'exam-completed')
+            'total' => (clone $interviewStatsQuery)->count(),
+            'scheduled' => (clone $interviewStatsQuery)->where('status', 'scheduled')->count(),
+            'completed' => (clone $interviewStatsQuery)->where('status', 'completed')->count(),
+            'cancelled' => (clone $interviewStatsQuery)->where('status', 'cancelled')->count(),
+            'pending_assignment' => (clone $applicantStatsQuery)->where('status', 'exam-completed')
                                            ->whereDoesntHave('interviews')->count(),
             // Interview pool deprecated: mirror pending_assignment for compatibility
-            'pool_available' => Applicant::where('status', 'exam-completed')
+            'pool_available' => (clone $applicantStatsQuery)->where('status', 'exam-completed')
                                            ->whereDoesntHave('interviews')->count(),
         ];
 

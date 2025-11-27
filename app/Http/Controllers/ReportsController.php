@@ -22,44 +22,77 @@ class ReportsController extends Controller
     }
 
     /**
+     * Apply school year filter to query if needed
+     */
+    protected function applySchoolYearFilter($query)
+    {
+        $schoolYearId = session('school_year_id');
+        if ($schoolYearId) {
+            $query->forSchoolYear($schoolYearId);
+        }
+        return $query;
+    }
+
+    /**
      * Display the reports dashboard
      */
     public function index(Request $request)
     {
-        // Overall statistics
-        $totalApplicants = Applicant::count();
-        $examCompleted = Applicant::where('status', 'exam-completed')->count();
-        $admitted = Applicant::where('status', 'admitted')->count();
-        $rejected = Applicant::where('status', 'rejected')->count();
+        $schoolYearId = session('school_year_id');
+        
+        // Overall statistics (filtered by school year)
+        $applicantQuery = Applicant::query();
+        $this->applySchoolYearFilter($applicantQuery);
+        
+        $totalApplicants = (clone $applicantQuery)->count();
+        $examCompleted = (clone $applicantQuery)->where('status', 'exam-completed')->count();
+        $admitted = (clone $applicantQuery)->where('status', 'admitted')->count();
+        $rejected = (clone $applicantQuery)->where('status', 'rejected')->count();
 
         // Calculate pass rate
-        $passedCount = Applicant::whereIn('status', [
+        $passedCount = (clone $applicantQuery)->whereIn('status', [
             'exam-completed', 'interview-scheduled', 'interview-completed', 'admitted'
         ])->count();
         $passRate = $totalApplicants > 0 ? round(($passedCount / $totalApplicants) * 100, 1) : 0;
 
-        // Access code statistics
-        $accessCodesGenerated = AccessCode::count();
-        $accessCodesUsed = AccessCode::where('is_used', true)->count();
+        // Access code statistics (filtered by school year through applicants)
+        $accessCodeQuery = AccessCode::query();
+        if ($schoolYearId) {
+            $accessCodeQuery->whereHas('applicant', function($q) use ($schoolYearId) {
+                $q->where('school_year_id', $schoolYearId);
+            });
+        }
+        $accessCodesGenerated = (clone $accessCodeQuery)->count();
+        $accessCodesUsed = (clone $accessCodeQuery)->where('is_used', true)->count();
 
         // Exam statistics
         $totalExams = Exam::count();
         $activeExams = Exam::where('is_active', true)->count();
         $totalQuestions = Question::count();
 
-        // Status distribution
-        $statusDistribution = Applicant::selectRaw('status, COUNT(*) as count')
-                                      ->groupBy('status')
+        // Status distribution (filtered by school year)
+        $statusQuery = Applicant::selectRaw('status, COUNT(*) as count');
+        if ($schoolYearId) {
+            $statusQuery->where('school_year_id', $schoolYearId);
+        }
+        $statusDistribution = $statusQuery->groupBy('status')
                                       ->pluck('count', 'status')
                                       ->toArray();
 
-        // Recent activity (last 7 days)
-        $recentApplicants = Applicant::where('created_at', '>=', now()->subDays(7))->count();
+        // Recent activity (last 7 days, filtered by school year)
+        $recentQuery = Applicant::where('created_at', '>=', now()->subDays(7));
+        if ($schoolYearId) {
+            $recentQuery->where('school_year_id', $schoolYearId);
+        }
+        $recentApplicants = $recentQuery->count();
 
         // Exam Results Data
         try {
             $query = Applicant::with(['assignedInstructor', 'accessCode', 'latestInterview'])
                 ->whereNotNull('enrollassess_score'); // Only show applicants who completed EnrollAssess exam
+            
+            // Apply school year filter
+            $this->applySchoolYearFilter($query);
 
             // Search functionality
             if ($request->filled('search')) {
@@ -140,9 +173,11 @@ class ReportsController extends Controller
                 'interview-completed'
             ];
 
-            // Statistics - 4 most important metrics
+            // Statistics - 4 most important metrics (filtered by school year)
             $scoringService = app(\App\Services\AdmissionScoringService::class);
-            $allApplicants = Applicant::whereNotNull('enrollassess_score')->get();
+            $allApplicantsQuery = Applicant::whereNotNull('enrollassess_score');
+            $this->applySchoolYearFilter($allApplicantsQuery);
+            $allApplicants = $allApplicantsQuery->get();
             
             $qualifiersCount = $allApplicants->filter(function($applicant) use ($scoringService) {
                 return $scoringService->hasAllRequiredScores($applicant);
@@ -153,11 +188,14 @@ class ReportsController extends Controller
                 return $rating ? $rating['overall_rating'] : null;
             })->filter()->values();
             
+            $statsQuery = Applicant::query();
+            $this->applySchoolYearFilter($statsQuery);
+            
             $stats = [
                 'qualifiers_count' => $qualifiersCount,
                 'average_overall' => $overallRatings->count() > 0 ? round($overallRatings->avg(), 2) : 0,
-                'average_uee' => round(Applicant::whereNotNull('score')->avg('score'), 2),
-                'average_gwa' => round(Applicant::whereNotNull('card_tor_gwa')->avg('card_tor_gwa'), 2),
+                'average_uee' => round((clone $statsQuery)->whereNotNull('score')->avg('score') ?? 0, 2),
+                'average_gwa' => round((clone $statsQuery)->whereNotNull('card_tor_gwa')->avg('card_tor_gwa') ?? 0, 2),
             ];
 
             // Return JSON for AJAX pagination requests only

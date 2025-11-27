@@ -633,6 +633,128 @@
         text-decoration: underline;
     }
 
+    /* Drawer Styles */
+    .drawer-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9998;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .drawer-overlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .drawer {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 100%;
+        max-width: 480px;
+        height: 100%;
+        background: var(--white);
+        box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        transition: right 0.3s ease;
+        overflow-y: auto;
+    }
+
+    .drawer-overlay.show .drawer {
+        right: 0;
+    }
+
+    .drawer-header {
+        padding: 24px;
+        border-bottom: 1px solid var(--border-gray);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--white);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .drawer-header h3 {
+        margin: 0;
+        color: var(--primary-maroon);
+        font-size: 20px;
+        font-weight: 700;
+    }
+
+    .drawer-close {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+        color: var(--text-gray);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: var(--transition);
+    }
+
+    .drawer-close:hover {
+        background: var(--light-gray);
+        color: var(--text-dark);
+    }
+
+    .drawer-body {
+        flex: 1;
+        padding: 24px;
+        overflow-y: auto;
+    }
+
+    .drawer-footer {
+        padding: 20px 24px;
+        border-top: 1px solid var(--border-gray);
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        background: var(--white);
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--text-dark);
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid var(--border-gray);
+        border-radius: 6px;
+        font-size: 14px;
+        transition: var(--transition);
+        background: var(--white);
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: var(--primary-maroon);
+        box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.1);
+    }
+
     @media (max-width: 768px) {
         .form-grid {
             grid-template-columns: 1fr;
@@ -681,6 +803,18 @@
             padding-left: 20px;
             padding-right: 20px;
         }
+
+        .drawer {
+            max-width: 100%;
+        }
+
+        .drawer-footer {
+            flex-direction: column;
+        }
+
+        .drawer-footer .btn {
+            width: 100%;
+        }
     }
 </style>
 @endpush
@@ -690,7 +824,7 @@
     <!-- Tab Navigation -->
     <div class="settings-tabs">
         <button type="button" class="settings-tab active" onclick="switchTab('email')">Email Settings</button>
-        <button type="button" class="settings-tab" onclick="switchTab('archived-applicants')">Archived Applicants</button>
+        <button type="button" class="settings-tab" onclick="switchTab('school-years')">School Years</button>
         <button type="button" class="settings-tab" onclick="switchTab('archived-reports')">Archived Reports</button>
         <button type="button" class="settings-tab" onclick="switchTab('archived-questions')">Archived Question Bank</button>
     </div>
@@ -824,42 +958,6 @@
         </form>
     </div>
 
-    <!-- Archived Applicants Tab Pane -->
-    <div id="archived-applicants-tab" class="settings-tab-pane">
-        <div class="archived-reports-section">
-            <div class="archived-reports-header">
-                <h3>Archived Applicants</h3>
-                <div class="archived-reports-actions">
-                    <button type="button" class="btn btn-archive" onclick="loadArchivedApplicants()" id="loadArchivedApplicantsBtn">Load Archived</button>
-                    <button type="button" class="btn btn-archive" onclick="restoreAllArchivedApplicants()">Restore All</button>
-                    <button type="button" class="btn btn-delete-permanent" onclick="permanentlyDeleteAllArchivedApplicants()">Permanently Delete All</button>
-                </div>
-            </div>
-            <div class="settings-card">
-                <table class="data-table archived-applicants-table">
-                    <thead>
-                        <tr>
-                            <th>Application No.</th>
-                            <th>Full Name</th>
-                            <th>Email</th>
-                            <th>Status</th>
-                            <th>Created</th>
-                            <th>Archived</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td colspan="7" style="text-align: center; padding: 20px; color: #6B7280;">
-                                <p>Click "Load Archived" to view archived applicants.</p>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
     <!-- Archived Reports Tab Pane -->
     <div id="archived-reports-tab" class="settings-tab-pane">
         <div class="archived-reports-section">
@@ -890,6 +988,24 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- School Years Tab Pane -->
+    <div id="school-years-tab" class="settings-tab-pane">
+        <div class="settings-card">
+            <div class="settings-card-header">
+                <h3>School Year Management</h3>
+                <button type="button" class="btn btn-primary" onclick="openAddSchoolYearModal()">
+                    <span>➕</span> Add New School Year
+                </button>
+            </div>
+            
+            <div class="school-years-list" id="schoolYearsList">
+                <div class="loading-spinner" style="text-align: center; padding: 40px;">
+                    <p>Loading school years...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -925,6 +1041,56 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- School Year Drawer -->
+<div id="schoolYearDrawerOverlay" class="drawer-overlay" onclick="closeSchoolYearDrawer()" style="display: none;">
+    <div id="schoolYearDrawer" class="drawer" onclick="event.stopPropagation()">
+        <div class="drawer-header">
+            <h3 id="schoolYearDrawerTitle">Add New School Year</h3>
+            <button type="button" class="drawer-close" onclick="closeSchoolYearDrawer()" aria-label="Close drawer">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="drawer-body">
+            <form id="schoolYearForm" onsubmit="saveSchoolYear(event)">
+                <div class="form-group">
+                    <label for="schoolYearName">School Year Name <span style="color: var(--danger-red);">*</span></label>
+                    <input type="text" id="schoolYearName" name="name" required placeholder="e.g., AY 2025-2026" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="schoolYearStartDate">Start Date <span style="color: var(--danger-red);">*</span></label>
+                    <input type="date" id="schoolYearStartDate" name="start_date" required class="form-input">
+                    <small style="color: var(--text-gray); font-size: 12px; margin-top: 4px; display: block;">
+                        The date when the academic year begins (e.g., June 1, 2025)
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label for="schoolYearEndDate">End Date <span style="color: var(--danger-red);">*</span></label>
+                    <input type="date" id="schoolYearEndDate" name="end_date" required class="form-input">
+                    <small style="color: var(--text-gray); font-size: 12px; margin-top: 4px; display: block;">
+                        The date when the academic year ends (e.g., May 31, 2026). Must be after the start date.
+                    </small>
+                </div>
+                <div style="background: var(--light-gray); padding: 12px; border-radius: 6px; margin-bottom: 20px; border-left: 3px solid var(--info-blue);">
+                    <p style="margin: 0; font-size: 13px; color: var(--text-dark); line-height: 1.5;">
+                        <strong>Purpose of Start & End Dates:</strong><br>
+                        • Define the academic year period (typically June to May)<br>
+                        • Help determine which year is "current" based on today's date<br>
+                        • Enable date-based filtering and reporting<br>
+                        • Allow future features like automatic year switching
+                    </p>
+                </div>
+                <div class="drawer-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeSchoolYearDrawer()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save School Year</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -1536,15 +1702,15 @@
         }
     }
 
-    // Archived Applicants Functions
-    async function loadArchivedApplicants() {
-        const btn = document.getElementById('loadArchivedApplicantsBtn');
-        const originalText = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = 'Loading...';
+    // School Years Management Functions
+    async function loadSchoolYears() {
+        const listContainer = document.getElementById('schoolYearsList');
+        if (!listContainer) return;
+        
+        listContainer.innerHTML = '<div class="loading-spinner" style="text-align: center; padding: 40px;"><p>Loading school years...</p></div>';
 
         try {
-            const response = await fetch('{{ route("admin.applicants.archived-history") }}', {
+            const response = await fetch('{{ route('admin.settings.school-years.index') }}', {
                 headers: {
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': csrfToken,
@@ -1553,175 +1719,240 @@
                 credentials: 'same-origin',
             });
 
-            const text = await response.text();
-            const data = JSON.parse(text);
+            const data = await response.json();
 
             if (data.success) {
-                if (data.applicants.length > 0) {
-                    updateArchivedApplicantsTable(data.applicants);
-                } else {
-                    const tbody = document.querySelector('.archived-applicants-table tbody');
-                    if (tbody) {
-                        tbody.innerHTML = `
-                            <tr>
-                                <td colspan="7" style="text-align: center; padding: 20px; color: #6B7280;">
-                                    <p>No archived applicants found.</p>
-                                </td>
-                            </tr>
-                        `;
-                    }
-                }
+                renderSchoolYearsTable(data.schoolYears);
             } else {
-                showNotification('Failed to load archived applicants.', 'error');
+                listContainer.innerHTML = '<p style="color: var(--danger-red); text-align: center; padding: 20px;">Failed to load school years.</p>';
             }
         } catch (error) {
-            console.error('Error loading archived applicants:', error);
-            showNotification('Error loading archived applicants. Please try again.', 'error');
-        } finally {
-            btn.disabled = false;
-            btn.textContent = originalText;
+            console.error('Error loading school years:', error);
+            listContainer.innerHTML = '<p style="color: var(--danger-red); text-align: center; padding: 20px;">Error loading school years. Please try again.</p>';
         }
     }
 
-    function updateArchivedApplicantsTable(applicants) {
-        const tbody = document.querySelector('.archived-applicants-table tbody');
-        if (!tbody) return;
-
-        if (applicants.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" style="text-align: center; padding: 20px; color: #6B7280;">
-                        <p>No archived applicants found.</p>
-                    </td>
-                </tr>
-            `;
+    function renderSchoolYearsTable(schoolYears) {
+        const listContainer = document.getElementById('schoolYearsList');
+        if (!listContainer) return;
+        
+        if (schoolYears.length === 0) {
+            listContainer.innerHTML = '<p style="text-align: center; padding: 40px; color: var(--text-gray);">No school years found. Add your first school year above.</p>';
             return;
         }
 
-        let html = '';
-        applicants.forEach(applicant => {
-            const statusMap = {
-                'exam-completed': 'EXAM DONE',
-                'interview-available': 'INTERVIEW READY',
-                'interview-scheduled': 'INTERVIEW SET',
-                'interview-completed': 'INTERVIEW DONE',
-                'admitted': 'ADMITTED',
-                'rejected': 'REJECTED',
-                'pending': 'PENDING'
-            };
-            const statusText = statusMap[applicant.status] || applicant.status.replace(/-/g, ' ').toUpperCase();
+        let html = `
+            <table class="data-table" style="width: 100%; margin-top: 20px;">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
 
+        schoolYears.forEach(sy => {
+            const isCurrent = sy.is_current ? '<span style="color: var(--success-green); font-weight: 600;">● Current</span>' : '';
+            const isActive = sy.is_active ? '<span style="color: var(--success-green);">Active</span>' : '<span style="color: var(--text-gray);">Inactive</span>';
+            const escapedName = sy.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            
             html += `
                 <tr>
-                    <td>${applicant.application_no || 'N/A'}</td>
-                    <td>${applicant.full_name || 'N/A'}</td>
-                    <td>${applicant.email_address || 'N/A'}</td>
-                    <td><span style="font-size: 11px; padding: 4px 8px; border-radius: 4px; background: #fef3c7; color: #92400e; font-weight: 500;">${statusText}</span></td>
-                    <td>${applicant.created_at || 'N/A'}</td>
-                    <td>${applicant.deleted_at || 'N/A'}</td>
+                    <td><strong>${sy.name}</strong> ${isCurrent}</td>
+                    <td>${new Date(sy.start_date).toLocaleDateString()}</td>
+                    <td>${new Date(sy.end_date).toLocaleDateString()}</td>
+                    <td>${isActive}</td>
                     <td>
-                        <button onclick="restoreArchivedApplicant(${applicant.applicant_id})" class="btn btn-archive" style="padding: 4px 12px; font-size: 12px;">Restore</button>
+                        <div style="display: flex; gap: 8px;">
+                            ${!sy.is_current ? `<button type="button" class="btn btn-sm btn-primary" onclick="setAsCurrent(${sy.school_year_id})">Set as Current</button>` : ''}
+                            <button type="button" class="btn btn-sm btn-info" onclick="openEditSchoolYearModal(${sy.school_year_id}, '${escapedName}', '${sy.start_date}', '${sy.end_date}')">Edit</button>
+                            ${!sy.is_current && sy.is_active ? `<button type="button" class="btn btn-sm btn-danger" onclick="deleteSchoolYear(${sy.school_year_id}, '${escapedName}')">Delete</button>` : ''}
+                        </div>
                     </td>
                 </tr>
             `;
         });
 
-        tbody.innerHTML = html;
+        html += `
+                </tbody>
+            </table>
+        `;
+
+        listContainer.innerHTML = html;
     }
 
-    async function restoreAllArchivedApplicants() {
-        if (!confirm('Are you sure you want to restore all archived applicants?')) {
+    function openAddSchoolYearModal() {
+        const overlay = document.getElementById('schoolYearDrawerOverlay');
+        if (!overlay) return;
+        
+        document.getElementById('schoolYearDrawerTitle').textContent = 'Add New School Year';
+        document.getElementById('schoolYearForm').reset();
+        document.getElementById('schoolYearForm').setAttribute('data-action', 'create');
+        document.getElementById('schoolYearForm').removeAttribute('data-school-year-id');
+        overlay.style.display = 'block';
+        setTimeout(() => {
+            overlay.classList.add('show');
+        }, 10);
+        document.body.style.overflow = 'hidden';
+    }
+
+    function openEditSchoolYearModal(id, name, startDate, endDate) {
+        const overlay = document.getElementById('schoolYearDrawerOverlay');
+        if (!overlay) return;
+        
+        document.getElementById('schoolYearDrawerTitle').textContent = 'Edit School Year';
+        document.getElementById('schoolYearName').value = name;
+        document.getElementById('schoolYearStartDate').value = startDate;
+        document.getElementById('schoolYearEndDate').value = endDate;
+        document.getElementById('schoolYearForm').setAttribute('data-action', 'edit');
+        document.getElementById('schoolYearForm').setAttribute('data-school-year-id', id);
+        overlay.style.display = 'block';
+        setTimeout(() => {
+            overlay.classList.add('show');
+        }, 10);
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSchoolYearDrawer() {
+        const overlay = document.getElementById('schoolYearDrawerOverlay');
+        if (overlay) {
+            overlay.classList.remove('show');
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 300);
+        }
+        document.body.style.overflow = '';
+        const form = document.getElementById('schoolYearForm');
+        if (form) {
+            form.reset();
+        }
+    }
+
+    async function saveSchoolYear(event) {
+        event.preventDefault();
+        
+        const form = document.getElementById('schoolYearForm');
+        if (!form) return;
+        
+        const action = form.getAttribute('data-action');
+        const schoolYearId = form.getAttribute('data-school-year-id');
+        
+        const formData = {
+            name: document.getElementById('schoolYearName').value,
+            start_date: document.getElementById('schoolYearStartDate').value,
+            end_date: document.getElementById('schoolYearEndDate').value,
+        };
+
+        let url = '{{ route('admin.settings.school-years.store') }}';
+        let method = 'POST';
+        
+        if (action === 'edit') {
+            url = `{{ route('admin.settings.school-years.update', ':id') }}`.replace(':id', schoolYearId);
+            method = 'PUT';
+        }
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify(formData),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showNotification(data.message, 'success');
+                closeSchoolYearDrawer();
+                loadSchoolYears();
+            } else {
+                showNotification(data.message || 'Failed to save school year.', 'error');
+            }
+        } catch (error) {
+            console.error('Error saving school year:', error);
+            showNotification('Error saving school year. Please try again.', 'error');
+        }
+    }
+
+    async function setAsCurrent(schoolYearId) {
+        if (!confirm('Set this school year as the current one? This will update all filters across the system.')) {
             return;
         }
 
-        const btn = event.target;
-        const originalText = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = 'Restoring...';
-
         try {
-            const response = await fetch('{{ route("admin.applicants.restore-all") }}', {
+            const response = await fetch(`{{ route('admin.settings.school-years.set-current', ':id') }}`.replace(':id', schoolYearId), {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
                     'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
                 credentials: 'same-origin',
             });
 
-            const text = await response.text();
-            const data = JSON.parse(text);
+            const data = await response.json();
 
             if (data.success) {
-                showNotification(data.message || `Successfully restored ${data.restored_count} applicant(s).`, 'success');
-                loadArchivedApplicants(); // Refresh archived applicants table
+                showNotification(data.message, 'success');
+                loadSchoolYears();
             } else {
-                showNotification(data.message || 'Failed to restore archived applicants.', 'error');
+                showNotification(data.message || 'Failed to set school year as current.', 'error');
             }
         } catch (error) {
-            console.error('Error restoring archived applicants:', error);
-            showNotification('Error restoring archived applicants. Please try again.', 'error');
-        } finally {
-            btn.disabled = false;
-            btn.textContent = originalText;
+            console.error('Error setting school year as current:', error);
+            showNotification('Error setting school year as current. Please try again.', 'error');
         }
     }
 
-    async function permanentlyDeleteAllArchivedApplicants() {
-        if (!confirm('WARNING: This will permanently delete all archived applicants. This action cannot be undone!\n\nAre you absolutely sure?')) {
+    async function deleteSchoolYear(schoolYearId, name) {
+        if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
             return;
         }
 
-        const btn = event.target;
-        const originalText = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = 'Deleting...';
-
         try {
-            const response = await fetch('{{ route("admin.applicants.permanently-delete-all") }}', {
-                method: 'POST',
+            const response = await fetch(`{{ route('admin.settings.school-years.destroy', ':id') }}`.replace(':id', schoolYearId), {
+                method: 'DELETE',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
                     'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
                 credentials: 'same-origin',
             });
 
-            const text = await response.text();
-            const data = JSON.parse(text);
+            const data = await response.json();
 
             if (data.success) {
-                showNotification(data.message || `Successfully permanently deleted ${data.deleted_count} applicant(s).`, 'success');
-                loadArchivedApplicants(); // Refresh archived applicants table
+                showNotification(data.message, 'success');
+                loadSchoolYears();
             } else {
-                showNotification(data.message || 'Failed to permanently delete archived applicants.', 'error');
+                showNotification(data.message || 'Failed to delete school year.', 'error');
             }
         } catch (error) {
-            console.error('Error permanently deleting archived applicants:', error);
-            showNotification('Error permanently deleting archived applicants. Please try again.', 'error');
-        } finally {
-            btn.disabled = false;
-            btn.textContent = originalText;
+            console.error('Error deleting school year:', error);
+            showNotification('Error deleting school year. Please try again.', 'error');
         }
     }
 
-    async function restoreArchivedApplicant(applicantId) {
-        if (!confirm('Are you sure you want to restore this applicant?')) {
-            return;
+    // Override switchTab to load school years when tab is switched
+    const originalSwitchTab = switchTab;
+    switchTab = function(tabName) {
+        originalSwitchTab(tabName);
+        if (tabName === 'school-years') {
+            loadSchoolYears();
         }
-
-        try {
-            // For individual restore, we'll need to add a route for this
-            // For now, use restore all as a workaround or add individual restore route
-            showNotification('Individual restore not yet implemented. Please use "Restore All" or contact administrator.', 'info');
-        } catch (error) {
-            console.error('Error restoring archived applicant:', error);
-            showNotification('Error restoring archived applicant. Please try again.', 'error');
-        }
-    }
+    };
 </script>
 @endpush
+
 
 

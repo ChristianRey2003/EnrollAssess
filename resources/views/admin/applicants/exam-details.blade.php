@@ -272,6 +272,19 @@
         color: #9ca3af;
     }
 
+    .violation-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        background: #fee2e2;
+        color: #991b1b;
+        margin-left: 12px;
+        vertical-align: middle;
+    }
+
     @media (max-width: 768px) {
         .stats-grid {
             grid-template-columns: 1fr;
@@ -300,13 +313,22 @@
     <!-- Summary Card -->
     <div class="summary-card">
         <div class="summary-header">
-            <h1 class="summary-title">Exam Details - {{ $applicant->full_name }}</h1>
+            <h1 class="summary-title">
+                Exam Details - {{ $applicant->full_name }}
+                @if($applicant->violation_count && $applicant->violation_count > 0)
+                    <span class="violation-badge">⚠ Flagged as Violation</span>
+                @endif
+            </h1>
         </div>
 
         <div class="stats-grid">
             <div class="stat-item">
-                <div class="stat-value total">{{ $totalQuestions }}</div>
-                <div class="stat-label">Total Questions</div>
+                <div class="stat-value total">{{ $totalAssignedQuestions }}</div>
+                <div class="stat-label">Total Questions Assigned</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value total" style="color: #6b7280;">{{ $answeredQuestions }}</div>
+                <div class="stat-label">Questions Answered</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value correct">{{ $correctAnswers }}</div>
@@ -316,6 +338,12 @@
                 <div class="stat-value incorrect">{{ $incorrectAnswers }}</div>
                 <div class="stat-label">Incorrect Answers</div>
             </div>
+            @if($unansweredQuestions > 0)
+            <div class="stat-item">
+                <div class="stat-value" style="color: #9ca3af;">{{ $unansweredQuestions }}</div>
+                <div class="stat-label">Unanswered Questions</div>
+            </div>
+            @endif
             <div class="stat-item">
                 <div class="stat-value total">{{ $applicant->enrollassess_score ? number_format($applicant->enrollassess_score, 2) . '%' : 'N/A' }}</div>
                 <div class="stat-label">Final Score</div>
@@ -333,6 +361,11 @@
                 @if($examAttempt->completed_at)
                 <div>
                     <strong>Completed:</strong> {{ $examAttempt->completed_at->format('M d, Y g:i A') }}
+                </div>
+                @endif
+                @if($applicant->violation_count && $applicant->violation_count > 0)
+                <div>
+                    <strong>Violations:</strong> <span style="color: #dc2626; font-weight: 600;">{{ $applicant->violation_count }}/5</span>
                 </div>
                 @endif
             </div>

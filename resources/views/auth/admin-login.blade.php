@@ -89,9 +89,9 @@
                 <form method="POST" action="{{ route('admin.login.submit') }}" id="adminLoginForm">
                     @csrf
 
-                    <!-- Username -->
+                    <!-- Username or Email -->
                     <div class="form-group">
-                        <label for="username" class="form-label">{{ __('Username') }}</label>
+                        <label for="username" class="form-label">{{ __('Username or Email') }}</label>
                         <input id="username" 
                                class="form-control admin-input @error('username') is-invalid @enderror" 
                                type="text" 
@@ -100,8 +100,8 @@
                                required 
                                autofocus 
                                autocomplete="username"
-                               placeholder="Enter your username"
-                               aria-label="Enter your username"
+                               placeholder="Enter your username or email"
+                               aria-label="Enter your username or email"
                                aria-describedby="username-help">
                         @error('username')
                             <div class="invalid-feedback" role="alert">

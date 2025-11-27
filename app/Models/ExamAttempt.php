@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use App\Models\Applicant;
 
 class ExamAttempt extends Model
 {
@@ -18,6 +19,7 @@ class ExamAttempt extends Model
         'attempt_token',
         'question_ids',
         'started_at',
+        'actual_started_at',
         'duration_minutes',
         'answers',
         'current_section',
@@ -33,6 +35,7 @@ class ExamAttempt extends Model
         'answers' => 'array',
         'sections_completed' => 'array',
         'started_at' => 'datetime',
+        'actual_started_at' => 'datetime',
         'last_activity_at' => 'datetime',
         'completed_at' => 'datetime',
         'violation_count' => 'integer',
@@ -103,7 +106,12 @@ class ExamAttempt extends Model
      */
     public function isExpired()
     {
-        $endTime = $this->started_at->copy()->addMinutes($this->duration_minutes);
+        // Use actual_started_at if available, otherwise use started_at
+        $startTime = $this->actual_started_at ?? $this->started_at;
+        if (!$startTime) {
+            return false; // Not started yet
+        }
+        $endTime = $startTime->copy()->addMinutes($this->duration_minutes);
         return now()->greaterThan($endTime);
     }
 
@@ -112,7 +120,13 @@ class ExamAttempt extends Model
      */
     public function getTimeRemainingAttribute()
     {
-        $endTime = $this->started_at->copy()->addMinutes($this->duration_minutes);
+        // Use actual_started_at if available, otherwise use started_at
+        $startTime = $this->actual_started_at ?? $this->started_at;
+        if (!$startTime) {
+            // Exam hasn't actually started yet (fullscreen not entered)
+            return ($this->duration_minutes ?? 30) * 60;
+        }
+        $endTime = $startTime->copy()->addMinutes($this->duration_minutes);
         $remaining = now()->diffInSeconds($endTime, false);
         return max(0, $remaining);
     }
@@ -122,6 +136,11 @@ class ExamAttempt extends Model
      */
     public function canBeResumed()
     {
+        // Don't allow resume if applicant has already completed the exam
+        if ($this->applicant && $this->applicant->exam_completed_at) {
+            return false;
+        }
+        
         return $this->status === 'in_progress' && !$this->isExpired();
     }
 
@@ -157,6 +176,19 @@ class ExamAttempt extends Model
     }
 
     /**
+     * Mark exam as actually started (when fullscreen is entered)
+     */
+    public function markAsActuallyStarted()
+    {
+        if (!$this->actual_started_at) {
+            $this->update([
+                'actual_started_at' => now(),
+                'last_activity_at' => now(),
+            ]);
+        }
+    }
+
+    /**
      * Save answers to attempt
      */
     public function saveAnswers(array $answers)
@@ -175,7 +207,23 @@ class ExamAttempt extends Model
      */
     public static function getActiveAttempt($applicantId, $examId)
     {
-        $attempt = static::where('applicant_id', $applicantId)
+        // IMPORTANT: First check if applicant has already completed the exam
+        // This prevents resume after exam completion (even if attempt status is still 'in_progress')
+        $applicant = Applicant::find($applicantId);
+        if ($applicant && $applicant->exam_completed_at) {
+            // Applicant has completed exam - mark any in_progress attempts as completed
+            static::where('applicant_id', $applicantId)
+                ->where('exam_id', $examId)
+                ->where('status', 'in_progress')
+                ->update([
+                    'status' => 'completed',
+                    'completed_at' => $applicant->exam_completed_at,
+                ]);
+            return null; // Don't allow resume if exam is already completed
+        }
+        
+        $attempt = static::with('applicant')
+            ->where('applicant_id', $applicantId)
             ->where('exam_id', $examId)
             ->where('status', 'in_progress')
             ->latest('started_at')
