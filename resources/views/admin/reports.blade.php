@@ -336,7 +336,7 @@
                                         <option value="">All Status</option>
                                         @foreach($statuses ?? [] as $status)
                                             <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : '' }}>
-                                                {{ ucwords(str_replace('-', ' ', $status)) }}
+                                                {{ $status === 'interview-completed' ? 'Overall Completed' : ucwords(str_replace('-', ' ', $status)) }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -352,7 +352,7 @@
                                 <div class="toolbar-right" style="display: flex; align-items: center; gap: 10px;">
                                     <button type="button" onclick="openEVSUDrawer()" class="btn-primary-export" style="height: 40px; padding: 8px 16px; font-size: 13px;">EVSU Results</button>
                                     <button type="button" onclick="openQualifiersDrawer()" class="btn-primary-export" style="height: 40px; padding: 8px 16px; font-size: 13px;">Qualifiers List</button>
-                                    <button type="button" onclick="openSignatureSettingsDrawer()" class="btn-secondary" style="height: 40px; padding: 8px 16px; font-size: 13px; background: #6b7280; color: white; width: 40px; display: flex; align-items: center; justify-content: center;">⚙️</button>
+                                    <button type="button" onclick="openSignatureSettingsDrawer()" class="btn-secondary" style="height: 40px; padding: 8px 16px; font-size: 13px; background: #6b7280; color: white; display: flex; align-items: center; justify-content: center;">Settings</button>
                                 </div>
                             </div>
 
@@ -584,7 +584,7 @@
                                         <select id="geoStatus" class="filter-select-sm">
                                             <option value="all">All Status</option>
                                             <option value="exam-completed">Exam Completed</option>
-                                            <option value="interview-completed">Interview Completed</option>
+                                            <option value="interview-completed">Overall Completed</option>
                                             <option value="admitted">Admitted</option>
                                         </select>
                                     </div>
@@ -616,7 +616,7 @@
                                         <select id="strandStatus" class="filter-select-sm">
                                             <option value="all">All Status</option>
                                             <option value="exam-completed">Exam Completed</option>
-                                            <option value="interview-completed">Interview Completed</option>
+                                            <option value="interview-completed">Overall Completed</option>
                                             <option value="admitted">Admitted</option>
                                         </select>
                                     </div>
@@ -647,7 +647,7 @@
                                         <select id="demoStatus" class="filter-select-sm">
                                             <option value="all">All Status</option>
                                             <option value="exam-completed">Exam Completed</option>
-                                            <option value="interview-completed">Interview Completed</option>
+                                            <option value="interview-completed">Overall Completed</option>
                                             <option value="admitted">Admitted</option>
                                         </select>
                                     </div>
