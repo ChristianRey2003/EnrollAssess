@@ -75,6 +75,10 @@ class MailConfigurationService
             case 'resend':
                 $this->configureResend($settings);
                 break;
+
+            case 'brevo':
+                $this->configureBrevo($settings);
+                break;
             
             case 'log':
                 // Log mailer doesn't need additional configuration
@@ -140,6 +144,27 @@ class MailConfigurationService
 
         // Resend mailer configuration is already defined in config/mail.php
         // It automatically uses the services.resend configuration
+    }
+
+    /**
+     * Configure Brevo mailer
+     *
+     * @param \Illuminate\Support\Collection $settings Email settings from database
+     * @return void
+     */
+    protected function configureBrevo($settings): void
+    {
+        // Configure Brevo API key in services config
+        Config::set('services.brevo', [
+            'key' => $settings->get('brevo_api_key', env('BREVO_KEY')),
+        ]);
+        
+        // Ensure the transport is set correctly in mail config
+        // We might need to pass the key directly to the transport config if using custom driver
+        Config::set('mail.mailers.brevo', [
+            'transport' => 'brevo',
+            // The key will be retrieved from services.brevo.key by our custom driver
+        ]);
     }
 
     /**

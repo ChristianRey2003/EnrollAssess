@@ -849,6 +849,9 @@
                         <button type="button" class="btn btn-info" onclick="openResendGuide()" id="resend-guide-btn" style="display: none;">
                             <span>📧</span> Resend Setup Guide
                         </button>
+                        <button type="button" class="btn btn-info" onclick="openBrevoGuide()" id="brevo-guide-btn" style="display: none;">
+                            <span>🔷</span> Brevo Setup Guide
+                        </button>
                         <button type="button" class="btn btn-test-email" onclick="openTestEmailModal()">
                             <span>🧪</span> Test Email
                         </button>
@@ -858,7 +861,7 @@
                 <div class="form-grid">
                     @php
                         // Reorder fields for optimal layout: Mailer|Region, From Address|From Name, Access Key ID|Secret Access Key|Resend API Key
-                        $orderedKeys = ['mail_mailer', 'aws_region', 'mail_from_address', 'mail_from_name', 'aws_access_key_id', 'aws_secret_access_key', 'resend_api_key'];
+                        $orderedKeys = ['mail_mailer', 'aws_region', 'mail_from_address', 'mail_from_name', 'aws_access_key_id', 'aws_secret_access_key', 'resend_api_key', 'brevo_api_key'];
                         $orderedSettings = [];
                         $otherSettings = [];
                         
@@ -887,6 +890,7 @@
                             $isSmtpField = in_array($setting->key, ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_encryption']);
                             $isSesField = in_array($setting->key, ['aws_access_key_id', 'aws_secret_access_key', 'aws_region']);
                             $isResendField = in_array($setting->key, ['resend_api_key']);
+                            $isBrevoField = in_array($setting->key, ['brevo_api_key']);
                             $fieldClass = '';
                             if ($isSmtpField) {
                                 $fieldClass = 'smtp-field';
@@ -894,6 +898,8 @@
                                 $fieldClass = 'ses-field';
                             } elseif ($isResendField) {
                                 $fieldClass = 'resend-field';
+                            } elseif ($isBrevoField) {
+                                $fieldClass = 'brevo-field';
                             }
                             // Fields that should be side-by-side (pairs): Mailer|Region, From Address|From Name, Access Key ID|Secret Access Key
                             $sideBySideFields = ['mail_mailer', 'aws_region', 'mail_from_address', 'mail_from_name', 'aws_access_key_id', 'aws_secret_access_key'];
@@ -907,6 +913,7 @@
                             @if($setting->key === 'mail_mailer')
                                 <select name="settings[{{ $setting->key }}]" id="{{ $setting->key }}" onchange="toggleMailerFields()">
                                     <option value="resend" {{ $setting->value === 'resend' ? 'selected' : '' }}>Resend (Recommended - FREE)</option>
+                                    <option value="brevo" {{ $setting->value === 'brevo' ? 'selected' : '' }}>Brevo (Sendinblue)</option>
                                     <option value="ses" {{ $setting->value === 'ses' ? 'selected' : '' }}>Amazon SES</option>
                                     <option value="log" {{ $setting->value === 'log' ? 'selected' : '' }}>Log (Testing)</option>
                                 </select>
@@ -1243,6 +1250,38 @@
     </div>
 </div>
 
+<!-- Brevo Setup Guide Modal -->
+<div id="brevoGuideModal" class="modal-overlay" onclick="closeBrevoGuide(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3>🔷 Brevo Setup Guide</h3>
+            <button type="button" class="modal-close" onclick="closeBrevoGuide()">×</button>
+        </div>
+        <div class="modal-body">
+            <h4>What is Brevo?</h4>
+            <p>Brevo (formerly Sendinblue) is a popular email marketing platform that offers a robust transactional email API.</p>
+            
+            <h4>Setup Steps:</h4>
+            <ol>
+                <li>Log in to your Brevo account at <a href="https://app.brevo.com" target="_blank">app.brevo.com</a></li>
+                <li>Go to <strong>Transactional > Settings > SMTP & API</strong></li>
+                <li>Click on the <strong>API Keys</strong> tab</li>
+                <li>Click <strong>"Generate a new API key"</strong></li>
+                <li>Give it a name (e.g., "EnrollAssess")</li>
+                <li>Copy the generated API key (starts with <code>xkeysib-</code>)</li>
+                <li>Paste it in the <strong>"Brevo API Key"</strong> field below</li>
+            </ol>
+            
+            <h4>✅ Features:</h4>
+            <ul>
+                <li><strong>Free Tier:</strong> 300 emails/day free</li>
+                <li><strong>Reliable:</strong> High deliverability rates</li>
+                <li><strong>API Integration:</strong> Uses standard web ports (bypasses Digital Ocean blocks)</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 <!-- Test Email Modal -->
 <div id="testEmailModal" class="modal-overlay" onclick="closeTestEmailModal(event)">
     <div class="modal-content test-email-modal" onclick="event.stopPropagation()">
@@ -1302,6 +1341,19 @@
         document.body.style.overflow = '';
     }
 
+    function openBrevoGuide() {
+        const modal = document.getElementById('brevoGuideModal');
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeBrevoGuide(event) {
+        if (event && event.target !== event.currentTarget) return;
+        const modal = document.getElementById('brevoGuideModal');
+        modal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
     function openTestEmailModal() {
         const modal = document.getElementById('testEmailModal');
         modal.classList.add('show');
@@ -1331,17 +1383,21 @@
         const smtpFields = document.querySelectorAll('.smtp-field');
         const sesFields = document.querySelectorAll('.ses-field');
         const resendFields = document.querySelectorAll('.resend-field');
+        const brevoFields = document.querySelectorAll('.brevo-field');
         
         // Get guide buttons
         const sesGuideBtn = document.getElementById('ses-guide-btn');
         const resendGuideBtn = document.getElementById('resend-guide-btn');
+        const brevoGuideBtn = document.getElementById('brevo-guide-btn');
         
         // Hide all fields and guides first
         smtpFields.forEach(field => field.style.display = 'none');
         sesFields.forEach(field => field.style.display = 'none');
         resendFields.forEach(field => field.style.display = 'none');
+        brevoFields.forEach(field => field.style.display = 'none');
         if (sesGuideBtn) sesGuideBtn.style.display = 'none';
         if (resendGuideBtn) resendGuideBtn.style.display = 'none';
+        if (brevoGuideBtn) brevoGuideBtn.style.display = 'none';
         
         // Show fields based on mailer type
         if (mailerType === 'ses') {
@@ -1350,6 +1406,9 @@
         } else if (mailerType === 'resend') {
             resendFields.forEach(field => field.style.display = 'block');
             if (resendGuideBtn) resendGuideBtn.style.display = 'inline-flex';
+        } else if (mailerType === 'brevo') {
+            brevoFields.forEach(field => field.style.display = 'block');
+            if (brevoGuideBtn) brevoGuideBtn.style.display = 'inline-flex';
         }
         // For 'log', all fields remain hidden
     }
@@ -1359,6 +1418,7 @@
         if (e.key === 'Escape') {
             closeSesGuide();
             closeResendGuide();
+            closeBrevoGuide();
             closeTestEmailModal();
         }
     });

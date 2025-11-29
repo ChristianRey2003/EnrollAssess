@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class SettingsController extends Controller
 {
@@ -103,6 +104,13 @@ class SettingsController extends Controller
                     'group' => 'email',
                     'type' => 'password',
                     'description' => 'Resend API Key (get from https://resend.com/api-keys)',
+                ],
+                [
+                    'key' => 'brevo_api_key',
+                    'value' => '',
+                    'group' => 'email',
+                    'type' => 'password',
+                    'description' => 'Brevo API Key (get from https://app.brevo.com/settings/keys/api)',
                 ],
             ];
 
@@ -249,6 +257,16 @@ class SettingsController extends Controller
                     ], 400);
                 }
             }
+            
+            if ($mailerType === 'brevo') {
+                $brevoApiKey = Settings::getSetting('brevo_api_key', '');
+                if (empty($brevoApiKey)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Please set your Brevo API key in email settings before testing.'
+                    ], 400);
+                }
+            }
 
             // Reload mail configuration to ensure we're using latest settings
             $this->reloadMailConfig();
@@ -277,9 +295,9 @@ class SettingsController extends Controller
                 stripos($e->getMessage(), 'check configuration') !== false ||
                 stripos($e->getMessage(), 'api key') !== false) {
                 $errorMessage = 'Email configuration error. Please check: ' . 
-                    '<br>1. Resend API key is set correctly' . 
+                    '<br>1. API key is set correctly' . 
                     '<br>2. From Address is set' . 
-                    '<br>3. Mail Driver is set to "Resend"' .
+                    '<br>3. Mail Driver is set correctly' .
                     '<br><br>Error details: ' . $e->getMessage();
             }
             

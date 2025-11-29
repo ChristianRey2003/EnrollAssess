@@ -10,8 +10,6 @@
     <link href="{{ asset('css/auth/university-auth.css') }}?v={{ time() }}" rel="stylesheet">
 </head>
 <body class="credits-page">
-    <canvas id="network-bg"></canvas>
-
     <div class="credits-wrapper">
         <div class="credits-container">
             <!-- Team Photo -->
@@ -42,7 +40,7 @@
                              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                         <div class="photo-glow"></div>
                     @else
-                        <div class="team-photo-placeholder" style="width: 100%; height: 300px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(0, 243, 255, 0.1), rgba(255, 0, 255, 0.1)); border-radius: 12px; color: var(--text-muted);">
+                        <div class="team-photo-placeholder" style="width: 100%; height: 300px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(128, 0, 32, 0.1), rgba(255, 215, 0, 0.1)); border-radius: 12px; color: var(--text-muted);">
                             <div style="text-align: center;">
                                 <div style="font-size: 48px; margin-bottom: 10px;">📷</div>
                                 <div style="font-size: 14px;">Team Photo</div>
@@ -58,9 +56,25 @@
                 <h2 class="developed-by">Developed By</h2>
                 
                 <div class="team-members">
-                    <div class="member-pill">Christian Rey Alegre</div>
-                    <div class="member-pill">Marjorie G. Bebanco</div>
-                    <div class="member-pill">Hazel A. Yray</div>
+                    <div class="member-card">
+                        <a href="https://www.facebook.com/Garlicbreaddd" target="_blank" class="member-name developer-link">Christian Rey Y.Alegre</a>
+                        <span class="member-role">Developer</span>
+                    </div>
+                    <div class="member-card">
+                        <span class="member-name">Marjorie G. Bebanco</span>
+                        <span class="member-role">UI/UX Designer</span>
+                    </div>
+                    <div class="member-card">
+                        <span class="member-name">Hazel A. Yray</span>
+                        <span class="member-role">QA</span>
+                    </div>
+                </div>
+
+                <div class="adviser-section" style="margin-top: 5px;">
+                    <div class="member-card" style="border-color: var(--secondary-color); background: rgba(255, 215, 0, 0.05);">
+                        <span class="member-name" style="color: var(--primary-color);">Joseph Jaymel S. Morpos</span>
+                        <span class="member-role">Capstone Adviser</span>
+                    </div>
                 </div>
 
                 <div class="divider"></div>
@@ -82,107 +96,14 @@
         </div>
     </div>
 
-    <script>
-        const canvas = document.getElementById('network-bg');
-        const ctx = canvas.getContext('2d');
-        let width, height;
-        let particles = [];
-        
-        // Neon Palette
-        const colors = ['#00ff41', '#00f3ff', '#ff00ff', '#ffe600'];
-
-        // Configuration
-        const particleCount = 70; // Increased for more energy
-        const connectionDistance = 150;
-
-        function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-        }
-
-        class Particle {
-            constructor() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.vx = (Math.random() - 0.5) * 0.8; // Faster movement
-                this.vy = (Math.random() - 0.5) * 0.8;
-                this.size = Math.random() * 2 + 1.5;
-                this.color = colors[Math.floor(Math.random() * colors.length)];
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-
-                if (this.x < 0 || this.x > width) this.vx *= -1;
-                if (this.y < 0 || this.y > height) this.vy *= -1;
-            }
-
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = this.color;
-                ctx.fill();
-                ctx.shadowBlur = 0; // Reset shadow
-            }
-        }
-
-        function init() {
-            resize();
-            particles = [];
-            for (let i = 0; i < particleCount; i++) {
-                particles.push(new Particle());
-            }
-        }
-
-        function animate() {
-            ctx.clearRect(0, 0, width, height);
-            
-            for (let i = 0; i < particles.length; i++) {
-                particles[i].update();
-                particles[i].draw();
-
-                for (let j = i; j < particles.length; j++) {
-                    const dx = particles[i].x - particles[j].x;
-                    const dy = particles[i].y - particles[j].y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-
-                    if (distance < connectionDistance) {
-                        ctx.beginPath();
-                        // Gradient line
-                        const gradient = ctx.createLinearGradient(particles[i].x, particles[i].y, particles[j].x, particles[j].y);
-                        gradient.addColorStop(0, particles[i].color);
-                        gradient.addColorStop(1, particles[j].color);
-                        
-                        ctx.strokeStyle = gradient;
-                        ctx.globalAlpha = 1 - distance/connectionDistance;
-                        ctx.lineWidth = 1;
-                        ctx.moveTo(particles[i].x, particles[i].y);
-                        ctx.lineTo(particles[j].x, particles[j].y);
-                        ctx.stroke();
-                        ctx.globalAlpha = 1;
-                    }
-                }
-            }
-            requestAnimationFrame(animate);
-        }
-
-        window.addEventListener('resize', resize);
-        init();
-        animate();
-    </script>
-
     <style>
         :root {
-            --primary-color: #00f3ff; /* Cyan */
-            --secondary-color: #ff00ff; /* Magenta */
-            --accent-color: #00ff41; /* Matrix Green */
-            --bg-dark: #050510;
-            --glass-bg: rgba(10, 10, 20, 0.65);
-            --text-main: #ffffff;
-            --text-muted: #a0a0b0;
+            --primary-color: #800020; /* Maroon */
+            --secondary-color: #FFD700; /* Gold */
+            --bg-light: #f8f9fa;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --text-main: #333333;
+            --text-muted: #666666;
         }
 
         * {
@@ -198,18 +119,26 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: var(--bg-dark);
+            background-color: var(--bg-light);
             position: relative;
             color: var(--text-main);
         }
 
-        #network-bg {
+        body.credits-page::before {
+            content: '';
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            background-image: url('/images/admin-login-bg.png?v=2');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            filter: blur(8px);
+            -webkit-filter: blur(8px);
             z-index: 0;
+            transform: scale(1.1);
         }
 
         /* Glassmorphism Card */
@@ -226,21 +155,21 @@
 
         .credits-container {
             width: 100%;
-            max-width: 900px;
+            max-width: 800px; /* Reduced max-width */
             background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border-radius: 24px;
             box-shadow: 
-                0 0 20px rgba(0, 243, 255, 0.1),
-                0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+                0 10px 40px rgba(128, 0, 32, 0.1),
+                0 1px 0 rgba(255, 255, 255, 0.5) inset;
+            border: 1px solid rgba(255, 255, 255, 0.6);
             display: flex;
             flex-direction: column;
-            padding: 40px;
-            gap: 30px;
-            max-height: calc(100vh - 40px);
-            overflow-y: auto;
+            padding: 30px; /* Reduced padding */
+            gap: 20px; /* Reduced gap */
+            max-height: 95vh; /* Ensure it fits */
+            overflow-y: auto; /* Fallback for very small screens */
             animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
             -ms-overflow-style: none;
             scrollbar-width: none;
@@ -260,23 +189,23 @@
             width: 100%;
             display: flex;
             justify-content: center;
-            margin-bottom: 10px;
+            margin-bottom: 5px; /* Reduced margin */
         }
 
         .photo-frame {
             position: relative;
-            width: 60%;
-            max-width: 500px;
+            width: 45%; /* Reduced width */
+            max-width: 350px; /* Reduced max-width */
             border-radius: 16px;
-            padding: 5px;
+            padding: 4px;
             background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+            box-shadow: 0 10px 30px rgba(128, 0, 32, 0.2);
             transition: transform 0.3s ease;
         }
 
         .photo-frame:hover {
             transform: translateY(-5px) scale(1.01);
-            box-shadow: 0 0 30px rgba(255, 0, 255, 0.4);
+            box-shadow: 0 15px 40px rgba(128, 0, 32, 0.3);
         }
 
         .team-photo {
@@ -284,7 +213,6 @@
             height: auto;
             display: block;
             border-radius: 12px;
-            filter: contrast(1.1);
         }
 
         /* Content Styling */
@@ -292,122 +220,146 @@
             text-align: center;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px; /* Reduced gap */
             align-items: center;
         }
 
         .developed-by {
             color: var(--primary-color);
-            font-size: 16px;
+            font-size: 13px; /* Slightly smaller */
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 3px;
+            letter-spacing: 2px;
             margin: 0;
-            text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
         }
 
         .team-members {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 12px;
+            gap: 15px; /* Reduced gap */
+            width: 100%;
         }
 
-        .member-pill {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 10px 24px;
-            border-radius: 50px;
-            font-weight: 600;
-            color: var(--text-main);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .member-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 10px 20px; /* Reduced padding */
+            border-radius: 14px;
+            border: 1px solid rgba(128, 0, 32, 0.1);
             transition: all 0.3s ease;
-            cursor: default;
+            min-width: 180px; /* Slightly smaller min-width */
+        }
+
+        .member-card:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(128, 0, 32, 0.1);
+            border-color: var(--primary-color);
+        }
+
+        .member-name {
+            font-weight: 700;
+            color: var(--text-main);
+            font-size: 15px; /* Slightly smaller */
+            margin-bottom: 2px;
+        }
+
+        .developer-link {
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .developer-link:hover {
+            color: var(--primary-color);
+            text-decoration: underline;
+        }
+
+        .member-role {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .member-pill:hover {
-            background: rgba(0, 243, 255, 0.1);
-            transform: translateY(-2px);
-            border-color: var(--primary-color);
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
-            color: var(--primary-color);
-        }
-
         .divider {
-            width: 80px;
+            width: 50px;
             height: 2px;
             background: linear-gradient(90deg, transparent, var(--secondary-color), transparent);
-            margin: 5px 0;
-            opacity: 0.8;
+            margin: 5px 0; /* Reduced margin */
+            opacity: 0.6;
         }
 
         .university-info {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 2px; /* Reduced gap */
         }
 
         .university-name {
-            font-size: 18px;
+            font-size: 16px; /* Slightly smaller */
             font-weight: 700;
-            color: var(--text-main);
+            color: var(--primary-color);
             letter-spacing: 0.5px;
         }
 
         .campus-name {
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 500;
             color: var(--text-muted);
         }
 
         .course-name {
-            font-size: 15px;
-            font-weight: 500;
-            color: var(--primary-color);
-            margin-top: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-top: 2px;
         }
 
         .academic-year {
-            font-size: 13px;
+            font-size: 12px;
             color: var(--text-muted);
             font-weight: 500;
-            margin-top: 8px;
-            background: rgba(255,255,255,0.05);
-            padding: 4px 12px;
-            border-radius: 12px;
+            margin-top: 5px;
+            background: rgba(128, 0, 32, 0.05);
+            padding: 3px 10px;
+            border-radius: 10px;
             display: inline-block;
             align-self: center;
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid rgba(128, 0, 32, 0.1);
         }
 
         /* Back Button */
         .back-link-container {
             display: flex;
             justify-content: center;
-            margin-top: 10px;
+            margin-top: 5px; /* Reduced margin */
         }
 
         .back-btn {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 12px 28px;
-            background: transparent;
-            color: var(--text-main);
+            gap: 6px;
+            padding: 10px 24px; /* Reduced padding */
+            background: white;
+            color: var(--primary-color);
             text-decoration: none;
             border-radius: 50px;
             font-weight: 600;
-            font-size: 15px;
+            font-size: 14px;
             border: 1px solid var(--primary-color);
-            box-shadow: 0 0 10px rgba(0, 243, 255, 0.1);
+            box-shadow: 0 4px 10px rgba(128, 0, 32, 0.1);
             transition: all 0.3s ease;
         }
 
         .back-btn:hover {
             background: var(--primary-color);
-            color: #000;
+            color: white;
             transform: translateY(-2px);
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+            box-shadow: 0 6px 15px rgba(128, 0, 32, 0.2);
         }
 
         .back-btn svg {
@@ -421,44 +373,50 @@
         /* Responsive */
         @media (max-width: 768px) {
             .credits-container {
-                padding: 24px;
-                gap: 20px;
+                padding: 20px;
+                gap: 15px;
             }
 
             .photo-frame {
-                width: 85%;
+                width: 70%;
             }
 
             .team-members {
                 flex-direction: column;
-                gap: 8px;
+                gap: 10px;
                 width: 100%;
             }
 
-            .member-pill {
+            .member-card {
                 width: 100%;
-                text-align: center;
+                padding: 8px 16px;
             }
 
             .university-name {
-                font-size: 16px;
+                font-size: 15px;
             }
             
             .course-name {
-                font-size: 14px;
+                font-size: 13px;
             }
         }
 
-        @media (max-height: 800px) {
+        @media (max-height: 700px) {
             .credits-container {
-                padding: 20px;
-                gap: 16px;
+                padding: 15px;
+                gap: 10px;
             }
             
             .photo-frame {
-                max-width: 350px;
+                width: 35%;
+                max-width: 250px;
+            }
+
+            .member-card {
+                padding: 6px 12px;
             }
         }
     </style>
 </body>
 </html>
+
