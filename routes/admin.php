@@ -44,13 +44,13 @@ Route::get('/dashboard', function (Illuminate\Http\Request $request) {
 
 // Routes requiring specific capabilities (Delegation or Role)
 // MUST BE BEFORE the main applicants group to avoid matching {id} wildcard
-Route::middleware(['auth', 'capability:assign_applicants'])->prefix('applicants')->name('applicants.')->group(function () {
+Route::middleware(['auth', 'capability:applicants.assign'])->prefix('applicants')->name('applicants.')->group(function () {
     Route::get('/assign', [ApplicantController::class, 'assignPage'])->name('assign');
     Route::post('/bulk/assign-instructors', [ApplicantController::class, 'bulkAssignInstructors'])->name('bulk.assign-instructors');
 });
 
 // Applicant Management Routes
-Route::prefix('applicants')->name('applicants.')->middleware('role:department-head,administrator')->group(function () {
+Route::prefix('applicants')->name('applicants.')->middleware(['role:department-head,administrator', 'capability:applicants.view'])->group(function () {
     Route::get('/', [ApplicantController::class, 'index'])->name('index');
     Route::get('/create', [ApplicantController::class, 'create'])->name('create');
     Route::post('/', [ApplicantController::class, 'store'])->name('store');
@@ -67,8 +67,8 @@ Route::prefix('applicants')->name('applicants.')->middleware('role:department-he
     // Dedicated Assignment Page (Moved to capability middleware group)
     // Route::get('/assign', [ApplicantController::class, 'assignPage'])->name('assign');
     
-    // Bulk Operations
-    Route::prefix('bulk')->name('bulk.')->group(function () {
+    // Bulk Operations (requires bulk_operations capability)
+    Route::prefix('bulk')->name('bulk.')->middleware('capability:applicants.bulk_operations')->group(function () {
         Route::get('/import', [ApplicantController::class, 'import'])->name('import');
         Route::post('/import', [ApplicantController::class, 'processImport'])->name('process-import');
         Route::post('/generate-access-codes', [ApplicantController::class, 'generateAccessCodes'])->name('generate-access-codes');
@@ -116,42 +116,64 @@ Route::prefix('applicants')->name('applicants.')->middleware('role:department-he
 
 
 // Question Management Routes
-Route::prefix('questions')->name('questions.')->middleware(['role:department-head,administrator,instructor', 'capability:manage_questions'])->group(function () {
+Route::prefix('questions')->name('questions.')->middleware(['role:department-head,administrator,instructor', 'capability:questions.view'])->group(function () {
     Route::get('/', [QuestionController::class, 'index'])->name('index');
-    Route::get('/create', [QuestionController::class, 'create'])->name('create');
-    Route::post('/', [QuestionController::class, 'store'])->name('store');
     Route::get('/{id}', [QuestionController::class, 'show'])->name('show');
-    Route::get('/{id}/edit', [QuestionController::class, 'edit'])->name('edit');
-    Route::put('/{id}', [QuestionController::class, 'update'])->name('update');
-    Route::delete('/{id}', [QuestionController::class, 'destroy'])->name('destroy');
-    Route::post('/{id}/toggle-status', [QuestionController::class, 'toggleStatus'])->name('toggle-status');
-    Route::post('/{id}/duplicate', [QuestionController::class, 'duplicate'])->name('duplicate');
-    Route::post('/reorder', [QuestionController::class, 'reorder'])->name('reorder');
+    
+    // Create requires questions.create
+    Route::middleware('capability:questions.create')->group(function () {
+        Route::get('/create', [QuestionController::class, 'create'])->name('create');
+        Route::post('/', [QuestionController::class, 'store'])->name('store');
+    });
+    
+    // Edit requires questions.edit
+    Route::middleware('capability:questions.edit')->group(function () {
+        Route::get('/{id}/edit', [QuestionController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [QuestionController::class, 'update'])->name('update');
+        Route::post('/{id}/toggle-status', [QuestionController::class, 'toggleStatus'])->name('toggle-status');
+        Route::post('/{id}/duplicate', [QuestionController::class, 'duplicate'])->name('duplicate');
+        Route::post('/reorder', [QuestionController::class, 'reorder'])->name('reorder');
+    });
+    
+    // Delete requires questions.delete
+    Route::delete('/{id}', [QuestionController::class, 'destroy'])->middleware('capability:questions.delete')->name('destroy');
 });
 
 // Sets & Questions Management Routes (Primary Interface)
-Route::prefix('sets-questions')->name('sets-questions.')->middleware(['role:department-head,administrator,instructor', 'capability:manage_questions'])->group(function () {
+Route::prefix('sets-questions')->name('sets-questions.')->middleware(['role:department-head,administrator,instructor', 'capability:questions.view'])->group(function () {
     Route::get('/', [SetsQuestionsController::class, 'index'])->name('index');
-    Route::post('/new-semester', [SetsQuestionsController::class, 'newSemester'])->name('new-semester');
-    Route::post('/{id}/publish', [SetsQuestionsController::class, 'publishExam'])->name('publish-exam');
     Route::get('/{id}/consistency-check', [SetsQuestionsController::class, 'consistencyCheck'])->name('consistency-check');
-    Route::post('/archive-old', [SetsQuestionsController::class, 'archiveOldExams'])->name('archive-old');
-    Route::post('/bulk/update-status', [SetsQuestionsController::class, 'bulkUpdateStatus'])->name('bulk-update-status');
-    Route::post('/bulk/delete', [SetsQuestionsController::class, 'bulkDelete'])->name('bulk-delete');
-    Route::post('/bulk/duplicate', [SetsQuestionsController::class, 'bulkDuplicate'])->name('bulk-duplicate');
-    Route::get('/import/template', [SetsQuestionsController::class, 'downloadTemplate'])->name('import.template');
-    Route::post('/import', [SetsQuestionsController::class, 'processImport'])->name('import');
+    
+    // Exam settings management requires questions.manage_exam_settings
+    Route::middleware('capability:questions.manage_exam_settings')->group(function () {
+        Route::post('/new-semester', [SetsQuestionsController::class, 'newSemester'])->name('new-semester');
+        Route::post('/{id}/publish', [SetsQuestionsController::class, 'publishExam'])->name('publish-exam');
+        Route::post('/archive-old', [SetsQuestionsController::class, 'archiveOldExams'])->name('archive-old');
+        Route::post('/bulk/update-status', [SetsQuestionsController::class, 'bulkUpdateStatus'])->name('bulk-update-status');
+        Route::post('/bulk/delete', [SetsQuestionsController::class, 'bulkDelete'])->name('bulk-delete');
+        Route::post('/bulk/duplicate', [SetsQuestionsController::class, 'bulkDuplicate'])->name('bulk-duplicate');
+    });
+    
+    // Import requires questions.create
+    Route::middleware('capability:questions.create')->group(function () {
+        Route::get('/import/template', [SetsQuestionsController::class, 'downloadTemplate'])->name('import.template');
+        Route::post('/import', [SetsQuestionsController::class, 'processImport'])->name('import');
+    });
 });
 
 // Simplified direct routes - no unnecessary redirects
 
 // Backend CRUD Routes (for AJAX calls from the interface)
-Route::prefix('exams')->name('exams.')->middleware('role:department-head,administrator,instructor')->group(function () {
-    Route::post('/', [ExamController::class, 'store'])->middleware('capability:manage_exam_settings')->name('store');
-    Route::get('/{id}', [ExamController::class, 'show'])->name('show'); // Viewing might be allowed for all? Let's restrict to manage_exam_settings for consistency or maybe manage_questions? Let's use manage_exam_settings for now as it shows settings.
-    Route::put('/{id}', [ExamController::class, 'update'])->middleware('capability:manage_exam_settings')->name('update');
-    Route::delete('/{id}', [ExamController::class, 'destroy'])->middleware('capability:manage_exam_settings')->name('destroy');
-    Route::post('/{id}/toggle-status', [ExamController::class, 'toggleStatus'])->middleware('capability:manage_exam_settings')->name('toggle-status');
+Route::prefix('exams')->name('exams.')->middleware(['role:department-head,administrator,instructor', 'capability:questions.view'])->group(function () {
+    Route::get('/{id}', [ExamController::class, 'show'])->name('show');
+    
+    // Exam settings management requires questions.manage_exam_settings
+    Route::middleware('capability:questions.manage_exam_settings')->group(function () {
+        Route::post('/', [ExamController::class, 'store'])->name('store');
+        Route::put('/{id}', [ExamController::class, 'update'])->name('update');
+        Route::delete('/{id}', [ExamController::class, 'destroy'])->name('destroy');
+        Route::post('/{id}/toggle-status', [ExamController::class, 'toggleStatus'])->name('toggle-status');
+    });
 });
 
 
@@ -173,24 +195,32 @@ Route::prefix('interviews')->name('interviews.')->middleware('role:department-he
 });
 
 // Reports
-Route::prefix('reports')->name('reports.')->middleware(['role:department-head,administrator,instructor', 'capability:view_reports'])->group(function () {
+Route::prefix('reports')->name('reports.')->middleware(['role:department-head,administrator,instructor', 'capability:reports.view'])->group(function () {
     Route::get('/', [ReportsController::class, 'index'])->name('index');
-    Route::post('/generate', [ReportsController::class, 'generate'])->name('generate');
-    Route::get('/{id}/download', [ReportsController::class, 'download'])->name('download');
-    Route::post('/preview', [ReportsController::class, 'preview'])->name('preview');
     Route::get('/history', [ReportsController::class, 'history'])->name('history');
-    Route::delete('/{id}', [ReportsController::class, 'destroy'])->name('destroy');
     Route::get('/stats', [ReportsController::class, 'getStats'])->name('stats');
-    Route::post('/archive-all', [ReportsController::class, 'archiveAll'])->name('archive-all');
-    Route::get('/archived-history', [ReportsController::class, 'archivedHistory'])->name('archived-history');
-    Route::post('/restore-all', [ReportsController::class, 'restoreAll'])->name('restore-all');
-    Route::post('/permanently-delete-all', [ReportsController::class, 'permanentlyDeleteAll'])->name('permanently-delete-all');
     Route::get('/signature-settings', [ReportsController::class, 'getSignatureSettings'])->name('signature-settings');
-    Route::post('/signature-settings', [ReportsController::class, 'updateSignatureSettings'])->name('update-signature-settings');
+    
+    // Generate/Export requires reports.generate
+    Route::middleware('capability:reports.generate')->group(function () {
+        Route::post('/generate', [ReportsController::class, 'generate'])->name('generate');
+        Route::get('/{id}/download', [ReportsController::class, 'download'])->name('download');
+        Route::post('/preview', [ReportsController::class, 'preview'])->name('preview');
+    });
+    
+    // Archive management requires reports.manage_archive
+    Route::middleware('capability:reports.manage_archive')->group(function () {
+        Route::delete('/{id}', [ReportsController::class, 'destroy'])->name('destroy');
+        Route::post('/archive-all', [ReportsController::class, 'archiveAll'])->name('archive-all');
+        Route::get('/archived-history', [ReportsController::class, 'archivedHistory'])->name('archived-history');
+        Route::post('/restore-all', [ReportsController::class, 'restoreAll'])->name('restore-all');
+        Route::post('/permanently-delete-all', [ReportsController::class, 'permanentlyDeleteAll'])->name('permanently-delete-all');
+        Route::post('/signature-settings', [ReportsController::class, 'updateSignatureSettings'])->name('update-signature-settings');
+    });
 });
 
-// User Management (Department Head only)
-Route::middleware(['role:department-head'])->prefix('users')->name('users.')->group(function () {
+// User Management (Department Head and Administrator)
+Route::middleware(['role:department-head,administrator'])->prefix('users')->name('users.')->group(function () {
     Route::get('/', [UserManagementController::class, 'index'])->name('index');
     Route::get('/create', [UserManagementController::class, 'create'])->name('create');
     Route::post('/', [UserManagementController::class, 'store'])->name('store');
@@ -239,8 +269,8 @@ Route::middleware(['role:department-head,administrator'])->prefix('settings')->n
     Route::put('/', [\App\Http\Controllers\SettingsController::class, 'update'])->name('update');
     Route::post('/test-email', [\App\Http\Controllers\SettingsController::class, 'testEmail'])->name('test-email');
     Route::post('/reset', [\App\Http\Controllers\SettingsController::class, 'reset'])->name('reset');
-    Route::get('/archived-questions', [\App\Http\Controllers\SettingsController::class, 'archivedQuestions'])->middleware('capability:manage_questions')->name('archived-questions');
-    Route::post('/restore-archived-questions', [\App\Http\Controllers\SettingsController::class, 'restoreArchivedQuestions'])->middleware('capability:manage_questions')->name('restore-archived-questions');
+    Route::get('/archived-questions', [\App\Http\Controllers\SettingsController::class, 'archivedQuestions'])->middleware('capability:questions.view')->name('archived-questions');
+    Route::post('/restore-archived-questions', [\App\Http\Controllers\SettingsController::class, 'restoreArchivedQuestions'])->middleware('capability:questions.edit')->name('restore-archived-questions');
     
     // School Year Management Routes
     Route::prefix('school-years')->name('school-years.')->group(function () {
@@ -277,6 +307,11 @@ Route::prefix('analytics-dashboard')->name('analytics.')->middleware('role:depar
     Route::get('/time-to-completion', [AnalyticsController::class, 'getTimeToCompletion'])->name('time-to-completion');
     Route::get('/category-performance', [AnalyticsController::class, 'getCategoryPerformance'])->name('category-performance');
     Route::get('/export', [AnalyticsController::class, 'export'])->name('export');
+});
+
+// Audit Logs Routes (Superadmin only)
+Route::prefix('audit-logs')->name('audit-logs.')->middleware('role:administrator')->group(function () {
+    Route::get('/', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('index');
 });
 
 // Notifications Routes

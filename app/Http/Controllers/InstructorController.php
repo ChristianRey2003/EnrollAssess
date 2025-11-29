@@ -268,8 +268,8 @@ class InstructorController extends Controller
             'recommendation' => 'required|in:highly_recommended,recommended,conditional,not_recommended',
             'final_comments' => 'required|string|max:5000',
             
-            // CARD/TOR GWA - required before submission
-            'card_tor_gwa' => 'required|numeric|min:0|max:100',
+            // CARD/TOR GWA - required before submission (allowed range: 75-100)
+            'card_tor_gwa' => 'required|numeric|min:75|max:100',
         ]);
 
         $interview = Interview::where('applicant_id', $applicantId)

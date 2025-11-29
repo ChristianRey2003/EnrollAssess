@@ -44,8 +44,9 @@ class ReportsController extends Controller
         $delegation = null;
         $isDelegated = false;
         if (auth()->check() && auth()->user()->role === 'instructor') {
+            // Check for any reports-related delegation (granular capabilities)
             $delegation = auth()->user()->delegatedPermissions()
-                ->where('permission', 'view_reports')
+                ->whereIn('permission', ['reports.view', 'reports.generate', 'reports.manage_archive', 'view_reports'])
                 ->where('status', 'active')
                 ->where(function($q) {
                     $q->whereNull('starts_at')

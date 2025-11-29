@@ -124,6 +124,16 @@ class ApplicantController extends BaseController
             // Meaningful Statistics (exclude archived applicants, filter by school year)
             $statsQuery = Applicant::query();
             $this->applySchoolYearFilter($statsQuery);
+
+            // Compute qualified count based on overall admission score (overall_rating_value)
+            // Threshold: overall score >= 75
+            $qualifiedCount = (clone $statsQuery)
+                ->get()
+                ->filter(function (Applicant $applicant) {
+                    return $applicant->overall_rating_value !== null
+                        && $applicant->overall_rating_value >= 75;
+                })
+                ->count();
             
             $stats = [
                 'total_applicants' => (clone $statsQuery)->count(),
@@ -133,8 +143,7 @@ class ApplicantController extends BaseController
                     'admitted',
                     'rejected',
                 ])->count(),
-                // Use admitted as proxy for qualified since overall_rating is computed, not a DB column
-                'qualified' => (clone $statsQuery)->where('status', 'admitted')->count(),
+                'qualified' => $qualifiedCount,
             ];
 
             $instructors = User::where('role', 'instructor')->get();
@@ -864,8 +873,9 @@ class ApplicantController extends BaseController
         $delegation = null;
         $isDelegated = false;
         if (Auth::check() && Auth::user()->role === 'instructor') {
+            // Check for any applicants-related delegation (granular capabilities)
             $delegation = Auth::user()->delegatedPermissions()
-                ->where('permission', 'assign_applicants')
+                ->whereIn('permission', ['applicants.view', 'applicants.assign', 'applicants.bulk_operations', 'assign_applicants'])
                 ->where('status', 'active')
                 ->where(function($q) {
                     $q->whereNull('starts_at')

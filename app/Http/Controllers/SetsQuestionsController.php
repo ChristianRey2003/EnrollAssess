@@ -79,8 +79,9 @@ class SetsQuestionsController extends Controller
         $delegation = null;
         $isDelegated = false;
         if (auth()->check() && auth()->user()->role === 'instructor') {
+            // Check for any questions-related delegation (granular capabilities)
             $delegation = auth()->user()->delegatedPermissions()
-                ->where('permission', 'manage_questions')
+                ->whereIn('permission', ['questions.view', 'questions.create', 'questions.edit', 'questions.delete', 'questions.manage_exam_settings', 'manage_questions'])
                 ->where('status', 'active')
                 ->where(function($q) {
                     $q->whereNull('starts_at')

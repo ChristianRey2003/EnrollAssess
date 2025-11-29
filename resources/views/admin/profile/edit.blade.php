@@ -161,8 +161,11 @@
                         
                         <div class="text-center w-100">
                             <h6 class="mb-1" style="font-size: 12px; font-weight: 600;">Upload Profile Picture</h6>
-                            <p class="text-muted mb-2" style="font-size: 11px; line-height: 1.3;">
+                            <p class="text-muted mb-1" style="font-size: 11px; line-height: 1.3;">
                                 Upload a profile picture. Accepted formats: JPG, PNG, GIF. Maximum size: 2MB.
+                            </p>
+                            <p id="profilePictureWarning" class="text-danger mb-2" style="font-size: 11px; display: none;">
+                                The selected file exceeds the 2MB limit. Please choose a smaller image.
                             </p>
                             
                             <div class="file-upload-wrapper d-inline-block">
@@ -308,12 +311,33 @@
 @push('scripts')
 <script>
     function previewProfilePicture(input) {
+        const warningEl = document.getElementById('profilePictureWarning');
+        const formInput = document.getElementById('profile_picture');
+        const maxBytes = 2 * 1024 * 1024; // 2MB limit
+
         if (input.files && input.files[0]) {
+            const file = input.files[0];
+
+            if (file.size > maxBytes) {
+                if (warningEl) {
+                    warningEl.style.display = 'block';
+                }
+                input.value = '';
+                if (formInput) {
+                    formInput.value = '';
+                }
+                return;
+            }
+
+            if (warningEl) {
+                warningEl.style.display = 'none';
+            }
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 const preview = document.getElementById('profilePreview');
                 const initials = document.getElementById('profileInitials');
-                const image = document.getElementById('profileImage');
+                let image = document.getElementById('profileImage');
                 
                 if (image) {
                     image.src = e.target.result;
@@ -321,20 +345,21 @@
                     if (initials) {
                         initials.style.display = 'none';
                     }
-                    const img = document.createElement('img');
-                    img.id = 'profileImage';
-                    img.src = e.target.result;
-                    img.alt = 'Profile Picture';
-                    preview.appendChild(img);
+                    image = document.createElement('img');
+                    image.id = 'profileImage';
+                    image.src = e.target.result;
+                    image.alt = 'Profile Picture';
+                    preview.appendChild(image);
                 }
             };
-            reader.readAsDataURL(input.files[0]);
+            reader.readAsDataURL(file);
             
             // Sync with form input - create a new FileList
-            const formInput = document.getElementById('profile_picture');
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(input.files[0]);
-            formInput.files = dataTransfer.files;
+            if (formInput) {
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                formInput.files = dataTransfer.files;
+            }
         }
     }
 </script>

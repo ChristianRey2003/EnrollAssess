@@ -195,6 +195,8 @@ class User extends Authenticatable
 
     /**
      * Check if user has a specific permission via role or delegation
+     * Supports granular capabilities with dependency checking
+     * Also handles backward compatibility with old capability names
      */
     public function hasPermission($permission)
     {
@@ -203,22 +205,115 @@ class User extends Authenticatable
             return true;
         }
 
-        // Check for active delegation
-        $delegation = $this->delegatedPermissions()
-                    ->where('permission', $permission)
-                    ->where('status', 'active')
-                    ->where(function($q) {
-                        $q->whereNull('starts_at')
-                          ->orWhere('starts_at', '<=', now());
-                    })
-                    ->first();
+        // Map old capability names to new granular ones for backward compatibility
+        $capabilityMapping = [
+            'assign_applicants' => 'applicants.assign',
+            'view_reports' => 'reports.view',
+            'manage_questions' => 'questions.view',
+            'manage_exam_settings' => 'questions.manage_exam_settings',
+        ];
 
-        if (!$delegation) {
+        // Reverse mapping: new granular -> old names (for checking delegations)
+        $reverseMapping = [
+            'applicants.assign' => 'assign_applicants',
+            'applicants.view' => 'assign_applicants', // Old assign_applicants implied view
+            'reports.view' => 'view_reports',
+            'reports.generate' => 'view_reports', // Old view_reports implied generate
+            'questions.view' => 'manage_questions',
+            'questions.create' => 'manage_questions', // Old manage_questions implied all
+            'questions.edit' => 'manage_questions',
+            'questions.delete' => 'manage_questions',
+            'questions.manage_exam_settings' => 'manage_exam_settings',
+        ];
+
+        // If checking old capability name, also check new equivalent
+        // If checking new capability name, also check old equivalent
+        $permissionsToCheck = [$permission];
+        if (isset($capabilityMapping[$permission])) {
+            $permissionsToCheck[] = $capabilityMapping[$permission];
+        }
+        if (isset($reverseMapping[$permission])) {
+            $permissionsToCheck[] = $reverseMapping[$permission];
+        }
+
+        // Check for active delegation (exact match)
+        foreach ($permissionsToCheck as $perm) {
+            $delegation = $this->delegatedPermissions()
+                        ->where('permission', $perm)
+                        ->where('status', 'active')
+                        ->where(function($q) {
+                            $q->whereNull('starts_at')
+                              ->orWhere('starts_at', '<=', now());
+                        })
+                        ->first();
+
+            if ($delegation && !$delegation->isExpired()) {
+                return true;
+            }
+        }
+
+        // Check if permission has dependencies and user has parent permission
+        // e.g., if checking questions.edit but user has questions.view, that's not enough
+        // But if checking questions.view and user has questions.edit, that works
+        $allDelegations = $this->delegatedPermissions()
+            ->where('status', 'active')
+            ->where(function($q) {
+                $q->whereNull('starts_at')
+                  ->orWhere('starts_at', '<=', now());
+            })
+            ->get()
+            ->filter(function($d) {
+                return !$d->isExpired();
+            })
+            ->pluck('permission')
+            ->toArray();
+
+        // Check if user has a more powerful capability that includes this one
+        // e.g., questions.edit includes questions.view
+        foreach ($allDelegations as $delegatedPermission) {
+            foreach ($permissionsToCheck as $perm) {
+                if ($this->capabilityIncludes($delegatedPermission, $perm)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if a capability includes another capability
+     * e.g., questions.edit includes questions.view
+     */
+    protected function capabilityIncludes(string $hasCapability, string $neededCapability): bool
+    {
+        // Exact match
+        if ($hasCapability === $neededCapability) {
+            return true;
+        }
+
+        // Check if hasCapability is a parent of neededCapability
+        // e.g., questions.edit includes questions.view
+        $hasParts = explode('.', $hasCapability);
+        $neededParts = explode('.', $neededCapability);
+
+        // Must be same category (e.g., both "questions")
+        if ($hasParts[0] !== $neededParts[0]) {
             return false;
         }
 
-        // Check expiration based on activation time
-        return !$delegation->isExpired();
+        // If has "manage" or "edit", it includes "view"
+        if (in_array($hasParts[1] ?? '', ['edit', 'delete', 'manage_exam_settings']) && 
+            ($neededParts[1] ?? '') === 'view') {
+            return true;
+        }
+
+        // If has "create", it includes "view"
+        if (($hasParts[1] ?? '') === 'create' && ($neededParts[1] ?? '') === 'view') {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -252,5 +347,80 @@ class User extends Authenticatable
                 );
             }
         }
+    }
+
+    /**
+     * Check if current user can manage a target user
+     * 
+     * @param User $targetUser The user being managed
+     * @return bool
+     */
+    public function canManageUser(User $targetUser)
+    {
+        // Superadmin can manage anyone
+        if ($this->isAdministrator()) {
+            return true;
+        }
+
+        // Department-head can only manage instructors
+        if ($this->isDepartmentHead()) {
+            return $targetUser->isInstructor();
+        }
+
+        // Instructors cannot manage other users
+        return false;
+    }
+
+    /**
+     * Check if current user can change a target user's role
+     * 
+     * @param User|null $targetUser The user whose role is being changed (null for new users)
+     * @param string $newRole The new role being assigned
+     * @return bool
+     */
+    public function canChangeRole(?User $targetUser, string $newRole)
+    {
+        // Superadmin can change any role
+        if ($this->isAdministrator()) {
+            return true;
+        }
+
+        // Department-head can only create/edit instructors (cannot change roles)
+        if ($this->isDepartmentHead()) {
+            // Can only work with instructor role
+            if ($newRole !== 'instructor') {
+                return false;
+            }
+            
+            // If editing existing user, can only edit if they're already an instructor
+            if ($targetUser && !$targetUser->isInstructor()) {
+                return false;
+            }
+            
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if current user can delegate to a target user
+     * 
+     * @param User $targetUser The user to delegate to
+     * @return bool
+     */
+    public function canDelegateTo(User $targetUser)
+    {
+        // Superadmin can delegate to both department-heads and instructors
+        if ($this->isAdministrator()) {
+            return in_array($targetUser->role, ['department-head', 'instructor']);
+        }
+
+        // Department-head can only delegate to instructors
+        if ($this->isDepartmentHead()) {
+            return $targetUser->isInstructor();
+        }
+
+        return false;
     }
 }

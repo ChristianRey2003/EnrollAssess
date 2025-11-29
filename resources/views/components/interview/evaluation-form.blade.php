@@ -1060,21 +1060,21 @@
                             type="number" 
                             id="card_tor_gwa_input" 
                             class="gwa-input" 
-                            min="0" 
+                            min="75" 
                             max="100" 
                             step="0.01" 
                             value="{{ old('card_tor_gwa', $applicant->card_tor_gwa) }}"
-                            placeholder="0.00"
+                            placeholder="75.00"
                             required
                         >
                         <span style="font-size: 0.875rem; color: var(--text-secondary);">%</span>
                     </div>
                 </div>
                 <div class="gwa-help-text">
-                    Enter the applicant's General Weighted Average from their CARD/TOR as a percentage (0-100). This is required before submission.
+                    Enter the applicant's General Weighted Average from their CARD/TOR as a percentage (75-100). This is required before submission.
                 </div>
                 <div id="gwaError" class="gwa-status warning" style="display: none;">
-                    Please enter a value between 0 and 100%.
+                    Please enter a value between 75 and 100%.
                 </div>
                 @if($applicant->card_tor_gwa)
                 <div class="gwa-status success">
@@ -1386,11 +1386,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 gwaError.textContent = 'Maximum allowed GWA is 100%.';
                 gwaError.style.display = 'block';
             }
-        } else if (value < 0) {
-            value = 0;
-            gwaInput.value = 0;
+        } else if (value < 75) {
+            value = 75;
+            gwaInput.value = 75;
             if (gwaError) {
-                gwaError.textContent = 'Minimum allowed GWA is 0%.';
+                gwaError.textContent = 'Minimum allowed GWA is 75%.';
                 gwaError.style.display = 'block';
             }
         } else if (gwaError) {

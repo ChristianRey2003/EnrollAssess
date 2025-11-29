@@ -20,14 +20,22 @@
             <img src="{{ asset('images/evsu-logo.png') }}" alt="EVSU Logo" class="logo-image">
             <div class="logo-content">
                 <h2 class="sidebar-title">EnrollAssess</h2>
-                <p class="sidebar-subtitle">{{ $userRole === 'instructor' ? 'Instructor Portal' : 'Admin Portal' }}</p>
+                <p class="sidebar-subtitle">
+                    @if($userRole === 'instructor')
+                        Instructor Portal
+                    @elseif($userRole === 'administrator')
+                        Superadmin Portal
+                    @else
+                        Admin Portal
+                    @endif
+                </p>
             </div>
         </div>
     </div>
 
     <div class="nav-menu" role="list">
         {{-- Common Navigation Items --}}
-        @if($userRole === 'department-head')
+        @if(in_array($userRole, ['department-head', 'administrator']))
             {{-- School Year Dropdown - Above Dashboard (Visible on all pages for consistency) --}}
             @if(isset($schoolYears) && $schoolYears->count() > 0)
             <div class="nav-item school-year-nav-item" role="listitem">
@@ -116,6 +124,18 @@
                 </a>
             </div>
 
+            @if($userRole === 'administrator')
+            <div class="nav-item" role="listitem">
+                <a href="{{ route('admin.audit-logs.index') }}" 
+                   class="nav-link {{ str_starts_with($currentRoute, 'admin.audit-logs') ? 'active' : '' }}"
+                   @if(str_starts_with($currentRoute, 'admin.audit-logs')) aria-current="page" @endif
+                   aria-label="Audit Logs - System activity and audit trail">
+                    <span class="nav-icon" aria-hidden="true"><i class="fas fa-clipboard-list"></i></span>
+                    <span class="nav-text">Audit Logs</span>
+                </a>
+            </div>
+            @endif
+
             
         @elseif($userRole === 'instructor')
             <div class="nav-item" role="listitem">
@@ -128,7 +148,7 @@
                 </a>
             </div>
             
-            @if(auth()->user()->hasPermission('assign_applicants'))
+            @if(auth()->user()->hasPermission('applicants.assign'))
             <div class="nav-item" role="listitem">
                 <a href="{{ route('admin.applicants.assign') }}" 
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.applicants.assign') ? 'active' : '' }}"
@@ -140,7 +160,7 @@
             </div>
             @endif
 
-            @if(auth()->user()->hasPermission('view_reports'))
+            @if(auth()->user()->hasPermission('reports.view'))
             <div class="nav-item" role="listitem">
                 <a href="{{ route('admin.reports.index') }}" 
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.reports') ? 'active' : '' }}"
@@ -152,7 +172,7 @@
             </div>
             @endif
 
-            @if(auth()->user()->hasPermission('manage_questions'))
+            @if(auth()->user()->hasPermission('questions.view'))
             <div class="nav-item" role="listitem">
                 <a href="{{ route('admin.sets-questions.index') }}" 
                    class="nav-link {{ str_starts_with($currentRoute, 'admin.sets-questions') || str_starts_with($currentRoute, 'admin.exams') || str_starts_with($currentRoute, 'admin.questions') ? 'active' : '' }}"

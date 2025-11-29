@@ -46,8 +46,9 @@ class AdminAuthController extends Controller
             ->first();
 
         if ($user && Hash::check($request->password, $user->password_hash)) {
-            // Check if user has valid role
-            if (in_array($user->role, ['department-head', 'instructor'])) {
+            // Check if user has a role that is allowed to use this login
+            // Allow: department-head, administrator (superadmin), and instructor
+            if (in_array($user->role, ['department-head', 'administrator', 'instructor'])) {
                 // Update last login timestamp
                 $user->update(['last_login' => now()]);
                 
@@ -70,6 +71,7 @@ class AdminAuthController extends Controller
                 
                 // Role-based redirect
                 $redirectRoute = match($user->role) {
+                    'administrator' => 'admin.dashboard',
                     'department-head' => 'admin.dashboard',
                     'instructor' => 'instructor.dashboard',
                     default => 'admin.dashboard'

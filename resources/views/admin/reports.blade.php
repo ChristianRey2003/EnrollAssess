@@ -287,6 +287,125 @@
 @endpush
 
 @section('content')
+<!-- Delegation Expiration Indicator -->
+@if($isDelegated && $delegation)
+    @php
+        $effectiveExpiresAt = $delegation->getEffectiveExpiresAt();
+        $isExpiringSoon = false;
+        $timeRemainingText = '';
+        
+        if ($effectiveExpiresAt) {
+            $isExpiringSoon = $effectiveExpiresAt->diffInHours(now()) < 2 && $effectiveExpiresAt->isFuture();
+            $timeRemaining = now()->diff($effectiveExpiresAt);
+            
+            if ($timeRemaining->invert === 0) {
+                // Future expiration
+                if ($timeRemaining->days > 0) {
+                    $timeRemainingText = $timeRemaining->days . 'd ' . $timeRemaining->h . 'h';
+                } elseif ($timeRemaining->h > 0) {
+                    $timeRemainingText = $timeRemaining->h . 'h ' . $timeRemaining->i . 'm';
+                } elseif ($timeRemaining->i > 0) {
+                    $timeRemainingText = $timeRemaining->i . 'm';
+                } else {
+                    $timeRemainingText = 'Less than a minute';
+                }
+            } else {
+                // Past expiration
+                $timeRemainingText = 'Expired';
+            }
+        }
+    @endphp
+    <div class="delegation-indicator {{ $isExpiringSoon ? 'expiring-soon' : '' }}" id="delegationIndicator" style="margin-bottom: 20px; padding: 12px 16px; background: {{ $isExpiringSoon ? '#FEF3C7' : '#EFF6FF' }}; border: 2px solid {{ $isExpiringSoon ? '#FDE68A' : '#BFDBFE' }}; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <svg style="width: 20px; height: 20px; color: {{ $isExpiringSoon ? '#F59E0B' : '#3B82F6' }};" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span style="font-weight: 600; color: {{ $isExpiringSoon ? '#92400E' : '#1E40AF' }}; font-size: 14px;">
+                Delegation Access
+            </span>
+        </div>
+        @if($effectiveExpiresAt)
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="color: {{ $isExpiringSoon ? '#92400E' : '#1E40AF' }}; font-size: 13px;">
+                    @if($timeRemainingText === 'Expired')
+                        <strong>Expired</strong>
+                    @else
+                        Expires in: <strong id="delegationTimer">{{ $timeRemainingText }}</strong>
+                    @endif
+                </span>
+                <span style="color: {{ $isExpiringSoon ? '#92400E' : '#60A5FA' }}; font-size: 12px;">
+                    ({{ $effectiveExpiresAt->format('M d, Y g:i A') }})
+                </span>
+            </div>
+        @endif
+    </div>
+    @if($effectiveExpiresAt)
+        <script>
+            // Live countdown timer for delegation
+            (function() {
+                const expiresAt = new Date('{{ $effectiveExpiresAt->toIso8601String() }}');
+                const timerEl = document.getElementById('delegationTimer');
+                const indicatorEl = document.getElementById('delegationIndicator');
+                
+                if (!timerEl || !indicatorEl) return;
+                
+                function updateTimer() {
+                    const now = new Date();
+                    const timeRemaining = expiresAt - now;
+                    
+                    if (timeRemaining <= 0) {
+                        timerEl.textContent = 'Expired';
+                        indicatorEl.style.background = '#FEE2E2';
+                        indicatorEl.style.borderColor = '#FECACA';
+                        const svg = indicatorEl.querySelector('svg');
+                        const spans = indicatorEl.querySelectorAll('span');
+                        if (svg) svg.style.color = '#DC2626';
+                        spans.forEach(span => span.style.color = '#DC2626');
+                        return;
+                    }
+                    
+                    const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+                    const days = Math.floor(hours / 24);
+                    const remainingHours = hours % 24;
+                    
+                    let timeText = '';
+                    if (days > 0) {
+                        timeText = days + 'd ' + remainingHours + 'h';
+                    } else if (hours > 0) {
+                        timeText = hours + 'h ' + minutes + 'm';
+                    } else if (minutes > 0) {
+                        timeText = minutes + 'm ' + seconds + 's';
+                    } else {
+                        timeText = seconds + 's';
+                    }
+                    
+                    timerEl.textContent = timeText;
+                    
+                    // Update styling if expiring soon (< 2 hours)
+                    const isExpiringSoon = hours < 2;
+                    if (isExpiringSoon) {
+                        indicatorEl.style.background = '#FEF3C7';
+                        indicatorEl.style.borderColor = '#FDE68A';
+                        const svg = indicatorEl.querySelector('svg');
+                        const spans = indicatorEl.querySelectorAll('span');
+                        if (svg) svg.style.color = '#F59E0B';
+                        spans.forEach(span => {
+                            if (span.textContent.includes('Expires')) {
+                                span.style.color = '#92400E';
+                            }
+                        });
+                    }
+                }
+                
+                // Update every second
+                setInterval(updateTimer, 1000);
+                updateTimer(); // Initial update
+            })();
+        </script>
+    @endif
+@endif
     <!-- Delegation Expiration Indicator -->
     @if(isset($isDelegated) && $isDelegated && isset($delegation))
         @php

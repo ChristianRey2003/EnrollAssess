@@ -95,15 +95,30 @@ class UserManagementController extends Controller
      */
     public function store(Request $request)
     {
+        $user = Auth::user();
+        
+        // Determine allowed roles based on current user's role
+        $allowedRoles = ['instructor'];
+        if ($user->isAdministrator()) {
+            $allowedRoles = ['administrator', 'department-head', 'instructor'];
+        }
+
         $request->validate([
             'username' => 'required|string|max:255|unique:users,username',
             'first_name' => 'required|string|max:255',
             'middle_name' => 'nullable|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email',
-            'role' => 'required|in:department-head,instructor',
+            'role' => ['required', 'in:' . implode(',', $allowedRoles)],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
+
+        // Additional authorization check: department-head cannot create department-head or administrator
+        if (!$user->isAdministrator() && in_array($request->role, ['department-head', 'administrator'])) {
+            return redirect()->back()
+                           ->with('error', 'You do not have permission to create users with this role.')
+                           ->withInput();
+        }
 
         try {
             $formatNamePart = function (?string $value) {
@@ -181,15 +196,22 @@ class UserManagementController extends Controller
      */
     public function edit($id)
     {
-        $user = User::findOrFail($id);
+        $targetUser = User::findOrFail($id);
+        $currentUser = Auth::user();
         
         // Prevent editing of your own account through this interface
-        if ($user->user_id === Auth::id()) {
+        if ($targetUser->user_id === Auth::id()) {
             return redirect()->route('admin.users.show', $id)
                            ->with('warning', 'Use the profile section to edit your own account.');
         }
 
-        return view('admin.users.edit', compact('user'));
+        // Check if current user can manage this user
+        if (!$currentUser->canManageUser($targetUser)) {
+            return redirect()->route('admin.users.index')
+                           ->with('error', 'You do not have permission to edit this user.');
+        }
+
+        return view('admin.users.edit', ['user' => $targetUser]);
     }
 
     /**
@@ -197,21 +219,56 @@ class UserManagementController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $user = User::findOrFail($id);
+        $targetUser = User::findOrFail($id);
+        $currentUser = Auth::user();
 
         // Prevent editing of your own account
-        if ($user->user_id === Auth::id()) {
+        if ($targetUser->user_id === Auth::id()) {
             return redirect()->route('admin.users.index')
                            ->with('error', 'You cannot edit your own account through user management.');
         }
 
+        // Check if current user can manage this user
+        if (!$currentUser->canManageUser($targetUser)) {
+            return redirect()->route('admin.users.index')
+                           ->with('error', 'You do not have permission to manage this user.');
+        }
+
+        // Determine allowed roles based on current user's role
+        $allowedRoles = ['instructor'];
+        if ($currentUser->isAdministrator()) {
+            $allowedRoles = ['administrator', 'department-head', 'instructor'];
+        }
+
         $request->validate([
-            'username' => 'required|string|max:255|unique:users,username,' . $user->user_id . ',user_id',
+            'username' => 'required|string|max:255|unique:users,username,' . $targetUser->user_id . ',user_id',
             'full_name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->user_id . ',user_id',
-            'role' => 'required|in:department-head,instructor',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $targetUser->user_id . ',user_id',
+            'role' => ['required', 'in:' . implode(',', $allowedRoles)],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
         ]);
+
+        // Check if role change is allowed
+        if (!$currentUser->canChangeRole($targetUser, $request->role)) {
+            return redirect()->back()
+                           ->with('error', 'You do not have permission to change this user\'s role.')
+                           ->withInput();
+        }
+
+        // Additional check: prevent department-head from changing roles of department-head or administrator
+        if ($currentUser->isDepartmentHead()) {
+            if (in_array($targetUser->role, ['department-head', 'administrator'])) {
+                return redirect()->back()
+                               ->with('error', 'You do not have permission to edit users with this role.')
+                               ->withInput();
+            }
+            // Department-head cannot change roles, only edit instructor details
+            if ($request->role !== $targetUser->role) {
+                return redirect()->back()
+                               ->with('error', 'You do not have permission to change user roles.')
+                               ->withInput();
+            }
+        }
 
         try {
             $updateData = [
@@ -226,11 +283,21 @@ class UserManagementController extends Controller
                 $updateData['password_hash'] = Hash::make($request->password);
             }
 
-            $user->update($updateData);
+            $oldRole = $targetUser->role;
+            $targetUser->update($updateData);
 
-            ActivityLogger::log('update_user', "Updated user account for {$user->full_name}", ['user_id' => $user->user_id, 'changes' => array_keys($updateData)]);
+            // Log role change if it occurred
+            if ($oldRole !== $request->role) {
+                ActivityLogger::log('change_role', "Changed role for {$targetUser->full_name} from {$oldRole} to {$request->role}", [
+                    'user_id' => $targetUser->user_id,
+                    'old_role' => $oldRole,
+                    'new_role' => $request->role
+                ]);
+            }
 
-            return redirect()->route('admin.users.show', $user->user_id)
+            ActivityLogger::log('update_user', "Updated user account for {$targetUser->full_name}", ['user_id' => $targetUser->user_id, 'changes' => array_keys($updateData)]);
+
+            return redirect()->route('admin.users.show', $targetUser->user_id)
                            ->with('success', 'User account updated successfully!');
 
         } catch (\Exception $e) {
@@ -243,22 +310,39 @@ class UserManagementController extends Controller
     /**
      * Remove the specified user from storage
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         try {
-            $user = User::findOrFail($id);
+            $targetUser = User::findOrFail($id);
+            $currentUser = Auth::user();
 
             // Prevent deletion of your own account
-            if ($user->user_id === Auth::id()) {
+            if ($targetUser->user_id === Auth::id()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'You cannot delete your own account.'
                 ]);
             }
 
+            // Check if current user can manage this user
+            if (!$currentUser->canManageUser($targetUser)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to delete this user.'
+                ]);
+            }
+
+            // Only administrator can delete department-head or administrator users
+            if (in_array($targetUser->role, ['department-head', 'administrator']) && !$currentUser->isAdministrator()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to delete users with this role.'
+                ]);
+            }
+
             // Check if user has related data that would be affected
-            if ($user->role === 'instructor') {
-                $hasInterviews = \App\Models\Interview::where('interviewer_id', $user->user_id)->exists();
+            if ($targetUser->role === 'instructor') {
+                $hasInterviews = \App\Models\Interview::where('interviewer_id', $targetUser->user_id)->exists();
                 if ($hasInterviews) {
                     return response()->json([
                         'success' => false,
@@ -267,15 +351,22 @@ class UserManagementController extends Controller
                 }
             }
 
-            $userName = $user->full_name;
-            $user->delete();
+            $userName = $targetUser->full_name;
+            $userRole = $targetUser->role;
+            $targetUser->delete();
 
-            ActivityLogger::log('delete_user', "Deleted user account for {$userName}", ['user_id' => $id]);
+            ActivityLogger::log('delete_user', "Deleted user account for {$userName} (Role: {$userRole})", ['user_id' => $id, 'role' => $userRole]);
 
-            return response()->json([
-                'success' => true,
-                'message' => "User account for {$userName} has been deleted successfully."
-            ]);
+            // Return JSON for API/AJAX calls, redirect with flash for normal form submits
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "User account for {$userName} has been deleted successfully."
+                ]);
+            }
+
+            return redirect()->route('admin.users.index')
+                             ->with('success', "User account for {$userName} has been deleted successfully.");
 
         } catch (\Exception $e) {
             return response()->json([
@@ -292,6 +383,15 @@ class UserManagementController extends Controller
     {
         try {
             $user = User::findOrFail($id);
+            $currentUser = Auth::user();
+
+            // Only allow privileged users to reset passwords
+            if (!$currentUser || !$currentUser->canManageUser($user)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to reset this user\'s password.'
+                ], 403);
+            }
 
             // Prevent resetting your own password through this interface
             if ($user->user_id === Auth::id()) {
@@ -403,13 +503,14 @@ class UserManagementController extends Controller
 
         try {
             $delegatee = User::findOrFail($id);
+            $currentUser = Auth::user();
             
-            // Only allow delegation to instructors
-            if ($delegatee->role !== 'instructor') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Permissions can only be delegated to instructors.'
-                ]);
+            // Check if current user can delegate to this user
+            if (!$currentUser->canDelegateTo($delegatee)) {
+                $allowedRoles = $currentUser->isAdministrator() 
+                    ? 'department-heads or instructors' 
+                    : 'instructors';
+                return redirect()->back()->with('error', "Permissions can only be delegated to {$allowedRoles}.");
             }
 
             $delegatedCount = 0;
@@ -475,18 +576,28 @@ class UserManagementController extends Controller
     public function sendCredentials($id)
     {
         try {
-            $user = User::findOrFail($id);
+            $targetUser = User::findOrFail($id);
+            $currentUser = Auth::user();
 
-            // Only allow sending credentials to instructors
-            if ($user->role !== 'instructor') {
+            // Check if current user can manage this user
+            if (!$currentUser->canManageUser($targetUser)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Credentials can only be sent to instructors.'
+                    'message' => 'You do not have permission to send credentials to this user.'
+                ], 403);
+            }
+
+            // Only allow sending credentials to instructors (for now)
+            // Administrator can send to anyone they can manage, but credentials email is instructor-specific
+            if ($targetUser->role !== 'instructor') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Credentials email can only be sent to instructors.'
                 ], 400);
             }
 
             // Check if user has email
-            if (empty($user->email)) {
+            if (empty($targetUser->email)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'User does not have an email address configured.'
@@ -497,7 +608,7 @@ class UserManagementController extends Controller
             $tempPassword = 'Temp' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT) . '!';
 
             // Update user password and set force password change flag
-            $user->update([
+            $targetUser->update([
                 'password_hash' => Hash::make($tempPassword),
                 'force_password_change' => true,
             ]);
@@ -527,13 +638,13 @@ class UserManagementController extends Controller
             }
 
             // Send email with credentials
-            Mail::to($user->email)->send(new InstructorCredentialsMail($user, $tempPassword));
+            Mail::to($targetUser->email)->send(new InstructorCredentialsMail($targetUser, $tempPassword));
 
-            ActivityLogger::log('send_credentials', "Sent credentials to {$user->email}", ['user_id' => $user->user_id]);
+            ActivityLogger::log('send_credentials', "Sent credentials to {$targetUser->email}", ['user_id' => $targetUser->user_id]);
 
             return response()->json([
                 'success' => true,
-                'message' => "Credentials email sent successfully to {$user->email}. The user will be required to change their password on first login."
+                'message' => "Credentials email sent successfully to {$targetUser->email}. The user will be required to change their password on first login."
             ]);
 
         } catch (\Illuminate\Mail\SendException $e) {

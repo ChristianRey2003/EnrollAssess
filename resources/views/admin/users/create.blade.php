@@ -374,13 +374,24 @@
                             class="@error('role') error @enderror" 
                             required>
                         <option value="">Select a role...</option>
-                        <option value="department-head" {{ old('role') === 'department-head' ? 'selected' : '' }}> Department Head</option>
-                        <option value="instructor" {{ old('role') === 'instructor' ? 'selected' : '' }}>🧑‍ Instructor</option>
+                        @if(auth()->user()->isAdministrator())
+                            <option value="administrator" {{ old('role') === 'administrator' ? 'selected' : '' }}>🔐 Administrator</option>
+                            <option value="department-head" {{ old('role') === 'department-head' ? 'selected' : '' }}>👔 Department Head</option>
+                            <option value="instructor" {{ old('role') === 'instructor' ? 'selected' : '' }}>🧑‍🏫 Instructor</option>
+                        @else
+                            <option value="instructor" {{ old('role') === 'instructor' ? 'selected' : '' }}>🧑‍🏫 Instructor</option>
+                        @endif
                     </select>
                     @error('role')
                         <span class="error-text">{{ $message }}</span>
                     @enderror
-                    <span class="help-text">Select user role</span>
+                    <span class="help-text">
+                        @if(auth()->user()->isAdministrator())
+                            Select user role (Administrator can create any role)
+                        @else
+                            You can only create instructor accounts
+                        @endif
+                    </span>
                 </div>
             </div>
 

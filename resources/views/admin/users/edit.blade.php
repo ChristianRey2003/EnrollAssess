@@ -344,17 +344,42 @@
                 <!-- Role -->
                 <div class="form-group">
                     <label for="role">Role <span class="required">*</span></label>
-                    <select id="role" 
-                            name="role" 
-                            class="@error('role') error @enderror" 
-                            required>
-                        <option value="department-head" {{ old('role', $user->role) === 'department-head' ? 'selected' : '' }}> Department Head</option>
-                        <option value="instructor" {{ old('role', $user->role) === 'instructor' ? 'selected' : '' }}>🧑‍ Instructor</option>
-                    </select>
+                    @if(auth()->user()->isAdministrator())
+                        {{-- Administrator can change any role --}}
+                        <select id="role" 
+                                name="role" 
+                                class="@error('role') error @enderror" 
+                                required>
+                            <option value="administrator" {{ old('role', $user->role) === 'administrator' ? 'selected' : '' }}>🔐 Administrator</option>
+                            <option value="department-head" {{ old('role', $user->role) === 'department-head' ? 'selected' : '' }}>👔 Department Head</option>
+                            <option value="instructor" {{ old('role', $user->role) === 'instructor' ? 'selected' : '' }}>🧑‍🏫 Instructor</option>
+                        </select>
+                        <span class="help-text">Select user role</span>
+                    @elseif(auth()->user()->isDepartmentHead())
+                        {{-- Department-head can only edit instructors, cannot change role --}}
+                        @if($user->isInstructor())
+                            <select id="role" 
+                                    name="role" 
+                                    class="@error('role') error @enderror" 
+                                    required
+                                    disabled>
+                                <option value="instructor" selected>🧑‍🏫 Instructor</option>
+                            </select>
+                            <input type="hidden" name="role" value="instructor">
+                            <span class="help-text">You can only manage instructor accounts</span>
+                        @else
+                            {{-- Read-only display for non-instructors --}}
+                            <input type="text" 
+                                   value="{{ ucfirst(str_replace('-', ' ', $user->role)) }}" 
+                                   readonly 
+                                   style="background-color: var(--light-gray); cursor: not-allowed;">
+                            <input type="hidden" name="role" value="{{ $user->role }}">
+                            <span class="help-text" style="color: var(--warning-orange);">You cannot change this user's role</span>
+                        @endif
+                    @endif
                     @error('role')
                         <span class="error-text">{{ $message }}</span>
                     @enderror
-                    <span class="help-text">Select user role</span>
                 </div>
             </div>
 

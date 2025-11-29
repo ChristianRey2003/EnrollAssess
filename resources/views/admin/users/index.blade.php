@@ -455,17 +455,21 @@
                                    class="btn btn-sm btn-secondary">
                                     View
                                 </a>
-                                <a href="{{ route('admin.users.edit', $user->user_id) }}" 
-                                   class="btn btn-sm btn-secondary">
-                                    Edit
-                                </a>
-                                @if($user->role === 'instructor')
+                                @if(auth()->user()->canManageUser($user))
+                                    <a href="{{ route('admin.users.edit', $user->user_id) }}" 
+                                       class="btn btn-sm btn-secondary">
+                                        Edit
+                                    </a>
+                                @endif
+                                @if(auth()->user()->canDelegateTo($user))
                                     <button type="button" 
                                             class="btn btn-sm btn-warning"
                                             data-delegations="{{ json_encode($user->delegatedPermissions) }}"
                                             onclick="openDelegationDrawer(this, '{{ $user->user_id }}', '{{ $user->full_name }}')">
                                         Delegate
                                     </button>
+                                @endif
+                                @if($user->role === 'instructor' && auth()->user()->canManageUser($user))
                                     <button type="button" 
                                             class="btn btn-sm btn-info"
                                             onclick="sendCredentials(event, '{{ $user->user_id }}', '{{ $user->full_name }}')"
@@ -562,51 +566,100 @@
                 <label class="form-label small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Category</label>
                 <select id="delegationCategory" class="form-select form-select-sm" onchange="updateCapabilityOptions()">
                     <option value="">Select a category...</option>
-                    <option value="applicant_management">Applicant Management</option>
-                    <option value="reports_analytics">Reports & Analytics</option>
-                    <option value="question_bank_exams">Question Bank & Exams</option>
+                    <option value="question_bank">Question Bank</option>
+                    <option value="applicants">Applicant Management</option>
+                    <option value="reports">Reports & Analytics</option>
                 </select>
             </div>
 
             <div id="capabilitiesSection" class="mb-3" style="display: none;">
                 <label class="form-label small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">Capabilities</label>
                 <div class="capabilities-container">
-                    <!-- Applicant Management Capabilities -->
-                    <div id="cap_applicant_management" class="capability-group" style="display: none;">
+                    <!-- Question Bank Capabilities -->
+                    <div id="cap_question_bank" class="capability-group" style="display: none;">
+                        <div class="form-check custom-checkbox mb-2">
+                            <input class="form-check-input capability-checkbox" type="checkbox" name="permissions[]" value="questions.view" id="perm_questions_view" onchange="handleCapabilityChange('questions.view', this.checked)">
+                            <label class="form-check-label" for="perm_questions_view">
+                                <span class="d-block fw-medium text-dark">View Questions</span>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">View question bank and exam sets</span>
+                            </label>
+                        </div>
+                        <div class="form-check custom-checkbox mb-2">
+                            <input class="form-check-input capability-checkbox" type="checkbox" name="permissions[]" value="questions.create" id="perm_questions_create" onchange="handleCapabilityChange('questions.create', this.checked)">
+                            <label class="form-check-label" for="perm_questions_create">
+                                <span class="d-block fw-medium text-dark">Add Questions</span>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Create new questions</span>
+                            </label>
+                        </div>
+                        <div class="form-check custom-checkbox mb-2">
+                            <input class="form-check-input capability-checkbox" type="checkbox" name="permissions[]" value="questions.edit" id="perm_questions_edit" onchange="handleCapabilityChange('questions.edit', this.checked)">
+                            <label class="form-check-label" for="perm_questions_edit">
+                                <span class="d-block fw-medium text-dark">Edit Questions</span>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Modify existing questions</span>
+                            </label>
+                        </div>
+                        <div class="form-check custom-checkbox mb-2">
+                            <input class="form-check-input capability-checkbox" type="checkbox" name="permissions[]" value="questions.delete" id="perm_questions_delete" onchange="handleCapabilityChange('questions.delete', this.checked)">
+                            <label class="form-check-label" for="perm_questions_delete">
+                                <span class="d-block fw-medium text-dark">Delete Questions</span>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Remove questions from the bank</span>
+                            </label>
+                        </div>
                         <div class="form-check custom-checkbox">
-                            <input class="form-check-input" type="checkbox" name="permissions[]" value="assign_applicants" id="perm_assign_applicants">
-                            <label class="form-check-label" for="perm_assign_applicants">
+                            <input class="form-check-input capability-checkbox" type="checkbox" name="permissions[]" value="questions.manage_exam_settings" id="perm_questions_manage_exam_settings" onchange="handleCapabilityChange('questions.manage_exam_settings', this.checked)">
+                            <label class="form-check-label" for="perm_questions_manage_exam_settings">
+                                <span class="d-block fw-medium text-dark">Manage Exam Settings</span>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Publish exams, toggle status, change exam settings</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Applicant Management Capabilities -->
+                    <div id="cap_applicants" class="capability-group" style="display: none;">
+                        <div class="form-check custom-checkbox mb-2">
+                            <input class="form-check-input capability-checkbox" type="checkbox" name="permissions[]" value="applicants.view" id="perm_applicants_view" onchange="handleCapabilityChange('applicants.view', this.checked)">
+                            <label class="form-check-label" for="perm_applicants_view">
+                                <span class="d-block fw-medium text-dark">View Applicants</span>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">View applicant lists and details</span>
+                            </label>
+                        </div>
+                        <div class="form-check custom-checkbox mb-2">
+                            <input class="form-check-input capability-checkbox" type="checkbox" name="permissions[]" value="applicants.assign" id="perm_applicants_assign" onchange="handleCapabilityChange('applicants.assign', this.checked)">
+                            <label class="form-check-label" for="perm_applicants_assign">
                                 <span class="d-block fw-medium text-dark">Assign Applicants</span>
-                                <span class="d-block text-muted" style="font-size: 0.75rem;">Allow assigning applicants to instructors.</span>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Assign applicants to instructors</span>
+                            </label>
+                        </div>
+                        <div class="form-check custom-checkbox">
+                            <input class="form-check-input capability-checkbox" type="checkbox" name="permissions[]" value="applicants.bulk_operations" id="perm_applicants_bulk_operations" onchange="handleCapabilityChange('applicants.bulk_operations', this.checked)">
+                            <label class="form-check-label" for="perm_applicants_bulk_operations">
+                                <span class="d-block fw-medium text-dark">Bulk Operations</span>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Import, export, and bulk actions</span>
                             </label>
                         </div>
                     </div>
 
                     <!-- Reports & Analytics Capabilities -->
-                    <div id="cap_reports_analytics" class="capability-group" style="display: none;">
-                        <div class="form-check custom-checkbox">
-                            <input class="form-check-input" type="checkbox" name="permissions[]" value="view_reports" id="perm_view_reports">
-                            <label class="form-check-label" for="perm_view_reports">
-                                <span class="d-block fw-medium text-dark">View & Generate Reports</span>
-                                <span class="d-block text-muted" style="font-size: 0.75rem;">Access to system reports and analytics.</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Question Bank & Exams Capabilities -->
-                    <div id="cap_question_bank_exams" class="capability-group" style="display: none;">
+                    <div id="cap_reports" class="capability-group" style="display: none;">
                         <div class="form-check custom-checkbox mb-2">
-                            <input class="form-check-input" type="checkbox" name="permissions[]" value="manage_questions" id="perm_manage_questions">
-                            <label class="form-check-label" for="perm_manage_questions">
-                                <span class="d-block fw-medium text-dark">Manage Question Bank</span>
-                                <span class="d-block text-muted" style="font-size: 0.75rem;">Create, edit, and delete questions.</span>
+                            <input class="form-check-input capability-checkbox" type="checkbox" name="permissions[]" value="reports.view" id="perm_reports_view" onchange="handleCapabilityChange('reports.view', this.checked)">
+                            <label class="form-check-label" for="perm_reports_view">
+                                <span class="d-block fw-medium text-dark">View Reports</span>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">View reports and analytics</span>
+                            </label>
+                        </div>
+                        <div class="form-check custom-checkbox mb-2">
+                            <input class="form-check-input capability-checkbox" type="checkbox" name="permissions[]" value="reports.generate" id="perm_reports_generate" onchange="handleCapabilityChange('reports.generate', this.checked)">
+                            <label class="form-check-label" for="perm_reports_generate">
+                                <span class="d-block fw-medium text-dark">Generate Reports</span>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Create and export reports</span>
                             </label>
                         </div>
                         <div class="form-check custom-checkbox">
-                            <input class="form-check-input" type="checkbox" name="permissions[]" value="manage_exam_settings" id="perm_manage_exam_settings">
-                            <label class="form-check-label" for="perm_manage_exam_settings">
-                                <span class="d-block fw-medium text-dark">Manage Exam Settings</span>
-                                <span class="d-block text-muted" style="font-size: 0.75rem;">Create exams and modify exam settings.</span>
+                            <input class="form-check-input capability-checkbox" type="checkbox" name="permissions[]" value="reports.manage_archive" id="perm_reports_manage_archive" onchange="handleCapabilityChange('reports.manage_archive', this.checked)">
+                            <label class="form-check-label" for="perm_reports_manage_archive">
+                                <span class="d-block fw-medium text-dark">Manage Archive</span>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Archive and restore reports</span>
                             </label>
                         </div>
                     </div>
@@ -812,17 +865,66 @@
 
         if (activeDelegations.length > 0) {
             section.style.display = 'block';
-            activeDelegations.forEach(d => {
-                const permissionName = d.permission.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                const expiry = new Date(d.expires_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+            activeDelegations.forEach((d, index) => {
+                const permissionName = d.permission.replace(/_/g, ' ').replace(/\./g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                const expiresAt = d.expires_at ? new Date(d.expires_at) : null;
+                const itemId = `delegation-item-${userId}-${index}`;
                 
                 const item = document.createElement('div');
-                item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; background: #F9FAFB; padding: 10px 12px; border-radius: 8px; border: 1px solid #E5E7EB;';
+                item.id = itemId;
+                item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; background: #F9FAFB; padding: 10px 12px; border-radius: 8px; border: 1px solid #E5E7EB; margin-bottom: 8px;';
+                
+                // Calculate time remaining
+                let timeRemainingHtml = '';
+                if (expiresAt) {
+                    const timeRemaining = expiresAt - new Date();
+                    if (timeRemaining > 0) {
+                        const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+                        const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+                        const days = Math.floor(hours / 24);
+                        const remainingHours = hours % 24;
+                        
+                        let timeText = '';
+                        if (days > 0) {
+                            timeText = `${days}d ${remainingHours}h`;
+                        } else if (hours > 0) {
+                            timeText = `${hours}h ${minutes}m`;
+                        } else {
+                            timeText = `${minutes}m`;
+                        }
+                        
+                        const isExpiringSoon = hours < 2;
+                        const bgColor = isExpiringSoon ? '#FEF3C7' : '#EFF6FF';
+                        const borderColor = isExpiringSoon ? '#FDE68A' : '#BFDBFE';
+                        const textColor = isExpiringSoon ? '#92400E' : '#1E40AF';
+                        
+                        item.style.background = bgColor;
+                        item.style.borderColor = borderColor;
+                        
+                        timeRemainingHtml = `
+                            <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+                                <svg style="width: 14px; height: 14px; color: ${textColor};" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span style="font-size: 11px; color: ${textColor}; font-weight: 500;">
+                                    Expires in: <strong id="timer-${itemId}" class="delegation-timer">${timeText}</strong>
+                                </span>
+                            </div>
+                        `;
+                        
+                        // Store expiration time for live countdown
+                        item.setAttribute('data-expires-at', expiresAt.getTime());
+                    } else {
+                        timeRemainingHtml = '<div style="font-size: 11px; color: #DC2626; margin-top: 4px; font-weight: 600;">Expired</div>';
+                        item.style.background = '#FEE2E2';
+                        item.style.borderColor = '#FECACA';
+                    }
+                }
                 
                 item.innerHTML = `
-                    <div>
+                    <div style="flex: 1;">
                         <div style="font-weight: 600; font-size: 13px; color: #374151;">${permissionName}</div>
-                        <div style="font-size: 11px; color: #6B7280;">Expires: ${expiry}</div>
+                        ${timeRemainingHtml}
                     </div>
                     <form action="/admin/users/${userId}/revoke-delegation" method="POST" style="margin: 0;">
                         <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
@@ -833,6 +935,9 @@
                 `;
                 list.appendChild(item);
             });
+            
+            // Start live countdown timers
+            startDelegationTimers();
         } else {
             section.style.display = 'none';
         }
@@ -843,6 +948,7 @@
     }
 
     function closeDelegationDrawer() {
+        stopDelegationTimers();
         document.getElementById('delegationDrawerOverlay').classList.remove('show');
         document.getElementById('delegationDrawer').classList.remove('show');
         document.body.style.overflow = '';
@@ -866,11 +972,6 @@
         
         // Uncheck all hidden checkboxes to prevent accidental submission
         document.querySelectorAll('input[name="permissions[]"]').forEach(cb => {
-            // Optional: uncheck when switching categories? 
-            // The user might want to mix and match if we allowed multiple categories, 
-            // but the UI implies one category at a time. 
-            // Let's uncheck to be safe and avoid confusion, or keep them if we want to allow accumulation.
-            // Given the prompt "when its choosen it shows checkbox", let's assume strict category switching.
             cb.checked = false; 
         });
 
@@ -882,6 +983,100 @@
             }
         } else {
             capabilitiesSection.style.display = 'none';
+        }
+    }
+
+    // Handle capability dependencies (e.g., checking edit should auto-check view)
+    function handleCapabilityChange(capability, isChecked) {
+        const dependencies = {
+            'questions.create': ['questions.view'],
+            'questions.edit': ['questions.view'],
+            'questions.delete': ['questions.view'],
+            'questions.manage_exam_settings': ['questions.view'],
+            'applicants.assign': ['applicants.view'],
+            'applicants.bulk_operations': ['applicants.view'],
+            'reports.generate': ['reports.view'],
+            'reports.manage_archive': ['reports.view'],
+        };
+
+        if (isChecked && dependencies[capability]) {
+            dependencies[capability].forEach(dep => {
+                const depCheckbox = document.getElementById('perm_' + dep.replace(/\./g, '_'));
+                if (depCheckbox) {
+                    depCheckbox.checked = true;
+                }
+            });
+        }
+    }
+
+    // Live countdown timer for delegations
+    let delegationTimerInterval = null;
+    
+    function startDelegationTimers() {
+        // Clear any existing interval
+        if (delegationTimerInterval) {
+            clearInterval(delegationTimerInterval);
+        }
+        
+        // Update timers every second
+        delegationTimerInterval = setInterval(() => {
+            const timerElements = document.querySelectorAll('.delegation-timer');
+            
+            timerElements.forEach(timerEl => {
+                const item = timerEl.closest('[data-expires-at]');
+                if (!item) return;
+                
+                const expiresAt = parseInt(item.getAttribute('data-expires-at'));
+                const now = new Date().getTime();
+                const timeRemaining = expiresAt - now;
+                
+                if (timeRemaining <= 0) {
+                    timerEl.textContent = 'Expired';
+                    timerEl.parentElement.parentElement.style.background = '#FEE2E2';
+                    timerEl.parentElement.parentElement.style.borderColor = '#FECACA';
+                    timerEl.parentElement.querySelector('svg').style.color = '#DC2626';
+                    timerEl.style.color = '#DC2626';
+                    return;
+                }
+                
+                const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+                const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+                const days = Math.floor(hours / 24);
+                const remainingHours = hours % 24;
+                
+                let timeText = '';
+                if (days > 0) {
+                    timeText = `${days}d ${remainingHours}h`;
+                } else if (hours > 0) {
+                    timeText = `${hours}h ${minutes}m`;
+                } else if (minutes > 0) {
+                    timeText = `${minutes}m ${seconds}s`;
+                } else {
+                    timeText = `${seconds}s`;
+                }
+                
+                timerEl.textContent = timeText;
+                
+                // Update styling if expiring soon (< 2 hours)
+                const isExpiringSoon = hours < 2;
+                if (isExpiringSoon) {
+                    item.style.background = '#FEF3C7';
+                    item.style.borderColor = '#FDE68A';
+                    const svg = timerEl.parentElement.querySelector('svg');
+                    const span = timerEl.parentElement.querySelector('span');
+                    if (svg) svg.style.color = '#92400E';
+                    if (span) span.style.color = '#92400E';
+                    timerEl.style.color = '#92400E';
+                }
+            });
+        }, 1000); // Update every second
+    }
+    
+    function stopDelegationTimers() {
+        if (delegationTimerInterval) {
+            clearInterval(delegationTimerInterval);
+            delegationTimerInterval = null;
         }
     }
 

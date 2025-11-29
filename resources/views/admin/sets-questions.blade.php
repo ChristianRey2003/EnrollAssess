@@ -631,7 +631,7 @@
                 }
             }
         @endphp
-        <div class="delegation-indicator {{ $isExpiringSoon ? 'expiring-soon' : '' }}" style="margin-bottom: 20px; padding: 12px 16px; background: {{ $isExpiringSoon ? '#FEF3C7' : '#EFF6FF' }}; border: 2px solid {{ $isExpiringSoon ? '#FDE68A' : '#BFDBFE' }}; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <div class="delegation-indicator {{ $isExpiringSoon ? 'expiring-soon' : '' }}" id="delegationIndicator" style="margin-bottom: 20px; padding: 12px 16px; background: {{ $isExpiringSoon ? '#FEF3C7' : '#EFF6FF' }}; border: 2px solid {{ $isExpiringSoon ? '#FDE68A' : '#BFDBFE' }}; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <svg style="width: 20px; height: 20px; color: {{ $isExpiringSoon ? '#F59E0B' : '#3B82F6' }};" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -646,7 +646,7 @@
                         @if($timeRemainingText === 'Expired')
                             <strong>Expired</strong>
                         @else
-                            Expires in: <strong>{{ $timeRemainingText }}</strong>
+                            Expires in: <strong id="delegationTimer">{{ $timeRemainingText }}</strong>
                         @endif
                     </span>
                     <span style="color: {{ $isExpiringSoon ? '#92400E' : '#60A5FA' }}; font-size: 12px;">
@@ -655,6 +655,72 @@
                 </div>
             @endif
         </div>
+        @if($effectiveExpiresAt)
+            <script>
+                // Live countdown timer for delegation
+                (function() {
+                    const expiresAt = new Date('{{ $effectiveExpiresAt->toIso8601String() }}');
+                    const timerEl = document.getElementById('delegationTimer');
+                    const indicatorEl = document.getElementById('delegationIndicator');
+                    
+                    if (!timerEl || !indicatorEl) return;
+                    
+                    function updateTimer() {
+                        const now = new Date();
+                        const timeRemaining = expiresAt - now;
+                        
+                        if (timeRemaining <= 0) {
+                            timerEl.textContent = 'Expired';
+                            indicatorEl.style.background = '#FEE2E2';
+                            indicatorEl.style.borderColor = '#FECACA';
+                            const svg = indicatorEl.querySelector('svg');
+                            const spans = indicatorEl.querySelectorAll('span');
+                            if (svg) svg.style.color = '#DC2626';
+                            spans.forEach(span => span.style.color = '#DC2626');
+                            return;
+                        }
+                        
+                        const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+                        const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+                        const days = Math.floor(hours / 24);
+                        const remainingHours = hours % 24;
+                        
+                        let timeText = '';
+                        if (days > 0) {
+                            timeText = days + 'd ' + remainingHours + 'h';
+                        } else if (hours > 0) {
+                            timeText = hours + 'h ' + minutes + 'm';
+                        } else if (minutes > 0) {
+                            timeText = minutes + 'm ' + seconds + 's';
+                        } else {
+                            timeText = seconds + 's';
+                        }
+                        
+                        timerEl.textContent = timeText;
+                        
+                        // Update styling if expiring soon (< 2 hours)
+                        const isExpiringSoon = hours < 2;
+                        if (isExpiringSoon) {
+                            indicatorEl.style.background = '#FEF3C7';
+                            indicatorEl.style.borderColor = '#FDE68A';
+                            const svg = indicatorEl.querySelector('svg');
+                            const spans = indicatorEl.querySelectorAll('span');
+                            if (svg) svg.style.color = '#F59E0B';
+                            spans.forEach(span => {
+                                if (span.textContent.includes('Expires')) {
+                                    span.style.color = '#92400E';
+                                }
+                            });
+                        }
+                    }
+                    
+                    // Update every second
+                    setInterval(updateTimer, 1000);
+                    updateTimer(); // Initial update
+                })();
+            </script>
+        @endif
     @endif
 
 <div class="content-section">
@@ -670,7 +736,7 @@
         <div class="section-actions">
             @if($currentExam)
                 <button type="button" 
-                        @if(auth()->user()->hasPermission('manage_exam_settings'))
+                        @if(auth()->user()->hasPermission('questions.manage_exam_settings'))
                             onclick="openEditSettingsDrawer()" 
                         @else
                             disabled
@@ -694,7 +760,7 @@
                     </button>
                     <div class="dropdown-menu">
                         <button type="button" 
-                                @if(auth()->user()->hasPermission('manage_exam_settings'))
+                                @if(auth()->user()->hasPermission('questions.manage_exam_settings'))
                                     onclick="showNewSemesterDrawer(); toggleDropdown('headerActionsDropdown');"
                                     class="dropdown-item"
                                 @else
@@ -713,7 +779,7 @@
                 </div>
             @else
                 <button 
-                    @if(auth()->user()->hasPermission('manage_exam_settings'))
+                    @if(auth()->user()->hasPermission('questions.manage_exam_settings'))
                         onclick="showCreateExamModal()" 
                     @else
                         disabled
@@ -745,7 +811,7 @@
                 </button>
                 @if(!$currentExam->is_active)
                     <button 
-                        @if(auth()->user()->hasPermission('manage_exam_settings'))
+                        @if(auth()->user()->hasPermission('questions.manage_exam_settings'))
                             onclick="publishExam({{ $currentExam->exam_id }})" 
                         @else
                             disabled
@@ -879,18 +945,22 @@
                 </div>
                 @if($currentExam)
                 <div class="toolbar-right">
+                    @if(auth()->user()->hasPermission('questions.create'))
                     <button type="button" onclick="showImportDrawer()" class="btn-secondary" style="padding: 8px 14px; border-radius: 6px; border: 1px solid #d1d5db; cursor: pointer; font-size: 12px; font-weight: 500; transition: var(--transition); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: white; color: #374151;">
                         <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
                         </svg>
                         Import Questions
                     </button>
-                    <button type="button" onclick="showAddQuestionModal()" class="btn-primary" style="padding: 8px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 500; transition: var(--transition); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                        </svg>
-                        Add Question
-                    </button>
+                    @endif
+                    @if(auth()->user()->hasPermission('questions.create'))
+                        <button type="button" onclick="showAddQuestionModal()" class="btn-primary" style="padding: 8px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 500; transition: var(--transition); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Add Question
+                        </button>
+                    @endif
                 </div>
                 @endif
             </div>
@@ -903,7 +973,9 @@
                 <div style="display: flex; gap: 6px;">
                     <button onclick="bulkUpdateStatus(true)" class="btn-outline" style="padding: 5px 12px; font-size: 13px;">Activate Selected</button>
                     <button onclick="bulkUpdateStatus(false)" class="btn-outline" style="padding: 5px 12px; font-size: 13px;">Deactivate Selected</button>
-                    <button onclick="bulkDelete()" class="btn-outline" style="padding: 5px 12px; font-size: 13px; color: #991b1b; border-color: #fecaca;">Delete Selected</button>
+                    @if(auth()->user()->hasPermission('questions.delete'))
+                        <button onclick="bulkDelete()" class="btn-outline" style="padding: 5px 12px; font-size: 13px; color: #991b1b; border-color: #fecaca;">Delete Selected</button>
+                    @endif
                 </div>
             </div>
             <button onclick="clearSelection()" style="background: none; border: none; color: #6b7280; cursor: pointer; font-size: 13px;">Clear</button>
@@ -936,24 +1008,30 @@
                         </div>
                     </div>
                     <div class="question-actions">
-                        <button onclick="editQuestion({{ $question->question_id }})" class="btn-icon" title="Edit">
-                            Edit
-                        </button>
-                        <button onclick="toggleQuestionStatus({{ $question->question_id }})" class="btn-icon" title="Toggle Status">
-                            {{ $question->is_active ? 'Hide' : 'Show' }}
-                        </button>
-                        <button onclick="deleteQuestion({{ $question->question_id }})" class="btn-icon danger" title="Delete">
-                            Delete
-                        </button>
+                        @if(auth()->user()->hasPermission('questions.edit'))
+                            <button onclick="editQuestion({{ $question->question_id }})" class="btn-icon" title="Edit">
+                                Edit
+                            </button>
+                            <button onclick="toggleQuestionStatus({{ $question->question_id }})" class="btn-icon" title="Toggle Status">
+                                {{ $question->is_active ? 'Hide' : 'Show' }}
+                            </button>
+                        @endif
+                        @if(auth()->user()->hasPermission('questions.delete'))
+                            <button onclick="deleteQuestion({{ $question->question_id }})" class="btn-icon danger" title="Delete">
+                                Delete
+                            </button>
+                        @endif
                     </div>
                 </div>
             @empty
                 <div class="empty-state">
                     <h4>No Questions Found</h4>
                     <p>@if(request()->hasAny(['search', 'type', 'status'])) No questions match your filters. @else Start building your question bank by adding your first question. @endif</p>
-                    <button onclick="showAddQuestionModal()" class="btn-primary">
-                        Add First Question
-                    </button>
+                    @if(auth()->user()->hasPermission('questions.create'))
+                        <button onclick="showAddQuestionModal()" class="btn-primary">
+                            Add First Question
+                        </button>
+                    @endif
                 </div>
             @endforelse
         </div>

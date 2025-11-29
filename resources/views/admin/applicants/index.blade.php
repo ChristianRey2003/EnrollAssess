@@ -376,7 +376,7 @@
                     <div class="stat-card">
                         <div class="stat-icon" aria-hidden="true"></div>
                         <div class="stat-value">{{ $stats['qualified'] ?? 0 }}</div>
-                        <div class="stat-label">Qualified (≥75%)</div>
+                        <div class="stat-label">Qualified (Overall ≥ 75)</div>
                     </div>
                 </section>
 
