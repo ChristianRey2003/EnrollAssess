@@ -232,39 +232,50 @@
 
 @push('modals')
 <!-- Credits Modal -->
-<div id="creditsModal" class="fixed inset-0 flex items-center justify-center hidden">
+<!-- Credits Modal -->
+<div id="creditsModal" class="fixed inset-0 flex items-center justify-center hidden" style="z-index: 999999;">
     <!-- Invisible Backdrop for closing -->
-    <div class="absolute inset-0 bg-black/10 backdrop-blur-[1px]" onclick="closeCreditsModal()"></div>
+    <div class="absolute inset-0 bg-white/80 backdrop-blur-sm" onclick="closeCreditsModal()"></div>
     
     <!-- Modal Content -->
-    <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-[90vw] md:max-w-md mx-4 transform transition-all duration-300 scale-95 opacity-0 border border-gray-100" id="creditsModalContent">
-        <div class="p-3 md:p-4 text-center">
-            <div class="mb-2 md:mb-3">
-                <h3 class="text-sm md:text-base font-bold text-gray-800">EnrollAssess</h3>
-                <p class="text-[10px] md:text-xs text-gray-500">Development Team</p>
+    <div class="relative z-10 w-full max-w-[85vw] md:max-w-2xl mx-auto transform transition-all duration-500 scale-95 opacity-0" id="creditsModalContent">
+        <div class="p-5 text-center">
+            <!-- Header -->
+            <div class="mb-6 md:mb-8">
+                <h3 class="text-lg md:text-xl font-light tracking-[0.2em] text-gray-800 uppercase">EnrollAssess</h3>
+                <div class="h-px w-8 bg-gray-300 mx-auto mt-3"></div>
             </div>
             
-            <div class="flex flex-col md:flex-row md:flex-nowrap justify-center gap-2 md:gap-4 mb-2 md:mb-3">
-                <div class="flex flex-col items-center px-2 md:px-3 py-1.5 md:py-2 hover:bg-gray-50 rounded-lg transition-colors">
-                    <p class="font-bold text-gray-700 text-xs md:text-sm whitespace-nowrap">Christian Rey Y.Alegre</p>
-                    <p class="text-[10px] md:text-xs text-gray-400 uppercase mt-0.5 md:mt-1">Developer</p>
+            <!-- Team Members - Horizontal on Desktop -->
+            <div class="flex flex-col md:flex-row justify-center items-center gap-6 md:gap-10 mb-6">
+                <!-- Member 1 -->
+                <div class="group flex flex-col items-center">
+                    <p class="font-medium text-gray-800 text-xs md:text-sm tracking-wide group-hover:text-maroon-600 transition-colors">Christian Rey Y. Alegre</p>
+                    <p class="text-[10px] text-gray-400 uppercase tracking-widest mt-1">Developer</p>
                 </div>
-                <div class="flex flex-col items-center px-2 md:px-3 py-1.5 md:py-2 hover:bg-gray-50 rounded-lg transition-colors">
-                    <p class="font-bold text-gray-700 text-xs md:text-sm whitespace-nowrap">Marjorie G. Bebanco</p>
-                    <p class="text-[10px] md:text-xs text-gray-400 uppercase mt-0.5 md:mt-1">UI/UX Designer</p>
+                
+                <!-- Member 2 -->
+                <div class="group flex flex-col items-center">
+                    <p class="font-medium text-gray-800 text-xs md:text-sm tracking-wide group-hover:text-maroon-600 transition-colors">Marjorie G. Bebanco</p>
+                    <p class="text-[10px] text-gray-400 uppercase tracking-widest mt-1">UI/UX Designer</p>
                 </div>
-                <div class="flex flex-col items-center px-2 md:px-3 py-1.5 md:py-2 hover:bg-gray-50 rounded-lg transition-colors">
-                    <p class="font-bold text-gray-700 text-xs md:text-sm whitespace-nowrap">Hazel A. Yray</p>
-                    <p class="text-[10px] md:text-xs text-gray-400 uppercase mt-0.5 md:mt-1">QA</p>
+                
+                <!-- Member 3 -->
+                <div class="group flex flex-col items-center">
+                    <p class="font-medium text-gray-800 text-xs md:text-sm tracking-wide group-hover:text-maroon-600 transition-colors">Hazel A. Yray</p>
+                    <p class="text-[10px] text-gray-400 uppercase tracking-widest mt-1">QA</p>
                 </div>
-                <div class="flex flex-col items-center px-2 md:px-3 py-1.5 md:py-2 hover:bg-gray-50 rounded-lg transition-colors border-t md:border-t-0 md:border-l border-gray-100 pt-2 md:pt-1.5 md:pl-4">
-                    <p class="font-bold text-gray-700 text-xs md:text-sm whitespace-nowrap">Joseph Jaymel S. Morpos</p>
-                    <p class="text-[10px] md:text-xs text-gray-400 uppercase mt-0.5 md:mt-1">Adviser</p>
+                
+                <!-- Member 4 -->
+                <div class="group flex flex-col items-center">
+                    <p class="font-medium text-gray-800 text-xs md:text-sm tracking-wide group-hover:text-maroon-600 transition-colors">Joseph Jaymel S. Morpos</p>
+                    <p class="text-[10px] text-gray-400 uppercase tracking-widest mt-1">Adviser</p>
                 </div>
             </div>
             
-            <button onclick="closeCreditsModal()" class="text-[10px] md:text-xs text-gray-500 hover:text-gray-800 font-medium transition-colors px-3 md:px-4 py-1 md:py-1.5 bg-gray-50 rounded-lg hover:bg-gray-100">
-                Close
+            <!-- Close Trigger -->
+            <button onclick="closeCreditsModal()" class="text-gray-300 hover:text-gray-600 transition-colors duration-300">
+                <i class="fas fa-times text-lg"></i>
             </button>
         </div>
     </div>
