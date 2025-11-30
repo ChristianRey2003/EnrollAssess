@@ -799,7 +799,7 @@ class ApplicantController extends BaseController
             ->get();
 
         // Build applicants query with filters
-        $query = Applicant::with(['assignedInstructor', 'accessCode']);
+        $query = Applicant::with(['assignedInstructor', 'accessCode', 'latestInterview']);
         
         // Apply school year filter
         $this->applySchoolYearFilter($query);
@@ -811,7 +811,10 @@ class ApplicantController extends BaseController
                 $q->where('first_name', 'like', "%{$search}%")
                   ->orWhere('last_name', 'like', "%{$search}%")
                   ->orWhere('email_address', 'like', "%{$search}%")
-                  ->orWhere('application_no', 'like', "%{$search}%");
+                  ->orWhere('application_no', 'like', "%{$search}%")
+                  ->orWhereHas('assignedInstructor', function($instructorQuery) use ($search) {
+                      $instructorQuery->where('full_name', 'like', "%{$search}%");
+                  });
             });
         }
 
@@ -841,6 +844,7 @@ class ApplicantController extends BaseController
             if ($request->ajax() && $request->header('Accept') && str_contains($request->header('Accept'), 'application/json')) {
             // Map applicants to include full_name and other accessors
             $applicantsData = $applicants->map(function($applicant) {
+                $latestInterview = $applicant->latestInterview;
                 return [
                     'applicant_id' => $applicant->applicant_id,
                     'application_no' => $applicant->application_no,
@@ -848,10 +852,17 @@ class ApplicantController extends BaseController
                     'full_name' => $applicant->full_name,
                     'email_address' => $applicant->email_address,
                     'status' => $applicant->status,
+                    'assigned_instructor_id' => $applicant->assigned_instructor_id,
                     'assigned_instructor' => $applicant->assignedInstructor ? [
                         'user_id' => $applicant->assignedInstructor->user_id,
                         'full_name' => $applicant->assignedInstructor->full_name,
                     ] : null,
+                    'interview_start' => $latestInterview && $latestInterview->interview_deadline_start 
+                        ? $latestInterview->interview_deadline_start->format('Y-m-d') 
+                        : null,
+                    'interview_end' => $latestInterview && $latestInterview->interview_deadline_end 
+                        ? $latestInterview->interview_deadline_end->format('Y-m-d') 
+                        : null,
                 ];
             });
             
@@ -910,15 +921,17 @@ class ApplicantController extends BaseController
         $interviewsCreated = 0;
         $emailsSent = 0;
 
-        DB::transaction(function () use ($request, &$updated, &$interviewsCreated, &$emailsSent) {
-            $instructor = User::findOrFail($request->instructor_id);
-            
+        $instructor = User::findOrFail($request->instructor_id);
+        $assignedApplicants = collect();
+        
+        DB::transaction(function () use ($request, &$updated, &$interviewsCreated, &$assignedApplicants, $instructor) {
             foreach ($request->applicant_ids as $applicantId) {
                 $applicant = Applicant::findOrFail($applicantId);
                 
                 // Update instructor assignment
                 $applicant->update(['assigned_instructor_id' => $request->instructor_id]);
                 $updated++;
+                $assignedApplicants->push($applicant->fresh(['assignedInstructor']));
 
                 // Create or update interview record
                 $interview = $applicant->latestInterview;
@@ -940,21 +953,30 @@ class ApplicantController extends BaseController
                     ]);
                     $interviewsCreated++;
                 }
-
-                // Send email notification if requested
-                if ($request->notify_email) {
-                    try {
-                        Mail::to($applicant->email_address)->send(
-                            new \App\Mail\InterviewInvitationMail($applicant, $instructor, $request->assignment_message)
-                        );
-                        $emailsSent++;
-                    } catch (\Exception $e) {
-                        // Log error but continue processing
-                        \Log::error("Failed to send email to {$applicant->email_address}: " . $e->getMessage());
-                    }
-                }
             }
         });
+
+        // Send email notification to instructor if requested
+        if ($request->notify_email && $instructor->email) {
+            try {
+                Mail::to($instructor->email)->send(
+                    new \App\Mail\InstructorAssignmentNotificationMail(
+                        $instructor,
+                        $assignedApplicants,
+                        $request->interview_start_date,
+                        $request->interview_end_date,
+                        $request->assignment_message
+                    )
+                );
+                $emailsSent = 1;
+            } catch (\Exception $e) {
+                // Log error but continue processing
+                \Log::error("Failed to send email to instructor {$instructor->email}: " . $e->getMessage());
+                $emailsSent = 0;
+            }
+        } else {
+            $emailsSent = 0;
+        }
 
         $message = "Assigned {$updated} applicants to instructor successfully.";
         if ($request->notify_email) {
@@ -1129,17 +1151,44 @@ class ApplicantController extends BaseController
             abort(403, 'Only department heads can export access codes.');
         }
 
-        // Get all applicants with access codes
-        $applicants = Applicant::with(['accessCode', 'accessCode.exam'])
-            ->whereHas('accessCode')
-            ->orderBy('last_name')
-            ->orderBy('first_name')
+        // Get all applicants with access codes, filtered by school year
+        $query = Applicant::with(['accessCode', 'accessCode.exam'])
+            ->whereHas('accessCode');
+        
+        // Apply school year filter
+        $this->applySchoolYearFilter($query);
+        
+        // Sort alphabetically by last name, then first name (case-insensitive)
+        $applicants = $query->orderByRaw('LOWER(last_name) ASC')
+            ->orderByRaw('LOWER(first_name) ASC')
             ->get();
 
         // Prepare data for PDF
         $data = $applicants->map(function ($applicant) {
+            // Format: LASTNAME, FIRSTNAME, MIDDLE INITIAL
+            $nameParts = [];
+            
+            // Add last name
+            if ($applicant->last_name) {
+                $nameParts[] = strtoupper($applicant->last_name);
+            }
+            
+            // Add first name
+            if ($applicant->first_name) {
+                $nameParts[] = $applicant->first_name;
+            }
+            
+            // Add middle initial (first letter only, uppercase)
+            if ($applicant->middle_name) {
+                $middleInitial = strtoupper(substr(trim($applicant->middle_name), 0, 1)) . '.';
+                $nameParts[] = $middleInitial;
+            }
+            
+            // Join: LASTNAME, FIRSTNAME, M.
+            $formattedName = implode(', ', $nameParts);
+            
             return [
-                'name' => $applicant->full_name,
+                'name' => $formattedName,
                 'access_code' => $applicant->accessCode ? $applicant->accessCode->code : 'N/A',
             ];
         });

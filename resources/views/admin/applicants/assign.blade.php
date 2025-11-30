@@ -708,6 +708,7 @@
                         <span id="bulkCount">0</span> selected
                     </div>
                     <button type="button" id="openAssignDrawer" class="btn-filter" disabled>Assign Selected</button>
+                    <button type="button" id="openReassignDrawer" class="btn-filter" disabled>Reassign Selected</button>
                 </div>
             </div>
 
@@ -732,7 +733,11 @@
                                     <input type="checkbox" 
                                            class="form-check-input rowChk" 
                                            value="{{ $applicant->applicant_id }}"
-                                           data-name="{{ $applicant->full_name }}">
+                                           data-name="{{ $applicant->full_name }}"
+                                           data-instructor-id="{{ $applicant->assigned_instructor_id ?? '' }}"
+                                           data-instructor-name="{{ $applicant->assignedInstructor ? $applicant->assignedInstructor->full_name : '' }}"
+                                           data-interview-start="{{ $applicant->latestInterview ? ($applicant->latestInterview->interview_deadline_start ? \Carbon\Carbon::parse($applicant->latestInterview->interview_deadline_start)->format('Y-m-d') : '') : '' }}"
+                                           data-interview-end="{{ $applicant->latestInterview ? ($applicant->latestInterview->interview_deadline_end ? \Carbon\Carbon::parse($applicant->latestInterview->interview_deadline_end)->format('Y-m-d') : '') : '' }}">
                                 </td>
                                 <td class="text-left" style="font-size: 13px; font-weight: normal;">{{ $applicant->application_no ?: $applicant->formatted_applicant_no }}</td>
                                 <td class="text-left" style="font-size: 13px; font-weight: normal;">{{ $applicant->full_name }}</td>
@@ -810,9 +815,78 @@
                     <label for="assignment_message">Assignment Message (Optional)</label>
                     <textarea id="assignment_message" class="form-control" rows="3" placeholder="Add instructions or context for the instructor"></textarea>
                 </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="notify_email" checked>
+                        <span>Send email notification to instructor</span>
+                    </label>
+                </div>
             </div>
             <div class="drawer-footer">
                 <button class="btn-primary" id="assignBtn" disabled>Assign to Instructor</button>
+            </div>
+        </aside>
+
+        <!-- Reassignment Drawer Markup -->
+        <div id="reassignDrawerOverlay" class="drawer-overlay" aria-hidden="true"></div>
+        <aside id="reassignDrawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="reassignDrawerTitle">
+            <div class="drawer-header">
+                <div class="drawer-title" id="reassignDrawerTitle">Reassign Instructor</div>
+                <button type="button" id="closeReassignDrawer" aria-label="Close" class="btn-clear" style="height:auto;padding:6px 10px;">Close</button>
+            </div>
+            <div class="drawer-body">
+                <div class="summary" style="margin-top:0;">
+                    <div><span id="reassignSelCount">0</span></div>
+                    <div class="summary-text">selected</div>
+                </div>
+                
+                <!-- Current Assignment Info -->
+                <div style="background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #92400E; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Current Assignment</div>
+                    <div style="font-size: 14px; color: #374151; margin-bottom: 4px;">
+                        <strong>Instructor:</strong> <span id="currentInstructorName">-</span>
+                    </div>
+                    <div style="font-size: 14px; color: #374151;">
+                        <strong>Interview Dates:</strong> <span id="currentInterviewDates">-</span>
+                    </div>
+                </div>
+
+                <!-- New Assignment Fields -->
+                <div style="border-top: 2px solid #E5E7EB; padding-top: 20px; margin-top: 20px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #800020; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px;">New Assignment</div>
+                    <div class="form-group">
+                        <label for="reassign_instructor_id">New Instructor *</label>
+                        <select id="reassign_instructor_id" class="form-control" required>
+                            <option value="">Select Instructor</option>
+                            @foreach($instructors as $instructor)
+                                <option value="{{ $instructor->user_id }}">
+                                    {{ $instructor->full_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="reassign_interview_start_date">Interview Start Date *</label>
+                        <input type="date" id="reassign_interview_start_date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reassign_interview_end_date">Interview End Date *</label>
+                        <input type="date" id="reassign_interview_end_date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reassignment_reason">Reassignment Reason (Optional)</label>
+                        <textarea id="reassignment_reason" class="form-control" rows="3" placeholder="Explain why you are reassigning these applicants"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="reassign_notify_email" checked>
+                            <span>Send email notification to instructor</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="drawer-footer">
+                <button class="btn-primary" id="reassignBtn" disabled>Reassign to Instructor</button>
             </div>
         </aside>
     </div>
@@ -822,6 +896,7 @@
 @push('scripts')
 <script>
     const selected = new Set();
+    const selectedApplicants = new Map(); // Store applicant data: id => {name, instructor, instructorId, interviewDates}
     const selCount = document.getElementById('selCount');
     const bulkCount = document.getElementById('bulkCount');
     const assignBtn = document.getElementById('assignBtn');
@@ -829,13 +904,21 @@
     const closeDrawerBtn = document.getElementById('closeAssignDrawer');
     const drawer = document.getElementById('assignDrawer');
     const overlay = document.getElementById('drawerOverlay');
+    
+    // Reassignment drawer elements
+    const openReassignDrawerBtn = document.getElementById('openReassignDrawer');
+    const closeReassignDrawerBtn = document.getElementById('closeReassignDrawer');
+    const reassignDrawer = document.getElementById('reassignDrawer');
+    const reassignDrawerOverlay = document.getElementById('reassignDrawerOverlay');
+    const reassignBtn = document.getElementById('reassignBtn');
+    const reassignSelCount = document.getElementById('reassignSelCount');
 
     // Select All functionality
     document.getElementById('selectAll')?.addEventListener('change', function(e) {
         const isChecked = e.target.checked;
         document.querySelectorAll('.rowChk').forEach(checkbox => {
             checkbox.checked = isChecked;
-            toggleSelection(checkbox.value, isChecked);
+            toggleSelection(checkbox.value, isChecked, checkbox);
         });
         refreshUI();
     });
@@ -843,7 +926,7 @@
     // Individual checkbox functionality
     document.querySelectorAll('.rowChk').forEach(checkbox => {
         checkbox.addEventListener('change', function(e) {
-            toggleSelection(e.target.value, e.target.checked);
+            toggleSelection(e.target.value, e.target.checked, checkbox);
             refreshUI();
             
             // Update select all checkbox
@@ -853,11 +936,22 @@
         });
     });
 
-    function toggleSelection(id, isSelected) {
+    function toggleSelection(id, isSelected, checkbox) {
         if (isSelected) {
             selected.add(id);
+            // Store applicant data
+            if (checkbox) {
+                selectedApplicants.set(id, {
+                    name: checkbox.getAttribute('data-name') || '',
+                    instructorId: checkbox.getAttribute('data-instructor-id') || '',
+                    instructorName: checkbox.getAttribute('data-instructor-name') || '',
+                    interviewStart: checkbox.getAttribute('data-interview-start') || '',
+                    interviewEnd: checkbox.getAttribute('data-interview-end') || ''
+                });
+            }
         } else {
             selected.delete(id);
+            selectedApplicants.delete(id);
         }
     }
 
@@ -867,6 +961,23 @@
         if (bulkCount) bulkCount.textContent = count;
         if (assignBtn) assignBtn.disabled = count === 0;
         if (openDrawerBtn) openDrawerBtn.disabled = count === 0;
+        
+        // Check if all selected applicants are assigned
+        let allAssigned = count > 0;
+        if (count > 0) {
+            for (let id of selected) {
+                const applicant = selectedApplicants.get(id);
+                if (!applicant || !applicant.instructorId) {
+                    allAssigned = false;
+                    break;
+                }
+            }
+        }
+        
+        // Enable/disable reassign button
+        if (openReassignDrawerBtn) {
+            openReassignDrawerBtn.disabled = !allAssigned;
+        }
     }
 
     // Drawer controls
@@ -887,6 +998,63 @@
     overlay?.addEventListener('click', closeDrawer);
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') closeDrawer();
+    });
+
+    // Reassignment drawer controls
+    function openReassignDrawer() {
+        if (selected.size === 0) return;
+        
+        // Get current assignment info from selected applicants
+        const applicants = Array.from(selected).map(id => selectedApplicants.get(id));
+        const instructors = [...new Set(applicants.map(a => a.instructorName).filter(Boolean))];
+        const interviewStarts = [...new Set(applicants.map(a => a.interviewStart).filter(Boolean))];
+        const interviewEnds = [...new Set(applicants.map(a => a.interviewEnd).filter(Boolean))];
+        
+        // Display current assignment info
+        const currentInstructorNameEl = document.getElementById('currentInstructorName');
+        const currentInterviewDatesEl = document.getElementById('currentInterviewDates');
+        
+        if (instructors.length === 1) {
+            currentInstructorNameEl.textContent = instructors[0];
+        } else if (instructors.length > 1) {
+            currentInstructorNameEl.textContent = `${instructors.length} different instructors`;
+        } else {
+            currentInstructorNameEl.textContent = 'Not assigned';
+        }
+        
+        if (interviewStarts.length === 1 && interviewEnds.length === 1) {
+            const start = new Date(interviewStarts[0]);
+            const end = new Date(interviewEnds[0]);
+            currentInterviewDatesEl.textContent = `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
+        } else if (interviewStarts.length > 0 || interviewEnds.length > 0) {
+            currentInterviewDatesEl.textContent = 'Various dates';
+        } else {
+            currentInterviewDatesEl.textContent = 'Not set';
+        }
+        
+        // Update count
+        if (reassignSelCount) reassignSelCount.textContent = selected.size;
+        
+        // Open drawer
+        reassignDrawer?.classList.add('open');
+        reassignDrawerOverlay?.classList.add('open');
+        
+        // Focus first field
+        setTimeout(() => document.getElementById('reassign_instructor_id')?.focus(), 50);
+    }
+
+    function closeReassignDrawer() {
+        reassignDrawer?.classList.remove('open');
+        reassignDrawerOverlay?.classList.remove('open');
+    }
+
+    openReassignDrawerBtn?.addEventListener('click', openReassignDrawer);
+    closeReassignDrawerBtn?.addEventListener('click', closeReassignDrawer);
+    reassignDrawerOverlay?.addEventListener('click', closeReassignDrawer);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && reassignDrawer?.classList.contains('open')) {
+            closeReassignDrawer();
+        }
     });
 
     // Assign button functionality
@@ -927,7 +1095,7 @@
             instructor_id: instructorId,
             interview_start_date: startDate,
             interview_end_date: endDate,
-            notify_email: false,
+            notify_email: document.getElementById('notify_email').checked,
             assignment_message: document.getElementById('assignment_message').value || null
         };
 
@@ -958,6 +1126,95 @@
             assignBtn.textContent = 'Assign to Instructor';
         }
     });
+
+    // Reassign button functionality
+    reassignBtn?.addEventListener('click', async function() {
+        const instructorId = parseInt(document.getElementById('reassign_instructor_id').value, 10);
+        const startDate = document.getElementById('reassign_interview_start_date').value;
+        const endDate = document.getElementById('reassign_interview_end_date').value;
+        
+        if (!instructorId) {
+            alert('Please select a new instructor.');
+            return;
+        }
+
+        if (!startDate || !endDate) {
+            alert('Please select both interview start and end dates.');
+            return;
+        }
+
+        if (new Date(endDate) < new Date(startDate)) {
+            alert('Interview end date must be after or equal to start date.');
+            return;
+        }
+
+        if (selected.size === 0) {
+            alert('Please select at least one applicant.');
+            return;
+        }
+
+        if (!confirm(`Reassign ${selected.size} applicant(s) to the selected instructor?`)) {
+            return;
+        }
+
+        reassignBtn.disabled = true;
+        reassignBtn.textContent = 'Reassigning...';
+
+        const payload = {
+            applicant_ids: Array.from(selected),
+            instructor_id: instructorId,
+            interview_start_date: startDate,
+            interview_end_date: endDate,
+            notify_email: document.getElementById('reassign_notify_email').checked,
+            assignment_message: document.getElementById('reassignment_reason').value || null
+        };
+
+        try {
+            const response = await fetch('{{ route("admin.applicants.bulk.assign-instructors") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert(data.message || 'Applicants reassigned successfully!');
+                location.reload();
+            } else {
+                alert(data.message || 'Failed to reassign applicants.');
+                reassignBtn.disabled = false;
+                reassignBtn.textContent = 'Reassign to Instructor';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while reassigning applicants.');
+            reassignBtn.disabled = false;
+            reassignBtn.textContent = 'Reassign to Instructor';
+        }
+    });
+
+    // Enable/disable reassign button based on form validity
+    const reassignInstructorSelect = document.getElementById('reassign_instructor_id');
+    const reassignStartDate = document.getElementById('reassign_interview_start_date');
+    const reassignEndDate = document.getElementById('reassign_interview_end_date');
+    
+    function validateReassignForm() {
+        const isValid = reassignInstructorSelect?.value && 
+                       reassignStartDate?.value && 
+                       reassignEndDate?.value && 
+                       selected.size > 0;
+        if (reassignBtn) {
+            reassignBtn.disabled = !isValid;
+        }
+    }
+    
+    reassignInstructorSelect?.addEventListener('change', validateReassignForm);
+    reassignStartDate?.addEventListener('change', validateReassignForm);
+    reassignEndDate?.addEventListener('change', validateReassignForm);
 
     // Function to hide pages 6 and 7 from pagination
     function hidePages6And7() {
@@ -1079,10 +1336,13 @@
                             const statusClass = (applicant.status || '').replace(/-/g, '');
                             const statusText = (applicant.status || '').split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
                             const instructorName = applicant.assigned_instructor ? applicant.assigned_instructor.full_name : null;
+                            const instructorId = applicant.assigned_instructor_id || '';
+                            const interviewStart = applicant.interview_start || '';
+                            const interviewEnd = applicant.interview_end || '';
                             
                             html += `<tr>
                                 <td class="text-center" style="font-size: 13px; font-weight: normal;">
-                                    <input type="checkbox" class="form-check-input rowChk" value="${applicant.applicant_id}" data-name="${applicant.full_name || ''}">
+                                    <input type="checkbox" class="form-check-input rowChk" value="${applicant.applicant_id}" data-name="${applicant.full_name || ''}" data-instructor-id="${instructorId}" data-instructor-name="${instructorName || ''}" data-interview-start="${interviewStart}" data-interview-end="${interviewEnd}">
                                 </td>
                                 <td class="text-left" style="font-size: 13px; font-weight: normal;">${applicant.application_no || applicant.formatted_applicant_no || 'N/A'}</td>
                                 <td class="text-left" style="font-size: 13px; font-weight: normal;">${applicant.full_name || ''}</td>
@@ -1104,7 +1364,7 @@
                     // Reattach checkbox event listeners after AJAX update
                     document.querySelectorAll('.rowChk').forEach(checkbox => {
                         checkbox.addEventListener('change', function(e) {
-                            toggleSelection(e.target.value, e.target.checked);
+                            toggleSelection(e.target.value, e.target.checked, checkbox);
                             refreshUI();
                             
                             // Update select all checkbox

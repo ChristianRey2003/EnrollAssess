@@ -35,6 +35,14 @@ class SchoolYear extends Model
     }
 
     /**
+     * Get the exam for this school year
+     */
+    public function exam()
+    {
+        return $this->hasOne(Exam::class, 'school_year_id', 'school_year_id');
+    }
+
+    /**
      * Scope to get active school years
      */
     public function scopeActive($query)

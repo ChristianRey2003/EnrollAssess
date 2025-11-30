@@ -127,12 +127,15 @@
 
     .applicants-table-section .table-responsive {
         margin-bottom: 0;
-        overflow: visible;
+        overflow-x: auto;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch;
     }
     
     /* Allow tooltips to overflow table cells */
     .table tbody td {
         overflow: visible !important;
+        position: relative;
     }
     
     .table tbody tr {

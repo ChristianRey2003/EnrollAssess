@@ -743,7 +743,7 @@
                             title="You do not have permission to manage exam settings"
                             style="opacity: 0.6; cursor: not-allowed; display: inline-flex; align-items: center; gap: 6px;"
                         @endif
-                        class="btn-secondary" 
+                        class="btn-primary" 
                         style="display: inline-flex; align-items: center; gap: 6px;">
                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
@@ -751,32 +751,6 @@
                     </svg>
                     Exam Settings
                 </button>
-                <div class="actions-dropdown" id="headerActionsDropdown">
-                    <button type="button" class="dropdown-toggle" onclick="toggleDropdown('headerActionsDropdown')">
-                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
-                        </svg>
-                        Actions
-                    </button>
-                    <div class="dropdown-menu">
-                        <button type="button" 
-                                @if(auth()->user()->hasPermission('questions.manage_exam_settings'))
-                                    onclick="showNewSemesterDrawer(); toggleDropdown('headerActionsDropdown');"
-                                    class="dropdown-item"
-                                @else
-                                    class="dropdown-item"
-                                    disabled
-                                    style="opacity: 0.6; cursor: not-allowed;"
-                                    title="You do not have permission to create question banks"
-                                @endif
-                                >
-                            <svg width="16" height="16" style="display: inline-block; margin-right: 8px; vertical-align: middle;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            Add Question Bank
-                        </button>
-                    </div>
-                </div>
             @else
                 <button 
                     @if(auth()->user()->hasPermission('questions.manage_exam_settings'))
@@ -1184,77 +1158,6 @@
         <div class="drawer-footer">
             <button class="btn-secondary" onclick="closeSettingsDrawer()">Cancel</button>
             <button class="btn-primary" onclick="saveSettings()" id="saveSettingsBtn">Save Settings</button>
-        </div>
-    </div>
-</div>
-
-<!-- New Semester Drawer (Add Question Bank) -->
-<div id="newSemesterDrawer" class="drawer-overlay">
-    <div class="drawer-content">
-        <div class="drawer-header">
-            <h3 id="newSemesterDrawerTitle">Add Question Bank</h3>
-            <button class="drawer-close" onclick="closeNewSemesterDrawer()">×</button>
-        </div>
-        <div class="drawer-body">
-            <form id="newSemesterForm">
-                @csrf
-                
-                <div class="form-group">
-                    <label class="form-label">
-                        Exam Title <span style="color: #ef4444;">*</span>
-                    </label>
-                    <input type="text" 
-                           class="form-control" 
-                           id="newSemester_title" 
-                           name="title" 
-                           placeholder="e.g., EnrollAssess - First Semester 2025" 
-                           required>
-                    <span class="error-message" id="newSemester_error_title"></span>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">
-                        Description
-                    </label>
-                    <textarea class="form-control" 
-                              id="newSemester_description" 
-                              name="description" 
-                              rows="3" 
-                              placeholder="Brief description of this exam..."></textarea>
-                    <span class="error-message" id="newSemester_error_description"></span>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">
-                        Duration (minutes) <span style="color: #ef4444;">*</span>
-                    </label>
-                    <input type="number" 
-                           class="form-control" 
-                           id="newSemester_duration_minutes" 
-                           name="duration_minutes" 
-                           min="5" 
-                           max="480" 
-                           value="60" 
-                           required>
-                    <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
-                        <button type="button" onclick="document.getElementById('newSemester_duration_minutes').value=30" style="padding: 4px 12px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; cursor: pointer;">30 min</button>
-                        <button type="button" onclick="document.getElementById('newSemester_duration_minutes').value=60" style="padding: 4px 12px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; cursor: pointer;">1 hour</button>
-                        <button type="button" onclick="document.getElementById('newSemester_duration_minutes').value=90" style="padding: 4px 12px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; cursor: pointer;">1.5 hours</button>
-                        <button type="button" onclick="document.getElementById('newSemester_duration_minutes').value=120" style="padding: 4px 12px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; cursor: pointer;">2 hours</button>
-                    </div>
-                    <span class="error-message" id="newSemester_error_duration_minutes"></span>
-                </div>
-
-                <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 4px; padding: 12px; margin-top: 16px;">
-                    <p style="margin: 0; font-size: 13px; color: #92400e; line-height: 1.5;">
-                        <strong style="color: #78350f;">Important:</strong> Creating a new exam will archive the current active exam. Only one exam can be active at a time (per semester). The new exam starts as a draft - publish it when ready.
-                    </p>
-                </div>
-            </form>
-        </div>
-        <div class="drawer-footer">
-            <button class="btn-secondary" onclick="closeNewSemesterDrawer()">Cancel</button>
-            <button class="btn-primary" onclick="saveNewSemester()" id="saveNewSemesterBtn">Create Exam</button>
         </div>
     </div>
 </div>
@@ -1846,89 +1749,6 @@
         }
     }
 
-    // Show new semester drawer
-    function showNewSemesterDrawer() {
-        document.getElementById('newSemesterDrawerTitle').textContent = 'Add Question Bank';
-        document.getElementById('newSemesterForm').reset();
-        document.getElementById('newSemesterDrawer').classList.add('active');
-        clearNewSemesterErrors();
-    }
-
-    // Close new semester drawer
-    function closeNewSemesterDrawer() {
-        document.getElementById('newSemesterDrawer').classList.remove('active');
-        clearNewSemesterErrors();
-    }
-
-    // Clear new semester form errors
-    function clearNewSemesterErrors() {
-        document.querySelectorAll('#newSemesterForm .error-message').forEach(el => el.textContent = '');
-        document.querySelectorAll('#newSemesterForm .form-control.error').forEach(el => el.classList.remove('error'));
-    }
-
-    // Show new semester field error
-    function showNewSemesterFieldError(fieldName, message) {
-        const errorEl = document.getElementById('newSemester_error_' + fieldName);
-        const inputEl = document.getElementById('newSemester_' + fieldName);
-        
-        if (errorEl) {
-            errorEl.textContent = message;
-        }
-        if (inputEl) {
-            inputEl.classList.add('error');
-        }
-    }
-
-    // Save new semester (create new exam)
-    function saveNewSemester() {
-        const form = document.getElementById('newSemesterForm');
-        const formData = new FormData(form);
-        const submitBtn = document.getElementById('saveNewSemesterBtn');
-        
-        // Disable button and show loading state
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Creating...';
-        
-        clearNewSemesterErrors();
-        
-        fetch('/admin/exams', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json',
-            },
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Close drawer and reload page to show new exam
-                closeNewSemesterDrawer();
-                window.location.reload();
-            } else {
-                // Show validation errors
-                if (data.errors) {
-                    Object.keys(data.errors).forEach(field => {
-                        showNewSemesterFieldError(field, data.errors[field][0]);
-                    });
-                } else if (data.message) {
-                    alert(data.message);
-                }
-                
-                // Re-enable button
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Create Exam';
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Failed to create exam. Please try again.');
-            
-            // Re-enable button
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Create Exam';
-        });
-    }
 
     // Show create exam modal
     function showCreateExamModal() {
@@ -2310,8 +2130,6 @@
                 closeImportDrawer();
             } else if (event.target.id === 'settingsDrawer') {
                 closeSettingsDrawer();
-            } else if (event.target.id === 'newSemesterDrawer') {
-                closeNewSemesterDrawer();
             }
         }
     });
@@ -2320,7 +2138,6 @@
         if (event.key === 'Escape') {
             closeQuestionDrawer();
             closeSettingsDrawer();
-            closeNewSemesterDrawer();
             closeExamModal();
         }
     });

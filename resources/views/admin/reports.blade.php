@@ -527,7 +527,7 @@
                                 <div class="toolbar-right" style="display: flex; align-items: center; gap: 10px;">
                                     <button type="button" onclick="openEVSUDrawer()" class="btn-primary-export" style="height: 40px; padding: 8px 16px; font-size: 13px;">EVSU Results</button>
                                     <button type="button" onclick="openQualifiersDrawer()" class="btn-primary-export" style="height: 40px; padding: 8px 16px; font-size: 13px;">Qualifiers List</button>
-                                    <button type="button" onclick="openSignatureSettingsDrawer()" class="btn-secondary" style="height: 40px; padding: 8px 16px; font-size: 13px; background: #6b7280; color: white; display: flex; align-items: center; justify-content: center;">Settings</button>
+                                    <button type="button" onclick="openSignatureSettingsDrawer()" class="btn-primary-export" style="height: 40px; padding: 8px 16px; font-size: 13px; display: flex; align-items: center; justify-content: center;">Settings</button>
                                 </div>
                             </div>
 

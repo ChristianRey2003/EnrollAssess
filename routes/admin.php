@@ -146,9 +146,7 @@ Route::prefix('sets-questions')->name('sets-questions.')->middleware(['role:depa
     
     // Exam settings management requires questions.manage_exam_settings
     Route::middleware('capability:questions.manage_exam_settings')->group(function () {
-        Route::post('/new-semester', [SetsQuestionsController::class, 'newSemester'])->name('new-semester');
         Route::post('/{id}/publish', [SetsQuestionsController::class, 'publishExam'])->name('publish-exam');
-        Route::post('/archive-old', [SetsQuestionsController::class, 'archiveOldExams'])->name('archive-old');
         Route::post('/bulk/update-status', [SetsQuestionsController::class, 'bulkUpdateStatus'])->name('bulk-update-status');
         Route::post('/bulk/delete', [SetsQuestionsController::class, 'bulkDelete'])->name('bulk-delete');
         Route::post('/bulk/duplicate', [SetsQuestionsController::class, 'bulkDuplicate'])->name('bulk-duplicate');
@@ -269,8 +267,6 @@ Route::middleware(['role:department-head,administrator'])->prefix('settings')->n
     Route::put('/', [\App\Http\Controllers\SettingsController::class, 'update'])->name('update');
     Route::post('/test-email', [\App\Http\Controllers\SettingsController::class, 'testEmail'])->name('test-email');
     Route::post('/reset', [\App\Http\Controllers\SettingsController::class, 'reset'])->name('reset');
-    Route::get('/archived-questions', [\App\Http\Controllers\SettingsController::class, 'archivedQuestions'])->middleware('capability:questions.view')->name('archived-questions');
-    Route::post('/restore-archived-questions', [\App\Http\Controllers\SettingsController::class, 'restoreArchivedQuestions'])->middleware('capability:questions.edit')->name('restore-archived-questions');
     
     // School Year Management Routes
     Route::prefix('school-years')->name('school-years.')->group(function () {

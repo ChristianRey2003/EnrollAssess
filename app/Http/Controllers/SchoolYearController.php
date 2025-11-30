@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\SchoolYear;
+use App\Models\Exam;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use App\Services\Dashboard\BasicInfoAnalyticsService;
 use Carbon\Carbon;
 
@@ -84,17 +86,29 @@ class SchoolYearController extends Controller
         ]);
 
         try {
-            $schoolYear = SchoolYear::create([
-                'name' => $request->name,
-                'start_date' => Carbon::parse($request->start_date),
-                'end_date' => Carbon::parse($request->end_date),
-                'is_current' => false,
-                'is_active' => true,
-            ]);
+            DB::transaction(function () use ($request, &$schoolYear) {
+                // Create the school year
+                $schoolYear = SchoolYear::create([
+                    'name' => $request->name,
+                    'start_date' => Carbon::parse($request->start_date),
+                    'end_date' => Carbon::parse($request->end_date),
+                    'is_current' => false,
+                    'is_active' => true,
+                ]);
+
+                // Automatically create an exam for this school year
+                Exam::create([
+                    'school_year_id' => $schoolYear->school_year_id,
+                    'title' => "EnrollAssess - {$schoolYear->name}",
+                    'description' => "Entrance examination for {$schoolYear->name}",
+                    'duration_minutes' => 90,
+                    'is_active' => false, // Start as draft
+                ]);
+            });
 
             return response()->json([
                 'success' => true,
-                'message' => "School year '{$schoolYear->name}' created successfully.",
+                'message' => "School year '{$schoolYear->name}' created successfully. An exam has been automatically created for this school year.",
                 'schoolYear' => [
                     'school_year_id' => $schoolYear->school_year_id,
                     'name' => $schoolYear->name,
@@ -132,14 +146,14 @@ class SchoolYearController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "School year '{$schoolYearModel->name}' updated successfully.",
+                'message' => "School year '{$schoolYear->name}' updated successfully.",
                 'schoolYear' => [
-                    'school_year_id' => $schoolYearModel->school_year_id,
-                    'name' => $schoolYearModel->name,
-                    'start_date' => $schoolYearModel->start_date->format('Y-m-d'),
-                    'end_date' => $schoolYearModel->end_date->format('Y-m-d'),
-                    'is_current' => $schoolYearModel->is_current,
-                    'is_active' => $schoolYearModel->is_active,
+                    'school_year_id' => $schoolYear->school_year_id,
+                    'name' => $schoolYear->name,
+                    'start_date' => $schoolYear->start_date->format('Y-m-d'),
+                    'end_date' => $schoolYear->end_date->format('Y-m-d'),
+                    'is_current' => $schoolYear->is_current,
+                    'is_active' => $schoolYear->is_active,
                 ],
             ]);
         } catch (\Exception $e) {

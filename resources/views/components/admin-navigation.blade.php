@@ -222,4 +222,93 @@
             </div>
         @endif
     </div>
+
+    <div class="sidebar-footer" style="border-top: none; padding-top: 0; padding-bottom: 10px;">
+        <button onclick="openCreditsModal()" class="logout-link w-full flex justify-center items-center" aria-label="View Credits">
+            <span class="nav-icon" style="margin-right: 0;"><i class="fas fa-info-circle"></i></span>
+        </button>
+    </div>
 </nav>
+
+@push('modals')
+<!-- Credits Modal -->
+<div id="creditsModal" class="fixed inset-0 flex items-center justify-center hidden">
+    <!-- Invisible Backdrop for closing -->
+    <div class="absolute inset-0 bg-black/10 backdrop-blur-[1px]" onclick="closeCreditsModal()"></div>
+    
+    <!-- Modal Content -->
+    <div class="relative bg-white rounded-xl shadow-2xl w-auto max-w-[90vw] md:max-w-none mx-4 transform transition-all duration-300 scale-95 opacity-0 border border-gray-100" id="creditsModalContent" style="margin: auto;">
+        <div class="p-3 md:p-4 text-center">
+            <div class="mb-2 md:mb-3">
+                <h3 class="text-sm md:text-base font-bold text-gray-800">EnrollAssess</h3>
+                <p class="text-[10px] md:text-xs text-gray-500">Development Team</p>
+            </div>
+            
+            <div class="flex flex-col md:flex-row md:flex-nowrap justify-center gap-2 md:gap-4 mb-2 md:mb-3">
+                <div class="flex flex-col items-center px-2 md:px-3 py-1.5 md:py-2 hover:bg-gray-50 rounded-lg transition-colors">
+                    <p class="font-bold text-gray-700 text-xs md:text-sm whitespace-nowrap">Christian Rey Y.Alegre</p>
+                    <p class="text-[10px] md:text-xs text-gray-400 uppercase mt-0.5 md:mt-1">Developer</p>
+                </div>
+                <div class="flex flex-col items-center px-2 md:px-3 py-1.5 md:py-2 hover:bg-gray-50 rounded-lg transition-colors">
+                    <p class="font-bold text-gray-700 text-xs md:text-sm whitespace-nowrap">Marjorie G. Bebanco</p>
+                    <p class="text-[10px] md:text-xs text-gray-400 uppercase mt-0.5 md:mt-1">UI/UX Designer</p>
+                </div>
+                <div class="flex flex-col items-center px-2 md:px-3 py-1.5 md:py-2 hover:bg-gray-50 rounded-lg transition-colors">
+                    <p class="font-bold text-gray-700 text-xs md:text-sm whitespace-nowrap">Hazel A. Yray</p>
+                    <p class="text-[10px] md:text-xs text-gray-400 uppercase mt-0.5 md:mt-1">QA</p>
+                </div>
+                <div class="flex flex-col items-center px-2 md:px-3 py-1.5 md:py-2 hover:bg-gray-50 rounded-lg transition-colors border-t md:border-t-0 md:border-l border-gray-100 pt-2 md:pt-1.5 md:pl-4">
+                    <p class="font-bold text-gray-700 text-xs md:text-sm whitespace-nowrap">Joseph Jaymel S. Morpos</p>
+                    <p class="text-[10px] md:text-xs text-gray-400 uppercase mt-0.5 md:mt-1">Adviser</p>
+                </div>
+            </div>
+            
+            <button onclick="closeCreditsModal()" class="text-[10px] md:text-xs text-gray-500 hover:text-gray-800 font-medium transition-colors px-3 md:px-4 py-1 md:py-1.5 bg-gray-50 rounded-lg hover:bg-gray-100">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openCreditsModal() {
+        const modal = document.getElementById('creditsModal');
+        const content = document.getElementById('creditsModalContent');
+        
+        // Force move to body if not already there to avoid sidebar constraints
+        if (modal && modal.parentElement !== document.body) {
+            document.body.appendChild(modal);
+        }
+        
+        if (modal && content) {
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex'; // Ensure flex is applied
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+    }
+
+    function closeCreditsModal() {
+        const modal = document.getElementById('creditsModal');
+        const content = document.getElementById('creditsModalContent');
+        if (modal && content) {
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+            }, 300);
+        }
+    }
+    
+    // Move to body on load as well
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('creditsModal');
+        if (modal && modal.parentElement !== document.body) {
+            document.body.appendChild(modal);
+        }
+    });
+</script>
+@endpush

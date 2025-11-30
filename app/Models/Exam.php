@@ -12,6 +12,7 @@ class Exam extends Model
     protected $primaryKey = 'exam_id'; // As per ERD
 
     protected $fillable = [
+        'school_year_id',
         'title',
         'duration_minutes',
         'total_items',
@@ -32,6 +33,14 @@ class Exam extends Model
     /**
      * Relationships
      */
+
+    /**
+     * Get the school year for this exam.
+     */
+    public function schoolYear()
+    {
+        return $this->belongsTo(SchoolYear::class, 'school_year_id', 'school_year_id');
+    }
 
     /**
      * Get all questions in the question bank for this exam.
@@ -86,6 +95,17 @@ class Exam extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    /**
+     * Scope to filter by school year
+     */
+    public function scopeForSchoolYear($query, $schoolYearId)
+    {
+        if ($schoolYearId) {
+            return $query->where('school_year_id', $schoolYearId);
+        }
+        return $query;
     }
 
     /**

@@ -17,8 +17,19 @@ class SetsQuestionsController extends Controller
      */
     public function index(Request $request)
     {
-        // Single active exam mode: only one exam can be active at a time
-        $currentExam = Exam::where('is_active', true)->first() ?? Exam::latest()->first();
+        // Get current school year from session
+        $schoolYearId = session('school_year_id');
+        
+        // Get exam for current school year (only one exam per school year)
+        $currentExam = null;
+        if ($schoolYearId) {
+            $currentExam = Exam::where('school_year_id', $schoolYearId)->first();
+        }
+        
+        // Fallback: if no exam for current school year, get the latest active exam
+        if (!$currentExam) {
+            $currentExam = Exam::where('is_active', true)->first() ?? Exam::latest()->first();
+        }
         
         $questions = collect();
         
@@ -98,62 +109,8 @@ class SetsQuestionsController extends Controller
     }
     
     /**
-     * Create a new semester exam (archives current active exam).
-     * Only one exam can be active at a time - the new exam starts as draft.
-     */
-    public function newSemester(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'semester_option' => 'required|in:duplicate,fresh'
-        ]);
-        
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed: ' . $validator->errors()->first()
-            ]);
-        }
-        
-        try {
-            DB::transaction(function () use ($request) {
-                // Archive current active exam (only one can be active)
-                $currentExam = Exam::where('is_active', true)->first();
-                if ($currentExam) {
-                    $currentExam->update(['is_active' => false]);
-                }
-                
-                // Create new exam as draft
-                $newExam = Exam::create([
-                    'title' => $request->title,
-                    'description' => $request->description,
-                    'duration_minutes' => $currentExam->duration_minutes ?? 90,
-                    'is_active' => false, // Start as draft, publish when ready
-                ]);
-                
-                if ($request->semester_option === 'duplicate' && $currentExam) {
-                    // Duplicate question bank from previous semester
-                    $this->duplicateExamContent($currentExam, $newExam);
-                }
-            });
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'New semester exam created successfully! Review questions and publish when ready.'
-            ]);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create new semester: ' . $e->getMessage()
-            ]);
-        }
-    }
-    
-    /**
-     * Publish the current exam (make it the single active exam).
-     * Deactivates all other exams - only one exam can be active at a time.
+     * Publish the current exam (make it active for the school year).
+     * Only one exam per school year can be active.
      */
     public function publishExam($id)
     {
@@ -169,9 +126,13 @@ class SetsQuestionsController extends Controller
                 ]);
             }
             
-            // Enforce single active exam: deactivate all others
+            // Deactivate other exams in the same school year, then activate this one
             DB::transaction(function () use ($exam) {
-                Exam::where('exam_id', '!=', $exam->exam_id)->update(['is_active' => false]);
+                if ($exam->school_year_id) {
+                    Exam::where('school_year_id', $exam->school_year_id)
+                        ->where('exam_id', '!=', $exam->exam_id)
+                        ->update(['is_active' => false]);
+                }
                 $exam->update(['is_active' => true]);
             });
             
@@ -184,52 +145,6 @@ class SetsQuestionsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to publish exam: ' . $e->getMessage()
-            ]);
-        }
-    }
-    
-    /**
-     * Archive old exams and their data.
-     */
-    public function archiveOldExams()
-    {
-        try {
-            $currentExam = Exam::where('is_active', true)->first();
-            $oldExams = Exam::where('is_active', false)
-                ->where('created_at', '<', now()->subMonths(6))
-                ->get();
-            
-            if ($oldExams->isEmpty()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'No old exams to archive.',
-                    'archived_count' => 0
-                ]);
-            }
-            
-            DB::transaction(function () use ($oldExams) {
-                foreach ($oldExams as $exam) {
-                    // Mark exam as archived (you could add an 'archived' column)
-                    $exam->update([
-                        'description' => '[ARCHIVED] ' . $exam->description,
-                        'is_active' => false
-                    ]);
-                    
-                    // Optionally, you could move data to archive tables
-                    // or just keep them marked as archived
-                }
-            });
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Archived ' . $oldExams->count() . ' old exams successfully!',
-                'archived_count' => $oldExams->count()
-            ]);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to archive old exams: ' . $e->getMessage()
             ]);
         }
     }
@@ -610,12 +525,23 @@ class SetsQuestionsController extends Controller
         }
         
         try {
-            $currentExam = Exam::where('is_active', true)->first();
+            // Get exam for current school year
+            $schoolYearId = session('school_year_id');
+            $currentExam = null;
+            
+            if ($schoolYearId) {
+                $currentExam = Exam::where('school_year_id', $schoolYearId)->first();
+            }
+            
+            // Fallback to active exam if no school year exam found
+            if (!$currentExam) {
+                $currentExam = Exam::where('is_active', true)->first();
+            }
             
             if (!$currentExam) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No active exam found. Please create and activate an exam first.'
+                    'message' => 'No exam found for the current school year. Please ensure a school year is selected.'
                 ], 422);
             }
             

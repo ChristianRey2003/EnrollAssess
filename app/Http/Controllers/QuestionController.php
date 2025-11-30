@@ -16,9 +16,20 @@ class QuestionController extends Controller
      */
     public function index(Request $request)
     {
+        // Get current school year from session
+        $schoolYearId = session('school_year_id');
+        
+        // Build query with school year filtering through exams
         $query = Question::with(['exam', 'options'])
             ->active()
             ->ordered();
+
+        // Filter by school year through exams
+        if ($schoolYearId) {
+            $query->whereHas('exam', function ($q) use ($schoolYearId) {
+                $q->where('school_year_id', $schoolYearId);
+            });
+        }
 
         // Search functionality
         if ($request->filled('search')) {
@@ -36,7 +47,13 @@ class QuestionController extends Controller
         }
 
         $questions = $query->paginate(10);
-        $exams = Exam::where('is_active', true)->get();
+        
+        // Get exams for current school year only
+        if ($schoolYearId) {
+            $exams = Exam::where('school_year_id', $schoolYearId)->get();
+        } else {
+            $exams = Exam::where('is_active', true)->get();
+        }
 
         // Get question counts by type for dashboard
         $questionStats = [
@@ -55,7 +72,13 @@ class QuestionController extends Controller
      */
     public function create()
     {
-        $exams = Exam::where('is_active', true)->get();
+        // Get exams for current school year only
+        $schoolYearId = session('school_year_id');
+        if ($schoolYearId) {
+            $exams = Exam::where('school_year_id', $schoolYearId)->get();
+        } else {
+            $exams = Exam::where('is_active', true)->get();
+        }
         return view('admin.questions.create', compact('exams'));
     }
 
@@ -154,7 +177,14 @@ class QuestionController extends Controller
     public function edit($id)
     {
         $question = Question::with(['exam', 'options'])->findOrFail($id);
-        $exams = Exam::where('is_active', true)->get();
+        
+        // Get exams for current school year only
+        $schoolYearId = session('school_year_id');
+        if ($schoolYearId) {
+            $exams = Exam::where('school_year_id', $schoolYearId)->get();
+        } else {
+            $exams = Exam::where('is_active', true)->get();
+        }
         
         return view('admin.questions.create', compact('question', 'exams'));
     }

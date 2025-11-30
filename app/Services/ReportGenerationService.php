@@ -284,6 +284,12 @@ class ReportGenerationService
      */
     protected function applyFilters($query, $filters)
     {
+        // Apply school year filter first
+        $schoolYearId = session('school_year_id');
+        if ($schoolYearId) {
+            $query->where('school_year_id', $schoolYearId);
+        }
+
         // Applicant status filter
         if (!empty($filters['applicantStatus']) && $filters['applicantStatus'] !== 'all') {
             switch ($filters['applicantStatus']) {
@@ -421,12 +427,18 @@ class ReportGenerationService
         // Get number of slots (required parameter)
         $slots = $filters['slots'] ?? 112;
         
-        // Get all applicants with complete scores
+        // Get all applicants with complete scores, filtered by school year
         $query = Applicant::query()
             ->whereNotNull('score')
             ->whereNotNull('card_tor_gwa')
             ->whereNotNull('enrollassess_score')
             ->whereNotNull('interview_score');
+        
+        // Apply school year filter
+        $schoolYearId = session('school_year_id');
+        if ($schoolYearId) {
+            $query->where('school_year_id', $schoolYearId);
+        }
 
         // Get applicants and filter those with all required scores
         $allApplicants = $query->get()->filter(function($applicant) {

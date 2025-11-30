@@ -23,8 +23,6 @@ class SetSchoolYear
         // Routes that should NOT be filtered by school year
         $excludedRoutes = [
             'admin.settings',
-            'admin.questions',
-            'admin.sets-questions',
             'admin.users',
         ];
 

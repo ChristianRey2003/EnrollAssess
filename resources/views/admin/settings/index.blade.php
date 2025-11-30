@@ -361,6 +361,26 @@
         box-shadow: 0 8px 25px rgba(128, 0, 32, 0.3);
     }
 
+    .btn-primary-export {
+        padding: 8px 16px;
+        background: linear-gradient(135deg, var(--primary-maroon) 0%, #a00030 100%);
+        color: var(--white);
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 12px;
+        transition: var(--transition);
+        box-shadow: 0 2px 6px rgba(128, 0, 32, 0.2);
+    }
+
+    .btn-primary-export:hover:not(:disabled) {
+        background: linear-gradient(135deg, var(--primary-gold) 0%, #e6c200 100%);
+        color: var(--primary-maroon);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(128, 0, 32, 0.4);
+    }
+
     .btn-secondary {
         background: var(--light-gray);
         color: var(--text-dark);
@@ -826,7 +846,6 @@
         <button type="button" class="settings-tab active" onclick="switchTab('email')">Email Settings</button>
         <button type="button" class="settings-tab" onclick="switchTab('school-years')">School Years</button>
         <button type="button" class="settings-tab" onclick="switchTab('archived-reports')">Archived Reports</button>
-        <button type="button" class="settings-tab" onclick="switchTab('archived-questions')">Archived Question Bank</button>
         <button type="button" class="settings-tab" onclick="switchTab('audit-logs')">Audit Logs</button>
     </div>
 
@@ -959,7 +978,7 @@
                 <button type="button" class="btn btn-secondary" onclick="window.location.href='{{ route('admin.dashboard') }}'">
                     <span></span> Cancel
                 </button>
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary-export">
                     <span></span> Save Settings
                 </button>
             </div>
@@ -972,8 +991,8 @@
             <div class="archived-reports-header">
                 <h3>Archived Reports</h3>
                 <div class="archived-reports-actions">
-                    <button type="button" class="btn btn-archive" onclick="loadArchivedReports()" id="loadArchivedBtn">Load Archived</button>
-                    <button type="button" class="btn btn-archive" onclick="restoreAllArchived()">Restore All</button>
+                    <button type="button" class="btn btn-primary-export" onclick="loadArchivedReports()" id="loadArchivedBtn">Load Archived</button>
+                    <button type="button" class="btn btn-primary-export" onclick="restoreAllArchived()">Restore All</button>
                     <button type="button" class="btn btn-delete-permanent" onclick="permanentlyDeleteAllArchived()">Permanently Delete All</button>
                 </div>
             </div>
@@ -1005,7 +1024,7 @@
         <div class="settings-card">
             <div class="settings-card-header">
                 <h3>School Year Management</h3>
-                <button type="button" class="btn btn-primary" onclick="openAddSchoolYearModal()">
+                <button type="button" class="btn btn-primary-export" onclick="openAddSchoolYearModal()">
                     <span>➕</span> Add New School Year
                 </button>
             </div>
@@ -1014,40 +1033,6 @@
                 <div class="loading-spinner" style="text-align: center; padding: 40px;">
                     <p>Loading school years...</p>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Archived Question Bank Tab Pane -->
-    <div id="archived-questions-tab" class="settings-tab-pane">
-        <div class="archived-reports-section">
-            <div class="archived-reports-header">
-                <h3>Archived Question Bank</h3>
-                <div class="archived-reports-actions">
-                    <button type="button" class="btn btn-archive" onclick="loadArchivedQuestions()" id="loadArchivedQuestionsBtn">Load Archived</button>
-                </div>
-            </div>
-            <div class="settings-card">
-                <table class="data-table archived-questions-table">
-                    <thead>
-                        <tr>
-                            <th>Title</th>
-                            <th>Description</th>
-                            <th>Duration</th>
-                            <th>Total Items</th>
-                            <th>Questions</th>
-                            <th>Created</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td colspan="7" style="text-align: center; padding: 20px; color: #6B7280;">
-                                <p>Click "Load Archived" to view archived question banks.</p>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
             </div>
         </div>
     </div>
@@ -1154,7 +1139,7 @@
                 </div>
                 <div class="drawer-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeSchoolYearDrawer()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save School Year</button>
+                    <button type="submit" class="btn btn-primary-export">Save School Year</button>
                 </div>
             </form>
         </div>
@@ -1714,112 +1699,6 @@
         }
     }
 
-    // Archived Question Bank (Exams) Functions
-    async function loadArchivedQuestions() {
-        const btn = document.getElementById('loadArchivedQuestionsBtn');
-        const originalText = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = 'Loading...';
-
-        try {
-            const response = await fetch('{{ route('admin.settings.archived-questions') }}', {
-                headers: {
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                credentials: 'same-origin',
-            });
-
-            const text = await response.text();
-            const data = JSON.parse(text);
-
-            if (data.success) {
-                if (data.exams.length > 0) {
-                    updateArchivedQuestionsTable(data.exams);
-                } else {
-                    const tbody = document.querySelector('.archived-questions-table tbody');
-                    if (tbody) {
-                        tbody.innerHTML = `
-                            <tr>
-                                <td colspan="7" style="text-align: center; padding: 20px; color: #6B7280;">
-                                    <p>No archived question banks found.</p>
-                                </td>
-                            </tr>
-                        `;
-                    }
-                }
-            } else {
-                showNotification('Failed to load archived question banks.', 'error');
-            }
-        } catch (error) {
-            console.error('Error loading archived question banks:', error);
-            showNotification('Error loading archived question banks. Please try again.', 'error');
-        } finally {
-            btn.disabled = false;
-            btn.textContent = originalText;
-        }
-    }
-
-    function updateArchivedQuestionsTable(exams) {
-        const tbody = document.querySelector('.archived-questions-table tbody');
-        if (!tbody) return;
-
-        tbody.innerHTML = exams.map(exam => {
-            const duration = exam.duration_minutes >= 60 
-                ? `${Math.floor(exam.duration_minutes / 60)}h ${exam.duration_minutes % 60}m`
-                : `${exam.duration_minutes}m`;
-            
-            return `
-            <tr>
-                <td><strong>${exam.title}</strong></td>
-                <td class="question-text" title="${(exam.description || '').replace(/"/g, '&quot;')}">${exam.description || 'No description'}</td>
-                <td>${duration}</td>
-                <td>${exam.total_items} items</td>
-                <td>${exam.active_questions}/${exam.total_questions} active</td>
-                <td>${exam.created_at}</td>
-                <td>
-                    <div class="table-actions">
-                        <button onclick="restoreExam(${exam.id})" class="action-btn action-btn-download" title="Restore & Publish Exam">Restore & Publish</button>
-                    </div>
-                </td>
-            </tr>
-        `;
-        }).join('');
-    }
-
-    async function restoreExam(examId) {
-        if (!confirm('Are you sure you want to restore and publish this question bank? This will deactivate the current active exam.')) {
-            return;
-        }
-
-        try {
-            const response = await fetch('{{ route('admin.settings.restore-archived-questions') }}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify({ exam_id: examId }),
-            });
-
-            const text = await response.text();
-            const data = JSON.parse(text);
-
-            if (data.success) {
-                showNotification(data.message || 'Question bank restored and published successfully.', 'success');
-                loadArchivedQuestions(); // Refresh archived exams table
-            } else {
-                showNotification(data.message || 'Failed to restore question bank.', 'error');
-            }
-        } catch (error) {
-            console.error('Error restoring exam:', error);
-            showNotification('Error restoring question bank. Please try again.', 'error');
-        }
-    }
 
     // School Years Management Functions
     async function loadSchoolYears() {
@@ -1887,7 +1766,7 @@
                     <td>${isActive}</td>
                     <td>
                         <div style="display: flex; gap: 8px;">
-                            ${!sy.is_current ? `<button type="button" class="btn btn-sm btn-primary" onclick="setAsCurrent(${sy.school_year_id})">Set as Current</button>` : ''}
+                            ${!sy.is_current ? `<button type="button" class="btn btn-sm btn-primary-export" onclick="setAsCurrent(${sy.school_year_id})">Set as Current</button>` : ''}
                             <button type="button" class="btn btn-sm btn-info" onclick="openEditSchoolYearModal(${sy.school_year_id}, '${escapedName}', '${sy.start_date}', '${sy.end_date}')">Edit</button>
                             ${!sy.is_current && sy.is_active ? `<button type="button" class="btn btn-sm btn-danger" onclick="deleteSchoolYear(${sy.school_year_id}, '${escapedName}')">Delete</button>` : ''}
                         </div>
