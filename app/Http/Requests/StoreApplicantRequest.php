@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * Form request for creating new applicants
@@ -32,7 +33,12 @@ class StoreApplicantRequest extends FormRequest
             'middle_name' => 'nullable|string|max:255',
             'last_name' => 'required|string|max:255|min:2',
             'preferred_course' => 'nullable|string|max:255',
-            'email_address' => 'required|email|max:255|unique:applicants,email_address',
+            'email_address' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('applicants', 'email_address')->whereNull('deleted_at')
+            ],
             'phone_number' => 'nullable|string|max:20|regex:/^[\d\s\-\+\(\)]+$/',
             'assigned_instructor_id' => 'nullable|exists:users,user_id',
             'generate_access_code' => 'boolean',

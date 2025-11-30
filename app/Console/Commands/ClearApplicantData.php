@@ -51,8 +51,8 @@ class ClearApplicantData extends Command
         DB::beginTransaction();
         
         try {
-            // Get counts before deletion for reporting
-            $applicantCount = Applicant::count();
+            // Get counts before deletion for reporting (including soft-deleted)
+            $applicantCount = Applicant::withTrashed()->count();
             $accessCodeCount = AccessCode::count();
             $interviewCount = Interview::count();
             $resultCount = Result::count();
@@ -80,9 +80,9 @@ class ClearApplicantData extends Command
             AccessCode::query()->delete();
             $progressBar->advance();
 
-            // Applicants last (main table)
-            $this->info('Deleting applicants...');
-            Applicant::query()->delete();
+            // Applicants last (main table) - FORCE DELETE to permanently remove
+            $this->info('Deleting applicants (permanently)...');
+            Applicant::withTrashed()->forceDelete();
             $progressBar->advance();
 
             $progressBar->finish();

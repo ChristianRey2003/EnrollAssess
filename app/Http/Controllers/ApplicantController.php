@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -197,7 +198,11 @@ class ApplicantController extends BaseController
             'middle_name' => 'nullable|string|max:255',
             'last_name' => 'required|string|max:255',
             'preferred_course' => 'nullable|string|max:255',
-            'email_address' => 'required|email|unique:applicants,email_address',
+            'email_address' => [
+                'required',
+                'email',
+                Rule::unique('applicants', 'email_address')->whereNull('deleted_at')
+            ],
             'phone_number' => 'nullable|string|max:20',
             'assigned_instructor_id' => 'nullable|exists:users,user_id',
             'score' => 'nullable|numeric|min:0|max:100',
@@ -568,11 +573,16 @@ class ApplicantController extends BaseController
                 'total' => 0,
                 'successful' => 0,
                 'failed' => 0,
+                'skipped' => 0,
                 'errors' => [],
+                'warnings' => [],
                 'imported_applicants' => [],
             ];
 
-            DB::transaction(function () use ($lines, $header, $headerMapping, $request, &$importResults) {
+            // Track emails processed in this import batch to detect duplicates within CSV
+            $processedEmails = [];
+
+            DB::transaction(function () use ($lines, $header, $headerMapping, $request, &$importResults, &$processedEmails) {
                 for ($i = 1; $i < count($lines); $i++) {
                     $line = trim($lines[$i]);
                     if (empty($line)) continue;
@@ -593,13 +603,27 @@ class ApplicantController extends BaseController
                             }
                         }
 
+                        // Normalize email for duplicate checking
+                        $emailAddress = isset($record['email_address']) ? strtolower(trim($record['email_address'])) : null;
+
+                        // Check for duplicate email within this CSV file first - skip silently
+                        if ($emailAddress && isset($processedEmails[$emailAddress])) {
+                            $importResults['skipped']++;
+                            $importResults['warnings'][] = "Line {$lineNumber}: Skipped duplicate email (first seen at line {$processedEmails[$emailAddress]}).";
+                            continue;
+                        }
+
                         // Validate required fields
                         $validator = Validator::make($record, [
                             'first_name' => 'required|string|max:255',
                             'middle_name' => 'nullable|string|max:255',
                             'last_name' => 'required|string|max:255',
                             'preferred_course' => 'nullable|string|max:255',
-                            'email_address' => 'required|email|unique:applicants,email_address',
+                            'email_address' => [
+                                'required',
+                                'email',
+                                Rule::unique('applicants', 'email_address')->whereNull('deleted_at')
+                            ],
                             'phone_number' => 'nullable|string|max:20',
                             'application_no' => 'nullable|string|max:50',
                             'score' => 'nullable|numeric|min:0|max:100',
@@ -610,6 +634,11 @@ class ApplicantController extends BaseController
                             $importResults['failed']++;
                             $importResults['errors'][] = "Line {$lineNumber}: " . implode(', ', $validator->errors()->all());
                             continue;
+                        }
+
+                        // Track this email as processed (after validation passes, before creating applicant)
+                        if ($emailAddress) {
+                            $processedEmails[$emailAddress] = $lineNumber;
                         }
 
                         // Create applicant
@@ -671,9 +700,17 @@ class ApplicantController extends BaseController
             // Dispatch statistics update event
             $this->dispatchStatisticsUpdate();
 
+            $message = "Import completed! {$importResults['successful']} applicants imported successfully.";
+            if ($importResults['skipped'] > 0) {
+                $message .= " {$importResults['skipped']} duplicate(s) skipped within CSV file.";
+            }
+            if ($importResults['failed'] > 0) {
+                $message .= " {$importResults['failed']} record(s) failed.";
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => "Import completed! {$importResults['successful']} applicants imported successfully.",
+                'message' => $message,
                 'results' => $importResults
             ]);
 

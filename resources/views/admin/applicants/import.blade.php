@@ -561,12 +561,32 @@
                             <span class="stat-label">Successfully Imported:</span>
                             <span class="stat-value success">${results.successful}</span>
                         </div>
+                        ${results.skipped > 0 ? `
+                        <div class="stat-item">
+                            <span class="stat-label">Skipped (Duplicates):</span>
+                            <span class="stat-value warning">${results.skipped}</span>
+                        </div>
+                        ` : ''}
+                        ${results.failed > 0 ? `
                         <div class="stat-item">
                             <span class="stat-label">Failed:</span>
                             <span class="stat-value error">${results.failed}</span>
                         </div>
+                        ` : ''}
                     </div>
                 `;
+
+                if (results.warnings && results.warnings.length > 0) {
+                    html += `
+                        <div class="import-warnings" style="margin-top: 20px; padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">
+                            <h4 style="margin: 0 0 10px 0; color: #92400e;">⚠️ Warnings (Duplicates Skipped):</h4>
+                            <ul class="warning-list" style="margin: 0; padding-left: 20px; color: #78350f;">
+                                ${results.warnings.slice(0, 20).map(warning => `<li style="margin: 4px 0;">${warning}</li>`).join('')}
+                                ${results.warnings.length > 20 ? `<li style="margin: 4px 0; font-style: italic;">... and ${results.warnings.length - 20} more warnings</li>` : ''}
+                            </ul>
+                        </div>
+                    `;
+                }
 
                 if (results.errors && results.errors.length > 0) {
                     html += `
