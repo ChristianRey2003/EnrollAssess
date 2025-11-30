@@ -9,6 +9,18 @@ export default {
         './resources/views/**/*.blade.php',
     ],
 
+    // Safelist classes that might be dynamically generated or in components
+    safelist: [
+        // Credits modal classes
+        'max-w-md',
+        'md:max-w-md',
+        'max-w-[90vw]',
+        // Ensure modal utilities are included
+        {
+            pattern: /^(max-w|w-|md:max-w|md:w-)/,
+        },
+    ],
+
     theme: {
         extend: {
             fontFamily: {

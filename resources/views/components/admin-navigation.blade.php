@@ -237,7 +237,7 @@
     <div class="absolute inset-0 bg-black/10 backdrop-blur-[1px]" onclick="closeCreditsModal()"></div>
     
     <!-- Modal Content -->
-    <div class="relative bg-white rounded-xl shadow-2xl w-auto max-w-[90vw] md:max-w-none mx-4 transform transition-all duration-300 scale-95 opacity-0 border border-gray-100" id="creditsModalContent" style="margin: auto;">
+    <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-[90vw] md:max-w-md mx-4 transform transition-all duration-300 scale-95 opacity-0 border border-gray-100" id="creditsModalContent">
         <div class="p-3 md:p-4 text-center">
             <div class="mb-2 md:mb-3">
                 <h3 class="text-sm md:text-base font-bold text-gray-800">EnrollAssess</h3>
