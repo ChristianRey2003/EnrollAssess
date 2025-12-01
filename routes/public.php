@@ -74,11 +74,12 @@ Route::get('/exam/pre-requirements', function (Illuminate\Http\Request $request)
             return redirect()->route('applicant.login')
                 ->with('error', $exam->getAvailabilityMessage());
         }
-
-        $totalQuestions = $exam->activeQuestions()->count();
+        
+        // Display the configured Total Items for the exam (not raw question bank count)
+        $totalItems = $exam->total_items ?? $exam->activeQuestions()->count();
         $duration = $exam->duration_minutes ?? 30;
 
-        return view('exam.pre-requirements', compact('exam', 'totalQuestions', 'duration'));
+        return view('exam.pre-requirements', compact('exam', 'totalItems', 'duration'));
     } catch (\Exception $e) {
         return redirect()->route('applicant.login')
             ->with('error', 'An error occurred. Please try again.');
@@ -126,7 +127,10 @@ Route::get('/exam/start-form', function (Illuminate\Http\Request $request) {
                 ->with('error', $exam->getAvailabilityMessage());
         }
 
-        return view('exam.start-form', compact('applicant', 'exam'));
+        // Display the configured Total Items for the exam (not raw question bank count)
+        $totalItems = $exam->total_items ?? $exam->activeQuestions()->count();
+
+        return view('exam.start-form', compact('applicant', 'exam', 'totalItems'));
     } catch (\Exception $e) {
         return redirect()->route('applicant.login')
             ->with('error', 'An error occurred. Please try again.');

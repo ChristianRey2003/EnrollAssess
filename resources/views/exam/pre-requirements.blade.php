@@ -373,8 +373,8 @@
                     <span class="info-value">{{ $exam->title ?? 'BSIT Entrance Exam' }}</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Total Questions</span>
-                    <span class="info-value">{{ $totalQuestions ?? 20 }} questions</span>
+                    <span class="info-label">Total Items</span>
+                    <span class="info-value">{{ $totalItems ?? 20 }} items</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Time Limit</span>

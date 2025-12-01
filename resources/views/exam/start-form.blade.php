@@ -361,8 +361,8 @@
                     <span class="info-value">{{ $exam->duration_minutes ?? 30 }} minutes</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Questions</span>
-                    <span class="info-value">{{ $exam->activeQuestions()->count() }} questions</span>
+                    <span class="info-label">Total Items</span>
+                    <span class="info-value">{{ $totalItems ?? $exam->total_items ?? $exam->activeQuestions()->count() }} items</span>
                 </div>
             </div>
 
