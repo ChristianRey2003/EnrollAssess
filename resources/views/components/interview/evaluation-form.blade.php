@@ -1379,25 +1379,28 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // Only show errors, do not snap/modify the entered value
         if (value > 100) {
-            value = 100;
-            gwaInput.value = 100;
             if (gwaError) {
                 gwaError.textContent = 'Maximum allowed GWA is 100%.';
                 gwaError.style.display = 'block';
             }
+            // Do not update hidden field while invalid
+            if (gwaHidden) gwaHidden.value = '';
         } else if (value < 75) {
-            value = 75;
-            gwaInput.value = 75;
             if (gwaError) {
                 gwaError.textContent = 'Minimum allowed GWA is 75%.';
                 gwaError.style.display = 'block';
             }
-        } else if (gwaError) {
-            gwaError.style.display = 'none';
+            // Do not update hidden field while invalid
+            if (gwaHidden) gwaHidden.value = '';
+        } else {
+            if (gwaError) {
+                gwaError.style.display = 'none';
+            }
+            // Valid range – sync to hidden field exactly as entered
+            if (gwaHidden) gwaHidden.value = value;
         }
-
-        if (gwaHidden) gwaHidden.value = value;
     }
 
     gwaInput?.addEventListener('input', function() {

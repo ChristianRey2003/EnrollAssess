@@ -351,6 +351,14 @@ class ReportGenerationService
     protected function saveReportToDatabase($type, $title, $filePath, $filters, $userId, $metadata = [])
     {
         $fileSize = Storage::size($filePath);
+        
+        // Determine school year ID
+        $schoolYearId = session('school_year_id');
+        
+        // If not in session, check filters (for consistency)
+        if (!$schoolYearId && isset($filters['school_year_id'])) {
+            $schoolYearId = $filters['school_year_id'];
+        }
 
         return GeneratedReport::create([
             'report_type' => $type,
@@ -358,6 +366,7 @@ class ReportGenerationService
             'file_path' => $filePath,
             'filters_applied' => $filters,
             'generated_by' => $userId,
+            'school_year_id' => $schoolYearId,
             'file_size' => $fileSize,
             'status' => 'completed',
             'metadata' => $metadata,
@@ -815,6 +824,12 @@ class ReportGenerationService
         // Get applicants with basic info
         $query = Applicant::with('basicInfo')
             ->whereHas('basicInfo');
+
+        // Apply school year filter
+        $schoolYearId = session('school_year_id');
+        if ($schoolYearId) {
+            $query->where('school_year_id', $schoolYearId);
+        }
         
         // Apply status filter
         if (isset($filters['status']) && $filters['status'] !== 'all') {
@@ -909,6 +924,12 @@ class ReportGenerationService
         // Get applicants with basic info
         $query = Applicant::with('basicInfo')
             ->whereHas('basicInfo');
+
+        // Apply school year filter
+        $schoolYearId = session('school_year_id');
+        if ($schoolYearId) {
+            $query->where('school_year_id', $schoolYearId);
+        }
         
         // Apply status filter
         if (isset($filters['status']) && $filters['status'] !== 'all') {
@@ -1001,6 +1022,12 @@ class ReportGenerationService
         // Get applicants with basic info
         $query = Applicant::with('basicInfo')
             ->whereHas('basicInfo');
+
+        // Apply school year filter
+        $schoolYearId = session('school_year_id');
+        if ($schoolYearId) {
+            $query->where('school_year_id', $schoolYearId);
+        }
         
         // Apply status filter
         if (isset($filters['status']) && $filters['status'] !== 'all') {

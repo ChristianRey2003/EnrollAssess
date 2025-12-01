@@ -50,7 +50,7 @@ Route::middleware(['auth', 'capability:applicants.assign'])->prefix('applicants'
 });
 
 // Applicant Management Routes
-Route::prefix('applicants')->name('applicants.')->middleware(['role:department-head,administrator', 'capability:applicants.view'])->group(function () {
+Route::prefix('applicants')->name('applicants.')->middleware(['role:department-head,administrator,instructor', 'capability:applicants.view'])->group(function () {
     Route::get('/', [ApplicantController::class, 'index'])->name('index');
     Route::get('/create', [ApplicantController::class, 'create'])->name('create');
     Route::post('/', [ApplicantController::class, 'store'])->name('store');
@@ -72,8 +72,15 @@ Route::prefix('applicants')->name('applicants.')->middleware(['role:department-h
         Route::get('/import', [ApplicantController::class, 'import'])->name('import');
         Route::post('/import', [ApplicantController::class, 'processImport'])->name('process-import');
         Route::post('/generate-access-codes', [ApplicantController::class, 'generateAccessCodes'])->name('generate-access-codes');
+        Route::post('/schedule-exams', [ApplicantController::class, 'bulkScheduleExams'])->name('schedule-exams');
         Route::post('/send-exam-notifications', [ApplicantController::class, 'sendExamNotifications'])->name('send-exam-notifications');
         Route::post('/delete', [ApplicantController::class, 'bulkDelete'])->name('delete');
+    });
+    
+    // Exam Scheduling Routes
+    Route::prefix('exam-schedule')->name('exam-schedule.')->group(function () {
+        Route::get('/{applicantId}', [ApplicantController::class, 'getApplicantSchedule'])->name('get');
+        Route::put('/{scheduleId}', [ApplicantController::class, 'rescheduleExam'])->name('reschedule');
     });
     
     // Archive Operations - DISABLED: Applicants are now filtered by school year instead of archiving

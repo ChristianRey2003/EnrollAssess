@@ -7,6 +7,7 @@ use App\Models\AccessCode;
 use App\Models\Exam;
 use App\Models\User;
 use App\Models\Interview;
+use App\Models\ExamSchedule;
 use App\Services\ApplicantService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -88,7 +89,7 @@ class ApplicantController extends BaseController
     {
         try {
             // Exclude archived applicants by default
-            $query = Applicant::with(['assignedInstructor', 'accessCode', 'accessCode.exam']);
+            $query = Applicant::with(['assignedInstructor', 'accessCode', 'accessCode.exam', 'latestExamSchedule']);
             
             // Apply school year filter
             $this->applySchoolYearFilter($query);
@@ -153,8 +154,30 @@ class ApplicantController extends BaseController
             
             // Return JSON for AJAX pagination requests only
             if ($request->ajax() && $request->header('Accept') && str_contains($request->header('Accept'), 'application/json')) {
+                // Map applicants to include exam schedule data
+                $applicantsData = $applicants->getCollection()->map(function($applicant) {
+                    $data = $applicant->toArray();
+                    
+                    // Include exam schedule data
+                    if ($applicant->latestExamSchedule) {
+                        $schedule = $applicant->latestExamSchedule;
+                        $data['latest_exam_schedule'] = [
+                            'exam_schedule_id' => $schedule->exam_schedule_id,
+                            'scheduled_date' => $schedule->scheduled_date ? $schedule->scheduled_date->format('Y-m-d') : null,
+                            'scheduled_time' => $schedule->scheduled_time,
+                            'venue' => $schedule->venue,
+                            'special_instructions' => $schedule->special_instructions,
+                            'status' => $schedule->status,
+                        ];
+                    } else {
+                        $data['latest_exam_schedule'] = null;
+                    }
+                    
+                    return $data;
+                })->values()->all();
+                
                 return response()->json([
-                    'applicants' => $applicants->items(),
+                    'applicants' => $applicantsData,
                     'pagination' => [
                         'current_page' => $applicants->currentPage(),
                         'last_page' => $applicants->lastPage(),
@@ -1486,7 +1509,292 @@ class ApplicantController extends BaseController
     }
 
     /**
-     * Send exam notifications to selected applicants
+     * Bulk schedule exams for applicants
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function bulkScheduleExams(Request $request): JsonResponse
+    {
+        try {
+            // Validate request
+            $validator = Validator::make($request->all(), [
+                'applicant_ids' => 'required|array|min:1',
+                'applicant_ids.*' => 'exists:applicants,applicant_id',
+                'scheduled_date' => 'required|date|after_or_equal:today',
+                'scheduled_time' => 'required|date_format:H:i',
+                'venue' => 'nullable|string|max:500',
+                'special_instructions' => 'nullable|string|max:2000',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed: ' . $validator->errors()->first(),
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $applicantIds = $request->applicant_ids;
+            $scheduledDate = $request->scheduled_date;
+            $scheduledTime = $request->scheduled_time;
+            $venue = $request->venue;
+            $specialInstructions = $request->special_instructions;
+            $scheduledBy = Auth::id();
+
+            $scheduledCount = 0;
+            $skippedCount = 0;
+            $errors = [];
+
+            // Check if exam availability window is set and validate schedule date is within window
+            $activeExam = Exam::where('is_active', true)->first();
+            if ($activeExam) {
+                $scheduleDateTime = \Carbon\Carbon::parse($scheduledDate . ' ' . $scheduledTime);
+                
+                if ($activeExam->starts_at && $scheduleDateTime->lt($activeExam->starts_at)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Scheduled date/time must be after exam availability start: ' . 
+                                    $activeExam->starts_at->setTimezone('Asia/Manila')->format('M d, Y g:i A')
+                    ], 422);
+                }
+                
+                if ($activeExam->ends_at && $scheduleDateTime->gt($activeExam->ends_at)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Scheduled date/time must be before exam availability end: ' . 
+                                    $activeExam->ends_at->setTimezone('Asia/Manila')->format('M d, Y g:i A')
+                    ], 422);
+                }
+            }
+
+            DB::transaction(function () use (
+                $applicantIds, 
+                $scheduledDate, 
+                $scheduledTime, 
+                $venue, 
+                $specialInstructions, 
+                $scheduledBy,
+                &$scheduledCount, 
+                &$skippedCount, 
+                &$errors
+            ) {
+                foreach ($applicantIds as $applicantId) {
+                    try {
+                        $applicant = Applicant::findOrFail($applicantId);
+
+                        // Skip if already scheduled (status = exam-scheduled)
+                        if ($applicant->status === 'exam-scheduled') {
+                            // Check if there's an existing schedule
+                            $existingSchedule = ExamSchedule::where('applicant_id', $applicantId)
+                                ->where('status', 'scheduled')
+                                ->first();
+                            
+                            if ($existingSchedule) {
+                                $errors[] = "Applicant {$applicant->full_name} is already scheduled for {$existingSchedule->formatted_date_time}";
+                                $skippedCount++;
+                                continue;
+                            } else {
+                                // Status is exam-scheduled but no schedule record - fix inconsistency
+                                $applicant->update(['status' => 'pending']);
+                            }
+                        }
+
+                        // Skip if already completed exam
+                        if ($applicant->status === 'exam-completed') {
+                            $errors[] = "Applicant {$applicant->full_name} has already completed the exam.";
+                            $skippedCount++;
+                            continue;
+                        }
+
+                        // Cancel any existing schedules for this applicant
+                        ExamSchedule::where('applicant_id', $applicantId)
+                            ->where('status', 'scheduled')
+                            ->update(['status' => 'cancelled']);
+
+                        // Create new schedule
+                        ExamSchedule::create([
+                            'applicant_id' => $applicantId,
+                            'scheduled_date' => $scheduledDate,
+                            'scheduled_time' => $scheduledTime,
+                            'venue' => $venue,
+                            'special_instructions' => $specialInstructions,
+                            'scheduled_by' => $scheduledBy,
+                            'status' => 'scheduled',
+                        ]);
+
+                        // Update applicant status
+                        $applicant->update(['status' => 'exam-scheduled']);
+
+                        $scheduledCount++;
+                    } catch (Exception $e) {
+                        $errors[] = "Failed to schedule exam for applicant #{$applicantId}: {$e->getMessage()}";
+                        $skippedCount++;
+                    }
+                }
+            });
+
+            $message = "Successfully scheduled {$scheduledCount} applicant(s) for exam.";
+            if ($skippedCount > 0) {
+                $message .= " {$skippedCount} skipped.";
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'data' => [
+                    'scheduled_count' => $scheduledCount,
+                    'skipped_count' => $skippedCount,
+                    'errors' => $errors
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to schedule exams: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Reschedule/edit exam schedule
+     *
+     * @param Request $request
+     * @param int $scheduleId
+     * @return JsonResponse
+     */
+    public function rescheduleExam(Request $request, $scheduleId): JsonResponse
+    {
+        try {
+            $schedule = ExamSchedule::findOrFail($scheduleId);
+
+            // Validate request
+            $validator = Validator::make($request->all(), [
+                'scheduled_date' => 'required|date|after_or_equal:today',
+                'scheduled_time' => 'required|date_format:H:i',
+                'venue' => 'nullable|string|max:500',
+                'special_instructions' => 'nullable|string|max:2000',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed: ' . $validator->errors()->first(),
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Check if exam availability window is set and validate schedule date is within window
+            $activeExam = Exam::where('is_active', true)->first();
+            if ($activeExam) {
+                $scheduleDateTime = \Carbon\Carbon::parse($request->scheduled_date . ' ' . $request->scheduled_time);
+                
+                if ($activeExam->starts_at && $scheduleDateTime->lt($activeExam->starts_at)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Scheduled date/time must be after exam availability start: ' . 
+                                    $activeExam->starts_at->setTimezone('Asia/Manila')->format('M d, Y g:i A')
+                    ], 422);
+                }
+                
+                if ($activeExam->ends_at && $scheduleDateTime->gt($activeExam->ends_at)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Scheduled date/time must be before exam availability end: ' . 
+                                    $activeExam->ends_at->setTimezone('Asia/Manila')->format('M d, Y g:i A')
+                    ], 422);
+                }
+            }
+
+            DB::transaction(function () use ($schedule, $request) {
+                // Mark old schedule as cancelled and create new one
+                $oldScheduleId = $schedule->exam_schedule_id;
+                
+                // Create new schedule record (keeping history)
+                $newSchedule = ExamSchedule::create([
+                    'applicant_id' => $schedule->applicant_id,
+                    'scheduled_date' => $request->scheduled_date,
+                    'scheduled_time' => $request->scheduled_time,
+                    'venue' => $request->venue,
+                    'special_instructions' => $request->special_instructions,
+                    'scheduled_by' => Auth::id(),
+                    'status' => 'scheduled',
+                    'previous_schedule_id' => $oldScheduleId,
+                    'reschedule_count' => $schedule->reschedule_count + 1,
+                ]);
+
+                // Cancel old schedule
+                $schedule->update(['status' => 'cancelled']);
+
+                // Reset notification status for new schedule
+                $newSchedule->update([
+                    'notification_sent' => false,
+                    'notification_sent_at' => null,
+                ]);
+            });
+
+            // Get the new schedule (latest one for this applicant)
+            $newSchedule = ExamSchedule::where('applicant_id', $schedule->applicant_id)
+                ->where('status', 'scheduled')
+                ->latest()
+                ->first();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Exam schedule updated successfully!',
+                'schedule' => $newSchedule
+            ]);
+
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Schedule not found.'
+            ], 404);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reschedule exam: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get exam schedule for an applicant
+     *
+     * @param int $applicantId
+     * @return JsonResponse
+     */
+    public function getApplicantSchedule($applicantId): JsonResponse
+    {
+        try {
+            $schedule = ExamSchedule::where('applicant_id', $applicantId)
+                ->where('status', 'scheduled')
+                ->latest()
+                ->first();
+
+            if (!$schedule) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No scheduled exam found for this applicant.'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'schedule' => $schedule
+            ]);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get schedule: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Send exam notifications to scheduled applicants
      *
      * @param Request $request
      * @return JsonResponse
@@ -1498,10 +1806,6 @@ class ApplicantController extends BaseController
             $validator = Validator::make($request->all(), [
                 'applicant_ids' => 'required|array|min:1',
                 'applicant_ids.*' => 'exists:applicants,applicant_id',
-                'exam_date' => 'nullable|string|max:255',
-                'exam_time' => 'nullable|string|max:255',
-                'exam_venue' => 'nullable|string|max:500',
-                'special_instructions' => 'nullable|string|max:2000',
             ]);
 
             if ($validator->fails()) {
@@ -1512,17 +1816,12 @@ class ApplicantController extends BaseController
             }
 
             $applicantIds = $request->applicant_ids;
-            $examDate = $request->exam_date ?? 'To Be Announced';
-            $examTime = $request->exam_time ?? 'To Be Announced';
-            $examVenue = $request->exam_venue ?? 'To Be Announced';
-            $specialInstructions = $request->special_instructions;
-
             $successCount = 0;
             $failedCount = 0;
             $errors = [];
 
-            // Get applicants with their access codes
-            $applicants = Applicant::with(['accessCode'])
+            // Get applicants with their access codes and schedules
+            $applicants = Applicant::with(['accessCode', 'latestExamSchedule'])
                 ->whereIn('applicant_id', $applicantIds)
                 ->get();
 
@@ -1542,6 +1841,20 @@ class ApplicantController extends BaseController
                         continue;
                     }
 
+                    // Check if applicant has a scheduled exam
+                    $schedule = $applicant->latestExamSchedule;
+                    if (!$schedule) {
+                        $errors[] = "Applicant {$applicant->full_name} is not scheduled for an exam. Please schedule first.";
+                        $failedCount++;
+                        continue;
+                    }
+
+                    // Format date and time from schedule
+                    $examDate = $schedule->scheduled_date->format('F j, Y');
+                    $examTime = \Carbon\Carbon::parse($schedule->scheduled_time)->format('g:i A');
+                    $examVenue = $schedule->venue ?? 'To Be Announced';
+                    $specialInstructions = $schedule->special_instructions;
+
                     // Send email notification
                     Mail::to($applicant->email_address)
                         ->send(new \App\Mail\ExamNotificationMail(
@@ -1552,6 +1865,9 @@ class ApplicantController extends BaseController
                             $examVenue,
                             $specialInstructions
                         ));
+
+                    // Mark notification as sent
+                    $schedule->markNotificationSent();
 
                     $successCount++;
                 } catch (Exception $e) {

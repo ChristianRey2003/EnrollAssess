@@ -93,6 +93,24 @@ class Applicant extends Model
     }
 
     /**
+     * Get the exam schedules for this applicant.
+     */
+    public function examSchedules()
+    {
+        return $this->hasMany(ExamSchedule::class, 'applicant_id', 'applicant_id');
+    }
+
+    /**
+     * Get the latest exam schedule for this applicant.
+     */
+    public function latestExamSchedule()
+    {
+        return $this->hasOne(ExamSchedule::class, 'applicant_id', 'applicant_id')
+                    ->where('status', 'scheduled')
+                    ->latest();
+    }
+
+    /**
      * Get the basic information for this applicant.
      */
     public function basicInfo()

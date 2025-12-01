@@ -346,13 +346,8 @@ class InstructorController extends Controller
                   ->orWhere('status', 'assigned');
             })
             ->whereHas('applicant', function($query) {
-                $query->whereIn('status', [
-                    'exam-completed', 
-                    'interview-scheduled', 
-                    'interview-completed', 
-                    'admitted', 
-                    'rejected'
-                ]);
+                // Only show applicants who have completed the exam
+                $query->where('status', 'exam-completed');
             })
             ->with('applicant')
             ->get();

@@ -15,56 +15,13 @@
             </div>
         </div>
 
-        <!-- Exam Date -->
-        <div style="margin-bottom: 20px;">
-            <label for="examDate" style="font-weight: 600; font-size: 12px; margin-bottom: 8px; display: block;">
-                Exam Date <span style="color: #ef4444;">*</span>
-            </label>
-            <input type="date" 
-                   id="examDate" 
-                   class="form-control" 
-                   required
-                   style="width: 100%; font-size: 12px;">
-            <small style="color: #6b7280; font-size: 11px;">The scheduled date for the examination</small>
-        </div>
-
-        <!-- Exam Time -->
-        <div style="margin-bottom: 20px;">
-            <label for="examTime" style="font-weight: 600; font-size: 12px; margin-bottom: 8px; display: block;">
-                Exam Time <span style="color: #ef4444;">*</span>
-            </label>
-            <input type="time" 
-                   id="examTime" 
-                   class="form-control" 
-                   required
-                   style="width: 100%; font-size: 12px;">
-            <small style="color: #6b7280; font-size: 11px;">Start time of the examination</small>
-        </div>
-
-        <!-- Exam Venue -->
-        <div style="margin-bottom: 20px;">
-            <label for="examVenue" style="font-weight: 600; font-size: 12px; margin-bottom: 8px; display: block;">
-                Exam Venue/Room
-            </label>
-            <input type="text" 
-                   id="examVenue" 
-                   class="form-control" 
-                   placeholder="e.g., Computer Laboratory 1, Room 203"
-                   style="width: 100%; font-size: 12px;">
-            <small style="color: #6b7280; font-size: 11px;">Location where the exam will be held (optional)</small>
-        </div>
-
-        <!-- Special Instructions -->
-        <div style="margin-bottom: 20px;">
-            <label for="specialInstructions" style="font-weight: 600; font-size: 12px; margin-bottom: 8px; display: block;">
-                Special Instructions
-            </label>
-            <textarea id="specialInstructions" 
-                      class="form-control" 
-                      rows="4"
-                      placeholder="Additional notes or instructions for the applicants (optional)"
-                      style="width: 100%; resize: vertical; font-size: 12px;"></textarea>
-            <small style="color: #6b7280; font-size: 11px;">Optional custom instructions that will appear in the email</small>
+        <!-- Info Box -->
+        <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px; margin-bottom: 20px;">
+            <div style="font-weight: 600; font-size: 12px; color: #1e40af; margin-bottom: 4px;">ℹ️ Note</div>
+            <div style="font-size: 12px; color: #1e3a8a;">
+                Only applicants who are already scheduled for an exam will receive notifications. 
+                The email will include their scheduled date, time, and venue from their schedule.
+            </div>
         </div>
 
         <!-- Warning for Missing Requirements -->
@@ -73,6 +30,7 @@
             <div style="font-size: 12px; color: #78350f;">
                 Applicants must have:
                 <ul style="margin: 8px 0; padding-left: 20px; font-size: 12px;">
+                    <li><strong>Already scheduled for exam</strong></li>
                     <li><strong>Access code generated</strong></li>
                     <li><strong>Valid email address</strong></li>
                 </ul>
@@ -274,18 +232,6 @@ function openEmailNotificationDrawer() {
             countSpan.textContent = selectedApplicants.length;
         }
         
-        // Set default date to today
-        const dateInput = document.getElementById('examDate');
-        if (dateInput) {
-            const today = new Date().toISOString().split('T')[0];
-            dateInput.value = today;
-        }
-        
-        // Set default time to 9:00 AM
-        const timeInput = document.getElementById('examTime');
-        if (timeInput && !timeInput.value) {
-            timeInput.value = '09:00';
-        }
         
         console.log('Email notification drawer opened successfully');
     } else {
@@ -326,49 +272,6 @@ function confirmSendEmails() {
     }
     
     // Get exam date and time
-    const examDate = document.getElementById('examDate').value;
-    const examTime = document.getElementById('examTime').value;
-    const examVenue = document.getElementById('examVenue').value;
-    const specialInstructions = document.getElementById('specialInstructions').value;
-    
-    // Validate required fields
-    if (!examDate) {
-        if (window.NotificationSystem) {
-            window.NotificationSystem.error('Please enter the exam date.');
-        } else if (window.showError) {
-            window.showError('Please enter the exam date.');
-        } else {
-            console.error('Please enter the exam date.');
-        }
-        return;
-    }
-    
-    if (!examTime) {
-        if (window.NotificationSystem) {
-            window.NotificationSystem.error('Please enter the exam time.');
-        } else if (window.showError) {
-            window.showError('Please enter the exam time.');
-        } else {
-            console.error('Please enter the exam time.');
-        }
-        return;
-    }
-    
-    // Format date for display
-    const dateObj = new Date(examDate);
-    const formattedDate = dateObj.toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-    });
-    
-    // Format time for display (12-hour format)
-    const [hours, minutes] = examTime.split(':');
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour % 12 || 12;
-    const formattedTime = `${displayHour}:${minutes} ${ampm}`;
-    
     const sendButton = document.getElementById('sendEmailButton');
     
     // Show loading state
@@ -377,11 +280,7 @@ function confirmSendEmails() {
     sendButton.disabled = true;
     
     const requestData = {
-        applicant_ids: selectedApplicants,
-        exam_date: formattedDate,
-        exam_time: formattedTime,
-        exam_venue: examVenue || null,
-        special_instructions: specialInstructions || null
+        applicant_ids: selectedApplicants
     };
     
     console.log('Sending email request:', requestData);

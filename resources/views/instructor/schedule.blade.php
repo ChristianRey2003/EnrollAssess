@@ -614,6 +614,8 @@
                                     <input type="checkbox" 
                                            class="interview-checkbox form-check-input" 
                                            data-interview-id="{{ $interview->interview_id }}"
+                                           data-deadline-start="{{ $interview->interview_deadline_start ? $interview->interview_deadline_start->toIso8601String() : '' }}"
+                                           data-deadline-end="{{ $interview->interview_deadline_end ? $interview->interview_deadline_end->toIso8601String() : '' }}"
                                            onchange="updateBulkSelection()"
                                            style="cursor: pointer;">
                                 </td>
@@ -645,7 +647,11 @@
                                 <td class="text-center" style="font-size: 13px; font-weight: normal;">
                                     @php $canSchedule = $interview->applicant->hasCompletedExam(); @endphp
                                     @if($canSchedule)
-                                        <button onclick="scheduleInterview({{ $interview->interview_id }})" 
+                                        <button onclick="scheduleInterview(
+                                                    {{ $interview->interview_id }},
+                                                    '{{ $interview->interview_deadline_start ? $interview->interview_deadline_start->toIso8601String() : '' }}',
+                                                    '{{ $interview->interview_deadline_end ? $interview->interview_deadline_end->toIso8601String() : '' }}'
+                                                )" 
                                                 class="btn btn-primary"
                                                 style="font-size: 12px; padding: 6px 12px;">
                                             Schedule Interview
@@ -693,9 +699,13 @@
                 </div>
         <div class="bulk-schedule-form">
             <div class="bulk-form-grid">
-                <div class="bulk-form-item" style="grid-column: 1 / -1;">
-                    <label>Start Date & Time *</label>
-                    <input type="datetime-local" id="bulkStartTime" class="bulk-input" required>
+                <div class="bulk-form-item">
+                    <label>Start Date *</label>
+                    <input type="date" id="bulkStartDate" class="bulk-input" required>
+                </div>
+                <div class="bulk-form-item">
+                    <label>Start Time *</label>
+                    <input type="time" id="bulkStartTime" class="bulk-input" required>
                 </div>
                 <div class="bulk-form-item" style="grid-column: 1 / -1;">
                     <label>Time Interval *</label>
@@ -733,10 +743,17 @@
         <form id="scheduleForm">
             @csrf
             <input type="hidden" id="interviewId" name="interview_id">
+            <input type="hidden" id="scheduleDeadlineStart" name="schedule_deadline_start">
+            <input type="hidden" id="scheduleDeadlineEnd" name="schedule_deadline_end">
             
             <div class="form-group">
-                <label class="form-label">Interview Date & Time</label>
-                <input type="datetime-local" id="scheduleDate" name="schedule_date" class="form-input" required>
+                <label class="form-label">Interview Date *</label>
+                <input type="date" id="scheduleDate" name="schedule_date" class="form-input" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Interview Time *</label>
+                <input type="time" id="scheduleTime" name="schedule_time" class="form-input" required>
             </div>
             
             <div class="form-group">
@@ -765,13 +782,12 @@
     let bulkDrawerRestoreFocusTo = null;
     let bulkDrawerKeydownCleanup = null;
 
-    // Initialize minimum date for bulk scheduling
+    // Initialize minimum date for bulk scheduling (same behavior as other schedule UIs)
     document.addEventListener('DOMContentLoaded', function() {
         const now = new Date();
-        now.setHours(now.getHours() + 1);
-        const bulkStartTime = document.getElementById('bulkStartTime');
-        if (bulkStartTime) {
-            bulkStartTime.min = now.toISOString().slice(0, 16);
+        const bulkStartDate = document.getElementById('bulkStartDate');
+        if (bulkStartDate) {
+            bulkStartDate.min = formatDateForInput(now);
         }
         updateBulkSelection();
         initializePendingSearch();
@@ -784,6 +800,51 @@
         if (!overlay || !drawer) {
             console.error('Bulk scheduling drawer elements not found');
             return;
+        }
+
+        // Ensure at least one interview is selected
+        const checkedBoxes = document.querySelectorAll('.interview-checkbox:checked');
+        if (!checkedBoxes || checkedBoxes.length === 0) {
+            alert('Please select at least one interview to schedule.');
+            return;
+        }
+
+        // Configure bulk start date limits based on selected interviews' windows
+        const bulkStartDateInput = document.getElementById('bulkStartDate');
+        if (bulkStartDateInput) {
+            const now = new Date();
+            now.setHours(now.getHours() + 1);
+            let minDate = now;
+            let maxDate = null;
+
+            checkedBoxes.forEach(cb => {
+                const deadlineStart = cb.dataset.deadlineStart;
+                const deadlineEnd = cb.dataset.deadlineEnd;
+
+                if (deadlineStart) {
+                    const startObj = new Date(deadlineStart);
+                    if (startObj > minDate) {
+                        minDate = startObj;
+                    }
+                }
+                if (deadlineEnd) {
+                    const endObj = new Date(deadlineEnd);
+                    if (!maxDate || endObj < maxDate) {
+                        maxDate = endObj;
+                    }
+                }
+            });
+
+            // Apply min/max derived from windows
+            bulkStartDateInput.min = formatDateForInput(minDate);
+            if (maxDate) {
+                bulkStartDateInput.max = formatDateForInput(maxDate);
+            } else {
+                bulkStartDateInput.removeAttribute('max');
+            }
+
+            // Default value to min (earliest allowed)
+            bulkStartDateInput.value = bulkStartDateInput.min;
         }
 
         bulkDrawerRestoreFocusTo = document.activeElement;
@@ -924,6 +985,24 @@
         applySearch();
     }
 
+    // Helper to format date for datetime-local input (YYYY-MM-DDTHH:MM)
+    function formatDateTimeLocal(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
+    // Helper to format date for date input (YYYY-MM-DD)
+    function formatDateForInput(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
     // Submit bulk schedule
     function submitBulkSchedule() {
         const checkedBoxes = document.querySelectorAll('.interview-checkbox:checked');
@@ -934,13 +1013,47 @@
             return;
         }
 
+        const startDate = document.getElementById('bulkStartDate').value;
         const startTime = document.getElementById('bulkStartTime').value;
         const interval = document.getElementById('bulkInterval').value;
         const notifyEmail = document.getElementById('bulkNotifyEmail').checked;
 
-        if (!startTime) {
-            alert('Please select a start date and time.');
+        if (!startDate || !startTime) {
+            alert('Please select both start date and time.');
             return;
+        }
+
+        const startDateTimeStr = `${startDate}T${startTime}`;
+
+        // Validate start time against interview windows (basic check)
+        const startTimeObj = new Date(startDateTimeStr);
+
+        // Also ensure start time is not in the past (with 1 hour buffer)
+        const now = new Date();
+        now.setHours(now.getHours() + 1);
+        if (startTimeObj < now) {
+            alert('Start time must be at least 1 hour from now.');
+            return;
+        }
+        for (const cb of checkedBoxes) {
+            const deadlineStart = cb.dataset.deadlineStart;
+            const deadlineEnd = cb.dataset.deadlineEnd;
+
+            if (deadlineStart) {
+                const startObj = new Date(deadlineStart);
+                if (startTimeObj < startObj) {
+                    alert('Selected start time is before the allowed interview window for one or more applicants.');
+                    return;
+                }
+            }
+            if (deadlineEnd) {
+                const endObj = new Date(deadlineEnd);
+                endObj.setHours(23, 59, 59, 999);
+                if (startTimeObj > endObj) {
+                    alert('Selected start time is beyond the allowed interview window for one or more applicants.');
+                    return;
+                }
+            }
         }
 
         // Confirm bulk scheduling
@@ -1002,24 +1115,87 @@
         });
     }
 
-    function scheduleInterview(interviewId) {
+    function scheduleInterview(interviewId, deadlineStart = '', deadlineEnd = '') {
         document.getElementById('interviewId').value = interviewId;
         document.getElementById('scheduleModal').classList.add('show');
         
-        // Set minimum date to current date + 1 hour
+        const dateInput = document.getElementById('scheduleDate');
+        const timeInput = document.getElementById('scheduleTime');
+        const deadlineStartInput = document.getElementById('scheduleDeadlineStart');
+        const deadlineEndInput = document.getElementById('scheduleDeadlineEnd');
+
+        // Store deadlines for validation on submit
+        if (deadlineStartInput) deadlineStartInput.value = deadlineStart || '';
+        if (deadlineEndInput) deadlineEndInput.value = deadlineEnd || '';
+
+        // Base min date: today (local) + 1 hour
         const now = new Date();
         now.setHours(now.getHours() + 1);
-        document.getElementById('scheduleDate').min = now.toISOString().slice(0, 16);
+        const todayStr = formatDateForInput(now);
+        dateInput.min = todayStr;
+
+        // Apply interview window start if provided
+        if (deadlineStart) {
+            const startDate = new Date(deadlineStart);
+            const startStr = formatDateForInput(startDate);
+            // max of (today, start date)
+            dateInput.min = startStr > todayStr ? startStr : todayStr;
+        }
+
+        // Apply interview window end if provided
+        if (deadlineEnd) {
+            const endDate = new Date(deadlineEnd);
+            const endStr = formatDateForInput(endDate);
+            dateInput.max = endStr;
+        } else {
+            dateInput.removeAttribute('max');
+        }
+
+        // Reset time field
+        if (timeInput) {
+            timeInput.value = '';
+        }
     }
 
-    function rescheduleInterview(interviewId) {
+    function rescheduleInterview(interviewId, deadlineStart = '', deadlineEnd = '') {
         document.getElementById('interviewId').value = interviewId;
         document.getElementById('scheduleModal').classList.add('show');
         
-        // Set minimum date to current date + 1 hour
+        const dateInput = document.getElementById('scheduleDate');
+        const timeInput = document.getElementById('scheduleTime');
+        const deadlineStartInput = document.getElementById('scheduleDeadlineStart');
+        const deadlineEndInput = document.getElementById('scheduleDeadlineEnd');
+
+        // Store deadlines for validation on submit
+        if (deadlineStartInput) deadlineStartInput.value = deadlineStart || '';
+        if (deadlineEndInput) deadlineEndInput.value = deadlineEnd || '';
+
+        // Base min date: today (local) + 1 hour
         const now = new Date();
         now.setHours(now.getHours() + 1);
-        document.getElementById('scheduleDate').min = now.toISOString().slice(0, 16);
+        const todayStr = formatDateForInput(now);
+        dateInput.min = todayStr;
+
+        // Apply interview window start if provided
+        if (deadlineStart) {
+            const startDate = new Date(deadlineStart);
+            const startStr = formatDateForInput(startDate);
+            dateInput.min = startStr > todayStr ? startStr : todayStr;
+        }
+
+        // Apply interview window end if provided
+        if (deadlineEnd) {
+            const endDate = new Date(deadlineEnd);
+            const endStr = formatDateForInput(endDate);
+            dateInput.max = endStr;
+        } else {
+            dateInput.removeAttribute('max');
+        }
+
+        // Reset time field
+        if (timeInput) {
+            timeInput.value = '';
+        }
         
         // Update modal title for rescheduling
         document.querySelector('.modal-title').textContent = 'Reschedule Interview';
@@ -1043,8 +1219,40 @@
         const interviewId = formData.get('interview_id');
         const mode = this.dataset.mode || 'schedule';
         
+        const dateValue = formData.get('schedule_date');
+        const timeValue = formData.get('schedule_time');
+        if (!dateValue || !timeValue) {
+            alert('Please select both interview date and time.');
+            return;
+        }
+
+        // Combine date and time into ISO-like string (YYYY-MM-DDTHH:MM)
+        const scheduleDateTime = `${dateValue}T${timeValue}`;
+
+        // Validate against interview window if provided
+        const deadlineStart = formData.get('schedule_deadline_start');
+        const deadlineEnd = formData.get('schedule_deadline_end');
+        const scheduleDateObj = new Date(scheduleDateTime);
+
+        if (deadlineStart) {
+            const startObj = new Date(deadlineStart);
+            if (scheduleDateObj < startObj) {
+                alert('Selected time is before the allowed interview window.');
+                return;
+            }
+        }
+        if (deadlineEnd) {
+            const endObj = new Date(deadlineEnd);
+            // Allow any time on the deadline day by pushing to end-of-day
+            endObj.setHours(23, 59, 59, 999);
+            if (scheduleDateObj > endObj) {
+                alert('Selected time is beyond the allowed interview window.');
+                return;
+            }
+        }
+
         const data = {
-            schedule_date: formData.get('schedule_date'),
+            schedule_date: scheduleDateTime,
             notes: formData.get('notes'),
             notify_email: formData.get('notify_email') ? 1 : 0
         };

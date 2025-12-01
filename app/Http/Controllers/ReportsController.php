@@ -511,12 +511,19 @@ class ReportsController extends Controller
     /**
      * Get archived reports
      */
-    public function archivedHistory()
+    public function archivedHistory(Request $request)
     {
-        $reports = GeneratedReport::onlyTrashed()
+        \Log::info('Archived History Request', ['all' => $request->all(), 'school_year_id' => $request->school_year_id]);
+        $query = GeneratedReport::onlyTrashed()
             ->with('generatedBy')
-            ->orderBy('deleted_at', 'desc')
-            ->paginate(10);
+            ->orderBy('deleted_at', 'desc');
+
+        // Apply school year filter
+        if ($request->has('school_year_id') && $request->school_year_id !== 'all') {
+            $query->where('school_year_id', $request->school_year_id);
+        }
+
+        $reports = $query->paginate(10);
 
         // Transform paginator items safely
         $items = $reports->getCollection()->map(function ($report) {
@@ -540,6 +547,11 @@ class ReportsController extends Controller
                 'last_page' => $reports->lastPage(),
                 'total' => $reports->total(),
             ],
+            'debug_filters' => [
+                'received_school_year_id' => $request->input('school_year_id'),
+                'has_filter' => $request->has('school_year_id'),
+                'is_not_all' => $request->input('school_year_id') !== 'all',
+            ]
         ]);
     }
 

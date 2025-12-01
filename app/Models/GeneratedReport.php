@@ -17,6 +17,7 @@ class GeneratedReport extends Model
         'file_path',
         'filters_applied',
         'generated_by',
+        'school_year_id',
         'file_size',
         'status',
         'metadata',
@@ -34,6 +35,14 @@ class GeneratedReport extends Model
     public function generatedBy()
     {
         return $this->belongsTo(User::class, 'generated_by', 'user_id');
+    }
+
+    /**
+     * Get the school year associated with this report.
+     */
+    public function schoolYear()
+    {
+        return $this->belongsTo(SchoolYear::class);
     }
 
     /**

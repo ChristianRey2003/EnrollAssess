@@ -1,13 +1,10 @@
 <div class="applicants-table-section">
-    <!-- Bulk Actions Bar -->
-    <div class="bulk-actions-bar" id="bulkActionsBar">
+    <!-- Bulk Actions Bar - Removed bulk scheduling, use Schedule page instead -->
+    <div class="bulk-actions-bar" id="bulkActionsBar" style="display: none;">
         <div class="bulk-actions-info">
             <span id="selectedCount">0</span> applicant(s) selected
         </div>
         <div class="bulk-actions-buttons">
-            <button type="button" class="btn btn-white" onclick="openBulkScheduleModal()">
-                Schedule Selected
-            </button>
             <button type="button" class="btn btn-outline-white" onclick="clearSelection()">
                 Clear Selection
             </button>

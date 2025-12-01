@@ -991,6 +991,12 @@
             <div class="archived-reports-header">
                 <h3>Archived Reports</h3>
                 <div class="archived-reports-actions">
+                    <select id="archivedReportSchoolYear" class="form-input" style="width: auto; display: inline-block; margin-right: 10px;" onchange="loadArchivedReports()">
+                        <option value="all">All School Years</option>
+                        @foreach($schoolYears as $sy)
+                            <option value="{{ $sy->id }}" {{ session('school_year_id') == $sy->id ? 'selected' : '' }}>{{ $sy->name }}</option>
+                        @endforeach
+                    </select>
                     <button type="button" class="btn btn-primary-export" onclick="loadArchivedReports()" id="loadArchivedBtn">Load Archived</button>
                     <button type="button" class="btn btn-primary-export" onclick="restoreAllArchived()">Restore All</button>
                     <button type="button" class="btn btn-delete-permanent" onclick="permanentlyDeleteAllArchived()">Permanently Delete All</button>
@@ -1547,7 +1553,13 @@
         btn.textContent = 'Loading...';
 
         try {
-            const response = await fetch('/admin/reports/archived-history', {
+            const schoolYearId = document.getElementById('archivedReportSchoolYear').value;
+            const url = new URL('/admin/reports/archived-history', window.location.origin);
+            if (schoolYearId && schoolYearId !== 'all') {
+                url.searchParams.append('school_year_id', schoolYearId);
+            }
+
+            const response = await fetch(url, {
                 headers: {
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': csrfToken,

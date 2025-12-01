@@ -547,52 +547,6 @@
     </div>
 </div>
 
-<!-- Bulk Schedule Modal -->
-<div id="bulkScheduleModal" class="schedule-modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 class="modal-title">Bulk Schedule Interviews</h3>
-        </div>
-        <form id="bulkScheduleForm" onsubmit="submitBulkSchedule(event)">
-            @csrf
-            
-            <div class="form-group">
-                <label class="form-label">Selected Applicants</label>
-                <div id="selectedApplicantsList" style="font-size: 0.875rem; color: #6B7280; margin-bottom: 12px;"></div>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Start Date *</label>
-                <input type="date" id="bulkScheduleDate" name="schedule_date_start" class="form-input" required>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Start Time *</label>
-                <input type="time" id="bulkScheduleTime" name="schedule_time_start" class="form-input" required>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Time Interval Between Interviews (minutes) *</label>
-                <select name="time_interval" class="form-select" required>
-                    <option value="30">30 minutes</option>
-                    <option value="45">45 minutes</option>
-                    <option value="60" selected>60 minutes</option>
-                    <option value="90">90 minutes</option>
-                    <option value="120">120 minutes</option>
-                </select>
-            </div>
-            
-            <div class="form-checkbox">
-                <input type="checkbox" id="bulkNotifyEmail" name="notify_email" value="1" checked>
-                <label for="bulkNotifyEmail">Send email notifications to all applicants</label>
-            </div>
-            
-            <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" onclick="closeBulkScheduleModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary">Schedule All</button>
-            </div>
-        </form>
-    </div>
-</div>
 @endsection
 
 @push('scripts')
@@ -770,25 +724,19 @@
     }
 
     function updateBulkActions() {
-        // Only count enabled checkboxes that are checked
+        // Bulk actions bar is hidden - no bulk scheduling on this page
+        // Keep function for compatibility but don't show bulk actions bar
         const checkboxes = document.querySelectorAll('.applicant-checkbox:not(:disabled):checked');
         const count = checkboxes.length;
-        const bulkBar = document.getElementById('bulkActionsBar');
         const selectAll = document.getElementById('selectAll');
-        
-        document.getElementById('selectedCount').textContent = count;
-        
-        if (count > 0) {
-            bulkBar.classList.add('show');
-        } else {
-            bulkBar.classList.remove('show');
-        }
         
         // Update select all checkbox - only consider enabled checkboxes
         const allEnabledCheckboxes = document.querySelectorAll('.applicant-checkbox:not(:disabled)');
         const checkedEnabledCheckboxes = document.querySelectorAll('.applicant-checkbox:not(:disabled):checked');
-        selectAll.checked = allEnabledCheckboxes.length > 0 && checkedEnabledCheckboxes.length === allEnabledCheckboxes.length;
-        selectAll.indeterminate = checkedEnabledCheckboxes.length > 0 && checkedEnabledCheckboxes.length < allEnabledCheckboxes.length;
+        if (selectAll) {
+            selectAll.checked = allEnabledCheckboxes.length > 0 && checkedEnabledCheckboxes.length === allEnabledCheckboxes.length;
+            selectAll.indeterminate = checkedEnabledCheckboxes.length > 0 && checkedEnabledCheckboxes.length < allEnabledCheckboxes.length;
+        }
     }
 
     function clearSelection() {
@@ -942,105 +890,12 @@
         });
     }
 
-    // Bulk schedule modal
-    function openBulkScheduleModal() {
-        const checkboxes = document.querySelectorAll('.applicant-checkbox:not(:disabled):checked');
-        
-        if (checkboxes.length === 0) {
-            alert('Please select at least one applicant to schedule.');
-            return;
-        }
-        
-        // Show selected applicants
-        const names = Array.from(checkboxes).map(cb => cb.dataset.applicantName).filter(name => name);
-        document.getElementById('selectedApplicantsList').innerHTML = names.join(', ');
-        
-        document.getElementById('bulkScheduleModal').classList.add('show');
-        
-        // Set minimum start date to today
-        const now = new Date();
-        const todayStr = now.toISOString().slice(0, 10);
-        document.getElementById('bulkScheduleDate').min = todayStr;
-    }
-
-    function closeBulkScheduleModal() {
-        document.getElementById('bulkScheduleModal').classList.remove('show');
-        document.getElementById('bulkScheduleForm').reset();
-    }
-
-    function submitBulkSchedule(event) {
-        event.preventDefault();
-        
-        const checkboxes = document.querySelectorAll('.applicant-checkbox:not(:disabled):checked');
-        const interviewIds = Array.from(checkboxes)
-            .map(cb => cb.dataset.interviewId)
-            .filter(id => id); // Filter out undefined/null values
-        
-        if (interviewIds.length === 0) {
-            alert('No applicants selected');
-            return;
-        }
-        
-        const form = event.target;
-        const formData = new FormData(form);
-
-        const dateValue = formData.get('schedule_date_start');
-        const timeValue = formData.get('schedule_time_start');
-        if (!dateValue || !timeValue) {
-            alert('Please select both start date and time.');
-            return;
-        }
-
-        const scheduleDateTimeStart = `${dateValue}T${timeValue}`;
-
-        const data = {
-            interview_ids: interviewIds,
-            schedule_date_start: scheduleDateTimeStart,
-            time_interval: parseInt(formData.get('time_interval')),
-            notify_email: formData.get('notify_email') ? 1 : 0
-        };
-        
-        fetch('/instructor/interviews/bulk-schedule', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                let message = `Successfully scheduled ${data.scheduled} interview(s).`;
-                if (data.emails_sent > 0) {
-                    message += ` ${data.emails_sent} email notification(s) sent.`;
-                }
-                if (data.errors.length > 0) {
-                    message += '\n\nErrors:\n' + data.errors.join('\n');
-                }
-                alert(message);
-                closeBulkScheduleModal();
-                clearSelection();
-                location.reload();
-            } else {
-                alert(data.message || 'Failed to schedule interviews');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred. Please try again.');
-        });
-    }
 
     // Close modals when clicking outside
     document.getElementById('scheduleModal')?.addEventListener('click', function(e) {
         if (e.target === this) closeScheduleModal();
     });
 
-    document.getElementById('bulkScheduleModal')?.addEventListener('click', function(e) {
-        if (e.target === this) closeBulkScheduleModal();
-    });
 
     // AJAX Pagination - Use event delegation for dynamically added pagination links
     document.addEventListener('click', function(e) {

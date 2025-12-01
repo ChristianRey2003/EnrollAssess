@@ -692,6 +692,7 @@
                     <select id="status" name="status" class="form-select form-select-sm" style="width: 180px; min-width: 180px; height: 40px; padding: 4px 28px 4px 8px;">
                         <option value="">All Statuses</option>
                         <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="exam-scheduled" {{ request('status') === 'exam-scheduled' ? 'selected' : '' }}>Exam Scheduled</option>
                         <option value="exam-completed" {{ request('status') === 'exam-completed' ? 'selected' : '' }}>Exam Completed</option>
                         <option value="interview-scheduled" {{ request('status') === 'interview-scheduled' ? 'selected' : '' }}>Interview Scheduled</option>
                     </select>

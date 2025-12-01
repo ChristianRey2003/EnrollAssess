@@ -147,6 +147,18 @@
                     <span class="nav-text">Dashboard</span>
                 </a>
             </div>
+
+            @if(auth()->user()->hasPermission('applicants.view'))
+            <div class="nav-item" role="listitem">
+                <a href="{{ route('admin.applicants.index') }}" 
+                   class="nav-link {{ str_starts_with($currentRoute, 'admin.applicants') && !str_contains($currentRoute, 'assign') ? 'active' : '' }}"
+                   @if(str_starts_with($currentRoute, 'admin.applicants') && !str_contains($currentRoute, 'assign')) aria-current="page" @endif
+                   aria-label="Applicants - View and manage applicants">
+                    <span class="nav-icon" aria-hidden="true"><i class="fas fa-user-graduate"></i></span>
+                    <span class="nav-text">Applicants</span>
+                </a>
+            </div>
+            @endif
             
             @if(auth()->user()->hasPermission('applicants.assign'))
             <div class="nav-item" role="listitem">

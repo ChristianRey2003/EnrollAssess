@@ -45,7 +45,10 @@ class SettingsController extends Controller
         // Get recent audit logs (limit to 20 for initial load)
         $auditLogs = ActivityLog::with('user')->latest()->take(20)->get();
 
-        return view('admin.settings.index', compact('emailSettings', 'auditLogs'));
+        // Get all school years for filtering
+        $schoolYears = \App\Models\SchoolYear::orderBy('start_date', 'desc')->get();
+
+        return view('admin.settings.index', compact('emailSettings', 'auditLogs', 'schoolYears'));
     }
 
     /**

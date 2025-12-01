@@ -356,6 +356,145 @@
 
 @section('content')
 
+    @php
+        $delegation = null;
+        $isDelegated = false;
+        if (auth()->check() && auth()->user()->role === 'instructor') {
+            $delegation = auth()->user()->delegatedPermissions()
+                ->whereIn('permission', ['applicants.view', 'applicants.create', 'applicants.edit', 'applicants.delete', 'applicants.assign', 'applicants.import'])
+                ->where('status', 'active')
+                ->where(function($q) {
+                    $q->whereNull('starts_at')
+                      ->orWhere('starts_at', '<=', now());
+                })
+                ->first();
+            
+            if ($delegation && !$delegation->isExpired()) {
+                $isDelegated = true;
+            }
+        }
+    @endphp
+
+    <!-- Delegation Expiration Indicator -->
+    @if($isDelegated && $delegation)
+        @php
+            $effectiveExpiresAt = $delegation->getEffectiveExpiresAt();
+            $isExpiringSoon = false;
+            $timeRemainingText = '';
+            
+            if ($effectiveExpiresAt) {
+                $isExpiringSoon = $effectiveExpiresAt->diffInHours(now()) < 2 && $effectiveExpiresAt->isFuture();
+                $timeRemaining = now()->diff($effectiveExpiresAt);
+                
+                if ($timeRemaining->invert === 0) {
+                    // Future expiration
+                    if ($timeRemaining->days > 0) {
+                        $timeRemainingText = $timeRemaining->days . 'd ' . $timeRemaining->h . 'h';
+                    } elseif ($timeRemaining->h > 0) {
+                        $timeRemainingText = $timeRemaining->h . 'h ' . $timeRemaining->i . 'm';
+                    } elseif ($timeRemaining->i > 0) {
+                        $timeRemainingText = $timeRemaining->i . 'm';
+                    } else {
+                        $timeRemainingText = 'Less than a minute';
+                    }
+                } else {
+                    // Past expiration
+                    $timeRemainingText = 'Expired';
+                }
+            }
+        @endphp
+        <div class="delegation-indicator {{ $isExpiringSoon ? 'expiring-soon' : '' }}" id="delegationIndicator" style="margin-bottom: 20px; padding: 12px 16px; background: {{ $isExpiringSoon ? '#FEF3C7' : '#EFF6FF' }}; border: 2px solid {{ $isExpiringSoon ? '#FDE68A' : '#BFDBFE' }}; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <svg style="width: 20px; height: 20px; color: {{ $isExpiringSoon ? '#F59E0B' : '#3B82F6' }};" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span style="font-weight: 600; color: {{ $isExpiringSoon ? '#92400E' : '#1E40AF' }}; font-size: 14px;">
+                    Delegation Access
+                </span>
+            </div>
+            @if($effectiveExpiresAt)
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="color: {{ $isExpiringSoon ? '#92400E' : '#1E40AF' }}; font-size: 13px;">
+                        @if($timeRemainingText === 'Expired')
+                            <strong>Expired</strong>
+                        @else
+                            Expires in: <strong id="delegationTimer">{{ $timeRemainingText }}</strong>
+                        @endif
+                    </span>
+                    <span style="color: {{ $isExpiringSoon ? '#92400E' : '#60A5FA' }}; font-size: 12px;">
+                        ({{ $effectiveExpiresAt->format('M d, Y g:i A') }})
+                    </span>
+                </div>
+            @endif
+        </div>
+        @if($effectiveExpiresAt)
+            <script>
+                // Live countdown timer for delegation
+                (function() {
+                    const expiresAt = new Date('{{ $effectiveExpiresAt->toIso8601String() }}');
+                    const timerEl = document.getElementById('delegationTimer');
+                    const indicatorEl = document.getElementById('delegationIndicator');
+                    
+                    if (!timerEl || !indicatorEl) return;
+                    
+                    function updateTimer() {
+                        const now = new Date();
+                        const timeRemaining = expiresAt - now;
+                        
+                        if (timeRemaining <= 0) {
+                            timerEl.textContent = 'Expired';
+                            indicatorEl.style.background = '#FEE2E2';
+                            indicatorEl.style.borderColor = '#FECACA';
+                            const svg = indicatorEl.querySelector('svg');
+                            const spans = indicatorEl.querySelectorAll('span');
+                            if (svg) svg.style.color = '#DC2626';
+                            spans.forEach(span => span.style.color = '#DC2626');
+                            return;
+                        }
+                        
+                        const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+                        const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+                        const days = Math.floor(hours / 24);
+                        const remainingHours = hours % 24;
+                        
+                        let timeText = '';
+                        if (days > 0) {
+                            timeText = days + 'd ' + remainingHours + 'h';
+                        } else if (hours > 0) {
+                            timeText = hours + 'h ' + minutes + 'm';
+                        } else if (minutes > 0) {
+                            timeText = minutes + 'm ' + seconds + 's';
+                        } else {
+                            timeText = seconds + 's';
+                        }
+                        
+                        timerEl.textContent = timeText;
+                        
+                        // Update styling if expiring soon (< 2 hours)
+                        const isExpiringSoon = hours < 2;
+                        if (isExpiringSoon) {
+                            indicatorEl.style.background = '#FEF3C7';
+                            indicatorEl.style.borderColor = '#FDE68A';
+                            const svg = indicatorEl.querySelector('svg');
+                            const spans = indicatorEl.querySelectorAll('span');
+                            if (svg) svg.style.color = '#F59E0B';
+                            spans.forEach(span => {
+                                if (span.textContent.includes('Expires')) {
+                                    span.style.color = '#92400E';
+                                }
+                            });
+                        }
+                    }
+                    
+                    // Update every second
+                    setInterval(updateTimer, 1000);
+                    updateTimer(); // Initial update
+                })();
+            </script>
+        @endif
+    @endif
+
                 <!-- Statistics Section -->
                 <section class="stats-section">
                     <div class="stat-card">
@@ -404,13 +543,16 @@
                                     aria-label="Filter by status">
                                 <option value="">All Status</option>
                                 <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                <option value="exam-scheduled" {{ request('status') == 'exam-scheduled' ? 'selected' : '' }}>Scheduled for Exam</option>
                                 <option value="exam-completed" {{ request('status') == 'exam-completed' ? 'selected' : '' }}>Exam Completed</option>
+                                <option value="exam-no-show" {{ request('status') == 'exam-no-show' ? 'selected' : '' }}>Exam No-Show</option>
                                 <option value="interview-scheduled" {{ request('status') == 'interview-scheduled' ? 'selected' : '' }}>Interview Scheduled</option>
                                 <option value="interview-completed" {{ request('status') == 'interview-completed' ? 'selected' : '' }}>Interview Completed</option>
                             </select>
                         </div>
                         <div class="toolbar-right" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <!-- Most Common Actions - Keep Visible for Better UX -->
+                            @if(auth()->user()->hasPermission('applicants.create'))
                             <a href="{{ route('admin.applicants.create') }}" 
                                class="btn btn-primary" 
                                style="white-space: nowrap;">
@@ -419,7 +561,9 @@
                                 </svg>
                                 Add
                             </a>
+                            @endif
                             
+                            @if(auth()->user()->hasPermission('applicants.import'))
                             <a href="{{ route('admin.applicants.import') }}" 
                                class="btn btn-secondary" 
                                style="white-space: nowrap;">
@@ -428,7 +572,9 @@
                                 </svg>
                                 Import
                             </a>
+                            @endif
                             
+                            @if(auth()->user()->hasPermission('applicants.assign'))
                             <a href="{{ route('admin.applicants.assign') }}" 
                                class="btn btn-success" 
                                style="white-space: nowrap;">
@@ -437,6 +583,7 @@
                                 </svg>
                                 Assign
                             </a>
+                            @endif
                             
                             <!-- Less Frequent Actions - In Dropdown -->
                             <div class="actions-dropdown" id="moreActionsDropdown">
@@ -452,6 +599,12 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
                                         </svg>
                                         Generate Codes
+                                    </button>
+                                    <button type="button" class="dropdown-item" onclick="openScheduleExamDrawer(); toggleDropdown('moreActionsDropdown');">
+                                        <svg class="dropdown-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                        Schedule Exam
                                     </button>
                                     <button type="button" class="dropdown-item" onclick="openEmailNotificationDrawer(); toggleDropdown('moreActionsDropdown');">
                                         <svg class="dropdown-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -477,12 +630,14 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%;">
                             <span id="selectedCount" style="font-size: 12px; font-weight: 500; color: #1e40af;">0 selected</span>
                             <div style="display: flex; gap: 8px;">
+                                @if(auth()->user()->hasPermission('applicants.delete'))
                                 <button onclick="bulkDeleteApplicants()" class="btn" style="padding: 4px 12px; font-size: 12px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; display: inline-flex; align-items: center;">
                                     <svg width="14" height="14" style="margin-right: 4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
                                     Delete Selected
                                 </button>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -506,6 +661,7 @@
                                 {{-- <th style="width: 120px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">Preferred course</th> --}}
                                 <th style="width: 100px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">Weighted exam % (60%)</th>
                                 {{-- <th style="width: 120px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">Verbal description</th> --}}
+                                <th style="width: 180px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">Exam Scheduled</th>
                                 <th style="width: 120px; font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">Status</th>
                             </tr>
                         </thead>
@@ -565,11 +721,13 @@
                                                title="View applicant information">
                                                 View
                                             </a>
+                                            @if(auth()->user()->hasPermission('applicants.edit'))
                                             <a href="{{ route('admin.applicants.edit', $applicant->applicant_id) }}"
                                                class="action-btn action-btn-edit"
                                                title="Edit applicant">
                                                 Edit
                                             </a>
+                                            @endif
                                             <!-- Hidden: Assign Exam (Legacy - kept for potential future use) -->
                                             @if($applicant->accessCode)
                                                 <button onclick="showSingleAssignExamModal({{ $applicant->applicant_id }})"
@@ -584,11 +742,13 @@
                                                     title="Send exam notification">
                                                 Email
                                             </button>
+                                            @if(auth()->user()->hasPermission('applicants.delete'))
                                             <button onclick="deleteApplicant({{ $applicant->applicant_id }})"
                                                     class="action-btn action-btn-delete"
                                                     title="Delete applicant">
                                                 Delete
                                             </button>
+                                            @endif
                                         </div>
                                     </td>
                                     <td class="text-left" style="font-size: 13px; font-weight: normal;">
@@ -614,12 +774,34 @@
                                     {{-- <td class="text-center" style="font-size: 13px; font-weight: normal;">
                                         <div class="applicant-name" style="font-weight: 500; color: #1F2937;">{{ $applicant->computed_verbal_description ?: '-' }}</div>
                                     </td> --}}
+                                    <td class="text-center" style="font-size: 12px; font-weight: normal;">
+                                        @php
+                                            $schedule = $applicant->latestExamSchedule;
+                                        @endphp
+                                        @if($schedule)
+                                            <div style="font-weight: 500; color: #1F2937;">
+                                                {{ $schedule->scheduled_date->format('M d, Y') }}
+                                            </div>
+                                            <div style="font-size: 11px; color: #6B7280;">
+                                                {{ \Carbon\Carbon::parse($schedule->scheduled_time)->format('g:i A') }}
+                                            </div>
+                                            @if($schedule->venue)
+                                                <div style="font-size: 11px; color: #6B7280; margin-top: 2px;">
+                                                    {{ Str::limit($schedule->venue, 20) }}
+                                                </div>
+                                            @endif
+                                        @else
+                                            <span style="color: #9ca3af;">-</span>
+                                        @endif
+                                    </td>
                                     <td class="text-center" style="padding: 6px 4px;">
                                         <span class="status-badge status-pending" style="font-size: 9px; padding: 2px 4px; border-radius: 3px; background: #fef3c7; color: #92400e; font-weight: 500; white-space: nowrap; display: inline-block;">
                                             @php
                                                 $status = $applicant->status;
                                                 $statusMap = [
+                                                    'exam-scheduled' => 'EXAM SCHEDULED',
                                                     'exam-completed' => 'EXAM DONE',
+                                                    'exam-no-show' => 'EXAM NO-SHOW',
                                                     'interview-available' => 'INTERVIEW READY',
                                                     'interview-scheduled' => 'INTERVIEW SET',
                                                     'interview-completed' => 'INTERVIEW DONE',
@@ -791,6 +973,7 @@
 
 <!-- Include Exam Notification Modal -->
 @include('components.exam-notification-modal')
+@include('components.schedule-exam-modal')
 
 <!-- Include Assign Exam Modal -->
 @include('admin.applicants.partials.assign-exam-modal')
@@ -1276,6 +1459,16 @@
             hidePages6And7();
         }
 
+        // Helper function to format time
+        function formatTime(timeString) {
+            if (!timeString) return '';
+            const [hours, minutes] = timeString.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour % 12 || 12;
+            return `${displayHour}:${minutes} ${ampm}`;
+        }
+
         // AJAX Pagination - Use event delegation to catch all pagination links
         document.addEventListener('click', function(e) {
             // Check if click is on a pagination link (could be direct <a> or nested in <span>)
@@ -1328,14 +1521,16 @@
                         const from = data.pagination.from || 0;
                         
                         if (data.applicants.length === 0) {
-                            html = '<tr><td colspan="7" class="text-center py-8"><div class="empty-state"><div class="empty-title">No applicants found</div></div></td></tr>';
+                            html = '<tr><td colspan="8" class="text-center py-8"><div class="empty-state"><div class="empty-title">No applicants found</div></div></td></tr>';
                         } else {
                             data.applicants.forEach((applicant, index) => {
                                 const rowNum = (from - 1) + index + 1;
                                 
                                 // Status badge mapping
                                 const statusMap = {
+                                    'exam-scheduled': 'EXAM SCHEDULED',
                                     'exam-completed': 'EXAM DONE',
+                                    'exam-no-show': 'EXAM NO-SHOW',
                                     'interview-available': 'INTERVIEW READY',
                                     'interview-scheduled': 'INTERVIEW SET',
                                     'interview-completed': 'INTERVIEW DONE',
@@ -1379,6 +1574,26 @@
                                 const scoreDisplay = applicant.score !== null 
                                     ? `<div class="applicant-name" style="font-weight: 500; color: #1F2937;">${Number(applicant.score).toFixed(2)}%</div>`
                                     : `<span class="applicant-email" style="font-size: 12px; color: #6B7280;">-</span>`;
+                                
+                                // Build exam schedule display
+                                let examScheduleDisplay = '<span style="color: #9ca3af;">-</span>';
+                                if (applicant.latest_exam_schedule) {
+                                    const schedule = applicant.latest_exam_schedule;
+                                    const scheduleDate = schedule.scheduled_date ? new Date(schedule.scheduled_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+                                    const scheduleTime = schedule.scheduled_time ? formatTime(schedule.scheduled_time) : '';
+                                    const venue = schedule.venue || '';
+                                    
+                                    examScheduleDisplay = '';
+                                    if (scheduleDate) {
+                                        examScheduleDisplay += `<div style="font-weight: 500; color: #1F2937;">${scheduleDate}</div>`;
+                                    }
+                                    if (scheduleTime) {
+                                        examScheduleDisplay += `<div style="font-size: 11px; color: #6B7280;">${scheduleTime}</div>`;
+                                    }
+                                    if (venue) {
+                                        examScheduleDisplay += `<div style="font-size: 11px; color: #6B7280; margin-top: 2px;">${venue.length > 20 ? venue.substring(0, 20) + '...' : venue}</div>`;
+                                    }
+                                }
                                 
                                 html += `<tr style="position: relative;" 
                                     onmouseover="showActions(${applicant.applicant_id})" 
@@ -1433,6 +1648,9 @@
                                     </td>
                                     <td class="text-center" style="font-size: 13px; font-weight: normal;">
                                         ${scoreDisplay}
+                                    </td>
+                                    <td class="text-center" style="font-size: 12px; font-weight: normal;">
+                                        ${examScheduleDisplay}
                                     </td>
                                     <td class="text-center" style="padding: 6px 4px;">
                                         <span class="status-badge status-pending" style="font-size: 9px; padding: 2px 4px; border-radius: 3px; background: #fef3c7; color: #92400e; font-weight: 500; white-space: nowrap; display: inline-block;">${statusText}</span>
