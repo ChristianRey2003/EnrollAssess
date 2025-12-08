@@ -42,6 +42,8 @@ class Interview extends Model
         'assignment_notes',
         'interview_deadline_start',
         'interview_deadline_end',
+        // Remarks
+        'remarks',
     ];
 
     protected $casts = [

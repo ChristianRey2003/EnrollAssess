@@ -219,8 +219,17 @@ class ReportsController extends Controller
 
             // Return JSON for AJAX pagination requests only
             if ($request->ajax() && $request->header('Accept') && str_contains($request->header('Accept'), 'application/json')) {
+                $scoringService = app(\App\Services\AdmissionScoringService::class);
+                $applicantsData = collect($applicants->items())->map(function($applicant) use ($scoringService) {
+                    $overallRating = $applicant->getOverallRating();
+                    return array_merge($applicant->toArray(), [
+                        'overall_rating' => $overallRating ? $overallRating['overall_rating'] : null,
+                        'overall_rating_components' => $overallRating ? $overallRating['components'] : null,
+                    ]);
+                })->toArray();
+                
                 return response()->json([
-                    'applicants' => $applicants->items(),
+                    'applicants' => $applicantsData,
                     'pagination' => [
                         'current_page' => $applicants->currentPage(),
                         'last_page' => $applicants->lastPage(),

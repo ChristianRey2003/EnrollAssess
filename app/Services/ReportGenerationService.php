@@ -243,13 +243,27 @@ class ReportGenerationService
                 $rating = $scoringService->calculateOverallRating($applicant);
                 $finalScore = $rating['overall_rating'];
             } else {
-                // Calculate partial score if some components are missing
-                $ueeWeighted = (float) ($applicant->score ?? 0); // Already weighted (0-60)
+                // Calculate partial score if some components are missing using dynamic weights
+                $ueeWeightPercent = (int) \App\Models\Settings::getSetting('scoring_weight_uee', 60);
+                $gwaWeightPercent = (int) \App\Models\Settings::getSetting('scoring_weight_gwa', 30);
+                $interviewWeightPercent = (int) \App\Models\Settings::getSetting('scoring_weight_interview', 5);
+                $skillTestWeightPercent = (int) \App\Models\Settings::getSetting('scoring_weight_skilltest', 5);
+                
+                // Convert to decimals
+                $ueeWeight = $ueeWeightPercent / 100.0;
+                $gwaWeight = $gwaWeightPercent / 100.0;
+                $interviewWeight = $interviewWeightPercent / 100.0;
+                $skillTestWeight = $skillTestWeightPercent / 100.0;
+                
+                // Get raw scores
+                // UEE score is stored as a percentage (0-100) in the database
+                $ueeRawPercentage = (float) ($applicant->score ?? 0);
+                
                 $gwaRaw = (float) ($applicant->card_tor_gwa ?? 0);
                 $skillTestRaw = (float) ($applicant->enrollassess_score ?? 0);
                 $interviewRaw = (float) ($applicant->interview_score ?? 0);
                 
-                $finalScore = $ueeWeighted + ($gwaRaw * 0.30) + ($interviewRaw * 0.05) + ($skillTestRaw * 0.05);
+                $finalScore = ($ueeRawPercentage * $ueeWeight) + ($gwaRaw * $gwaWeight) + ($interviewRaw * $interviewWeight) + ($skillTestRaw * $skillTestWeight);
             }
             
             $applicant->final_score = round($finalScore, 2);

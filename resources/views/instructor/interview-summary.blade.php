@@ -29,75 +29,126 @@
                         <span class="meta-item">{{ $applicant->application_no }}</span>
                         <span class="meta-separator">•</span>
                         <span class="meta-item meta-email">{{ $applicant->email_address }}</span>
+                        @if($applicant->phone_number)
+                            <span class="meta-separator">•</span>
+                            <span class="meta-item">{{ $applicant->phone_number }}</span>
+                        @endif
+                        @if($applicant->basicInfo && $applicant->basicInfo->facebook_link)
+                            <span class="meta-separator">•</span>
+                            <span class="meta-item">
+                                <a href="{{ $applicant->basicInfo->facebook_link }}" target="_blank" rel="noopener noreferrer" 
+                                   style="color: #2563eb; text-decoration: underline;">
+                                    {{ $applicant->basicInfo->facebook_link }}
+                                </a>
+                            </span>
+                        @endif
                     </div>
                 </div>
             </div>
             <div class="header-status">
                 <div class="status-group">
                     <span class="status-label">Interview Status</span>
-                    <span class="status-badge status-{{ $interview->status }}">
-                        {{ ucfirst(str_replace('-', ' ', $interview->status)) }}
-                    </span>
+                    @if($interview)
+                        <span class="status-badge status-{{ $interview->status }}">
+                            {{ ucfirst(str_replace('-', ' ', $interview->status)) }}
+                        </span>
+                    @else
+                        <span class="status-badge status-pending">
+                            Not Completed
+                        </span>
+                    @endif
                 </div>
             </div>
         </div>
 
-        <!-- Interview Summary Section -->
-        <div class="header-summary">
-            <h3 class="card-title">Interview Summary</h3>
-            <div class="summary-content">
-                <div class="summary-row">
-                    <span class="row-label">Interviewer</span>
-                    <span class="row-value">
-                        @if($interview->interviewer)
-                            {{ $interview->interviewer->full_name }}
-                            <span class="role-badge">{{ ucfirst($interview->interviewer->role) }}</span>
+        @if(!$interview || $interview->status !== 'completed')
+            <!-- No Interview Completed Message -->
+            <div class="header-summary">
+                <div class="alert alert-warning" style="padding: 16px; background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; color: #92400E;">
+                    <strong>Interview Not Completed</strong>
+                    <p style="margin: 8px 0 0 0;">
+                        @if(!$hasCompletedExam)
+                            This applicant has not completed the exam yet. The interview cannot be conducted until the exam is completed.
                         @else
-                            <span class="text-muted">Unassigned</span>
+                            This applicant has completed the exam, but the interview has not been completed yet.
                         @endif
-                    </span>
+                    </p>
                 </div>
-
-                @if($interview->schedule_date)
+            </div>
+        @else
+            <!-- Interview Summary Section -->
+            <div class="header-summary">
+                <h3 class="card-title">Interview Summary</h3>
+                <div class="summary-content">
                     <div class="summary-row">
-                        <span class="row-label">Scheduled</span>
-                        <span class="row-value">{{ $interview->schedule_date->format('M d, Y • g:i A') }}</span>
-                    </div>
-                @endif
-
-                @if($interview->status === 'completed' && $interview->updated_at)
-                    <div class="summary-row">
-                        <span class="row-label">Completed</span>
-                        <span class="row-value">{{ $interview->updated_at->format('M d, Y • g:i A') }}</span>
-                    </div>
-                @endif
-
-                @if($interview->status === 'completed' && $interview->overall_score !== null)
-                    <div class="summary-divider"></div>
-                    <div class="summary-row">
-                        <span class="row-label">Interview Score</span>
+                        <span class="row-label">Interviewer</span>
                         <span class="row-value">
-                            <span class="score-highlight">{{ number_format($interview->overall_score, 1) }}/80</span>
-                            <span class="score-detail">({{ number_format(($interview->overall_score / 80) * 100, 1) }}%)</span>
+                            @if($interview->interviewer)
+                                {{ $interview->interviewer->full_name }}
+                                <span class="role-badge">{{ ucfirst($interview->interviewer->role) }}</span>
+                            @else
+                                <span class="text-muted">Unassigned</span>
+                            @endif
                         </span>
                     </div>
-                @endif
 
-                @if($interview->recommendation)
-                    <div class="summary-row">
-                        <span class="row-label">Recommendation</span>
-                        <span class="row-value">
-                            <span class="recommendation-badge recommendation-{{ str_replace('_', '-', $interview->recommendation) }}">
-                                {{ ucfirst(str_replace('_', ' ', $interview->recommendation)) }}
+                    @if($interview->schedule_date)
+                        <div class="summary-row">
+                            <span class="row-label">Scheduled</span>
+                            <span class="row-value">{{ $interview->schedule_date->format('M d, Y • g:i A') }}</span>
+                        </div>
+                    @endif
+
+                    @if($interview->status === 'completed' && $interview->updated_at)
+                        <div class="summary-row">
+                            <span class="row-label">Completed</span>
+                            <span class="row-value">{{ $interview->updated_at->format('M d, Y • g:i A') }}</span>
+                        </div>
+                    @endif
+
+                    @if($interview->status === 'completed' && $interview->overall_score !== null)
+                        <div class="summary-divider"></div>
+                        <div class="summary-row">
+                            <span class="row-label">Interview Score</span>
+                            <span class="row-value">
+                                <span class="score-highlight">{{ number_format($interview->overall_score, 1) }}/80</span>
+                                <span class="score-detail">({{ number_format(($interview->overall_score / 80) * 100, 1) }}%)</span>
                             </span>
-                        </span>
-                    </div>
-                @endif
+                        </div>
+                    @endif
 
-                @if($applicant->card_tor_gwa)
+                    @if($interview->recommendation)
+                        <div class="summary-row">
+                            <span class="row-label">Recommendation</span>
+                            <span class="row-value">
+                                <span class="recommendation-badge recommendation-{{ str_replace('_', '-', $interview->recommendation) }}">
+                                    {{ ucfirst(str_replace('_', ' ', $interview->recommendation)) }}
+                                </span>
+                            </span>
+                        </div>
+                    @endif
+
+                    @if($applicant->card_tor_gwa)
+                        <div class="summary-row">
+                            <span class="row-label">CARD/TOR GWA</span>
+                            <span class="row-value">{{ number_format($applicant->card_tor_gwa, 2) }}</span>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        @endif
+        
+        <!-- Remarks Section -->
+        <div class="header-summary">
+            <h3 class="card-title">Remarks</h3>
+            <div class="summary-content">
+                @if($interview && $interview->remarks)
                     <div class="summary-row">
-                        <span class="row-label">CARD/TOR GWA</span>
-                        <span class="row-value">{{ number_format($applicant->card_tor_gwa, 2) }}</span>
+                        <div style="white-space: pre-wrap; color: #374151; line-height: 1.6;">{{ $interview->remarks }}</div>
+                    </div>
+                @else
+                    <div class="summary-row">
+                        <span style="color: #9CA3AF; font-style: italic;">No remarks added yet.</span>
                     </div>
                 @endif
             </div>
@@ -106,11 +157,10 @@
 
     <div class="detail-grid">
         <!-- Scoring and Rubric Section -->
+        @if($interview && $interview->status === 'completed' && $interview->overall_score !== null)
         <div class="detail-card scoring-card full-width">
             <h3 class="card-title">Scoring and Rubric Breakdown</h3>
-            
-            @if($interview->status === 'completed' && $interview->overall_score !== null)
-                <div class="scoring-content">
+            <div class="scoring-content">
                     <div class="rubric-breakdown">
                         <div class="rubric-grid">
                             @if($interview->communication_skills !== null)
@@ -178,14 +228,8 @@
                         </div>
                     @endif
                 </div>
-            @else
-                <div class="empty-state">
-                    <div class="empty-icon">📝</div>
-                    <p class="empty-text">Not evaluated yet</p>
-                    <p class="empty-subtext">Interview scores will appear here once the evaluation is complete.</p>
-                </div>
-            @endif
         </div>
+        @endif
     </div>
 
     <!-- Actions Bar -->
@@ -194,7 +238,7 @@
             <a href="{{ route('instructor.applicants') }}" class="btn btn-secondary">
                 Back to Applicants
             </a>
-            @if($interview->status === 'completed' && $interview->interviewer_id === auth()->user()->user_id)
+            @if($interview && $interview->status === 'completed' && $interview->interviewer_id === auth()->user()->user_id)
                 <a href="{{ route('instructor.interview.show', $applicant->applicant_id) }}" class="btn btn-outline">
                     Edit Evaluation
                 </a>
@@ -324,13 +368,19 @@
 .applicant-meta {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
     color: #6B7280;
     font-size: 14px;
+    line-height: 1.5;
 }
 
 .meta-separator {
     color: #D1D5DB;
+}
+
+.meta-item {
+    white-space: nowrap;
 }
 
 .meta-email {

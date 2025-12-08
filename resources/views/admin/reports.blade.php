@@ -498,7 +498,7 @@
                                         <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
                                             <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'score', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
                                                style="color: inherit; text-decoration: none; font-weight: bold;">
-                                                UEE
+                                                UEE ({{ \App\Models\Settings::getSetting('scoring_weight_uee', 60) }}%)
                                                 @if(request('sort_by') == 'score')
                                                     <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
                                                 @endif
@@ -507,7 +507,7 @@
                                         <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
                                             <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'card_tor_gwa', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
                                                style="color: inherit; text-decoration: none; font-weight: bold;">
-                                                GWA
+                                                GWA ({{ \App\Models\Settings::getSetting('scoring_weight_gwa', 30) }}%)
                                                 @if(request('sort_by') == 'card_tor_gwa')
                                                     <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
                                                 @endif
@@ -516,17 +516,8 @@
                                         <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
                                             <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'enrollassess_score', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
                                                style="color: inherit; text-decoration: none; font-weight: bold;">
-                                                EnrollAssess
+                                                Interview & Exam ({{ \App\Models\Settings::getSetting('scoring_weight_interview', 5) + \App\Models\Settings::getSetting('scoring_weight_skilltest', 5) }}%)
                                                 @if(request('sort_by') == 'enrollassess_score')
-                                                    <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
-                                                @endif
-                                            </a>
-                                        </th>
-                                        <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
-                                            <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'interview_score', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
-                                               style="color: inherit; text-decoration: none; font-weight: bold;">
-                                                Interview
-                                                @if(request('sort_by') == 'interview_score')
                                                     <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
                                                 @endif
                                             </a>
@@ -579,34 +570,31 @@
                                                 @endif
                                             </td>
                                             <td class="text-center" style="font-size: 13px; font-weight: normal;">
-                                                @if($applicant->score)
-                                                    <div>{{ round($applicant->score, 2) }}</div>
+                                                @if($applicant->score && $overallRating)
+                                                    <div>{{ round($overallRating['components']['uee']['raw'], 2) }}%</div>
                                                 @else
                                                     <span style="color: #9ca3af;">-</span>
                                                 @endif
                                             </td>
                                             <td class="text-center" style="font-size: 13px; font-weight: normal;">
                                                 @if($applicant->card_tor_gwa)
-                                                    <div>{{ round($applicant->card_tor_gwa, 2) }}</div>
+                                                    <div>{{ round($applicant->card_tor_gwa, 2) }}%</div>
                                                 @else
                                                     <span style="color: #9ca3af;">-</span>
                                                 @endif
                                             </td>
                                             <td class="text-center" style="font-size: 13px; font-weight: normal;">
-                                                @if($applicant->enrollassess_score)
-                                                    <div>{{ round($applicant->enrollassess_score, 2) }}%</div>
+                                                @if($overallRating && isset($overallRating['components']['interview_skill_combined']['weighted']))
+                                                    @php
+                                                        // Display weighted value directly (0-10 represents the 10% weight)
+                                                        $combinedWeighted = $overallRating['components']['interview_skill_combined']['weighted'];
+                                                    @endphp
+                                                    <div>{{ round($combinedWeighted, 2) }}%</div>
                                                 @else
                                                     <span style="color: #9ca3af;">-</span>
                                                 @endif
                                             </td>
                                             <td class="text-center" style="font-size: 13px; font-weight: normal;">
-                                                @if($applicant->interview_score)
-                                                    <div>{{ round($applicant->interview_score, 2) }}%</div>
-                                                @else
-                                                    <span style="color: #9ca3af;">-</span>
-                                                @endif
-                                            </td>
-                                            <td>
                                                 @if($overallRating)
                                                     @php
                                                         $rating = $overallRating['overall_rating'];
@@ -652,7 +640,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="8" class="text-center py-5">
+                                            <td colspan="7" class="text-center py-5">
                                                 <div class="text-muted">
                                                     <h5>No exam results found</h5>
                                                     <p class="mb-0">Only applicants who completed the EnrollAssess exam are shown here.</p>
@@ -1281,15 +1269,42 @@
                         let html = '';
                         
                         if (data.applicants.length === 0) {
-                            html = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">No exam results found. Only applicants who completed the EnrollAssess exam are shown here.</td></tr>';
+                            html = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #6b7280;">No exam results found. Only applicants who completed the EnrollAssess exam are shown here.</td></tr>';
                         } else {
                             data.applicants.forEach((applicant) => {
                                 const statusText = (applicant.status || '').split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
                                 
-                                const score = applicant.score ? Number(applicant.score).toFixed(2) : '<span style="color: #9ca3af;">-</span>';
-                                const gwa = applicant.card_tor_gwa ? Number(applicant.card_tor_gwa).toFixed(2) : '<span style="color: #9ca3af;">-</span>';
-                                const examScore = applicant.enrollassess_score ? Number(applicant.enrollassess_score).toFixed(2) + '%' : '<span style="color: #9ca3af;">-</span>';
-                                const interviewScore = applicant.interview_score ? Number(applicant.interview_score).toFixed(2) + '%' : '<span style="color: #9ca3af;">-</span>';
+                                // UEE score is stored as percentage (0-100), display directly
+                                const ueePercentage = applicant.score !== null && applicant.score !== undefined
+                                    ? Number(applicant.score).toFixed(2) + '%'
+                                    : '<span style="color: #9ca3af;">-</span>';
+                                
+                                // Show GWA as percentage
+                                const gwa = applicant.card_tor_gwa 
+                                    ? Number(applicant.card_tor_gwa).toFixed(2) + '%'
+                                    : '<span style="color: #9ca3af;">-</span>';
+                                
+                                // Combined Interview & Exam (weighted 10% value)
+                                // Formula: (Interview × 0.05) + (Exam × 0.05) = weighted (0-10), display directly
+                                let combinedScore = '<span style="color: #9ca3af;">-</span>';
+                                if (applicant.overall_rating_components && applicant.overall_rating_components.interview_skill_combined) {
+                                    // Use weighted value (0-10) directly
+                                    const weighted = Number(applicant.overall_rating_components.interview_skill_combined.weighted);
+                                    combinedScore = weighted.toFixed(2) + '%';
+                                } else if (applicant.enrollassess_score !== null && applicant.interview_score !== null) {
+                                    // Fallback: calculate weighted value manually
+                                    const interviewWeighted = Number(applicant.interview_score) * 0.05;
+                                    const examWeighted = Number(applicant.enrollassess_score) * 0.05;
+                                    const combinedWeighted = interviewWeighted + examWeighted;
+                                    combinedScore = combinedWeighted.toFixed(2) + '%';
+                                } else if (applicant.enrollassess_score !== null || applicant.interview_score !== null) {
+                                    // If only one is available, calculate partial weighted value
+                                    const availableScore = applicant.enrollassess_score !== null 
+                                        ? applicant.enrollassess_score 
+                                        : applicant.interview_score;
+                                    const partialWeighted = Number(availableScore) * 0.05;
+                                    combinedScore = partialWeighted.toFixed(2) + '%';
+                                }
                                 
                                 // Build overall rating display
                                 let overallRatingHtml = '<span style="color: #9ca3af;">-</span>';
@@ -1302,7 +1317,19 @@
                                     else if (rating >= 75) ratingClass = 'score-satisfactory';
                                     else if (rating >= 70) ratingClass = 'score-fair';
                                     
-                                    overallRatingHtml = `<div class="score-badge ${ratingClass}" style="display: block; margin-bottom: 2px;">${rating.toFixed(2)}</div>`;
+                                    // Get verbal description
+                                    let verbal = '';
+                                    if (rating >= 95) verbal = 'Outstanding';
+                                    else if (rating >= 90) verbal = 'Excellent';
+                                    else if (rating >= 85) verbal = 'Very Good';
+                                    else if (rating >= 80) verbal = 'Good';
+                                    else if (rating >= 75) verbal = 'Satisfactory';
+                                    else if (rating >= 70) verbal = 'Fair';
+                                    else if (rating >= 60) verbal = 'Conditional';
+                                    else verbal = 'Below Standards';
+                                    
+                                    overallRatingHtml = `<div class="score-badge ${ratingClass}" style="display: block; margin-bottom: 2px;">${rating.toFixed(2)}</div>
+                                        <div style="font-size: 11px; color: #6b7280;">${verbal}</div>`;
                                 }
                                 
                                 // Build floating actions
@@ -1318,11 +1345,10 @@
                                         <div style="font-weight: 500;">${applicant.full_name || ''}</div>
                                         <div style="font-size: 12px; color: #6b7280;">${applicant.application_no || applicant.formatted_applicant_no || 'N/A'}</div>
                                     </td>
-                                    <td style="text-align: center;">${score}</td>
+                                    <td style="text-align: center;">${ueePercentage}</td>
                                     <td style="text-align: center;">${gwa}</td>
-                                    <td style="text-align: center;">${examScore}</td>
-                                    <td style="text-align: center;">${interviewScore}</td>
-                                    <td>${overallRatingHtml}</td>
+                                    <td style="text-align: center;">${combinedScore}</td>
+                                    <td style="text-align: center;">${overallRatingHtml}</td>
                                     <td style="text-align: center;">
                                         <span class="badge bg-secondary">${statusText}</span>
                                         <div id="actions-${applicant.applicant_id}" class="floating-actions" style="display: none;">

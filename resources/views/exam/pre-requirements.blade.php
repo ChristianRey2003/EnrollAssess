@@ -432,7 +432,7 @@
                     <div class="checkbox-item">
                         <input type="checkbox" id="agree-terms" class="agreement-checkbox" required>
                         <label for="agree-terms">
-                            I agree to the terms and conditions. I understand that violations will result in automatic exam submission.
+                            I understand that violations will result in automatic exam submission.
                         </label>
                     </div>
                     <div class="checkbox-item">

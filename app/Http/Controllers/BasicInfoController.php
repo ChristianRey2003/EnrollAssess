@@ -112,9 +112,10 @@ class BasicInfoController extends Controller
             'complete_address' => 'required|string|max:1000',
             'province' => 'required|string|max:255',
             'city_municipality' => 'required|string|max:255',
-            'senior_high_school_strand' => 'required|in:ABM,STEM,HUMSS,TVL,Others',
+            'senior_high_school_strand' => 'required_unless:applicant_type,ALS passer|nullable|in:ABM,STEM,HUMSS,TVL,Others',
             'senior_high_school_strand_other' => 'required_if:senior_high_school_strand,Others|nullable|string|max:255',
-            'senior_high_school_name' => 'required|string|max:255',
+            'senior_high_school_name' => 'required_unless:applicant_type,ALS passer|nullable|string|min:5|max:255',
+            'facebook_link' => 'required|url|max:500',
         ];
 
         $messages = [
@@ -132,6 +133,10 @@ class BasicInfoController extends Controller
             'senior_high_school_strand.required' => 'Please select your senior high school strand.',
             'senior_high_school_strand_other.required_if' => 'Please specify your strand.',
             'senior_high_school_name.required' => 'Please enter your senior high school name.',
+            'senior_high_school_name.min' => 'School name must be at least 5 characters. Abbreviations are not allowed.',
+            'facebook_link.required' => 'Please enter your Facebook link.',
+            'facebook_link.url' => 'Please enter a valid URL for your Facebook link.',
+            'facebook_link.max' => 'Facebook link must not exceed 500 characters.',
         ];
 
         $validated = $request->validate($rules, $messages);
@@ -147,6 +152,13 @@ class BasicInfoController extends Controller
                 return back()
                     ->withInput()
                     ->withErrors(['city_municipality' => 'The selected city does not belong to the selected province.']);
+            }
+
+            // If ALS passer, set SHS fields to null
+            if ($validated['applicant_type'] === 'ALS passer') {
+                $validated['senior_high_school_strand'] = null;
+                $validated['senior_high_school_strand_other'] = null;
+                $validated['senior_high_school_name'] = null;
             }
 
             // Create or update basic info

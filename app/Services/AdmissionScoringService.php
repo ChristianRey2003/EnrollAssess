@@ -22,62 +22,73 @@ class AdmissionScoringService
     /**
      * Calculate the overall admission rating for an applicant
      * 
-     * Formula: Overall = UEE + (0.30 × GWA%) + (0.05 × Interview%) + (0.05 × SkillTest%)
+     * Formula: Overall = UEE + (GWA × GWA_weight) + (Interview × Interview_weight) + (SkillTest × SkillTest_weight)
      * 
-     * Note: UEE is already weighted (0-60 range), so it's used as-is without multiplication.
+     * Note: UEE is already weighted based on its percentage, so it's calculated from raw percentage.
      * 
      * @param Applicant $applicant
      * @return array ['overall_rating' => float, 'components' => array]
      */
     public function calculateOverallRating(Applicant $applicant): array
     {
-        // UEE is already weighted (0-60 range), use as-is
-        $ueeWeighted = (float) ($applicant->score ?? 0);
+        // Get dynamic weights from settings (defaults to current values)
+        $ueeWeightPercent = (int) \App\Models\Settings::getSetting('scoring_weight_uee', 60);
+        $gwaWeightPercent = (int) \App\Models\Settings::getSetting('scoring_weight_gwa', 30);
+        $interviewWeightPercent = (int) \App\Models\Settings::getSetting('scoring_weight_interview', 5);
+        $skillTestWeightPercent = (int) \App\Models\Settings::getSetting('scoring_weight_skilltest', 5);
         
-        // GWA, Interview, and SkillTest are raw percentages (0-100)
+        // Convert percentages to decimals for calculation
+        $ueeWeight = $ueeWeightPercent / 100.0;
+        $gwaWeight = $gwaWeightPercent / 100.0;
+        $interviewWeight = $interviewWeightPercent / 100.0;
+        $skillTestWeight = $skillTestWeightPercent / 100.0;
+        
+        // Get raw scores
+        // UEE score is stored as a percentage (0-100) in the database
+        // Based on ApplicantController validation: 'score' => 'nullable|numeric|min:0|max:100'
+        $ueeRawPercentage = (float) ($applicant->score ?? 0);
+        
+        // Other scores are already percentages (0-100)
         $gwaRaw = (float) ($applicant->card_tor_gwa ?? 0);
         $skillTestRaw = (float) ($applicant->enrollassess_score ?? 0);  // EnrollAssess Exam
         $interviewRaw = (float) ($applicant->interview_score ?? 0);
-
-        // Apply weights: GWA (30%), Interview (5%), SkillTest (5%)
-        // UEE is already weighted, so no multiplication needed
-        $gwaWeighted = $gwaRaw * 0.30;
-        $interviewWeighted = $interviewRaw * 0.05;
-        $skillTestWeighted = $skillTestRaw * 0.05;
-
-        // Overall = UEE(already weighted 0-60) + GWA(30%) + Interview(5%) + SkillTest(5%)
-        $overallRating = $ueeWeighted + $gwaWeighted + $interviewWeighted + $skillTestWeighted;
         
-        // Calculate UEE raw percentage for display (reverse calculation: weighted / 0.6)
-        $ueeRaw = $ueeWeighted > 0 ? ($ueeWeighted / 0.60) : 0;
+        // Calculate weighted values
+        $ueeWeighted = $ueeRawPercentage * $ueeWeight;
+        $gwaWeighted = $gwaRaw * $gwaWeight;
+        $interviewWeighted = $interviewRaw * $interviewWeight;
+        $skillTestWeighted = $skillTestRaw * $skillTestWeight;
+
+        // Overall = UEE(weighted) + GWA(weighted) + Interview(weighted) + SkillTest(weighted)
+        $overallRating = $ueeWeighted + $gwaWeighted + $interviewWeighted + $skillTestWeighted;
         
         return [
             'overall_rating' => round($overallRating, 2),
             'components' => [
                 'uee' => [
-                    'raw' => round($ueeRaw, 2),         // Calculated for display (0-100)
-                    'weighted' => round($ueeWeighted, 2),   // Already weighted (0-60)
-                    'weight' => 60,
+                    'raw' => round($ueeRawPercentage, 2),         // Calculated for display (0-100)
+                    'weighted' => round($ueeWeighted, 2),   // Weighted value
+                    'weight' => $ueeWeightPercent,
                 ],
                 'gwa' => [
                     'raw' => round($gwaRaw, 2),         // 0-100
-                    'weighted' => round($gwaWeighted, 2),   // 0-30
-                    'weight' => 30,
+                    'weighted' => round($gwaWeighted, 2),   // Weighted value
+                    'weight' => $gwaWeightPercent,
                 ],
                 'interview' => [
                     'raw' => round($interviewRaw, 2),      // 0-100
-                    'weighted' => round($interviewWeighted, 2), // 0-5
-                    'weight' => 5,
+                    'weighted' => round($interviewWeighted, 2), // Weighted value
+                    'weight' => $interviewWeightPercent,
                 ],
                 'skill_test' => [
                     'raw' => round($skillTestRaw, 2),      // 0-100
-                    'weighted' => round($skillTestWeighted, 2), // 0-5
-                    'weight' => 5,
+                    'weighted' => round($skillTestWeighted, 2), // Weighted value
+                    'weight' => $skillTestWeightPercent,
                 ],
                 'interview_skill_combined' => [
                     'raw' => round(($interviewRaw + $skillTestRaw) / 2.0, 2), // Average for display
-                    'weighted' => round($interviewWeighted + $skillTestWeighted, 2), // 0-10
-                    'weight' => 10,
+                    'weighted' => round($interviewWeighted + $skillTestWeighted, 2), // Combined weighted
+                    'weight' => $interviewWeightPercent + $skillTestWeightPercent,
                 ],
             ],
         ];

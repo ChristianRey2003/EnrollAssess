@@ -499,6 +499,18 @@
                     @endif
                 </span>
             </div>
+            <div class="personal-info-item">
+                <span class="personal-info-label">Facebook Link:</span>
+                <span class="personal-info-value">
+                    @if($applicant->basicInfo->facebook_link)
+                        <a href="{{ $applicant->basicInfo->facebook_link }}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline;">
+                            {{ $applicant->basicInfo->facebook_link }}
+                        </a>
+                    @else
+                        -
+                    @endif
+                </span>
+            </div>
         </div>
     </div>
     @endif

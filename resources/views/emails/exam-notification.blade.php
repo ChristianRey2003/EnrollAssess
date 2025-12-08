@@ -85,28 +85,6 @@
             letter-spacing: 4px;
             font-family: 'Courier New', monospace;
         }
-        .exam-link-box {
-            background: #f0fdf4;
-            border: 2px solid #86efac;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-            text-align: center;
-        }
-        .exam-link {
-            display: inline-block;
-            background: #16a34a;
-            color: white;
-            padding: 12px 30px;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 16px;
-            margin-top: 10px;
-        }
-        .exam-link:hover {
-            background: #15803d;
-        }
         .instructions {
             background: #fffbeb;
             border-left: 4px solid #f59e0b;
@@ -168,7 +146,7 @@
 
             <p>
                 You have been assigned to take the <strong>BSIT Entrance Examination</strong>. 
-                Below are the details you need to access your exam:
+                Below are the details for your scheduled exam:
             </p>
 
             <div class="info-box">
@@ -194,19 +172,7 @@
                 <div class="access-code-label">Your Access Code</div>
                 <div class="access-code">{{ $accessCode }}</div>
                 <p style="margin: 10px 0 0 0; font-size: 12px; color: #6b7280;">
-                    Keep this code secure. You will need it to access your exam.
-                </p>
-            </div>
-
-            <div class="exam-link-box">
-                <p style="margin: 0 0 10px 0; font-weight: 600; color: #166534;">
-                    Access Your Exam
-                </p>
-                <a href="https://enrollassess-evsu.com/applicant/login" class="exam-link">
-                    Go to Exam Portal
-                </a>
-                <p style="margin: 10px 0 0 0; font-size: 12px; color: #6b7280;">
-                    https://enrollassess-evsu.com/applicant/login
+                    Keep this code secure. You will need it when you arrive at the exam venue.
                 </p>
             </div>
 

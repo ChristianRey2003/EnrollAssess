@@ -561,13 +561,13 @@
                 </div>
 
                 <!-- Educational Background -->
-                <div class="form-section">
+                <div class="form-section" id="educationalBackgroundSection">
                     <div class="section-title">Educational Background</div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label for="senior_high_school_strand" class="form-label">Senior High School Strand <span style="color: #dc2626;">*</span></label>
-                            <select id="senior_high_school_strand" name="senior_high_school_strand" class="form-control @error('senior_high_school_strand') error @enderror" required>
+                            <select id="senior_high_school_strand" name="senior_high_school_strand" class="form-control @error('senior_high_school_strand') error @enderror">
                                 <option value="">Select Strand</option>
                                 @foreach($strandOptions as $value => $label)
                                     <option value="{{ $value }}" {{ old('senior_high_school_strand') == $value ? 'selected' : '' }}>
@@ -608,9 +608,32 @@
                                 name="senior_high_school_name" 
                                 class="form-control @error('senior_high_school_name') error @enderror"
                                 value="{{ old('senior_high_school_name') }}"
-                                placeholder="Enter school name"
-                                required>
+                                placeholder="E.G ORMOC CITY SENIOR HIGH SCHOOL"
+                                minlength="5">
                             @error('senior_high_school_name')
+                                <span class="error-message">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Information -->
+                <div class="form-section">
+                    <div class="section-title">Additional Information</div>
+
+                    <div class="form-row single">
+                        <div class="form-group">
+                            <label for="facebook_link" class="form-label">Facebook Link <span style="color: #dc2626;">*</span></label>
+                            <input 
+                                type="url" 
+                                id="facebook_link" 
+                                name="facebook_link" 
+                                class="form-control @error('facebook_link') error @enderror"
+                                value="{{ old('facebook_link', 'https://www.facebook.com/') }}"
+                                placeholder="https://www.facebook.com/yourprofile"
+                                required>
+                            <span class="help-text">Enter your complete Facebook profile URL</span>
+                            @error('facebook_link')
                                 <span class="error-message">{{ $message }}</span>
                             @enderror
                         </div>
@@ -808,6 +831,46 @@
             validateForm();
         });
 
+        // Applicant Type selection - show/hide Educational Background section
+        document.getElementById('applicant_type').addEventListener('change', function() {
+            const educationalSection = document.getElementById('educationalBackgroundSection');
+            const strandField = document.getElementById('senior_high_school_strand');
+            const strandOtherField = document.getElementById('strandOtherField');
+            const strandOtherInput = document.getElementById('senior_high_school_strand_other');
+            const schoolNameField = document.getElementById('senior_high_school_name');
+            
+            if (this.value === 'ALS passer') {
+                // Hide Educational Background section for ALS passers
+                educationalSection.style.display = 'none';
+                
+                // Remove required attributes
+                strandField.removeAttribute('required');
+                strandOtherInput.removeAttribute('required');
+                schoolNameField.removeAttribute('required');
+                schoolNameField.removeAttribute('minlength');
+                
+                // Clear values
+                strandField.value = '';
+                strandOtherInput.value = '';
+                schoolNameField.value = '';
+                
+                // Hide strand "Others" field if visible
+                strandOtherField.classList.remove('show');
+            } else {
+                // Show Educational Background section for other applicant types
+                educationalSection.style.display = 'block';
+                
+                // Add required attributes back
+                strandField.setAttribute('required', 'required');
+                schoolNameField.setAttribute('required', 'required');
+                schoolNameField.setAttribute('minlength', '5');
+                
+                // Strand "Others" field requirement handled by its own listener
+            }
+            
+            validateForm();
+        });
+
         // Strand selection - show/hide "Others" field
         document.getElementById('senior_high_school_strand').addEventListener('change', function() {
             const strandOtherField = document.getElementById('strandOtherField');
@@ -827,6 +890,7 @@
 
         // Function to highlight empty fields in red
         function highlightEmptyFields() {
+            const applicantType = document.getElementById('applicant_type').value;
             const requiredFields = [
                 'sex',
                 'civil_status',
@@ -837,9 +901,13 @@
                 'complete_address',
                 'province',
                 'city_municipality',
-                'senior_high_school_strand',
-                'senior_high_school_name'
+                'facebook_link'
             ];
+
+            // Only include educational background fields if not ALS passer
+            if (applicantType !== 'ALS passer') {
+                requiredFields.push('senior_high_school_strand', 'senior_high_school_name');
+            }
 
             requiredFields.forEach(fieldId => {
                 const field = document.getElementById(fieldId);
@@ -848,23 +916,30 @@
                     if (!value) {
                         field.classList.add('error');
                     } else {
-                        field.classList.remove('error');
+                        // Special validation for school name - must be at least 5 characters
+                        if (fieldId === 'senior_high_school_name' && value.length < 5) {
+                            field.classList.add('error');
+                        } else {
+                            field.classList.remove('error');
+                        }
                     }
                 }
             });
 
-            // Check strand "Others" field if applicable
-            const strand = document.getElementById('senior_high_school_strand').value;
-            const strandOtherField = document.getElementById('senior_high_school_strand_other');
-            if (strand === 'Others') {
-                const strandOtherValue = strandOtherField ? strandOtherField.value.trim() : '';
-                if (!strandOtherValue) {
-                    strandOtherField.classList.add('error');
-                } else {
+            // Check strand "Others" field if applicable (only if not ALS passer)
+            if (applicantType !== 'ALS passer') {
+                const strand = document.getElementById('senior_high_school_strand').value;
+                const strandOtherField = document.getElementById('senior_high_school_strand_other');
+                if (strand === 'Others') {
+                    const strandOtherValue = strandOtherField ? strandOtherField.value.trim() : '';
+                    if (!strandOtherValue) {
+                        strandOtherField.classList.add('error');
+                    } else {
+                        strandOtherField.classList.remove('error');
+                    }
+                } else if (strandOtherField) {
                     strandOtherField.classList.remove('error');
                 }
-            } else if (strandOtherField) {
-                strandOtherField.classList.remove('error');
             }
         }
 
@@ -882,13 +957,32 @@
             const city = cityField ? cityField.value.trim() : '';
             const strand = document.getElementById('senior_high_school_strand').value;
             const schoolName = document.getElementById('senior_high_school_name').value.trim();
+            const facebookLink = document.getElementById('facebook_link').value.trim();
             
-            let isValid = sex && civilStatus && dob && age && applicantType && isPwd && address && province && city && strand && schoolName;
-
-            // Check strand "Others" field if applicable
-            if (strand === 'Others') {
-                const strandOther = document.getElementById('senior_high_school_strand_other').value.trim();
-                isValid = isValid && strandOther;
+            // Basic URL validation
+            let isValidUrl = true;
+            if (facebookLink) {
+                try {
+                    new URL(facebookLink);
+                } catch (e) {
+                    isValidUrl = false;
+                }
+            }
+            
+            // For ALS passers, skip educational background validation
+            let isValid = sex && civilStatus && dob && age && applicantType && isPwd && address && province && city && facebookLink && isValidUrl;
+            
+            // Only validate educational background if not ALS passer
+            if (applicantType !== 'ALS passer') {
+                // School name must be at least 5 characters (no abbreviations)
+                const isValidSchoolName = schoolName && schoolName.length >= 5;
+                isValid = isValid && strand && isValidSchoolName;
+                
+                // Check strand "Others" field if applicable
+                if (strand === 'Others') {
+                    const strandOther = document.getElementById('senior_high_school_strand_other').value.trim();
+                    isValid = isValid && strandOther;
+                }
             }
 
             return isValid;
@@ -954,6 +1048,19 @@
                 }, 500);
             }
 
+            // Check if applicant type is ALS passer on load
+            const applicantTypeSelect = document.getElementById('applicant_type');
+            if (applicantTypeSelect.value === 'ALS passer') {
+                const educationalSection = document.getElementById('educationalBackgroundSection');
+                educationalSection.style.display = 'none';
+                
+                // Remove required attributes
+                document.getElementById('senior_high_school_strand').removeAttribute('required');
+                document.getElementById('senior_high_school_strand_other').removeAttribute('required');
+                document.getElementById('senior_high_school_name').removeAttribute('required');
+                document.getElementById('senior_high_school_name').removeAttribute('minlength');
+            }
+            
             // Check if strand is "Others" on load
             const strandSelect = document.getElementById('senior_high_school_strand');
             if (strandSelect.value === 'Others') {

@@ -7,6 +7,7 @@ use App\Models\Interview;
 use App\Models\User;
 use App\Services\InterviewPoolService;
 use App\Mail\InterviewScheduleMail;
+use App\Exports\InstructorReportExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
@@ -206,44 +207,41 @@ class InstructorController extends Controller
     {
         $instructor = Auth::user();
         
-        $applicant = Applicant::with(['latestInterview.interviewer'])->findOrFail($applicantId);
+        $applicant = Applicant::with(['latestInterview.interviewer', 'basicInfo'])->findOrFail($applicantId);
         
         // Check if instructor is assigned to this applicant
         if ($applicant->assigned_instructor_id !== $instructor->user_id) {
             abort(403, 'You are not assigned to view this applicant.');
         }
         
-        // First try to get the instructor's own interview
+        // Get the latest interview for this applicant (any status) - this will have remarks
         $interview = Interview::where('applicant_id', $applicantId)
-            ->where('interviewer_id', $instructor->user_id)
-            ->where('status', 'completed')
+            ->orderBy('created_at', 'desc')
             ->first();
         
-        // If no instructor interview found, check for department head interview
-        if (!$interview) {
-            $interview = Interview::where('applicant_id', $applicantId)
-                ->where('status', 'completed')
-                ->whereHas('interviewer', function($query) {
-                    $query->where('role', 'department-head');
-                })
-                ->first();
-        }
+        // Check if exam is completed
+        $hasCompletedExam = method_exists($applicant, 'hasCompletedExam') ? $applicant->hasCompletedExam() : ($applicant->status === 'exam-completed');
         
-        if (!$interview) {
-            return redirect()->route('instructor.applicants')
-                ->with('error', 'No completed interview found for this applicant.');
-        }
-        
-        // Load interviewer relationship if not already loaded
-        if (!$interview->relationLoaded('interviewer')) {
+        // Load interviewer relationship if interview exists
+        if ($interview && !$interview->relationLoaded('interviewer')) {
             $interview->load('interviewer');
         }
         
         // Calculate exam context
-        $totalQuestions = $applicant->results()->count();
-        $correctAnswers = $applicant->results()->where('is_correct', true)->count();
+        $totalQuestions = 0;
+        $correctAnswers = 0;
+        if ($hasCompletedExam) {
+            $totalQuestions = $applicant->results()->count();
+            $correctAnswers = $applicant->results()->where('is_correct', true)->count();
+        }
         
-        return view('instructor.interview-summary', compact('applicant', 'interview', 'totalQuestions', 'correctAnswers'));
+        return view('instructor.interview-summary', compact(
+            'applicant', 
+            'interview',  // Latest interview (any status) - used for remarks and display
+            'totalQuestions', 
+            'correctAnswers', 
+            'hasCompletedExam'
+        ));
     }
 
     /**
@@ -766,46 +764,66 @@ class InstructorController extends Controller
     }
 
     /**
-     * Send interview notification email
+     * Send interview notification email (reminder)
      */
     public function sendScheduleNotification($interviewId)
     {
         $instructor = Auth::user();
         $interview = Interview::findOrFail($interviewId);
         
-        // Verify ownership
-        if ($interview->interviewer_id !== $instructor->user_id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You are not assigned to this interview.'
-            ], 403);
-        }
+        // Any instructor can send reminders (no ownership check needed)
 
         // Verify interview is scheduled
         if (!$interview->schedule_date) {
             return response()->json([
                 'success' => false,
-                'message' => 'Interview must be scheduled before sending notification.'
+                'message' => 'Interview must be scheduled before sending reminder.'
             ], 400);
         }
 
         try {
             Mail::to($interview->applicant->email_address)->send(
-                new InterviewScheduleMail($interview->applicant, $interview)
+                new InterviewScheduleMail($interview->applicant, $interview, true) // Pass true for isReminder
             );
             
             return response()->json([
                 'success' => true,
-                'message' => 'Notification email sent successfully!'
+                'message' => 'Reminder email sent successfully!'
             ]);
         } catch (\Exception $e) {
-            \Log::error('Failed to send interview notification: ' . $e->getMessage());
+            \Log::error('Failed to send interview reminder: ' . $e->getMessage());
             
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to send email. Please try again.'
             ], 500);
         }
+    }
+    
+    /**
+     * Update remarks for an interview
+     */
+    public function updateRemarks(Request $request, $interviewId)
+    {
+        $instructor = Auth::user();
+        
+        $request->validate([
+            'remarks' => 'nullable|string|max:5000',
+        ]);
+
+        $interview = Interview::findOrFail($interviewId);
+        
+        // Any instructor can add remarks (no ownership check needed)
+
+        $interview->update([
+            'remarks' => $request->remarks,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Remarks updated successfully!',
+            'remarks' => $interview->remarks
+        ]);
     }
 
     /**
@@ -823,12 +841,39 @@ class InstructorController extends Controller
 
         $interview = Interview::findOrFail($interviewId);
         
-        // Verify instructor owns this interview
-        if ($interview->interviewer_id !== $instructor->user_id) {
+        // Verify instructor can reschedule (any instructor can reschedule)
+        // No need to check interviewer_id since all instructors can reschedule
+        
+        // Check if interview is scheduled
+        if (!$interview->schedule_date) {
             return response()->json([
                 'success' => false,
-                'message' => 'You are not assigned to this interview.'
-            ], 403);
+                'message' => 'Interview must be scheduled before it can be rescheduled.'
+            ], 400);
+        }
+        
+        // Check if interview is completed
+        if ($interview->status === 'completed') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot reschedule a completed interview.'
+            ], 400);
+        }
+        
+        // Check time window constraints
+        if ($interview->interview_deadline_start && $interview->interview_deadline_end) {
+            $requestedDate = \Carbon\Carbon::parse($request->schedule_date);
+            $deadlineStart = \Carbon\Carbon::parse($interview->interview_deadline_start);
+            $deadlineEnd = \Carbon\Carbon::parse($interview->interview_deadline_end);
+            
+            if ($requestedDate->lt($deadlineStart) || $requestedDate->gt($deadlineEnd)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Rescheduled date must be within the interview window: ' . 
+                                $deadlineStart->format('M d, Y') . ' to ' . 
+                                $deadlineEnd->format('M d, Y')
+                ], 400);
+            }
         }
 
         // Guard: Check if applicant has already been interviewed by department head
@@ -847,30 +892,15 @@ class InstructorController extends Controller
             ], 400);
         }
 
-        // Check for scheduling conflicts
-        $conflict = Interview::where('interviewer_id', $instructor->user_id)
-            ->where('interview_id', '!=', $interviewId)
-            ->where('status', 'scheduled')
-            ->whereNotNull('schedule_date')
-            ->where(function($q) use ($request) {
-                $scheduleDate = \Carbon\Carbon::parse($request->schedule_date);
-                $q->whereBetween('schedule_date', [
-                    $scheduleDate->copy()->subMinutes(30),
-                    $scheduleDate->copy()->addMinutes(30)
-                ]);
-            })
-            ->exists();
+        // Parse the schedule_date (format: YYYY-MM-DDTHH:MM)
+        $scheduleDateTime = \Carbon\Carbon::parse($request->schedule_date);
 
-        if ($conflict) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You have another interview scheduled within 30 minutes of this time.'
-            ], 400);
-        }
+        // Check for scheduling conflicts (optional - can be removed if not needed)
+        // Note: Removed conflict check since any instructor can reschedule
 
         // Update interview
         $interview->update([
-            'schedule_date' => $request->schedule_date,
+            'schedule_date' => $scheduleDateTime,
             'status' => 'scheduled',
             'notes' => $request->notes,
         ]);
@@ -900,6 +930,63 @@ class InstructorController extends Controller
             'email_sent' => $emailSent,
             'interview' => $interview->load('applicant')
         ]);
+    }
+
+    /**
+     * Export applicants report as PDF
+     */
+    public function exportReport(Request $request)
+    {
+        $instructor = Auth::user();
+        
+        $request->validate([
+            'report_type' => 'required|in:all,interviewed,not_interviewed',
+        ]);
+
+        try {
+            // Get applicants based on current filters (if any)
+            $applicants = null;
+            if ($request->has('applicant_ids')) {
+                $applicantIds = json_decode($request->applicant_ids, true);
+                if (is_array($applicantIds) && count($applicantIds) > 0) {
+                    $applicants = Applicant::whereIn('applicant_id', $applicantIds)
+                        ->where('assigned_instructor_id', $instructor->user_id)
+                        ->with(['basicInfo', 'latestInterview'])
+                        ->get();
+                }
+            }
+
+            $export = new InstructorReportExport($request->report_type, $applicants);
+            $pdfContent = $export->export();
+
+            $filename = $this->getReportFilename($request->report_type);
+
+            return response($pdfContent)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+                
+        } catch (\Exception $e) {
+            \Log::error('Instructor report export failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate report: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get filename for report
+     */
+    protected function getReportFilename($reportType)
+    {
+        $filenames = [
+            'all' => 'All_Assigned_Applicants',
+            'interviewed' => 'Interviewed_Applicants',
+            'not_interviewed' => 'Pending_Not_Interviewed_Applicants',
+        ];
+
+        $baseName = $filenames[$reportType] ?? 'Applicants_Report';
+        return $baseName . '_' . now()->format('Y-m-d_His') . '.pdf';
     }
 
     /**

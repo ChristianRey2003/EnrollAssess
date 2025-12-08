@@ -272,6 +272,7 @@ Route::get('/export-interview-results', [DepartmentHeadController::class, 'expor
 Route::middleware(['role:department-head,administrator'])->prefix('settings')->name('settings.')->group(function () {
     Route::get('/', [\App\Http\Controllers\SettingsController::class, 'index'])->name('index');
     Route::put('/', [\App\Http\Controllers\SettingsController::class, 'update'])->name('update');
+    Route::put('/scoring-weights', [\App\Http\Controllers\SettingsController::class, 'updateScoringWeights'])->name('update-scoring-weights');
     Route::post('/test-email', [\App\Http\Controllers\SettingsController::class, 'testEmail'])->name('test-email');
     Route::post('/reset', [\App\Http\Controllers\SettingsController::class, 'reset'])->name('reset');
     

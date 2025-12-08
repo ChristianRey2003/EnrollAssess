@@ -456,7 +456,160 @@
         font-size: 0.813rem;
     }
 
+    /* Export Drawer Styles */
+    .export-drawer {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1000;
+        display: none;
+    }
+
+    .export-drawer.show {
+        display: flex;
+    }
+
+    .drawer-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+    }
+
+    .drawer-content {
+        position: relative;
+        background: white;
+        width: 100%;
+        max-width: 500px;
+        height: 100%;
+        margin-left: auto;
+        box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+        }
+        to {
+            transform: translateX(0);
+        }
+    }
+
+    .drawer-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #E5E7EB;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .drawer-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1F2937;
+        margin: 0;
+    }
+
+    .drawer-close {
+        background: none;
+        border: none;
+        font-size: 28px;
+        color: #6B7280;
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: background 0.2s;
+    }
+
+    .drawer-close:hover {
+        background: #F3F4F6;
+        color: #1F2937;
+    }
+
+    .drawer-body {
+        flex: 1;
+        padding: 24px;
+        overflow-y: auto;
+    }
+
+    .drawer-footer {
+        padding: 20px 24px;
+        border-top: 1px solid #E5E7EB;
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    .radio-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .radio-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .radio-item:hover {
+        border-color: #800020;
+        background: #FEF2F2;
+    }
+
+    .radio-item input[type="radio"] {
+        margin-top: 4px;
+        cursor: pointer;
+    }
+
+    .radio-item label {
+        flex: 1;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .radio-item label strong {
+        color: #1F2937;
+        font-weight: 600;
+    }
+
+    .radio-description {
+        font-size: 0.875rem;
+        color: #6B7280;
+    }
+
+    .radio-item input[type="radio"]:checked + label strong {
+        color: #800020;
+    }
+
+    .radio-item input[type="radio"]:checked ~ label {
+        color: #800020;
+    }
+
     @media (max-width: 768px) {
+        .drawer-content {
+            max-width: 100%;
+        }
+
         .table-header-controls {
             flex-direction: column;
             align-items: stretch;
@@ -542,6 +695,89 @@
             <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" onclick="closeScheduleModal()">Cancel</button>
                 <button type="submit" class="btn btn-primary">Schedule Interview</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Reschedule Modal -->
+<div id="rescheduleModal" class="schedule-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Reschedule Interview</h3>
+        </div>
+        <form id="rescheduleForm" onsubmit="submitReschedule(event)">
+            @csrf
+            <input type="hidden" id="rescheduleInterviewId" name="interview_id">
+            <input type="hidden" id="rescheduleDeadlineStart" name="schedule_deadline_start">
+            <input type="hidden" id="rescheduleDeadlineEnd" name="schedule_deadline_end">
+            
+            <div class="form-group">
+                <label class="form-label">Applicant</label>
+                <input type="text" id="rescheduleApplicantName" class="form-input" readonly>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Current Schedule</label>
+                <input type="text" id="currentSchedule" class="form-input" readonly>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">New Interview Date *</label>
+                <input type="date" id="rescheduleDate" name="schedule_date" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">New Interview Time *</label>
+                <input type="time" id="rescheduleTime" name="schedule_time" class="form-input" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Notes (Optional)</label>
+                <textarea id="rescheduleNotes" name="notes" class="form-textarea" 
+                          placeholder="Reason for rescheduling or additional notes..."></textarea>
+            </div>
+            
+            <div class="form-checkbox">
+                <input type="checkbox" id="rescheduleNotifyEmail" name="notify_email" value="1" checked>
+                <label for="rescheduleNotifyEmail">Send email notification to applicant</label>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeRescheduleModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Reschedule Interview</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Remarks Modal -->
+<div id="remarksModal" class="schedule-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Remarks</h3>
+        </div>
+        <form id="remarksForm" onsubmit="submitRemarks(event)">
+            @csrf
+            <input type="hidden" id="remarksInterviewId" name="interview_id">
+            
+            <div class="form-group">
+                <label class="form-label">Applicant</label>
+                <input type="text" id="remarksApplicantName" class="form-input" readonly>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Remarks</label>
+                <textarea id="remarksText" name="remarks" class="form-textarea" 
+                          placeholder="Document contact attempts, applicant availability issues, or any other relevant notes..." 
+                          rows="6"></textarea>
+                <span class="help-text" style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+                    Use this field to document contact attempts, reasons for unavailability, or any other relevant information.
+                </span>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeRemarksModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Remarks</button>
             </div>
         </form>
     </div>
@@ -891,11 +1127,292 @@
     }
 
 
+    // Reschedule Modal Functions
+    function openRescheduleModal(interviewId, applicantName, deadlineStart, deadlineEnd, currentSchedule) {
+        document.getElementById('rescheduleInterviewId').value = interviewId;
+        document.getElementById('rescheduleApplicantName').value = applicantName;
+        document.getElementById('rescheduleDeadlineStart').value = deadlineStart || '';
+        document.getElementById('rescheduleDeadlineEnd').value = deadlineEnd || '';
+        
+        // Format current schedule for display
+        if (currentSchedule) {
+            const currentDate = new Date(currentSchedule);
+            const formattedDate = currentDate.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            document.getElementById('currentSchedule').value = formattedDate;
+        } else {
+            document.getElementById('currentSchedule').value = 'Not scheduled';
+        }
+        
+        document.getElementById('rescheduleModal').classList.add('show');
+        
+        const dateInput = document.getElementById('rescheduleDate');
+        const timeInput = document.getElementById('rescheduleTime');
+
+        const now = new Date();
+        now.setHours(now.getHours() + 1);
+
+        // Default min date is today (local)
+        const todayStr = formatDateForInput(now);
+        dateInput.min = todayStr;
+
+        // Apply interview window limits if provided
+        if (deadlineStart) {
+            const startDate = new Date(deadlineStart);
+            const startStr = formatDateForInput(startDate);
+            dateInput.min = startStr > todayStr ? startStr : todayStr;
+        }
+        if (deadlineEnd) {
+            const endDate = new Date(deadlineEnd);
+            const endStr = formatDateForInput(endDate);
+            dateInput.max = endStr;
+        }
+
+        // Reset time field
+        timeInput.value = '';
+    }
+
+    function closeRescheduleModal() {
+        document.getElementById('rescheduleModal').classList.remove('show');
+        document.getElementById('rescheduleForm').reset();
+    }
+
+    function submitReschedule(event) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const formData = new FormData(form);
+        const interviewId = formData.get('interview_id');
+
+        const dateValue = formData.get('schedule_date');
+        const timeValue = document.getElementById('rescheduleTime').value;
+        if (!dateValue || !timeValue) {
+            alert('Please select both interview date and time.');
+            return;
+        }
+
+        // Combine date and time into ISO-like string (YYYY-MM-DDTHH:MM)
+        const scheduleDateTime = `${dateValue}T${timeValue}`;
+
+        // Validate against interview window if provided
+        const deadlineStart = formData.get('schedule_deadline_start');
+        const deadlineEnd = formData.get('schedule_deadline_end');
+        const scheduleDateObj = new Date(scheduleDateTime);
+
+        if (deadlineStart) {
+            const startObj = new Date(deadlineStart);
+            if (scheduleDateObj < startObj) {
+                alert('Selected time is before the allowed interview window.');
+                return;
+            }
+        }
+        if (deadlineEnd) {
+            const endObj = new Date(deadlineEnd);
+            endObj.setHours(23, 59, 59, 999);
+            if (scheduleDateObj > endObj) {
+                alert('Selected time is beyond the allowed interview window.');
+                return;
+            }
+        }
+
+        const data = {
+            schedule_date: scheduleDateTime,
+            notes: formData.get('notes'),
+            notify_email: formData.get('notify_email') ? 1 : 0
+        };
+        
+        fetch(`/instructor/interviews/${interviewId}/reschedule`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let message = data.message;
+                if (data.email_sent) {
+                    message += ' Email notification sent.';
+                }
+                alert(message);
+                closeRescheduleModal();
+                location.reload();
+            } else {
+                alert(data.message || 'Failed to reschedule interview');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+
+    // Send Reminder Function
+    function sendReminder(interviewId) {
+        if (!confirm('Send a reminder email to the applicant about their scheduled interview?')) {
+            return;
+        }
+        
+        fetch(`/instructor/interviews/${interviewId}/send-notification`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message || 'Reminder email sent successfully!');
+            } else {
+                alert(data.message || 'Failed to send reminder email');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+
+    // Remarks Modal Functions
+    function openRemarksModal(interviewId, applicantName, currentRemarks) {
+        if (!interviewId) {
+            alert('No interview found for this applicant.');
+            return;
+        }
+        
+        document.getElementById('remarksInterviewId').value = interviewId;
+        document.getElementById('remarksApplicantName').value = applicantName;
+        document.getElementById('remarksText').value = currentRemarks || '';
+        document.getElementById('remarksModal').classList.add('show');
+    }
+
+    function closeRemarksModal() {
+        document.getElementById('remarksModal').classList.remove('show');
+        document.getElementById('remarksForm').reset();
+    }
+
+    function submitRemarks(event) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const formData = new FormData(form);
+        const interviewId = formData.get('interview_id');
+
+        const data = {
+            remarks: formData.get('remarks')
+        };
+        
+        fetch(`/instructor/interviews/${interviewId}/remarks`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message || 'Remarks saved successfully!');
+                closeRemarksModal();
+                location.reload();
+            } else {
+                alert(data.message || 'Failed to save remarks');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+
     // Close modals when clicking outside
     document.getElementById('scheduleModal')?.addEventListener('click', function(e) {
         if (e.target === this) closeScheduleModal();
     });
+    
+    document.getElementById('rescheduleModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeRescheduleModal();
+    });
+    
+    document.getElementById('remarksModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeRemarksModal();
+    });
 
+
+    // Export Drawer Functions
+    function openExportDrawer() {
+        document.getElementById('exportDrawer').classList.add('show');
+    }
+
+    function closeExportDrawer() {
+        document.getElementById('exportDrawer').classList.remove('show');
+    }
+
+    function exportReport(event) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const formData = new FormData(form);
+        const reportType = formData.get('report_type');
+        
+        if (!reportType) {
+            alert('Please select a report type.');
+            return;
+        }
+
+        const exportBtn = document.getElementById('exportBtn');
+        const originalText = exportBtn.innerHTML;
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = '<svg style="width: 16px; height: 16px; margin-right: 6px; animation: spin 1s linear infinite;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Generating...';
+
+        // Create a form to submit
+        const exportForm = document.createElement('form');
+        exportForm.method = 'POST';
+        exportForm.action = '{{ route("instructor.export.report") }}';
+        exportForm.style.display = 'none';
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = '{{ csrf_token() }}';
+        exportForm.appendChild(csrfInput);
+        
+        const reportTypeInput = document.createElement('input');
+        reportTypeInput.type = 'hidden';
+        reportTypeInput.name = 'report_type';
+        reportTypeInput.value = reportType;
+        exportForm.appendChild(reportTypeInput);
+        
+        document.body.appendChild(exportForm);
+        exportForm.submit();
+        
+        // Reset button after a delay
+        setTimeout(() => {
+            exportBtn.disabled = false;
+            exportBtn.innerHTML = originalText;
+            closeExportDrawer();
+        }, 2000);
+    }
+
+    // Close drawer on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeExportDrawer();
+        }
+    });
 
     // AJAX Pagination - Use event delegation for dynamically added pagination links
     document.addEventListener('click', function(e) {
@@ -983,6 +1500,68 @@
                 }
                 window.location.href = url;
             });
+        }
+    });
+
+    // Export Drawer Functions
+    function openExportDrawer() {
+        document.getElementById('exportDrawer').classList.add('show');
+    }
+
+    function closeExportDrawer() {
+        document.getElementById('exportDrawer').classList.remove('show');
+    }
+
+    function exportReport(event) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const formData = new FormData(form);
+        const reportType = formData.get('report_type');
+        
+        if (!reportType) {
+            alert('Please select a report type.');
+            return;
+        }
+
+        const exportBtn = document.getElementById('exportBtn');
+        const originalText = exportBtn.innerHTML;
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = '<svg style="width: 16px; height: 16px; margin-right: 6px; animation: spin 1s linear infinite;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Generating...';
+
+        // Create a form to submit
+        const exportForm = document.createElement('form');
+        exportForm.method = 'POST';
+        exportForm.action = '{{ route("instructor.export.report") }}';
+        exportForm.style.display = 'none';
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = '{{ csrf_token() }}';
+        exportForm.appendChild(csrfInput);
+        
+        const reportTypeInput = document.createElement('input');
+        reportTypeInput.type = 'hidden';
+        reportTypeInput.name = 'report_type';
+        reportTypeInput.value = reportType;
+        exportForm.appendChild(reportTypeInput);
+        
+        document.body.appendChild(exportForm);
+        exportForm.submit();
+        
+        // Reset button after a delay
+        setTimeout(() => {
+            exportBtn.disabled = false;
+            exportBtn.innerHTML = originalText;
+            closeExportDrawer();
+        }, 2000);
+    }
+
+    // Close drawer on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeExportDrawer();
         }
     });
 </script>

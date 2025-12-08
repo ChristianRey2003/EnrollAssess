@@ -844,6 +844,7 @@
     <!-- Tab Navigation -->
     <div class="settings-tabs">
         <button type="button" class="settings-tab active" onclick="switchTab('email')">Email Settings</button>
+        <button type="button" class="settings-tab" onclick="switchTab('scoring-weights')">Scoring Weights</button>
         <button type="button" class="settings-tab" onclick="switchTab('school-years')">School Years</button>
         <button type="button" class="settings-tab" onclick="switchTab('archived-reports')">Archived Reports</button>
         <button type="button" class="settings-tab" onclick="switchTab('audit-logs')">Audit Logs</button>
@@ -1022,6 +1023,134 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <!-- Scoring Weights Tab Pane -->
+    <div id="scoring-weights-tab" class="settings-tab-pane">
+        <div class="settings-card">
+            <div class="settings-card-header">
+                <h3>Admission Scoring Weights</h3>
+                <p style="margin: 8px 0 0 0; color: var(--text-gray); font-size: 14px;">
+                    Configure the weight percentages for calculating overall admission ratings. Total must equal 100%.
+                </p>
+            </div>
+
+            <form method="POST" action="{{ route('admin.settings.update-scoring-weights') }}" id="scoringWeightsForm">
+                @csrf
+                @method('PUT')
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 24px;">
+                    <div class="form-group">
+                        <label for="scoring_weight_uee" class="form-label">
+                            UEE (University Entrance Examination) <span style="color: var(--danger-red);">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            id="scoring_weight_uee" 
+                            name="scoring_weight_uee" 
+                            class="form-control scoring-weight-input"
+                            value="{{ \App\Models\Settings::getSetting('scoring_weight_uee', 60) }}"
+                            min="0"
+                            max="100"
+                            required>
+                        <span class="help-text">Current weight: <strong id="uee-display">{{ \App\Models\Settings::getSetting('scoring_weight_uee', 60) }}%</strong></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scoring_weight_gwa" class="form-label">
+                            GWA (CARD/TOR GWA) <span style="color: var(--danger-red);">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            id="scoring_weight_gwa" 
+                            name="scoring_weight_gwa" 
+                            class="form-control scoring-weight-input"
+                            value="{{ \App\Models\Settings::getSetting('scoring_weight_gwa', 30) }}"
+                            min="0"
+                            max="100"
+                            required>
+                        <span class="help-text">Current weight: <strong id="gwa-display">{{ \App\Models\Settings::getSetting('scoring_weight_gwa', 30) }}%</strong></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scoring_weight_interview" class="form-label">
+                            Interview <span style="color: var(--danger-red);">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            id="scoring_weight_interview" 
+                            name="scoring_weight_interview" 
+                            class="form-control scoring-weight-input"
+                            value="{{ \App\Models\Settings::getSetting('scoring_weight_interview', 5) }}"
+                            min="0"
+                            max="100"
+                            required>
+                        <span class="help-text">Current weight: <strong id="interview-display">{{ \App\Models\Settings::getSetting('scoring_weight_interview', 5) }}%</strong></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scoring_weight_skilltest" class="form-label">
+                            Skill Test (EnrollAssess Exam) <span style="color: var(--danger-red);">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            id="scoring_weight_skilltest" 
+                            name="scoring_weight_skilltest" 
+                            class="form-control scoring-weight-input"
+                            value="{{ \App\Models\Settings::getSetting('scoring_weight_skilltest', 5) }}"
+                            min="0"
+                            max="100"
+                            required>
+                        <span class="help-text">Current weight: <strong id="skilltest-display">{{ \App\Models\Settings::getSetting('scoring_weight_skilltest', 5) }}%</strong></span>
+                    </div>
+                </div>
+
+                <!-- Total Display -->
+                <div style="background: var(--light-gray); border: 2px solid var(--border-gray); border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 16px; font-weight: 600; color: var(--text-dark); margin-bottom: 4px;">
+                                Total Weight
+                            </div>
+                            <div style="font-size: 13px; color: var(--text-gray);">
+                                All weights must sum to exactly 100%
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div id="total-weight" style="font-size: 32px; font-weight: 700; color: var(--primary-maroon);">
+                                {{ \App\Models\Settings::getSetting('scoring_weight_uee', 60) + \App\Models\Settings::getSetting('scoring_weight_gwa', 30) + \App\Models\Settings::getSetting('scoring_weight_interview', 5) + \App\Models\Settings::getSetting('scoring_weight_skilltest', 5) }}%
+                            </div>
+                            <div id="total-status" style="font-size: 12px; font-weight: 600; margin-top: 4px;">
+                                <span id="status-text" style="color: var(--success-green);">✓ Valid</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Warning Message -->
+                <div id="weight-warning" style="display: none; background: #fef2f2; border: 2px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+                    <div style="display: flex; align-items: start; gap: 12px;">
+                        <div style="font-size: 20px;">⚠️</div>
+                        <div>
+                            <div style="font-weight: 600; color: #991b1b; margin-bottom: 4px;">Warning</div>
+                            <div style="font-size: 14px; color: #7f1d1d;">
+                                Changing scoring weights will affect all future calculations. Existing overall ratings will not be recalculated automatically.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="settings-actions">
+                    <button type="button" class="btn btn-secondary" onclick="resetScoringWeightsToDefaults()">
+                        Reset to Defaults
+                    </button>
+                    <button type="submit" class="btn btn-primary-export" id="saveScoringWeightsBtn">
+                        Save Scoring Weights
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -1535,7 +1664,92 @@
         const clickedTab = event.target;
         clickedTab.classList.add('active');
         document.getElementById(tabName + '-tab').classList.add('active');
+        
+        // Show warning when switching to scoring weights tab
+        if (tabName === 'scoring-weights') {
+            document.getElementById('weight-warning').style.display = 'block';
+        }
     }
+
+    // Scoring Weights Form Functions
+    function calculateTotalWeight() {
+        const uee = parseInt(document.getElementById('scoring_weight_uee').value) || 0;
+        const gwa = parseInt(document.getElementById('scoring_weight_gwa').value) || 0;
+        const interview = parseInt(document.getElementById('scoring_weight_interview').value) || 0;
+        const skilltest = parseInt(document.getElementById('scoring_weight_skilltest').value) || 0;
+        
+        const total = uee + gwa + interview + skilltest;
+        
+        // Update display
+        document.getElementById('total-weight').textContent = total + '%';
+        document.getElementById('uee-display').textContent = uee + '%';
+        document.getElementById('gwa-display').textContent = gwa + '%';
+        document.getElementById('interview-display').textContent = interview + '%';
+        document.getElementById('skilltest-display').textContent = skilltest + '%';
+        
+        // Update status
+        const statusText = document.getElementById('status-text');
+        const totalStatus = document.getElementById('total-status');
+        
+        if (total === 100) {
+            statusText.textContent = '✓ Valid';
+            statusText.style.color = 'var(--success-green)';
+            document.getElementById('total-weight').style.color = 'var(--success-green)';
+            document.getElementById('saveScoringWeightsBtn').disabled = false;
+        } else if (total > 100) {
+            statusText.textContent = '✗ Exceeds 100%';
+            statusText.style.color = 'var(--danger-red)';
+            document.getElementById('total-weight').style.color = 'var(--danger-red)';
+            document.getElementById('saveScoringWeightsBtn').disabled = true;
+        } else {
+            statusText.textContent = '⚠ Less than 100%';
+            statusText.style.color = 'var(--warning-orange)';
+            document.getElementById('total-weight').style.color = 'var(--warning-orange)';
+            document.getElementById('saveScoringWeightsBtn').disabled = true;
+        }
+    }
+
+    function resetScoringWeightsToDefaults() {
+        if (confirm('Are you sure you want to reset scoring weights to default values?\n\nDefault values:\n- UEE: 60%\n- GWA: 30%\n- Interview: 5%\n- Skill Test: 5%')) {
+            document.getElementById('scoring_weight_uee').value = 60;
+            document.getElementById('scoring_weight_gwa').value = 30;
+            document.getElementById('scoring_weight_interview').value = 5;
+            document.getElementById('scoring_weight_skilltest').value = 5;
+            calculateTotalWeight();
+        }
+    }
+
+    // Initialize scoring weights form
+    document.addEventListener('DOMContentLoaded', function() {
+        const scoringWeightsForm = document.getElementById('scoringWeightsForm');
+        if (scoringWeightsForm) {
+            // Add event listeners to weight inputs
+            const weightInputs = scoringWeightsForm.querySelectorAll('.scoring-weight-input');
+            weightInputs.forEach(input => {
+                input.addEventListener('input', calculateTotalWeight);
+                input.addEventListener('change', calculateTotalWeight);
+            });
+            
+            // Initial calculation
+            calculateTotalWeight();
+            
+            // Form submission with confirmation
+            scoringWeightsForm.addEventListener('submit', function(e) {
+                const total = parseInt(document.getElementById('total-weight').textContent) || 0;
+                
+                if (total !== 100) {
+                    e.preventDefault();
+                    alert('Total weight must equal exactly 100%. Current total: ' + total + '%');
+                    return false;
+                }
+                
+                if (!confirm('Are you sure you want to update the scoring weights?\n\nThis will affect all future overall rating calculations.\n\nExisting ratings will NOT be recalculated automatically.')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        }
+    });
 
     // Get CSRF token
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';

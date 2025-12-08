@@ -680,6 +680,18 @@ class SetsQuestionsController extends Controller
                                 continue;
                             }
                             
+                            // Check for duplicate question text in the same exam
+                            $normalizedQuestionText = trim($questionText);
+                            $duplicateExists = Question::where('exam_id', $currentExam->exam_id)
+                                ->whereRaw('LOWER(TRIM(question_text)) = ?', [strtolower($normalizedQuestionText)])
+                                ->exists();
+                            
+                            if ($duplicateExists) {
+                                $importResults['errors'][] = "Line {$lineNumber}: A question with the same text already exists in this exam.";
+                                $importResults['failed']++;
+                                continue;
+                            }
+                            
                             // Create question
                             $maxOrderNumber++;
                             $question = Question::create([
@@ -712,6 +724,18 @@ class SetsQuestionsController extends Controller
                             }
                             
                             $isTrueCorrect = $correctAnswerLower === 'true';
+                            
+                            // Check for duplicate question text in the same exam
+                            $normalizedQuestionText = trim($questionText);
+                            $duplicateExists = Question::where('exam_id', $currentExam->exam_id)
+                                ->whereRaw('LOWER(TRIM(question_text)) = ?', [strtolower($normalizedQuestionText)])
+                                ->exists();
+                            
+                            if ($duplicateExists) {
+                                $importResults['errors'][] = "Line {$lineNumber}: A question with the same text already exists in this exam.";
+                                $importResults['failed']++;
+                                continue;
+                            }
                             
                             // Create question
                             $maxOrderNumber++;

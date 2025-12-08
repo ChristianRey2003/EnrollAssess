@@ -39,6 +39,9 @@ class SettingsController extends Controller
         // Ensure all required email settings exist
         $this->ensureEmailSettingsExist();
         
+        // Ensure scoring weights settings exist
+        $this->ensureScoringWeightsExist();
+        
         // Get only email settings
         $emailSettings = Settings::where('group', 'email')->get();
 
@@ -325,6 +328,127 @@ class SettingsController extends Controller
             $this->mailConfigService->loadFromDatabase();
         } catch (\Exception $e) {
             Log::error('Failed to reload mail config: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Ensure all required scoring weights settings exist in database
+     */
+    protected function ensureScoringWeightsExist()
+    {
+        try {
+            $requiredSettings = [
+                [
+                    'key' => 'scoring_weight_uee',
+                    'value' => '60',
+                    'group' => 'scoring',
+                    'type' => 'number',
+                    'description' => 'UEE (University Entrance Examination) weight percentage',
+                ],
+                [
+                    'key' => 'scoring_weight_gwa',
+                    'value' => '30',
+                    'group' => 'scoring',
+                    'type' => 'number',
+                    'description' => 'GWA (CARD/TOR GWA) weight percentage',
+                ],
+                [
+                    'key' => 'scoring_weight_interview',
+                    'value' => '5',
+                    'group' => 'scoring',
+                    'type' => 'number',
+                    'description' => 'Interview weight percentage',
+                ],
+                [
+                    'key' => 'scoring_weight_skilltest',
+                    'value' => '5',
+                    'group' => 'scoring',
+                    'type' => 'number',
+                    'description' => 'Skill Test (EnrollAssess Exam) weight percentage',
+                ],
+            ];
+
+            foreach ($requiredSettings as $setting) {
+                $existing = Settings::where('key', $setting['key'])->first();
+                if (!$existing) {
+                    Settings::create($setting);
+                } else {
+                    // Only update type and description if they're missing
+                    $update = [];
+                    if (empty($existing->type)) {
+                        $update['type'] = $setting['type'];
+                    }
+                    if (empty($existing->description)) {
+                        $update['description'] = $setting['description'];
+                    }
+                    if (!empty($update)) {
+                        $existing->update($update);
+                    }
+                }
+            }
+            
+            Settings::clearCache();
+        } catch (\Exception $e) {
+            Log::error('Failed to ensure scoring weights exist: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Update scoring weights
+     */
+    public function updateScoringWeights(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'scoring_weight_uee' => 'required|integer|min:0|max:100',
+                'scoring_weight_gwa' => 'required|integer|min:0|max:100',
+                'scoring_weight_interview' => 'required|integer|min:0|max:100',
+                'scoring_weight_skilltest' => 'required|integer|min:0|max:100',
+            ]);
+
+            if ($validator->fails()) {
+                return redirect()->back()
+                    ->withErrors($validator)
+                    ->with('error', 'Invalid scoring weight values provided.');
+            }
+
+            $uee = (int) $request->input('scoring_weight_uee');
+            $gwa = (int) $request->input('scoring_weight_gwa');
+            $interview = (int) $request->input('scoring_weight_interview');
+            $skilltest = (int) $request->input('scoring_weight_skilltest');
+            
+            $total = $uee + $gwa + $interview + $skilltest;
+            
+            if ($total !== 100) {
+                return redirect()->back()
+                    ->with('error', "Total weight must equal exactly 100%. Current total: {$total}%")
+                    ->withInput();
+            }
+
+            // Update settings
+            Settings::setSetting('scoring_weight_uee', $uee, 'scoring');
+            Settings::setSetting('scoring_weight_gwa', $gwa, 'scoring');
+            Settings::setSetting('scoring_weight_interview', $interview, 'scoring');
+            Settings::setSetting('scoring_weight_skilltest', $skilltest, 'scoring');
+
+            Settings::clearCache();
+
+            ActivityLogger::log('update_scoring_weights', "Updated scoring weights: UEE={$uee}%, GWA={$gwa}%, Interview={$interview}%, SkillTest={$skilltest}%", [
+                'uee' => $uee,
+                'gwa' => $gwa,
+                'interview' => $interview,
+                'skilltest' => $skilltest,
+            ], Auth::id());
+
+            return redirect()->route('admin.settings.index')
+                ->with('success', 'Scoring weights updated successfully! All future overall ratings will use these weights.');
+
+        } catch (\Exception $e) {
+            Log::error('Scoring weights update failed: ' . $e->getMessage());
+            
+            return redirect()->back()
+                ->with('error', 'Failed to update scoring weights. Please try again.')
+                ->withInput();
         }
     }
 

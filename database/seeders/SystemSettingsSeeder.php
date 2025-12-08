@@ -267,6 +267,36 @@ class SystemSettingsSeeder extends Seeder
                 'type' => 'text',
                 'description' => 'Title of person who approved the report',
             ],
+
+            // Scoring Weights Settings
+            [
+                'key' => 'scoring_weight_uee',
+                'value' => '60',
+                'group' => 'scoring',
+                'type' => 'number',
+                'description' => 'UEE (University Entrance Examination) weight percentage',
+            ],
+            [
+                'key' => 'scoring_weight_gwa',
+                'value' => '30',
+                'group' => 'scoring',
+                'type' => 'number',
+                'description' => 'GWA (CARD/TOR GWA) weight percentage',
+            ],
+            [
+                'key' => 'scoring_weight_interview',
+                'value' => '5',
+                'group' => 'scoring',
+                'type' => 'number',
+                'description' => 'Interview weight percentage',
+            ],
+            [
+                'key' => 'scoring_weight_skilltest',
+                'value' => '5',
+                'group' => 'scoring',
+                'type' => 'number',
+                'description' => 'Skill Test (EnrollAssess Exam) weight percentage',
+            ],
         ];
 
         foreach ($settings as $setting) {

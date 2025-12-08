@@ -3,7 +3,7 @@ Computer Studies Department
 
 Dear {{ $applicant->full_name }},
 
-You have been assigned to take the BSIT Entrance Examination. Below are the details you need to access your exam:
+You have been assigned to take the BSIT Entrance Examination. Below are the details for your scheduled exam:
 
 EXAMINATION DETAILS
 Application No: {{ $applicant->application_no }}
@@ -14,10 +14,7 @@ Exam Venue: {{ $examVenue }}
 YOUR ACCESS CODE
 {{ $accessCode }}
 
-Keep this code secure. You will need it to access your exam.
-
-EXAM PORTAL
-https://enrollassess-evsu.com/applicant/login
+Keep this code secure. You will need it when you arrive at the exam venue.
 
 @if($specialInstructions)
 SPECIAL INSTRUCTIONS

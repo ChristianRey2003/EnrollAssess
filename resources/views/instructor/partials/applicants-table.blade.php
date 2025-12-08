@@ -13,7 +13,14 @@
 
     <div class="table-header">
         <h2 class="table-title">Assigned Applicants ({{ $assignedApplicants->total() }})</h2>
-        <form class="table-header-controls" id="applicantFiltersForm" method="GET" action="{{ route('instructor.applicants') }}">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <button type="button" class="btn btn-primary" onclick="openExportDrawer()" style="height: 40px; padding: 0 16px;">
+                <svg style="width: 16px; height: 16px; margin-right: 6px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Export Report
+            </button>
+            <form class="table-header-controls" id="applicantFiltersForm" method="GET" action="{{ route('instructor.applicants') }}">
             <div style="position: relative; width: 220px;">
                 <input
                     type="text"
@@ -43,6 +50,7 @@
                 <option value="interview-completed" {{ request('status') == 'interview-completed' ? 'selected' : '' }}>Interview Completed</option>
             </select>
         </form>
+        </div>
     </div>
     
     @if($assignedApplicants->count() > 0)
@@ -211,19 +219,43 @@
                                         }
                                     }
                                     
-                                    // Determine View button state - check for any completed interview
+                                    // Determine View button state - always enabled, but show different messages
                                     $hasCompletedInterview = \App\Models\Interview::where('applicant_id', $applicant->applicant_id)
                                         ->where('status', 'completed')
                                         ->exists();
-                                    $viewEnabled = $hasCompletedInterview;
+                                    $viewEnabled = true; // Always enabled now
                                     $viewTooltip = "View Interview Summary";
-                                    if (!$viewEnabled) {
-                                        if (in_array($applicant->status, ['exam-completed', 'interview-scheduled'])) {
-                                            $viewTooltip = "Interview not completed yet";
-                                        } elseif ($applicant->status === 'pending') {
-                                            $viewTooltip = "Interview not started";
+                                    if (!$hasCompletedInterview) {
+                                        if (!$hasCompletedExam) {
+                                            $viewTooltip = "View applicant details (Exam not completed yet)";
                                         } else {
-                                            $viewTooltip = "Interview not completed";
+                                            $viewTooltip = "View applicant details (Interview not completed yet)";
+                                        }
+                                    }
+                                    
+                                    // Determine Reschedule button state
+                                    $rescheduleEnabled = $interview && $interview->schedule_date && $interview->status !== 'completed';
+                                    $rescheduleTooltip = "Reschedule Interview";
+                                    if (!$rescheduleEnabled) {
+                                        if (!$interview) {
+                                            $rescheduleTooltip = "No interview assigned";
+                                        } elseif (!$interview->schedule_date) {
+                                            $rescheduleTooltip = "Interview not scheduled yet";
+                                        } elseif ($interview->status === 'completed') {
+                                            $rescheduleTooltip = "Interview already completed";
+                                        } else {
+                                            $rescheduleTooltip = "Cannot reschedule";
+                                        }
+                                    }
+                                    
+                                    // Determine Send Reminder button state
+                                    $reminderEnabled = $interview && $interview->schedule_date;
+                                    $reminderTooltip = "Send Reminder Email";
+                                    if (!$reminderEnabled) {
+                                        if (!$interview) {
+                                            $reminderTooltip = "No interview assigned";
+                                        } else {
+                                            $reminderTooltip = "Interview not scheduled yet";
                                         }
                                     }
                                 @endphp
@@ -267,21 +299,60 @@
                                     </span>
                                 @endif
                                 
-                                <!-- View Button -->
-                                @if($viewEnabled)
-                                    <a href="{{ route('instructor.interview.summary', $applicant->applicant_id) }}" 
-                                       class="action-btn action-btn-secondary"
-                                       title="{{ $viewTooltip }}">
-                                        View
-                                    </a>
+                                <!-- View Button - Always enabled -->
+                                <a href="{{ route('instructor.interview.summary', $applicant->applicant_id) }}" 
+                                   class="action-btn action-btn-secondary"
+                                   title="{{ $viewTooltip }}">
+                                    View
+                                </a>
+                                
+                                <!-- Reschedule Button -->
+                                @if($rescheduleEnabled)
+                                    <button type="button" 
+                                            class="action-btn action-btn-secondary" 
+                                            onclick="openRescheduleModal(
+                                                {{ $interview->interview_id }}, 
+                                                '{{ $applicant->first_name }} {{ $applicant->last_name }}',
+                                                '{{ $interview->interview_deadline_start ? $interview->interview_deadline_start->toIso8601String() : '' }}',
+                                                '{{ $interview->interview_deadline_end ? $interview->interview_deadline_end->toIso8601String() : '' }}',
+                                                '{{ $interview->schedule_date ? $interview->schedule_date->toIso8601String() : '' }}'
+                                            )"
+                                            title="{{ $rescheduleTooltip }}">
+                                        Reschedule
+                                    </button>
                                 @else
                                     <span class="action-btn action-btn-disabled tooltip" 
-                                          data-tip="{{ $viewTooltip }}"
-                                          title="{{ $viewTooltip }}"
+                                          data-tip="{{ $rescheduleTooltip }}"
+                                          title="{{ $rescheduleTooltip }}"
                                           style="cursor: not-allowed;">
-                                        View
+                                        Reschedule
                                     </span>
                                 @endif
+                                
+                                <!-- Send Reminder Button -->
+                                @if($reminderEnabled)
+                                    <button type="button" 
+                                            class="action-btn action-btn-secondary" 
+                                            onclick="sendReminder({{ $interview->interview_id }})"
+                                            title="{{ $reminderTooltip }}">
+                                        Remind
+                                    </button>
+                                @else
+                                    <span class="action-btn action-btn-disabled tooltip" 
+                                          data-tip="{{ $reminderTooltip }}"
+                                          title="{{ $reminderTooltip }}"
+                                          style="cursor: not-allowed;">
+                                        Remind
+                                    </span>
+                                @endif
+                                
+                                <!-- Remarks Button -->
+                                <button type="button" 
+                                        class="action-btn action-btn-secondary" 
+                                        onclick="openRemarksModal({{ $interview ? $interview->interview_id : 'null' }}, '{{ $applicant->first_name }} {{ $applicant->last_name }}', {{ $interview && $interview->remarks ? json_encode($interview->remarks) : 'null' }})"
+                                        title="Add/Edit Remarks">
+                                    Remarks
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -310,5 +381,56 @@
             </div>
         </div>
     @endif
+    
+    <!-- Export Drawer -->
+    <div id="exportDrawer" class="export-drawer">
+        <div class="drawer-overlay" onclick="closeExportDrawer()"></div>
+        <div class="drawer-content">
+            <div class="drawer-header">
+                <h3 class="drawer-title">Export Report</h3>
+                <button type="button" class="drawer-close" onclick="closeExportDrawer()">&times;</button>
+            </div>
+            <div class="drawer-body">
+                <form id="exportForm" onsubmit="exportReport(event)">
+                    @csrf
+                    <div class="form-group">
+                        <label class="form-label">Report Type *</label>
+                        <div class="radio-group">
+                            <div class="radio-item">
+                                <input type="radio" id="report_all" name="report_type" value="all" checked>
+                                <label for="report_all">
+                                    <strong>All Assigned Applicants</strong>
+                                    <span class="radio-description">All applicants assigned to you (interviewed and not interviewed)</span>
+                                </label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="report_interviewed" name="report_type" value="interviewed">
+                                <label for="report_interviewed">
+                                    <strong>Interviewed Applicants</strong>
+                                    <span class="radio-description">Only applicants with completed interviews</span>
+                                </label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="report_not_interviewed" name="report_type" value="not_interviewed">
+                                <label for="report_not_interviewed">
+                                    <strong>Pending/Not Interviewed Applicants</strong>
+                                    <span class="radio-description">Applicants not yet interviewed (includes remarks)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="drawer-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeExportDrawer()">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="exportBtn">
+                            <svg style="width: 16px; height: 16px; margin-right: 6px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Generate PDF
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 

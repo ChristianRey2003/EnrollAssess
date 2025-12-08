@@ -80,12 +80,18 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>️ Interview Scheduled</h1>
+            <h1>️ @if(isset($isReminder) && $isReminder) Reminder: @endif Interview Scheduled</h1>
         </div>
 
         <p>Dear <strong>{{ $applicant->full_name }}</strong>,</p>
 
-        <p>Your interview has been scheduled! Please see the details below:</p>
+        @if(isset($isReminder) && $isReminder)
+        <div class="highlight">
+            <strong>This is a reminder about your scheduled interview.</strong>
+        </div>
+        @endif
+
+        <p>@if(isset($isReminder) && $isReminder) This is a reminder that @else Your interview has been scheduled! @endif Please see the details below:</p>
 
         <div class="info-box">
             <div class="info-row">

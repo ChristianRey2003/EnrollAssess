@@ -77,6 +77,12 @@ Route::prefix('interviews')->name('interviews.')->middleware('role:instructor')-
     Route::post('/bulk-schedule', [InstructorController::class, 'bulkScheduleInterviews'])->name('bulk-schedule');
     Route::post('/{interview}/send-notification', [InstructorController::class, 'sendScheduleNotification'])->name('send-notification');
     Route::post('/{interview}/reschedule', [InstructorController::class, 'rescheduleInterview'])->name('reschedule');
+    Route::post('/{interview}/remarks', [InstructorController::class, 'updateRemarks'])->name('remarks');
+});
+
+// Export Routes
+Route::middleware(['role:instructor'])->prefix('export')->name('export.')->group(function () {
+    Route::post('/report', [InstructorController::class, 'exportReport'])->name('report');
 });
 
 // Profile Routes

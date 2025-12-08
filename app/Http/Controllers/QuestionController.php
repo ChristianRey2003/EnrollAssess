@@ -101,6 +101,24 @@ class QuestionController extends Controller
                 ->withInput();
         }
 
+        // Check for duplicate question text in the same exam
+        $normalizedQuestionText = trim($request->question_text);
+        $duplicateExists = Question::where('exam_id', $request->exam_id)
+            ->whereRaw('LOWER(TRIM(question_text)) = ?', [strtolower($normalizedQuestionText)])
+            ->exists();
+
+        if ($duplicateExists) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'A question with the same text already exists in this exam. Please use a different question text.'
+                ], 422);
+            }
+            return redirect()->back()
+                ->with('error', 'A question with the same text already exists in this exam. Please use a different question text.')
+                ->withInput();
+        }
+
         try {
             $question = null;
             DB::transaction(function () use ($request, &$question) {
@@ -206,6 +224,25 @@ class QuestionController extends Controller
             }
             return redirect()->back()
                 ->withErrors($validator)
+                ->withInput();
+        }
+
+        // Check for duplicate question text in the same exam (excluding current question)
+        $normalizedQuestionText = trim($request->question_text);
+        $duplicateExists = Question::where('exam_id', $request->exam_id)
+            ->where('question_id', '!=', $id)
+            ->whereRaw('LOWER(TRIM(question_text)) = ?', [strtolower($normalizedQuestionText)])
+            ->exists();
+
+        if ($duplicateExists) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'A question with the same text already exists in this exam. Please use a different question text.'
+                ], 422);
+            }
+            return redirect()->back()
+                ->with('error', 'A question with the same text already exists in this exam. Please use a different question text.')
                 ->withInput();
         }
 

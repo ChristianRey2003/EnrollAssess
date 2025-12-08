@@ -23,6 +23,7 @@ class ApplicantBasicInfo extends Model
         'senior_high_school_strand',
         'senior_high_school_strand_other',
         'senior_high_school_name',
+        'facebook_link',
         'completed_at',
     ];
 
