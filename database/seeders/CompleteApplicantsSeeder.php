@@ -10,7 +10,6 @@ use App\Models\Interview;
 use App\Models\SchoolYear;
 use App\Models\User;
 use Carbon\Carbon;
-use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -28,8 +27,6 @@ class CompleteApplicantsSeeder extends Seeder
     */
     public function run(): void
     {
-        $faker = Faker::create('en_PH');
-
         $exam = Exam::first();
         if (!$exam) {
             $this->command->error('No exam found. Run ExamSeeder first.');
@@ -80,8 +77,9 @@ class CompleteApplicantsSeeder extends Seeder
         $deadlineStart = Carbon::create(2025, 12, 8, 8, 0, 0);
         $deadlineEnd = Carbon::create(2025, 12, 20, 17, 0, 0);
 
+        $streetNames = ['Rizal', 'Luna', 'Bonifacio', 'Mabini', 'Burgos', 'Gomez', 'Zamora', 'Del Pilar', 'Jacinto', 'Aguinaldo'];
+        
         DB::transaction(function () use (
-            $faker,
             $exam,
             $schoolYear,
             $instructors,
@@ -93,15 +91,16 @@ class CompleteApplicantsSeeder extends Seeder
             $strands,
             $courses,
             $deadlineStart,
-            $deadlineEnd
+            $deadlineEnd,
+            $streetNames
         ) {
             for ($i = 1; $i <= 150; $i++) {
-                $sex = $faker->randomElement(['Male', 'Female']);
+                $sex = (['Male', 'Female'])[rand(0, 1)];
                 $firstName = $sex === 'Male'
-                    ? $faker->randomElement($maleNames)
-                    : $faker->randomElement($femaleNames);
-                $middleName = Str::upper($faker->randomLetter());
-                $lastName = $faker->randomElement($lastNames);
+                    ? $maleNames[array_rand($maleNames)]
+                    : $femaleNames[array_rand($femaleNames)];
+                $middleName = Str::upper(chr(rand(65, 90))); // Random uppercase letter A-Z
+                $lastName = $lastNames[array_rand($lastNames)];
 
                 // Unique email
                 $emailSlug = Str::slug($firstName . '.' . $lastName);
@@ -124,8 +123,8 @@ class CompleteApplicantsSeeder extends Seeder
                     'last_name' => $lastName,
                     'preferred_course' => 'BSIT',
                     'email_address' => $email,
-                    'phone_number' => '09' . $faker->numberBetween(100000000, 999999999),
-                    'assigned_instructor_id' => $faker->randomElement($instructors),
+                    'phone_number' => '09' . rand(100000000, 999999999),
+                    'assigned_instructor_id' => $instructors[array_rand($instructors)],
                     'school_year_id' => $schoolYear->school_year_id,
                     'score' => $ueeScore,
                     'enrollassess_score' => $skillScore,
@@ -146,9 +145,9 @@ class CompleteApplicantsSeeder extends Seeder
                 ]);
 
                 $birthDate = Carbon::create(rand(1999, 2007), rand(1, 12), rand(1, 28));
-                $city = $faker->randomElement($cities);
-                $strand = $faker->randomElement($strands);
-                $shs = $faker->randomElement($shsNames);
+                $city = $cities[array_rand($cities)];
+                $strand = $strands[array_rand($strands)];
+                $shs = $shsNames[array_rand($shsNames)];
 
                 ApplicantBasicInfo::create([
                     'applicant_id' => $applicant->applicant_id,
@@ -158,7 +157,7 @@ class CompleteApplicantsSeeder extends Seeder
                     'civil_status' => 'Single',
                     'applicant_type' => 'New College Applicant',
                     'is_pwd' => 'No',
-                    'complete_address' => $faker->streetAddress . ', ' . $city . ', Leyte',
+                    'complete_address' => rand(1, 999) . ' ' . $streetNames[array_rand($streetNames)] . ' Street, ' . $city . ', Leyte',
                     'city_municipality' => $city,
                     'province' => 'Leyte',
                     'senior_high_school_strand' => $strand,
@@ -180,7 +179,8 @@ class CompleteApplicantsSeeder extends Seeder
                     rand(7, 10),
                 ];
                 $criteriaTotal = array_sum($criteriaScores); // max 80
-                $recommendation = $faker->randomElement(['highly_recommended', 'recommended', 'conditional']);
+                $recommendationOptions = ['highly_recommended', 'recommended', 'conditional'];
+                $recommendation = $recommendationOptions[array_rand($recommendationOptions)];
                 $recommendationPoints = match ($recommendation) {
                     'highly_recommended' => 20,
                     'recommended' => 10,
@@ -188,6 +188,9 @@ class CompleteApplicantsSeeder extends Seeder
                     default => 0,
                 };
                 $overallInterviewScore = min(100, $criteriaTotal + $recommendationPoints);
+                
+                $ratingOptions = ['excellent', 'very_good', 'good', 'satisfactory'];
+                $overallRating = $ratingOptions[array_rand($ratingOptions)];
 
                 Interview::create([
                     'applicant_id' => $applicant->applicant_id,
@@ -203,7 +206,7 @@ class CompleteApplicantsSeeder extends Seeder
                     'willingness_to_learn' => $criteriaScores[6],
                     'overall_impression' => $criteriaScores[7],
                     'overall_score' => $overallInterviewScore,
-                    'overall_rating' => $faker->randomElement(['excellent', 'very_good', 'good', 'satisfactory']),
+                    'overall_rating' => $overallRating,
                     'recommendation' => $recommendation,
                     'strengths' => 'Shows readiness for BSIT coursework.',
                     'areas_improvement' => 'Continue improving problem-solving speed.',
