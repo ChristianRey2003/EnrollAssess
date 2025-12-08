@@ -466,8 +466,8 @@
                                     <select id="sortFilter" class="form-select form-select-sm" onchange="applySort()" style="width: 180px; min-width: 180px; height: 40px; padding: 4px 28px 4px 8px;">
                                         <option value="exam_completed_at_desc" {{ request('sort_by') == 'exam_completed_at' && request('sort_order') == 'desc' ? 'selected' : (!request('sort_by') ? 'selected' : '') }}>Newest First</option>
                                         <option value="exam_completed_at_asc" {{ request('sort_by') == 'exam_completed_at' && request('sort_order') == 'asc' ? 'selected' : '' }}>Oldest First</option>
-                                        <option value="enrollassess_score_desc" {{ request('sort_by') == 'enrollassess_score' && request('sort_order') == 'desc' ? 'selected' : '' }}>Score: High to Low</option>
-                                        <option value="enrollassess_score_asc" {{ request('sort_by') == 'enrollassess_score' && request('sort_order') == 'asc' ? 'selected' : '' }}>Score: Low to High</option>
+                                        <option value="overall_rating_desc" {{ request('sort_by') == 'overall_rating' && request('sort_order') == 'desc' ? 'selected' : '' }}>Score: High to Low</option>
+                                        <option value="overall_rating_asc" {{ request('sort_by') == 'overall_rating' && request('sort_order') == 'asc' ? 'selected' : '' }}>Score: Low to High</option>
                                         <option value="first_name_asc" {{ request('sort_by') == 'first_name' && request('sort_order') == 'asc' ? 'selected' : '' }}>Name: A to Z</option>
                                         <option value="first_name_desc" {{ request('sort_by') == 'first_name' && request('sort_order') == 'desc' ? 'selected' : '' }}>Name: Z to A</option>
                                     </select>
