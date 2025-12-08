@@ -122,7 +122,7 @@ class CompleteApplicantsSeeder extends Seeder
                     'first_name' => $firstName,
                     'middle_name' => $middleName,
                     'last_name' => $lastName,
-                    'preferred_course' => $faker->randomElement($courses),
+                    'preferred_course' => 'BSIT',
                     'email_address' => $email,
                     'phone_number' => '09' . $faker->numberBetween(100000000, 999999999),
                     'assigned_instructor_id' => $faker->randomElement($instructors),
