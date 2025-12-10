@@ -52,11 +52,11 @@ Route::middleware(['auth', 'capability:applicants.assign'])->prefix('applicants'
 // Applicant Management Routes
 Route::prefix('applicants')->name('applicants.')->middleware(['role:department-head,administrator,instructor', 'capability:applicants.view'])->group(function () {
     Route::get('/', [ApplicantController::class, 'index'])->name('index');
-    Route::get('/create', [ApplicantController::class, 'create'])->name('create');
-    Route::post('/', [ApplicantController::class, 'store'])->name('store');
-    Route::get('/{id}/edit', [ApplicantController::class, 'edit'])->name('edit');
-    Route::put('/{id}', [ApplicantController::class, 'update'])->name('update');
-    Route::delete('/{id}', [ApplicantController::class, 'destroy'])->name('destroy');
+    Route::get('/create', [ApplicantController::class, 'create'])->middleware('capability:applicants.create')->name('create');
+    Route::post('/', [ApplicantController::class, 'store'])->middleware('capability:applicants.create')->name('store');
+    Route::get('/{id}/edit', [ApplicantController::class, 'edit'])->middleware('capability:applicants.edit')->name('edit');
+    Route::put('/{id}', [ApplicantController::class, 'update'])->middleware('capability:applicants.edit')->name('update');
+    Route::delete('/{id}', [ApplicantController::class, 'destroy'])->middleware('capability:applicants.delete')->name('destroy');
     
     // Direct import route for backward compatibility
     Route::get('/import', [ApplicantController::class, 'import'])->name('import');
@@ -72,13 +72,17 @@ Route::prefix('applicants')->name('applicants.')->middleware(['role:department-h
         Route::get('/import', [ApplicantController::class, 'import'])->name('import');
         Route::post('/import', [ApplicantController::class, 'processImport'])->name('process-import');
         Route::post('/generate-access-codes', [ApplicantController::class, 'generateAccessCodes'])->name('generate-access-codes');
-        Route::post('/schedule-exams', [ApplicantController::class, 'bulkScheduleExams'])->name('schedule-exams');
-        Route::post('/send-exam-notifications', [ApplicantController::class, 'sendExamNotifications'])->name('send-exam-notifications');
         Route::post('/delete', [ApplicantController::class, 'bulkDelete'])->name('delete');
     });
     
-    // Exam Scheduling Routes
-    Route::prefix('exam-schedule')->name('exam-schedule.')->group(function () {
+    // Exam Scheduling Routes (requires schedule_exam capability)
+    Route::prefix('bulk')->name('bulk.')->middleware('capability:applicants.schedule_exam')->group(function () {
+        Route::post('/schedule-exams', [ApplicantController::class, 'bulkScheduleExams'])->name('schedule-exams');
+        Route::post('/send-exam-notifications', [ApplicantController::class, 'sendExamNotifications'])->name('send-exam-notifications');
+    });
+    
+    // Exam Scheduling Routes (individual)
+    Route::prefix('exam-schedule')->name('exam-schedule.')->middleware('capability:applicants.schedule_exam')->group(function () {
         Route::get('/{applicantId}', [ApplicantController::class, 'getApplicantSchedule'])->name('get');
         Route::put('/{scheduleId}', [ApplicantController::class, 'rescheduleExam'])->name('reschedule');
     });
@@ -273,6 +277,7 @@ Route::middleware(['role:department-head,administrator'])->prefix('settings')->n
     Route::get('/', [\App\Http\Controllers\SettingsController::class, 'index'])->name('index');
     Route::put('/', [\App\Http\Controllers\SettingsController::class, 'update'])->name('update');
     Route::put('/scoring-weights', [\App\Http\Controllers\SettingsController::class, 'updateScoringWeights'])->name('update-scoring-weights');
+    Route::get('/scoring-weights/{schoolYearId}', [\App\Http\Controllers\SettingsController::class, 'getScoringWeights'])->name('get-scoring-weights');
     Route::post('/test-email', [\App\Http\Controllers\SettingsController::class, 'testEmail'])->name('test-email');
     Route::post('/reset', [\App\Http\Controllers\SettingsController::class, 'reset'])->name('reset');
     
@@ -282,6 +287,7 @@ Route::middleware(['role:department-head,administrator'])->prefix('settings')->n
         Route::post('/', [\App\Http\Controllers\SchoolYearController::class, 'store'])->name('store');
         Route::put('/{schoolYear}', [\App\Http\Controllers\SchoolYearController::class, 'update'])->name('update');
         Route::delete('/{schoolYear}', [\App\Http\Controllers\SchoolYearController::class, 'destroy'])->name('destroy');
+        Route::post('/{schoolYear}/activate', [\App\Http\Controllers\SchoolYearController::class, 'activate'])->name('activate');
         Route::post('/{schoolYear}/set-current', [\App\Http\Controllers\SchoolYearController::class, 'setAsCurrent'])->name('set-current');
     });
 });

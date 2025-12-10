@@ -37,12 +37,13 @@ class SetSchoolYear
             }
         }
 
-        // Get all active school years for dropdown (only if table exists)
+        // Get all school years for dropdown (both active and inactive - only if table exists)
         $schoolYears = collect([]);
         try {
             if (Schema::hasTable('school_years')) {
-                // Only get active school years, ordered by start_date descending (most recent first)
-                $schoolYears = SchoolYear::where('is_active', true)
+                // Get all school years (active and inactive) for dropdown visibility
+                // Ordered by start_date descending (most recent first), then by active status
+                $schoolYears = SchoolYear::orderBy('is_active', 'desc')
                                         ->orderBy('start_date', 'desc')
                                         ->get();
             }

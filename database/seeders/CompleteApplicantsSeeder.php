@@ -59,7 +59,7 @@ class CompleteApplicantsSeeder extends Seeder
         $femaleNames = ['Maria', 'Angela', 'Patricia', 'Louise', 'Andrea', 'Katrina', 'Princess', 'Jasmine', 'Sophia', 'Clarisse', 'Faith', 'Camille', 'Joyce', 'Rochelle', 'Dianne'];
         $lastNames = ['Santos', 'Reyes', 'Cruz', 'Bautista', 'Torres', 'Navarro', 'Garcia', 'Lopez', 'Dela Cruz', 'Ramos', 'Villanueva', 'Mendoza', 'Gonzales', 'Aquino', 'Domingo', 'Ferrer', 'Marquez', 'Salazar', 'Velasquez', 'Flores'];
 
-        $cities = ['Ormoc City', 'Baybay City', 'Albuera', 'Kananga', 'Palo', 'Tacloban City', 'Villaba', 'Carigara', 'Burauen'];
+        $cities = ['Ormoc City', 'Baybay City', 'Albuera', 'Kananga', 'Tacloban City'];
         $shsNames = [
             'Ormoc City Senior High School',
             'Leyte National High School',
@@ -223,6 +223,40 @@ class CompleteApplicantsSeeder extends Seeder
 
                 // Keep applicant interview_score aligned with rubric score
                 $applicant->update(['interview_score' => $overallInterviewScore]);
+            }
+
+            // Seed 50 additional applicants with no completion (no exam/interview/basic info)
+            for ($i = 1; $i <= 50; $i++) {
+                $sex = (['Male', 'Female'])[rand(0, 1)];
+                $firstName = $sex === 'Male'
+                    ? $maleNames[array_rand($maleNames)]
+                    : $femaleNames[array_rand($femaleNames)];
+                $middleName = Str::upper(chr(rand(65, 90))); // Random uppercase letter A-Z
+                $lastName = $lastNames[array_rand($lastNames)];
+
+                // Unique email
+                $emailSlug = Str::slug($firstName . '.' . $lastName);
+                $email = $emailSlug . 'pending' . $i . '@gmail.com';
+
+                Applicant::create([
+                    'application_no' => Applicant::generateApplicationNumber(),
+                    'first_name' => $firstName,
+                    'middle_name' => $middleName,
+                    'last_name' => $lastName,
+                    'preferred_course' => 'BSIT',
+                    'email_address' => $email,
+                    'phone_number' => '09' . rand(100000000, 999999999),
+                    'assigned_instructor_id' => null,
+                    'school_year_id' => $schoolYear->school_year_id,
+                    // Leave scores and interview/exam fields null to represent not completed
+                    'score' => null,
+                    'enrollassess_score' => null,
+                    'interview_score' => null,
+                    'card_tor_gwa' => null,
+                    'status' => 'pending',
+                    'exam_completed_at' => null,
+                    'violation_count' => 0,
+                ]);
             }
         });
 

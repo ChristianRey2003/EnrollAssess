@@ -37,7 +37,6 @@
         </div>
         
         <!-- Notifications Dropdown -->
-        @if(auth()->user()->role !== 'instructor')
         <div class="notification-dropdown">
             <button class="notification-toggle" 
                     onclick="toggleNotificationDropdown()"
@@ -66,7 +65,6 @@
                 </div>
             </div>
         </div>
-        @endif
         
         <div class="user-dropdown">
             <button class="user-dropdown-toggle" 

@@ -118,7 +118,20 @@ class InstructorController extends Controller
             }
         }
 
+        // Order by: prioritize applicants who still need interviewing (not completed) at top
+        // Then by created_at descending
         $assignedApplicants = $assignedApplicantsQuery
+            ->orderByRaw('(
+                SELECT CASE 
+                    WHEN EXISTS (
+                        SELECT 1 FROM interviews 
+                        WHERE interviews.applicant_id = applicants.applicant_id 
+                        AND interviews.interviewer_id = ? 
+                        AND interviews.status = "completed"
+                    ) THEN 1 
+                    ELSE 0 
+                END
+            ) ASC', [$instructor->user_id])
             ->orderBy('created_at', 'desc')
             ->paginate(15)
             ->appends($request->only(['search', 'status']));
@@ -663,8 +676,9 @@ class InstructorController extends Controller
         $scheduled = 0;
         $errors = [];
         $emailsSent = 0;
+        $emailsFailed = [];
 
-        DB::transaction(function () use ($request, $instructor, &$scheduled, &$errors, &$emailsSent) {
+        DB::transaction(function () use ($request, $instructor, &$scheduled, &$errors, &$emailsSent, &$emailsFailed) {
             $currentDateTime = \Carbon\Carbon::parse($request->schedule_date_start);
             
             foreach ($request->interview_ids as $interviewId) {
@@ -734,7 +748,10 @@ class InstructorController extends Controller
                             );
                             $emailsSent++;
                         } catch (\Exception $e) {
-                            \Log::error('Failed to send bulk schedule email: ' . $e->getMessage());
+                            \Log::error('Failed to send bulk schedule email to ' . $interview->applicant->email_address . ': ' . $e->getMessage());
+                            // Track failed email with applicant name
+                            $applicantName = trim($interview->applicant->first_name . ' ' . $interview->applicant->last_name);
+                            $emailsFailed[] = $applicantName;
                         }
                     }
 
@@ -754,11 +771,23 @@ class InstructorController extends Controller
             $this->dispatchStatisticsUpdate();
         }
 
+        // Send notification to instructor if emails failed
+        if ($request->notify_email && count($emailsFailed) > 0) {
+            $instructor->notify(new \App\Notifications\BulkScheduleEmailFailedNotification(
+                $scheduled,
+                $emailsSent,
+                $emailsFailed,
+                count($emailsFailed)
+            ));
+        }
+
         return response()->json([
             'success' => true,
             'scheduled' => $scheduled,
             'errors' => $errors,
             'emails_sent' => $emailsSent,
+            'emails_failed' => $emailsFailed,
+            'emails_failed_count' => count($emailsFailed),
             'message' => "Successfully scheduled {$scheduled} interview(s)."
         ]);
     }

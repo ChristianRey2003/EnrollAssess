@@ -1032,13 +1032,36 @@
             <div class="settings-card-header">
                 <h3>Admission Scoring Weights</h3>
                 <p style="margin: 8px 0 0 0; color: var(--text-gray); font-size: 14px;">
-                    Configure the weight percentages for calculating overall admission ratings. Total must equal 100%.
+                    Configure the weight percentages for calculating overall admission ratings per school year. Total must equal 100%.
                 </p>
+            </div>
+
+            <!-- School Year Selector -->
+            <div style="margin-bottom: 24px;">
+                <div class="form-group">
+                    <label for="scoringWeightsSchoolYear" class="form-label">
+                        School Year <span style="color: var(--danger-red);">*</span>
+                    </label>
+                    <select id="scoringWeightsSchoolYear" name="school_year_id" class="form-control" required onchange="loadScoringWeightsForSchoolYear()">
+                        <option value="">-- Select School Year --</option>
+                        @forelse($schoolYears as $sy)
+                            <option value="{{ $sy->school_year_id }}" {{ $loop->first ? 'selected' : '' }}>
+                                {{ $sy->name }}
+                            </option>
+                        @empty
+                            <option value="" disabled>No school years available</option>
+                        @endforelse
+                    </select>
+                    <small style="color: var(--text-gray); font-size: 12px; margin-top: 4px; display: block;">
+                        Select a school year to configure its scoring weights. Each school year can have different weights.
+                    </small>
+                </div>
             </div>
 
             <form method="POST" action="{{ route('admin.settings.update-scoring-weights') }}" id="scoringWeightsForm">
                 @csrf
                 @method('PUT')
+                <input type="hidden" id="scoringWeightsFormSchoolYearId" name="school_year_id" value="{{ $schoolYears->first()->school_year_id ?? '' }}">
 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 24px;">
                     <div class="form-group">
@@ -1050,11 +1073,11 @@
                             id="scoring_weight_uee" 
                             name="scoring_weight_uee" 
                             class="form-control scoring-weight-input"
-                            value="{{ \App\Models\Settings::getSetting('scoring_weight_uee', 60) }}"
+                            value="{{ \App\Models\Settings::getSetting('scoring_weight_uee', 60, $schoolYears->first()->school_year_id ?? null) }}"
                             min="0"
                             max="100"
                             required>
-                        <span class="help-text">Current weight: <strong id="uee-display">{{ \App\Models\Settings::getSetting('scoring_weight_uee', 60) }}%</strong></span>
+                        <span class="help-text">Current weight: <strong id="uee-display">{{ \App\Models\Settings::getSetting('scoring_weight_uee', 60, $schoolYears->first()->school_year_id ?? null) }}%</strong></span>
                     </div>
 
                     <div class="form-group">
@@ -1066,11 +1089,11 @@
                             id="scoring_weight_gwa" 
                             name="scoring_weight_gwa" 
                             class="form-control scoring-weight-input"
-                            value="{{ \App\Models\Settings::getSetting('scoring_weight_gwa', 30) }}"
+                            value="{{ \App\Models\Settings::getSetting('scoring_weight_gwa', 30, $schoolYears->first()->school_year_id ?? null) }}"
                             min="0"
                             max="100"
                             required>
-                        <span class="help-text">Current weight: <strong id="gwa-display">{{ \App\Models\Settings::getSetting('scoring_weight_gwa', 30) }}%</strong></span>
+                        <span class="help-text">Current weight: <strong id="gwa-display">{{ \App\Models\Settings::getSetting('scoring_weight_gwa', 30, $schoolYears->first()->school_year_id ?? null) }}%</strong></span>
                     </div>
 
                     <div class="form-group">
@@ -1082,11 +1105,11 @@
                             id="scoring_weight_interview" 
                             name="scoring_weight_interview" 
                             class="form-control scoring-weight-input"
-                            value="{{ \App\Models\Settings::getSetting('scoring_weight_interview', 5) }}"
+                            value="{{ \App\Models\Settings::getSetting('scoring_weight_interview', 5, $schoolYears->first()->school_year_id ?? null) }}"
                             min="0"
                             max="100"
                             required>
-                        <span class="help-text">Current weight: <strong id="interview-display">{{ \App\Models\Settings::getSetting('scoring_weight_interview', 5) }}%</strong></span>
+                        <span class="help-text">Current weight: <strong id="interview-display">{{ \App\Models\Settings::getSetting('scoring_weight_interview', 5, $schoolYears->first()->school_year_id ?? null) }}%</strong></span>
                     </div>
 
                     <div class="form-group">
@@ -1098,11 +1121,11 @@
                             id="scoring_weight_skilltest" 
                             name="scoring_weight_skilltest" 
                             class="form-control scoring-weight-input"
-                            value="{{ \App\Models\Settings::getSetting('scoring_weight_skilltest', 5) }}"
+                            value="{{ \App\Models\Settings::getSetting('scoring_weight_skilltest', 5, $schoolYears->first()->school_year_id ?? null) }}"
                             min="0"
                             max="100"
                             required>
-                        <span class="help-text">Current weight: <strong id="skilltest-display">{{ \App\Models\Settings::getSetting('scoring_weight_skilltest', 5) }}%</strong></span>
+                        <span class="help-text">Current weight: <strong id="skilltest-display">{{ \App\Models\Settings::getSetting('scoring_weight_skilltest', 5, $schoolYears->first()->school_year_id ?? null) }}%</strong></span>
                     </div>
                 </div>
 
@@ -1119,7 +1142,14 @@
                         </div>
                         <div style="text-align: right;">
                             <div id="total-weight" style="font-size: 32px; font-weight: 700; color: var(--primary-maroon);">
-                                {{ \App\Models\Settings::getSetting('scoring_weight_uee', 60) + \App\Models\Settings::getSetting('scoring_weight_gwa', 30) + \App\Models\Settings::getSetting('scoring_weight_interview', 5) + \App\Models\Settings::getSetting('scoring_weight_skilltest', 5) }}%
+                                @php
+                                    $firstSyId = $schoolYears->first()->school_year_id ?? null;
+                                    $uee = \App\Models\Settings::getSetting('scoring_weight_uee', 60, $firstSyId);
+                                    $gwa = \App\Models\Settings::getSetting('scoring_weight_gwa', 30, $firstSyId);
+                                    $interview = \App\Models\Settings::getSetting('scoring_weight_interview', 5, $firstSyId);
+                                    $skilltest = \App\Models\Settings::getSetting('scoring_weight_skilltest', 5, $firstSyId);
+                                @endphp
+                                {{ $uee + $gwa + $interview + $skilltest }}%
                             </div>
                             <div id="total-status" style="font-size: 12px; font-weight: 600; margin-top: 4px;">
                                 <span id="status-text" style="color: var(--success-green);">✓ Valid</span>
@@ -1272,6 +1302,46 @@
                         • Allow future features like automatic year switching
                     </p>
                 </div>
+
+                <!-- Scoring Weights Section (Compact) -->
+                <div style="border-top: 1px solid var(--border-gray); padding-top: 16px; margin-top: 16px;">
+                    <label style="font-size: 13px; font-weight: 600; color: var(--text-dark); margin-bottom: 8px; display: block;">
+                        Scoring Weights (Optional)
+                    </label>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 8px;">
+                        <div>
+                            <label style="font-size: 11px; color: var(--text-gray); display: block; margin-bottom: 4px;">UEE</label>
+                            <input type="number" id="sy_scoring_weight_uee" name="scoring_weight_uee" 
+                                   class="form-input" style="padding: 6px 8px; font-size: 13px;" 
+                                   min="0" max="100" placeholder="60">
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; color: var(--text-gray); display: block; margin-bottom: 4px;">GWA</label>
+                            <input type="number" id="sy_scoring_weight_gwa" name="scoring_weight_gwa" 
+                                   class="form-input" style="padding: 6px 8px; font-size: 13px;" 
+                                   min="0" max="100" placeholder="30">
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; color: var(--text-gray); display: block; margin-bottom: 4px;">Interview</label>
+                            <input type="number" id="sy_scoring_weight_interview" name="scoring_weight_interview" 
+                                   class="form-input" style="padding: 6px 8px; font-size: 13px;" 
+                                   min="0" max="100" placeholder="5">
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; color: var(--text-gray); display: block; margin-bottom: 4px;">Skill Test</label>
+                            <input type="number" id="sy_scoring_weight_skilltest" name="scoring_weight_skilltest" 
+                                   class="form-input" style="padding: 6px 8px; font-size: 13px;" 
+                                   min="0" max="100" placeholder="5">
+                        </div>
+                    </div>
+                    <small style="color: var(--text-gray); font-size: 11px; display: block; margin-top: 4px;">
+                        Total must equal 100%. Leave empty to use defaults (60/30/5/5).
+                    </small>
+                    <div id="sy-total-weight" style="font-size: 12px; font-weight: 600; margin-top: 8px; color: var(--text-gray);">
+                        Total: <span id="sy-total-value">0</span>%
+                    </div>
+                </div>
+
                 <div class="drawer-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeSchoolYearDrawer()">Cancel</button>
                     <button type="submit" class="btn btn-primary-export">Save School Year</button>
@@ -1719,6 +1789,48 @@
         }
     }
 
+    async function loadScoringWeightsForSchoolYear() {
+        const schoolYearId = document.getElementById('scoringWeightsSchoolYear').value;
+        if (!schoolYearId) return;
+
+        // Update hidden input
+        document.getElementById('scoringWeightsFormSchoolYearId').value = schoolYearId;
+
+        // Fetch scoring weights for this school year
+        try {
+            const response = await fetch(`{{ route('admin.settings.get-scoring-weights', ':id') }}`.replace(':id', schoolYearId), {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById('scoring_weight_uee').value = data.uee || 60;
+                document.getElementById('scoring_weight_gwa').value = data.gwa || 30;
+                document.getElementById('scoring_weight_interview').value = data.interview || 5;
+                document.getElementById('scoring_weight_skilltest').value = data.skilltest || 5;
+                calculateTotalWeight();
+            } else {
+                // Use defaults if not found
+                document.getElementById('scoring_weight_uee').value = 60;
+                document.getElementById('scoring_weight_gwa').value = 30;
+                document.getElementById('scoring_weight_interview').value = 5;
+                document.getElementById('scoring_weight_skilltest').value = 5;
+                calculateTotalWeight();
+            }
+        } catch (error) {
+            console.error('Error loading scoring weights:', error);
+            // Use defaults on error
+            document.getElementById('scoring_weight_uee').value = 60;
+            document.getElementById('scoring_weight_gwa').value = 30;
+            document.getElementById('scoring_weight_interview').value = 5;
+            document.getElementById('scoring_weight_skilltest').value = 5;
+            calculateTotalWeight();
+        }
+    }
+
     // Initialize scoring weights form
     document.addEventListener('DOMContentLoaded', function() {
         const scoringWeightsForm = document.getElementById('scoringWeightsForm');
@@ -1730,8 +1842,13 @@
                 input.addEventListener('change', calculateTotalWeight);
             });
             
-            // Initial calculation
-            calculateTotalWeight();
+            // Load initial scoring weights for selected school year
+            const initialSchoolYearId = document.getElementById('scoringWeightsSchoolYear')?.value;
+            if (initialSchoolYearId) {
+                loadScoringWeightsForSchoolYear();
+            } else {
+                calculateTotalWeight();
+            }
             
             // Form submission with confirmation
             scoringWeightsForm.addEventListener('submit', function(e) {
@@ -1748,6 +1865,20 @@
                     return false;
                 }
             });
+        }
+        
+        // Initialize school year scoring weights inputs
+        const syUee = document.getElementById('sy_scoring_weight_uee');
+        const syGwa = document.getElementById('sy_scoring_weight_gwa');
+        const syInterview = document.getElementById('sy_scoring_weight_interview');
+        const sySkilltest = document.getElementById('sy_scoring_weight_skilltest');
+        
+        if (syUee && syGwa && syInterview && sySkilltest) {
+            [syUee, syGwa, syInterview, sySkilltest].forEach(input => {
+                input.addEventListener('input', updateSchoolYearTotalWeight);
+                input.addEventListener('change', updateSchoolYearTotalWeight);
+            });
+            updateSchoolYearTotalWeight();
         }
     });
 
@@ -1992,9 +2123,10 @@
                     <td>${isActive}</td>
                     <td>
                         <div style="display: flex; gap: 8px;">
-                            ${!sy.is_current ? `<button type="button" class="btn btn-sm btn-primary-export" onclick="setAsCurrent(${sy.school_year_id})">Set as Current</button>` : ''}
+                            ${!sy.is_current && sy.is_active ? `<button type="button" class="btn btn-sm btn-primary-export" onclick="setAsCurrent(${sy.school_year_id})">Set as Current</button>` : ''}
+                            ${!sy.is_active ? `<button type="button" class="btn btn-sm btn-success" onclick="activateSchoolYear(${sy.school_year_id}, '${escapedName}')">Activate</button>` : ''}
                             <button type="button" class="btn btn-sm btn-info" onclick="openEditSchoolYearModal(${sy.school_year_id}, '${escapedName}', '${sy.start_date}', '${sy.end_date}')">Edit</button>
-                            ${!sy.is_current && sy.is_active ? `<button type="button" class="btn btn-sm btn-danger" onclick="deleteSchoolYear(${sy.school_year_id}, '${escapedName}')">Delete</button>` : ''}
+                            ${!sy.is_current && sy.is_active ? `<button type="button" class="btn btn-sm btn-danger" onclick="deleteSchoolYear(${sy.school_year_id}, '${escapedName}')">Deactivate</button>` : ''}
                         </div>
                     </td>
                 </tr>
@@ -2017,6 +2149,14 @@
         document.getElementById('schoolYearForm').reset();
         document.getElementById('schoolYearForm').setAttribute('data-action', 'create');
         document.getElementById('schoolYearForm').removeAttribute('data-school-year-id');
+        
+        // Reset scoring weights
+        document.getElementById('sy_scoring_weight_uee').value = '';
+        document.getElementById('sy_scoring_weight_gwa').value = '';
+        document.getElementById('sy_scoring_weight_interview').value = '';
+        document.getElementById('sy_scoring_weight_skilltest').value = '';
+        updateSchoolYearTotalWeight();
+        
         overlay.style.display = 'block';
         setTimeout(() => {
             overlay.classList.add('show');
@@ -2034,6 +2174,14 @@
         document.getElementById('schoolYearEndDate').value = endDate;
         document.getElementById('schoolYearForm').setAttribute('data-action', 'edit');
         document.getElementById('schoolYearForm').setAttribute('data-school-year-id', id);
+        
+        // Reset scoring weights (editing doesn't change weights)
+        document.getElementById('sy_scoring_weight_uee').value = '';
+        document.getElementById('sy_scoring_weight_gwa').value = '';
+        document.getElementById('sy_scoring_weight_interview').value = '';
+        document.getElementById('sy_scoring_weight_skilltest').value = '';
+        updateSchoolYearTotalWeight();
+        
         overlay.style.display = 'block';
         setTimeout(() => {
             overlay.classList.add('show');
@@ -2053,6 +2201,27 @@
         const form = document.getElementById('schoolYearForm');
         if (form) {
             form.reset();
+            updateSchoolYearTotalWeight();
+        }
+    }
+
+    function updateSchoolYearTotalWeight() {
+        const uee = parseInt(document.getElementById('sy_scoring_weight_uee').value) || 0;
+        const gwa = parseInt(document.getElementById('sy_scoring_weight_gwa').value) || 0;
+        const interview = parseInt(document.getElementById('sy_scoring_weight_interview').value) || 0;
+        const skilltest = parseInt(document.getElementById('sy_scoring_weight_skilltest').value) || 0;
+        const total = uee + gwa + interview + skilltest;
+        
+        const totalElement = document.getElementById('sy-total-value');
+        if (totalElement) {
+            totalElement.textContent = total;
+            if (total === 100) {
+                totalElement.style.color = 'var(--success-green)';
+            } else if (total > 100) {
+                totalElement.style.color = 'var(--danger-red)';
+            } else {
+                totalElement.style.color = 'var(--warning-orange)';
+            }
         }
     }
 
@@ -2065,11 +2234,38 @@
         const action = form.getAttribute('data-action');
         const schoolYearId = form.getAttribute('data-school-year-id');
         
+        // Check scoring weights if provided
+        const uee = document.getElementById('sy_scoring_weight_uee').value;
+        const gwa = document.getElementById('sy_scoring_weight_gwa').value;
+        const interview = document.getElementById('sy_scoring_weight_interview').value;
+        const skilltest = document.getElementById('sy_scoring_weight_skilltest').value;
+        
+        // If any weight is provided, all must be provided and total must be 100
+        if (uee || gwa || interview || skilltest) {
+            if (!uee || !gwa || !interview || !skilltest) {
+                showNotification('Please fill all scoring weight fields or leave them all empty.', 'error');
+                return;
+            }
+            const total = parseInt(uee) + parseInt(gwa) + parseInt(interview) + parseInt(skilltest);
+            if (total !== 100) {
+                showNotification(`Scoring weights must total exactly 100%. Current total: ${total}%`, 'error');
+                return;
+            }
+        }
+        
         const formData = {
             name: document.getElementById('schoolYearName').value,
             start_date: document.getElementById('schoolYearStartDate').value,
             end_date: document.getElementById('schoolYearEndDate').value,
         };
+        
+        // Add scoring weights if provided
+        if (uee && gwa && interview && skilltest) {
+            formData.scoring_weight_uee = parseInt(uee);
+            formData.scoring_weight_gwa = parseInt(gwa);
+            formData.scoring_weight_interview = parseInt(interview);
+            formData.scoring_weight_skilltest = parseInt(skilltest);
+        }
 
         let url = '{{ route('admin.settings.school-years.store') }}';
         let method = 'POST';
@@ -2138,7 +2334,7 @@
     }
 
     async function deleteSchoolYear(schoolYearId, name) {
-        if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+        if (!confirm(`Are you sure you want to deactivate "${name}"? You can activate it again later.`)) {
             return;
         }
 
@@ -2159,11 +2355,41 @@
                 showNotification(data.message, 'success');
                 loadSchoolYears();
             } else {
-                showNotification(data.message || 'Failed to delete school year.', 'error');
+                showNotification(data.message || 'Failed to deactivate school year.', 'error');
             }
         } catch (error) {
             console.error('Error deleting school year:', error);
-            showNotification('Error deleting school year. Please try again.', 'error');
+            showNotification('Error deactivating school year. Please try again.', 'error');
+        }
+    }
+
+    async function activateSchoolYear(schoolYearId, name) {
+        if (!confirm(`Activate "${name}"?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`{{ route('admin.settings.school-years.activate', ':id') }}`.replace(':id', schoolYearId), {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showNotification(data.message, 'success');
+                loadSchoolYears();
+            } else {
+                showNotification(data.message || 'Failed to activate school year.', 'error');
+            }
+        } catch (error) {
+            console.error('Error activating school year:', error);
+            showNotification('Error activating school year. Please try again.', 'error');
         }
     }
 

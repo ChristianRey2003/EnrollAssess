@@ -515,21 +515,47 @@ class UserManagementController extends Controller
 
             $delegatedCount = 0;
             $delegatedNames = [];
+            $permissionsToGrant = [];
 
-            DB::transaction(function () use ($request, $delegatee, &$delegatedCount, &$delegatedNames) {
+            DB::transaction(function () use ($request, $delegatee, &$delegatedCount, &$delegatedNames, &$permissionsToGrant) {
                 foreach ($request->permissions as $permission) {
-                    // Create delegation
-                    \App\Models\RoleDelegation::create([
-                        'delegator_id' => Auth::id(),
-                        'delegatee_id' => $delegatee->user_id,
-                        'permission' => $permission,
-                        'starts_at' => now(),
-                        'expires_at' => now()->addHours((int)$request->duration),
-                        'status' => 'active'
-                    ]);
+                    // Add the permission itself
+                    $permissionsToGrant[] = $permission;
+                    
+                    // Automatically add dependencies
+                    $dependencies = \App\Constants\Capabilities::getDependencies($permission);
+                    foreach ($dependencies as $dep) {
+                        if (!in_array($dep, $permissionsToGrant)) {
+                            $permissionsToGrant[] = $dep;
+                        }
+                    }
+                }
+                
+                // Grant all permissions (including dependencies)
+                foreach ($permissionsToGrant as $perm) {
+                    // Check if already exists to avoid duplicates
+                    $exists = \App\Models\RoleDelegation::where('delegatee_id', $delegatee->user_id)
+                        ->where('permission', $perm)
+                        ->where('status', 'active')
+                        ->where(function($q) use ($request) {
+                            $q->whereNull('expires_at')
+                              ->orWhere('expires_at', '>', now()->addHours((int)$request->duration));
+                        })
+                        ->exists();
+                    
+                    if (!$exists) {
+                        \App\Models\RoleDelegation::create([
+                            'delegator_id' => Auth::id(),
+                            'delegatee_id' => $delegatee->user_id,
+                            'permission' => $perm,
+                            'starts_at' => now(),
+                            'expires_at' => now()->addHours((int)$request->duration),
+                            'status' => 'active'
+                        ]);
+                    }
                     
                     $delegatedCount++;
-                    $delegatedNames[] = ucwords(str_replace('_', ' ', $permission));
+                    $delegatedNames[] = \App\Constants\Capabilities::getLabel($perm);
                 }
             });
 

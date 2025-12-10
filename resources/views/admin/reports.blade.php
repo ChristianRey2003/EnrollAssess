@@ -495,10 +495,17 @@
                                                 @endif
                                             </a>
                                         </th>
+                                        @php
+                                            $currentSchoolYearId = session('school_year_id');
+                                            $ueeWeight = \App\Models\Settings::getSetting('scoring_weight_uee', 60, $currentSchoolYearId);
+                                            $gwaWeight = \App\Models\Settings::getSetting('scoring_weight_gwa', 30, $currentSchoolYearId);
+                                            $interviewWeight = \App\Models\Settings::getSetting('scoring_weight_interview', 5, $currentSchoolYearId);
+                                            $skilltestWeight = \App\Models\Settings::getSetting('scoring_weight_skilltest', 5, $currentSchoolYearId);
+                                        @endphp
                                         <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
                                             <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'score', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
                                                style="color: inherit; text-decoration: none; font-weight: bold;">
-                                                UEE ({{ \App\Models\Settings::getSetting('scoring_weight_uee', 60) }}%)
+                                                UEE ({{ $ueeWeight }}%)
                                                 @if(request('sort_by') == 'score')
                                                     <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
                                                 @endif
@@ -507,7 +514,7 @@
                                         <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
                                             <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'card_tor_gwa', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
                                                style="color: inherit; text-decoration: none; font-weight: bold;">
-                                                GWA ({{ \App\Models\Settings::getSetting('scoring_weight_gwa', 30) }}%)
+                                                GWA ({{ $gwaWeight }}%)
                                                 @if(request('sort_by') == 'card_tor_gwa')
                                                     <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
                                                 @endif
@@ -516,7 +523,7 @@
                                         <th style="font-size: 0.85rem; font-weight: bold; color: #1F2937 !important; background-color: white !important; padding: 12px 8px;" class="text-center">
                                             <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'enrollassess_score', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc']) }}" 
                                                style="color: inherit; text-decoration: none; font-weight: bold;">
-                                                Interview & Exam ({{ \App\Models\Settings::getSetting('scoring_weight_interview', 5) + \App\Models\Settings::getSetting('scoring_weight_skilltest', 5) }}%)
+                                                Interview & Exam ({{ $interviewWeight + $skilltestWeight }}%)
                                                 @if(request('sort_by') == 'enrollassess_score')
                                                     <span>{{ request('sort_order') == 'asc' ? '↑' : '↓' }}</span>
                                                 @endif
@@ -577,7 +584,10 @@
                                                 @endif
                                             </td>
                                             <td class="text-center" style="font-size: 13px; font-weight: normal;">
-                                                @if($applicant->card_tor_gwa)
+                                                @if($overallRating && isset($overallRating['components']['gwa']['weighted']))
+                                                    <div>{{ round($overallRating['components']['gwa']['weighted'], 2) }}%</div>
+                                                @elseif($applicant->card_tor_gwa)
+                                                    {{-- Fallback to raw if no overall rating calculated yet --}}
                                                     <div>{{ round($applicant->card_tor_gwa, 2) }}%</div>
                                                 @else
                                                     <span style="color: #9ca3af;">-</span>
@@ -1279,10 +1289,16 @@
                                     ? Number(applicant.score).toFixed(2) + '%'
                                     : '<span style="color: #9ca3af;">-</span>';
                                 
-                                // Show GWA as percentage
-                                const gwa = applicant.card_tor_gwa 
-                                    ? Number(applicant.card_tor_gwa).toFixed(2) + '%'
-                                    : '<span style="color: #9ca3af;">-</span>';
+                                // Show GWA as weighted value (computed)
+                                let gwa = '<span style="color: #9ca3af;">-</span>';
+                                if (applicant.overall_rating_components && applicant.overall_rating_components.gwa) {
+                                    // Use weighted value (computed)
+                                    const weighted = Number(applicant.overall_rating_components.gwa.weighted);
+                                    gwa = weighted.toFixed(2) + '%';
+                                } else if (applicant.card_tor_gwa) {
+                                    // Fallback to raw if no overall rating calculated yet
+                                    gwa = Number(applicant.card_tor_gwa).toFixed(2) + '%';
+                                }
                                 
                                 // Combined Interview & Exam (weighted 10% value)
                                 // Formula: (Interview × 0.05) + (Exam × 0.05) = weighted (0-10), display directly

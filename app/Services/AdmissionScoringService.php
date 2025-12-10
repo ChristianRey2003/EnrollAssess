@@ -20,6 +20,29 @@ use App\Models\Applicant;
 class AdmissionScoringService
 {
     /**
+     * Cached settings to avoid repeated database queries
+     * Key format: school_year_id or 'global'
+     */
+    protected static $cachedWeights = [];
+
+    /**
+     * Get scoring weights for a specific school year (cached per request)
+     * 
+     * @param int|null $schoolYearId School year ID (null for global/default)
+     * @return array
+     */
+    protected function getScoringWeights($schoolYearId = null): array
+    {
+        $cacheKey = $schoolYearId ?? 'global';
+        
+        if (!isset(self::$cachedWeights[$cacheKey])) {
+            self::$cachedWeights[$cacheKey] = \App\Models\Settings::getScoringWeights($schoolYearId);
+        }
+        
+        return self::$cachedWeights[$cacheKey];
+    }
+
+    /**
      * Calculate the overall admission rating for an applicant
      * 
      * Formula: Overall = UEE + (GWA × GWA_weight) + (Interview × Interview_weight) + (SkillTest × SkillTest_weight)
@@ -31,11 +54,15 @@ class AdmissionScoringService
      */
     public function calculateOverallRating(Applicant $applicant): array
     {
-        // Get dynamic weights from settings (defaults to current values)
-        $ueeWeightPercent = (int) \App\Models\Settings::getSetting('scoring_weight_uee', 60);
-        $gwaWeightPercent = (int) \App\Models\Settings::getSetting('scoring_weight_gwa', 30);
-        $interviewWeightPercent = (int) \App\Models\Settings::getSetting('scoring_weight_interview', 5);
-        $skillTestWeightPercent = (int) \App\Models\Settings::getSetting('scoring_weight_skilltest', 5);
+        // Get school year ID from applicant (fallback to null for global/default weights)
+        $schoolYearId = $applicant->school_year_id ?? null;
+        
+        // Get dynamic weights from settings for this school year (cached to avoid repeated queries)
+        $weights = $this->getScoringWeights($schoolYearId);
+        $ueeWeightPercent = $weights['uee'];
+        $gwaWeightPercent = $weights['gwa'];
+        $interviewWeightPercent = $weights['interview'];
+        $skillTestWeightPercent = $weights['skilltest'];
         
         // Convert percentages to decimals for calculation
         $ueeWeight = $ueeWeightPercent / 100.0;

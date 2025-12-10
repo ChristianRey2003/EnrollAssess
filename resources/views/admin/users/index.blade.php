@@ -624,10 +624,38 @@
                             </label>
                         </div>
                         <div class="form-check custom-checkbox mb-2">
+                            <input class="form-check-input capability-checkbox" type="checkbox" name="permissions[]" value="applicants.create" id="perm_applicants_create" onchange="handleCapabilityChange('applicants.create', this.checked)">
+                            <label class="form-check-label" for="perm_applicants_create">
+                                <span class="d-block fw-medium text-dark">Add Applicants</span>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Create new applicants</span>
+                            </label>
+                        </div>
+                        <div class="form-check custom-checkbox mb-2">
+                            <input class="form-check-input capability-checkbox" type="checkbox" name="permissions[]" value="applicants.edit" id="perm_applicants_edit" onchange="handleCapabilityChange('applicants.edit', this.checked)">
+                            <label class="form-check-label" for="perm_applicants_edit">
+                                <span class="d-block fw-medium text-dark">Edit Applicants</span>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Modify applicant information</span>
+                            </label>
+                        </div>
+                        <div class="form-check custom-checkbox mb-2">
+                            <input class="form-check-input capability-checkbox" type="checkbox" name="permissions[]" value="applicants.delete" id="perm_applicants_delete" onchange="handleCapabilityChange('applicants.delete', this.checked)">
+                            <label class="form-check-label" for="perm_applicants_delete">
+                                <span class="d-block fw-medium text-dark">Delete Applicants</span>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Remove applicants from the system</span>
+                            </label>
+                        </div>
+                        <div class="form-check custom-checkbox mb-2">
                             <input class="form-check-input capability-checkbox" type="checkbox" name="permissions[]" value="applicants.assign" id="perm_applicants_assign" onchange="handleCapabilityChange('applicants.assign', this.checked)">
                             <label class="form-check-label" for="perm_applicants_assign">
                                 <span class="d-block fw-medium text-dark">Assign Applicants</span>
                                 <span class="d-block text-muted" style="font-size: 0.75rem;">Assign applicants to instructors</span>
+                            </label>
+                        </div>
+                        <div class="form-check custom-checkbox mb-2">
+                            <input class="form-check-input capability-checkbox" type="checkbox" name="permissions[]" value="applicants.schedule_exam" id="perm_applicants_schedule_exam" onchange="handleCapabilityChange('applicants.schedule_exam', this.checked)">
+                            <label class="form-check-label" for="perm_applicants_schedule_exam">
+                                <span class="d-block fw-medium text-dark">Schedule Exam / Send Notification</span>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Schedule exams and send exam notifications to applicants</span>
                             </label>
                         </div>
                         <div class="form-check custom-checkbox">
@@ -993,7 +1021,11 @@
             'questions.edit': ['questions.view'],
             'questions.delete': ['questions.view'],
             'questions.manage_exam_settings': ['questions.view'],
+            'applicants.create': ['applicants.view'],
+            'applicants.edit': ['applicants.view'],
+            'applicants.delete': ['applicants.view'],
             'applicants.assign': ['applicants.view'],
+            'applicants.schedule_exam': ['applicants.view'],
             'applicants.bulk_operations': ['applicants.view'],
             'reports.generate': ['reports.view'],
             'reports.manage_archive': ['reports.view'],

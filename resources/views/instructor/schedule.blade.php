@@ -1087,16 +1087,51 @@
         .then(data => {
             if (data.success) {
                 let message = data.message;
-                if (data.emails_sent) {
-                    message += ` ${data.emails_sent} email(s) sent.`;
+                let notificationType = 'success';
+                
+                // Build email notification message
+                if (data.emails_sent !== undefined || data.emails_failed_count !== undefined) {
+                    if (data.emails_failed_count > 0) {
+                        // Some emails failed - show warning with details
+                        const failedNames = data.emails_failed ? data.emails_failed.join(', ') : '';
+                        message += ` ${data.emails_sent || 0} email(s) sent successfully, ${data.emails_failed_count} failed: ${failedNames}`;
+                        notificationType = 'warning';
+                    } else if (data.emails_sent > 0) {
+                        // All emails sent successfully
+                        message += ` ${data.emails_sent} email(s) sent successfully.`;
+                    }
                 }
+                
+                // Add scheduling errors if any
                 if (data.errors && data.errors.length > 0) {
                     message += '\n\nErrors:\n' + data.errors.join('\n');
+                    notificationType = 'warning';
                 }
-                alert(message);
+                
+                // Show notification using NotificationSystem
+                if (window.NotificationSystem) {
+                    if (notificationType === 'warning') {
+                        window.NotificationSystem.warning(message);
+                    } else {
+                        window.NotificationSystem.success(message);
+                    }
+                } else if (window.showNotification) {
+                    window.showNotification(message, notificationType);
+                } else {
+                    alert(message);
+                }
+                
                 location.reload();
             } else {
-                alert(data.message || 'Failed to schedule interviews');
+                const errorMessage = data.message || 'Failed to schedule interviews';
+                if (window.NotificationSystem) {
+                    window.NotificationSystem.error(errorMessage);
+                } else if (window.showError) {
+                    window.showError(errorMessage);
+                } else {
+                    alert(errorMessage);
+                }
+                
                 if (bulkBtn) {
                     bulkBtn.disabled = interviewIds.length === 0;
                     delete bulkBtn.dataset.loading;
@@ -1106,7 +1141,15 @@
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            const errorMessage = 'An error occurred. Please try again.';
+            if (window.NotificationSystem) {
+                window.NotificationSystem.error(errorMessage);
+            } else if (window.showError) {
+                window.showError(errorMessage);
+            } else {
+                alert(errorMessage);
+            }
+            
             if (bulkBtn) {
                 bulkBtn.disabled = interviewIds.length === 0;
                 delete bulkBtn.dataset.loading;

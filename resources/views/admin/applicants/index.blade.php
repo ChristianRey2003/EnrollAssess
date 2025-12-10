@@ -361,7 +361,16 @@
         $isDelegated = false;
         if (auth()->check() && auth()->user()->role === 'instructor') {
             $delegation = auth()->user()->delegatedPermissions()
-                ->whereIn('permission', ['applicants.view', 'applicants.create', 'applicants.edit', 'applicants.delete', 'applicants.assign', 'applicants.import'])
+                ->whereIn('permission', [
+                    'applicants.view', 
+                    'applicants.create', 
+                    'applicants.edit', 
+                    'applicants.delete', 
+                    'applicants.assign', 
+                    'applicants.schedule_exam',
+                    'applicants.bulk_operations',
+                    'applicants.import'
+                ])
                 ->where('status', 'active')
                 ->where(function($q) {
                     $q->whereNull('starts_at')
@@ -600,18 +609,22 @@
                                         </svg>
                                         Generate Codes
                                     </button>
+                                    @if(auth()->user()->hasPermission('applicants.schedule_exam'))
                                     <button type="button" class="dropdown-item" onclick="openScheduleExamDrawer(); toggleDropdown('moreActionsDropdown');">
                                         <svg class="dropdown-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                         </svg>
                                         Schedule Exam
                                     </button>
+                                    @endif
+                                    @if(auth()->user()->hasPermission('applicants.schedule_exam'))
                                     <button type="button" class="dropdown-item" onclick="openEmailNotificationDrawer(); toggleDropdown('moreActionsDropdown');">
                                         <svg class="dropdown-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                                         </svg>
                                         Send Notifications
                                     </button>
+                                    @endif
                                     @if(auth()->user()->role === 'department-head')
                                     <button type="button" class="dropdown-item" onclick="openExportAccessCodesDrawer(); toggleDropdown('moreActionsDropdown');">
                                         <svg class="dropdown-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -737,11 +750,13 @@
                                                     Assign Exam
                                                 </button>
                                             @endif
+                                            @if(auth()->user()->hasPermission('applicants.schedule_exam'))
                                             <button onclick="sendIndividualNotification({{ $applicant->applicant_id }})"
                                                     class="action-btn action-btn-notify"
                                                     title="Send exam notification">
                                                 Email
                                             </button>
+                                            @endif
                                             @if(auth()->user()->hasPermission('applicants.delete'))
                                             <button onclick="deleteApplicant({{ $applicant->applicant_id }})"
                                                     class="action-btn action-btn-delete"
@@ -1623,21 +1638,21 @@
                                                title="View applicant information">
                                                 View
                                             </a>
-                                            <a href="/admin/applicants/${applicant.applicant_id}/edit"
+                                            ${data.permissions && data.permissions.can_edit ? `<a href="/admin/applicants/${applicant.applicant_id}/edit"
                                                class="action-btn action-btn-edit"
                                                title="Edit applicant">
                                                 Edit
-                                            </a>
-                                            <button onclick="sendIndividualNotification(${applicant.applicant_id})"
+                                            </a>` : ''}
+                                            ${data.permissions && data.permissions.can_schedule_exam ? `<button onclick="sendIndividualNotification(${applicant.applicant_id})"
                                                     class="action-btn action-btn-notify"
                                                     title="Send exam notification">
                                                 Email
-                                            </button>
-                                            <button onclick="deleteApplicant(${applicant.applicant_id})"
+                                            </button>` : ''}
+                                            ${data.permissions && data.permissions.can_delete ? `<button onclick="deleteApplicant(${applicant.applicant_id})"
                                                     class="action-btn action-btn-delete"
                                                     title="Delete applicant">
                                                 Delete
-                                            </button>
+                                            </button>` : ''}
                                         </div>
                                     </td>
                                     <td class="text-left" style="font-size: 13px; font-weight: normal;">

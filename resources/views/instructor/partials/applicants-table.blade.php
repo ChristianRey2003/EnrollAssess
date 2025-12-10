@@ -110,13 +110,10 @@
                             <div class="applicant-info">
                                 <div class="applicant-name" style="font-weight: 500; color: #1F2937; margin-bottom: 4px;">{{ $applicant->first_name }} {{ $applicant->last_name }}</div>
                                 <div class="applicant-email" style="font-size: 12px; color: #6B7280;">{{ $applicant->email_address }}</div>
+                                @if($applicant->phone_number)
+                                    <div class="applicant-phone" style="font-size: 12px; color: #6B7280; margin-top: 4px;">{{ $applicant->phone_number }}</div>
+                                @endif
                                 @if($interview && $interview->assignment_notes)
-                                    <button type="button" 
-                                            onclick="toggleAssignmentInfo({{ $applicant->applicant_id }})" 
-                                            style="background: none; border: none; cursor: pointer; padding: 4px; font-size: 1.2rem; color: #3B82F6; margin-top: 4px;"
-                                            title="View assignment message">
-                                        📋
-                                    </button>
                                     <div id="assignment-info-{{ $applicant->applicant_id }}" 
                                          style="display: none; margin-top: 8px; padding: 10px; background: #F3F4F6; border-radius: 6px; font-size: 0.875rem; color: #374151;">
                                         <strong style="color: #1F2937;">Assignment Message:</strong><br>
@@ -187,20 +184,26 @@
                             <!-- Floating Actions -->
                             <div id="actions-{{ $applicant->applicant_id }}" class="floating-actions" style="display: none;">
                                 @php
-                                    // Determine Schedule button state
-                                    $scheduleEnabled = $interview && $canSchedule && $hasCompletedExam && !$hasDepartmentHeadInterview;
-                                    $scheduleTooltip = "Schedule Interview";
-                                    if (!$scheduleEnabled) {
+                                    // Determine unified Schedule/Reschedule button state
+                                    $hasSchedule = $interview && $interview->schedule_date;
+                                    $isReschedule = $hasSchedule && $interview->status !== 'completed';
+                                    $isSchedule = $interview && $canSchedule && $hasCompletedExam && !$hasDepartmentHeadInterview && !$hasSchedule;
+                                    
+                                    $scheduleRescheduleEnabled = $isSchedule || $isReschedule;
+                                    $scheduleRescheduleButtonText = $hasSchedule ? "Reschedule" : "Schedule";
+                                    $scheduleRescheduleTooltip = $hasSchedule ? "Reschedule Interview" : "Schedule Interview";
+                                    
+                                    if (!$scheduleRescheduleEnabled) {
                                         if (!$interview) {
-                                            $scheduleTooltip = "No interview assigned";
+                                            $scheduleRescheduleTooltip = "No interview assigned";
                                         } elseif ($hasDepartmentHeadInterview) {
-                                            $scheduleTooltip = "Already interviewed by department head";
+                                            $scheduleRescheduleTooltip = "Already interviewed by department head";
                                         } elseif (!$hasCompletedExam) {
-                                            $scheduleTooltip = "Applicant must complete the exam first";
-                                        } elseif ($interview->schedule_date) {
-                                            $scheduleTooltip = "Interview already scheduled";
+                                            $scheduleRescheduleTooltip = "Applicant must complete the exam first";
+                                        } elseif ($interview->status === 'completed') {
+                                            $scheduleRescheduleTooltip = "Interview already completed";
                                         } else {
-                                            $scheduleTooltip = "Interview not available";
+                                            $scheduleRescheduleTooltip = "Interview not available";
                                         }
                                     }
                                     
@@ -233,21 +236,6 @@
                                         }
                                     }
                                     
-                                    // Determine Reschedule button state
-                                    $rescheduleEnabled = $interview && $interview->schedule_date && $interview->status !== 'completed';
-                                    $rescheduleTooltip = "Reschedule Interview";
-                                    if (!$rescheduleEnabled) {
-                                        if (!$interview) {
-                                            $rescheduleTooltip = "No interview assigned";
-                                        } elseif (!$interview->schedule_date) {
-                                            $rescheduleTooltip = "Interview not scheduled yet";
-                                        } elseif ($interview->status === 'completed') {
-                                            $rescheduleTooltip = "Interview already completed";
-                                        } else {
-                                            $rescheduleTooltip = "Cannot reschedule";
-                                        }
-                                    }
-                                    
                                     // Determine Send Reminder button state
                                     $reminderEnabled = $interview && $interview->schedule_date;
                                     $reminderTooltip = "Send Reminder Email";
@@ -260,26 +248,41 @@
                                     }
                                 @endphp
                                 
-                                <!-- Schedule Button -->
-                                @if($scheduleEnabled)
-                                    <button type="button" 
-                                            class="action-btn action-btn-primary" 
-                                            onclick="openScheduleModal(
-                                                {{ $interview->interview_id }}, 
-                                                '{{ $applicant->first_name }} {{ $applicant->last_name }}',
-                                                '{{ $interview->interview_deadline_start ? $interview->interview_deadline_start->toIso8601String() : '' }}',
-                                                '{{ $interview->interview_deadline_end ? $interview->interview_deadline_end->toIso8601String() : '' }}'
-                                            )"
-                                            title="{{ $scheduleTooltip }}">
-                                        Schedule
-                                    </button>
+                                <!-- Schedule/Reschedule Button (Combined) -->
+                                @if($scheduleRescheduleEnabled)
+                                    @if($hasSchedule)
+                                        <button type="button" 
+                                                class="action-btn action-btn-primary" 
+                                                onclick="openRescheduleModal(
+                                                    {{ $interview->interview_id }}, 
+                                                    '{{ $applicant->first_name }} {{ $applicant->last_name }}',
+                                                    '{{ $interview->interview_deadline_start ? $interview->interview_deadline_start->toIso8601String() : '' }}',
+                                                    '{{ $interview->interview_deadline_end ? $interview->interview_deadline_end->toIso8601String() : '' }}',
+                                                    '{{ $interview->schedule_date ? $interview->schedule_date->toIso8601String() : '' }}'
+                                                )"
+                                                title="{{ $scheduleRescheduleTooltip }}">
+                                            {{ $scheduleRescheduleButtonText }}
+                                        </button>
+                                    @else
+                                        <button type="button" 
+                                                class="action-btn action-btn-primary" 
+                                                onclick="openScheduleModal(
+                                                    {{ $interview->interview_id }}, 
+                                                    '{{ $applicant->first_name }} {{ $applicant->last_name }}',
+                                                    '{{ $interview->interview_deadline_start ? $interview->interview_deadline_start->toIso8601String() : '' }}',
+                                                    '{{ $interview->interview_deadline_end ? $interview->interview_deadline_end->toIso8601String() : '' }}'
+                                                )"
+                                                title="{{ $scheduleRescheduleTooltip }}">
+                                            {{ $scheduleRescheduleButtonText }}
+                                        </button>
+                                    @endif
                                 @else
                                     <button type="button" 
                                             class="action-btn action-btn-disabled tooltip" 
                                             disabled
-                                            data-tip="{{ $scheduleTooltip }}"
-                                            title="{{ $scheduleTooltip }}">
-                                        Schedule
+                                            data-tip="{{ $scheduleRescheduleTooltip }}"
+                                            title="{{ $scheduleRescheduleTooltip }}">
+                                        {{ $scheduleRescheduleButtonText }}
                                     </button>
                                 @endif
                                 
@@ -305,29 +308,6 @@
                                    title="{{ $viewTooltip }}">
                                     View
                                 </a>
-                                
-                                <!-- Reschedule Button -->
-                                @if($rescheduleEnabled)
-                                    <button type="button" 
-                                            class="action-btn action-btn-secondary" 
-                                            onclick="openRescheduleModal(
-                                                {{ $interview->interview_id }}, 
-                                                '{{ $applicant->first_name }} {{ $applicant->last_name }}',
-                                                '{{ $interview->interview_deadline_start ? $interview->interview_deadline_start->toIso8601String() : '' }}',
-                                                '{{ $interview->interview_deadline_end ? $interview->interview_deadline_end->toIso8601String() : '' }}',
-                                                '{{ $interview->schedule_date ? $interview->schedule_date->toIso8601String() : '' }}'
-                                            )"
-                                            title="{{ $rescheduleTooltip }}">
-                                        Reschedule
-                                    </button>
-                                @else
-                                    <span class="action-btn action-btn-disabled tooltip" 
-                                          data-tip="{{ $rescheduleTooltip }}"
-                                          title="{{ $rescheduleTooltip }}"
-                                          style="cursor: not-allowed;">
-                                        Reschedule
-                                    </span>
-                                @endif
                                 
                                 <!-- Send Reminder Button -->
                                 @if($reminderEnabled)

@@ -404,6 +404,7 @@ class SettingsController extends Controller
                 'scoring_weight_gwa' => 'required|integer|min:0|max:100',
                 'scoring_weight_interview' => 'required|integer|min:0|max:100',
                 'scoring_weight_skilltest' => 'required|integer|min:0|max:100',
+                'school_year_id' => 'nullable|exists:school_years,school_year_id',
             ]);
 
             if ($validator->fails()) {
@@ -416,6 +417,7 @@ class SettingsController extends Controller
             $gwa = (int) $request->input('scoring_weight_gwa');
             $interview = (int) $request->input('scoring_weight_interview');
             $skilltest = (int) $request->input('scoring_weight_skilltest');
+            $schoolYearId = $request->input('school_year_id') ? (int) $request->input('school_year_id') : null;
             
             $total = $uee + $gwa + $interview + $skilltest;
             
@@ -425,23 +427,27 @@ class SettingsController extends Controller
                     ->withInput();
             }
 
-            // Update settings
-            Settings::setSetting('scoring_weight_uee', $uee, 'scoring');
-            Settings::setSetting('scoring_weight_gwa', $gwa, 'scoring');
-            Settings::setSetting('scoring_weight_interview', $interview, 'scoring');
-            Settings::setSetting('scoring_weight_skilltest', $skilltest, 'scoring');
-
-            Settings::clearCache();
-
-            ActivityLogger::log('update_scoring_weights', "Updated scoring weights: UEE={$uee}%, GWA={$gwa}%, Interview={$interview}%, SkillTest={$skilltest}%", [
+            // Update settings with school year ID
+            Settings::setScoringWeights([
                 'uee' => $uee,
                 'gwa' => $gwa,
                 'interview' => $interview,
                 'skilltest' => $skilltest,
+            ], $schoolYearId);
+
+            Settings::clearCache();
+
+            $schoolYearName = $schoolYearId ? \App\Models\SchoolYear::find($schoolYearId)->name : 'Global';
+            ActivityLogger::log('update_scoring_weights', "Updated scoring weights for {$schoolYearName}: UEE={$uee}%, GWA={$gwa}%, Interview={$interview}%, SkillTest={$skilltest}%", [
+                'uee' => $uee,
+                'gwa' => $gwa,
+                'interview' => $interview,
+                'skilltest' => $skilltest,
+                'school_year_id' => $schoolYearId,
             ], Auth::id());
 
             return redirect()->route('admin.settings.index')
-                ->with('success', 'Scoring weights updated successfully! All future overall ratings will use these weights.');
+                ->with('success', "Scoring weights updated successfully for {$schoolYearName}!");
 
         } catch (\Exception $e) {
             Log::error('Scoring weights update failed: ' . $e->getMessage());
@@ -449,6 +455,25 @@ class SettingsController extends Controller
             return redirect()->back()
                 ->with('error', 'Failed to update scoring weights. Please try again.')
                 ->withInput();
+        }
+    }
+
+    /**
+     * Get scoring weights for a specific school year
+     */
+    public function getScoringWeights($schoolYearId)
+    {
+        try {
+            $weights = Settings::getScoringWeights((int) $schoolYearId);
+            return response()->json($weights);
+        } catch (\Exception $e) {
+            Log::error('Failed to get scoring weights: ' . $e->getMessage());
+            return response()->json([
+                'uee' => 60,
+                'gwa' => 30,
+                'interview' => 5,
+                'skilltest' => 5,
+            ]);
         }
     }
 

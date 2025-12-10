@@ -926,8 +926,17 @@ class ApplicantController extends BaseController
                 ];
             });
             
+            // Include permission flags for JavaScript
+            $permissions = [
+                'can_create' => Auth::user()->hasPermission('applicants.create'),
+                'can_edit' => Auth::user()->hasPermission('applicants.edit'),
+                'can_delete' => Auth::user()->hasPermission('applicants.delete'),
+                'can_schedule_exam' => Auth::user()->hasPermission('applicants.schedule_exam'),
+            ];
+            
             return response()->json([
                 'applicants' => $applicantsData,
+                'permissions' => $permissions,
                 'pagination' => [
                     'current_page' => $applicants->currentPage(),
                     'last_page' => $applicants->lastPage(),
@@ -946,7 +955,16 @@ class ApplicantController extends BaseController
         if (Auth::check() && Auth::user()->role === 'instructor') {
             // Check for any applicants-related delegation (granular capabilities)
             $delegation = Auth::user()->delegatedPermissions()
-                ->whereIn('permission', ['applicants.view', 'applicants.assign', 'applicants.bulk_operations', 'assign_applicants'])
+                ->whereIn('permission', [
+                    'applicants.view', 
+                    'applicants.create', 
+                    'applicants.edit', 
+                    'applicants.delete',
+                    'applicants.assign', 
+                    'applicants.schedule_exam',
+                    'applicants.bulk_operations', 
+                    'assign_applicants'
+                ])
                 ->where('status', 'active')
                 ->where(function($q) {
                     $q->whereNull('starts_at')

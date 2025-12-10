@@ -233,40 +233,10 @@ class ReportGenerationService
         $scoringService = app(AdmissionScoringService::class);
         
         $applicants = $query->get()->map(function($applicant) use ($scoringService) {
-            // Calculate overall admission rating using weighted averages
-            // Formula: UEE + (GWA × 0.3) + (Interview × 0.05) + (SkillTest × 0.05)
-            // Note: UEE is already weighted (0-60), so use as-is
-            $finalScore = 0.0;
-            
-            if ($scoringService->hasAllRequiredScores($applicant)) {
-                // Use the scoring service for consistent calculation
-                $rating = $scoringService->calculateOverallRating($applicant);
-                $finalScore = $rating['overall_rating'];
-            } else {
-                // Calculate partial score if some components are missing using dynamic weights
-                $ueeWeightPercent = (int) \App\Models\Settings::getSetting('scoring_weight_uee', 60);
-                $gwaWeightPercent = (int) \App\Models\Settings::getSetting('scoring_weight_gwa', 30);
-                $interviewWeightPercent = (int) \App\Models\Settings::getSetting('scoring_weight_interview', 5);
-                $skillTestWeightPercent = (int) \App\Models\Settings::getSetting('scoring_weight_skilltest', 5);
-                
-                // Convert to decimals
-                $ueeWeight = $ueeWeightPercent / 100.0;
-                $gwaWeight = $gwaWeightPercent / 100.0;
-                $interviewWeight = $interviewWeightPercent / 100.0;
-                $skillTestWeight = $skillTestWeightPercent / 100.0;
-                
-                // Get raw scores
-                // UEE score is stored as a percentage (0-100) in the database
-                $ueeRawPercentage = (float) ($applicant->score ?? 0);
-                
-                $gwaRaw = (float) ($applicant->card_tor_gwa ?? 0);
-                $skillTestRaw = (float) ($applicant->enrollassess_score ?? 0);
-                $interviewRaw = (float) ($applicant->interview_score ?? 0);
-                
-                $finalScore = ($ueeRawPercentage * $ueeWeight) + ($gwaRaw * $gwaWeight) + ($interviewRaw * $interviewWeight) + ($skillTestRaw * $skillTestWeight);
-            }
-            
-            $applicant->final_score = round($finalScore, 2);
+            // Always use the scoring service for consistent calculation with school-year-specific weights
+            // The service automatically uses the applicant's school_year_id to get the correct weights
+            $rating = $scoringService->calculateOverallRating($applicant);
+            $applicant->final_score = $rating['overall_rating'];
             
             // Determine recommendation based on overall rating
             if ($finalScore >= 75) {
@@ -639,16 +609,19 @@ class ReportGenerationService
     {
         \Log::info('Starting EVSU Results XLSX generation', ['filters' => $filters]);
 
-        // Build query with filters
-        $query = Applicant::with(['assignedInstructor', 'accessCode']);
+        // Build query with filters - FILTER AT DATABASE LEVEL FIRST
+        $query = Applicant::with(['assignedInstructor', 'accessCode'])
+            // Filter to only applicants with all required scores at database level
+            ->whereNotNull('score')
+            ->whereNotNull('card_tor_gwa')
+            ->whereNotNull('enrollassess_score')
+            ->whereNotNull('interview_score');
 
         // Apply filters using existing filter logic
         $this->applyFilters($query, $filters);
 
-        // Get applicants and filter to only those with complete scores
-        $collection = $query->get()->filter(function($applicant) {
-            return $applicant->hasAllRequiredScores();
-        });
+        // Get applicants - no need to filter in memory anymore
+        $collection = $query->get();
 
         // Sort by overall rating (descending by default)
         $sort = $filters['sort'] ?? 'overall_desc';
@@ -737,16 +710,19 @@ class ReportGenerationService
     {
         \Log::info('Starting EVSU Results PDF generation', ['filters' => $filters]);
 
-        // Build query with filters
-        $query = Applicant::with(['assignedInstructor', 'accessCode']);
+        // Build query with filters - FILTER AT DATABASE LEVEL FIRST
+        $query = Applicant::with(['assignedInstructor', 'accessCode'])
+            // Filter to only applicants with all required scores at database level
+            ->whereNotNull('score')
+            ->whereNotNull('card_tor_gwa')
+            ->whereNotNull('enrollassess_score')
+            ->whereNotNull('interview_score');
 
         // Apply filters using existing filter logic
         $this->applyFilters($query, $filters);
 
-        // Get applicants and filter to only those with complete scores
-        $collection = $query->get()->filter(function($applicant) {
-            return $applicant->hasAllRequiredScores();
-        });
+        // Get applicants - no need to filter in memory anymore
+        $collection = $query->get();
 
         // Sort by overall rating (descending by default)
         $sort = $filters['sort'] ?? 'overall_desc';

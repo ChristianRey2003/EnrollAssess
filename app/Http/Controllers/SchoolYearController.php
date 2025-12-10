@@ -83,11 +83,15 @@ class SchoolYearController extends Controller
             'name' => 'required|string|max:255|unique:school_years,name',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
+            'scoring_weight_uee' => 'nullable|integer|min:0|max:100',
+            'scoring_weight_gwa' => 'nullable|integer|min:0|max:100',
+            'scoring_weight_interview' => 'nullable|integer|min:0|max:100',
+            'scoring_weight_skilltest' => 'nullable|integer|min:0|max:100',
         ]);
 
         try {
             DB::transaction(function () use ($request, &$schoolYear) {
-                // Create the school year
+                // Create the school year (active by default)
                 $schoolYear = SchoolYear::create([
                     'name' => $request->name,
                     'start_date' => Carbon::parse($request->start_date),
@@ -104,6 +108,29 @@ class SchoolYearController extends Controller
                     'duration_minutes' => 90,
                     'is_active' => false, // Start as draft
                 ]);
+
+                // Save scoring weights if provided
+                if ($request->has('scoring_weight_uee') && 
+                    $request->has('scoring_weight_gwa') && 
+                    $request->has('scoring_weight_interview') && 
+                    $request->has('scoring_weight_skilltest')) {
+                    
+                    $uee = (int) $request->input('scoring_weight_uee');
+                    $gwa = (int) $request->input('scoring_weight_gwa');
+                    $interview = (int) $request->input('scoring_weight_interview');
+                    $skilltest = (int) $request->input('scoring_weight_skilltest');
+                    
+                    $total = $uee + $gwa + $interview + $skilltest;
+                    
+                    if ($total === 100) {
+                        \App\Models\Settings::setScoringWeights([
+                            'uee' => $uee,
+                            'gwa' => $gwa,
+                            'interview' => $interview,
+                            'skilltest' => $skilltest,
+                        ], $schoolYear->school_year_id);
+                    }
+                }
             });
 
             return response()->json([
@@ -203,6 +230,26 @@ class SchoolYearController extends Controller
     }
 
     /**
+     * Activate a school year (restore from inactive)
+     */
+    public function activate(SchoolYear $schoolYear)
+    {
+        try {
+            $schoolYear->update(['is_active' => true]);
+
+            return response()->json([
+                'success' => true,
+                'message' => "School year '{$schoolYear->name}' has been activated.",
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to activate school year: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Set a school year as the current one
      */
     public function setAsCurrent(SchoolYear $schoolYear)
@@ -211,7 +258,7 @@ class SchoolYearController extends Controller
             if (!$schoolYear->is_active) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Cannot set an inactive school year as current.',
+                    'message' => 'Cannot set an inactive school year as current. Please activate it first.',
                 ], 400);
             }
 

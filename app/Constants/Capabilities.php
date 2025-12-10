@@ -19,7 +19,11 @@ class Capabilities
 
     // Applicant Management Capabilities
     const APPLICANTS_VIEW = 'applicants.view';
+    const APPLICANTS_CREATE = 'applicants.create';
+    const APPLICANTS_EDIT = 'applicants.edit';
+    const APPLICANTS_DELETE = 'applicants.delete';
     const APPLICANTS_ASSIGN = 'applicants.assign';
+    const APPLICANTS_SCHEDULE_EXAM = 'applicants.schedule_exam';
     const APPLICANTS_BULK_OPERATIONS = 'applicants.bulk_operations';
 
     // Reports Capabilities
@@ -65,9 +69,25 @@ class Capabilities
                         'label' => 'View Applicants',
                         'description' => 'View applicant lists and details',
                     ],
+                    self::APPLICANTS_CREATE => [
+                        'label' => 'Add Applicants',
+                        'description' => 'Create new applicants',
+                    ],
+                    self::APPLICANTS_EDIT => [
+                        'label' => 'Edit Applicants',
+                        'description' => 'Modify applicant information',
+                    ],
+                    self::APPLICANTS_DELETE => [
+                        'label' => 'Delete Applicants',
+                        'description' => 'Remove applicants from the system',
+                    ],
                     self::APPLICANTS_ASSIGN => [
                         'label' => 'Assign Applicants',
                         'description' => 'Assign applicants to instructors',
+                    ],
+                    self::APPLICANTS_SCHEDULE_EXAM => [
+                        'label' => 'Schedule Exam / Send Notification',
+                        'description' => 'Schedule exams and send exam notifications to applicants',
                     ],
                     self::APPLICANTS_BULK_OPERATIONS => [
                         'label' => 'Bulk Operations',
@@ -144,7 +164,11 @@ class Capabilities
             self::QUESTIONS_EDIT => [self::QUESTIONS_VIEW],
             self::QUESTIONS_DELETE => [self::QUESTIONS_VIEW],
             self::QUESTIONS_MANAGE_EXAM_SETTINGS => [self::QUESTIONS_VIEW],
+            self::APPLICANTS_CREATE => [self::APPLICANTS_VIEW],
+            self::APPLICANTS_EDIT => [self::APPLICANTS_VIEW],
+            self::APPLICANTS_DELETE => [self::APPLICANTS_VIEW],
             self::APPLICANTS_ASSIGN => [self::APPLICANTS_VIEW],
+            self::APPLICANTS_SCHEDULE_EXAM => [self::APPLICANTS_VIEW],
             self::APPLICANTS_BULK_OPERATIONS => [self::APPLICANTS_VIEW],
             self::REPORTS_GENERATE => [self::REPORTS_VIEW],
             self::REPORTS_MANAGE_ARCHIVE => [self::REPORTS_VIEW],

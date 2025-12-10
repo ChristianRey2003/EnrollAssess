@@ -312,6 +312,13 @@ class User extends Authenticatable
         if (($hasParts[1] ?? '') === 'create' && ($neededParts[1] ?? '') === 'view') {
             return true;
         }
+        
+        // For applicants: any permission (create, edit, delete, assign, schedule_exam, bulk_operations) includes view
+        if (($hasParts[0] ?? '') === 'applicants' && 
+            in_array($hasParts[1] ?? '', ['create', 'edit', 'delete', 'assign', 'schedule_exam', 'bulk_operations']) &&
+            ($neededParts[1] ?? '') === 'view') {
+            return true;
+        }
 
         return false;
     }

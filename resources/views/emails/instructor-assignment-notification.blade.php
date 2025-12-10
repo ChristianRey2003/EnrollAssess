@@ -172,6 +172,9 @@
                     <div class="applicant-details">
                         Application No: {{ $applicant->application_no ?: $applicant->formatted_applicant_no }}<br>
                         Email: {{ $applicant->email_address }}<br>
+                        @if($applicant->phone_number)
+                        Phone: {{ $applicant->phone_number }}<br>
+                        @endif
                         Status: {{ ucwords(str_replace('-', ' ', $applicant->status ?? 'pending')) }}
                     </div>
                 </div>
