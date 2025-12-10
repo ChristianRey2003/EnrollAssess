@@ -153,11 +153,7 @@
             margin-left: 20px;
         }
 
-        /* Limit pagination to 5 page numbers - hide pages 6 and 7 */
-        .pagination-wrapper .relative.z-0.inline-flex > a[href*="page=6"],
-        .pagination-wrapper .relative.z-0.inline-flex > a[href*="page=7"] {
-            display: none !important;
-        }
+        /* Limit pagination to 5 page numbers - CSS hiding rules removed */
 
         .floating-actions {
             position: absolute;
@@ -1449,29 +1445,7 @@
             });
         }
 
-        // Function to hide pages 6 and 7 from pagination
-        function hidePages6And7() {
-            const paginationContainer = document.querySelector('.pagination-wrapper .relative.z-0.inline-flex');
-            if (paginationContainer) {
-                const links = paginationContainer.querySelectorAll('a, span');
-                links.forEach(element => {
-                    const href = element.getAttribute('href') || '';
-                    const text = element.textContent.trim();
-                    // Hide if it's page 6 or 7 (check href or text content)
-                    if (href.includes('page=6') || href.includes('page=7') || 
-                        (text === '6' && !element.hasAttribute('aria-current')) || 
-                        (text === '7' && !element.hasAttribute('aria-current'))) {
-                        element.style.display = 'none';
-                    }
-                });
-            }
-        }
-
-        // Hide pages 6 and 7 on page load
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', hidePages6And7);
-        } else {
-            hidePages6And7();
+        // Pagination pages 6 and 7 hiding removed
         }
 
         // Helper function to format time
@@ -1681,8 +1655,7 @@
                         // Update pagination HTML if provided
                         if (data.pagination_html && paginationWrapper) {
                             paginationWrapper.innerHTML = data.pagination_html;
-                            // Hide pages 6 and 7
-                            hidePages6And7();
+                            // Pages 6 and 7 now visible
                         }
                         
                         if (paginationWrapper) {

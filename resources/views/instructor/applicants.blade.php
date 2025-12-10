@@ -329,11 +329,7 @@
         margin-left: 20px;
     }
 
-    /* Limit pagination to 5 page numbers - hide pages 6 and 7 */
-    .pagination-wrapper .relative.z-0.inline-flex > a[href*="page=6"],
-    .pagination-wrapper .relative.z-0.inline-flex > a[href*="page=7"] {
-        display: none !important;
-    }
+    /* Limit pagination to 5 page numbers - CSS hiding rules removed */
 
     .bulk-actions-bar {
         background: var(--maroon-primary);
