@@ -222,7 +222,11 @@ class ReportsController extends Controller
                 $scoringService = app(\App\Services\AdmissionScoringService::class);
                 $applicantsData = collect($applicants->items())->map(function($applicant) use ($scoringService) {
                     $overallRating = $applicant->getOverallRating();
+
+                    // Explicitly include computed/presentation fields used by the AJAX renderer
                     return array_merge($applicant->toArray(), [
+                        'full_name' => $applicant->full_name,
+                        'formatted_applicant_no' => $applicant->formatted_applicant_no ?? null,
                         'overall_rating' => $overallRating ? $overallRating['overall_rating'] : null,
                         'overall_rating_components' => $overallRating ? $overallRating['components'] : null,
                     ]);

@@ -1446,7 +1446,6 @@
         }
 
         // Pagination pages 6 and 7 hiding removed
-        }
 
         // Helper function to format time
         function formatTime(timeString) {

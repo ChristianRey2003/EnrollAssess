@@ -1357,8 +1357,8 @@
                                 html += `<tr style="position: relative;" 
                                     onmouseover="showActions(${applicant.applicant_id})" 
                                     onmouseout="hideActions(${applicant.applicant_id})">
-                                    <td>
-                                        <div style="font-weight: 500;">${applicant.full_name || ''}</div>
+                                    <td class="text-left" style="font-size: 13px; font-weight: normal;">
+                                        <div>${applicant.full_name || ''}</div>
                                         <div style="font-size: 12px; color: #6b7280;">${applicant.application_no || applicant.formatted_applicant_no || 'N/A'}</div>
                                     </td>
                                     <td style="text-align: center;">${ueePercentage}</td>

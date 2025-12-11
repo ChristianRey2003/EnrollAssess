@@ -111,7 +111,7 @@ class CompleteApplicantsSeeder extends Seeder
                 $interviewDate = Carbon::create(2025, 12, rand(15, 20), rand(8, 16), rand(0, 59));
 
                 // Scores
-                $ueeScore = rand(3000, 5900) / 100;           // 30 - 59 (below 60%)
+                $ueeScore = rand(1500, 4500) / 100;           // 15 - 45 (UEE capped at 45%)
                 $skillScore = rand(7200, 9700) / 100;         // EnrollAssess 72 - 97
                 $gwaScore = rand(8400, 9600) / 100;           // 84 - 96
                 $interviewScore = rand(7600, 9800) / 100;     // 76 - 98
