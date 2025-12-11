@@ -9,10 +9,10 @@ use App\Models\Applicant;
  * 
  * Centralized service for calculating admission scores using weighted averages.
  * 
- * Formula: FinalGrade = UEE + (GWA × 0.3) + (Interview × 0.05) + (SkillTest × 0.05)
+ * Formula: FinalGrade = UEE (already weighted, 0-60) + (GWA × 0.3) + (Interview × 0.05) + (SkillTest × 0.05)
  * 
  * Components:
- * - University Entrance Examination (UEE): already weighted (0-60), use as-is
+ * - University Entrance Examination (UEE): already weighted when entered (0-60 range), use as-is
  * - CARD/TOR GWA: raw percentage (0-100) × 0.3
  * - Interview: raw percentage (0-100) × 0.05
  * - Skill Test (EnrollAssess Exam): raw percentage (0-100) × 0.05
@@ -45,9 +45,9 @@ class AdmissionScoringService
     /**
      * Calculate the overall admission rating for an applicant
      * 
-     * Formula: Overall = UEE + (GWA × GWA_weight) + (Interview × Interview_weight) + (SkillTest × SkillTest_weight)
+     * Formula: Overall = UEE (already weighted) + (GWA × GWA_weight) + (Interview × Interview_weight) + (SkillTest × SkillTest_weight)
      * 
-     * Note: UEE is already weighted based on its percentage, so it's calculated from raw percentage.
+     * Note: UEE is already weighted when inputted (0-60 range), so it's used as-is without additional weighting.
      * 
      * @param Applicant $applicant
      * @return array ['overall_rating' => float, 'components' => array]
@@ -64,37 +64,35 @@ class AdmissionScoringService
         $interviewWeightPercent = $weights['interview'];
         $skillTestWeightPercent = $weights['skilltest'];
         
-        // Convert percentages to decimals for calculation
-        $ueeWeight = $ueeWeightPercent / 100.0;
+        // Convert percentages to decimals for calculation (for GWA, Interview, SkillTest only)
         $gwaWeight = $gwaWeightPercent / 100.0;
         $interviewWeight = $interviewWeightPercent / 100.0;
         $skillTestWeight = $skillTestWeightPercent / 100.0;
         
-        // Get raw scores
-        // UEE score is stored as a percentage (0-100) in the database
-        // Based on ApplicantController validation: 'score' => 'nullable|numeric|min:0|max:100'
-        $ueeRawPercentage = (float) ($applicant->score ?? 0);
+        // Get scores
+        // UEE score is ALREADY WEIGHTED when inputted (0-60 range based on 60% weight)
+        // It should be used as-is without additional weighting
+        $ueeWeighted = (float) ($applicant->score ?? 0);
         
-        // Other scores are already percentages (0-100)
+        // Other scores are raw percentages (0-100) that need to be weighted
         $gwaRaw = (float) ($applicant->card_tor_gwa ?? 0);
         $skillTestRaw = (float) ($applicant->enrollassess_score ?? 0);  // EnrollAssess Exam
         $interviewRaw = (float) ($applicant->interview_score ?? 0);
         
-        // Calculate weighted values
-        $ueeWeighted = $ueeRawPercentage * $ueeWeight;
+        // Calculate weighted values (UEE is already weighted, others need weighting)
         $gwaWeighted = $gwaRaw * $gwaWeight;
         $interviewWeighted = $interviewRaw * $interviewWeight;
         $skillTestWeighted = $skillTestRaw * $skillTestWeight;
 
-        // Overall = UEE(weighted) + GWA(weighted) + Interview(weighted) + SkillTest(weighted)
+        // Overall = UEE (already weighted) + GWA(weighted) + Interview(weighted) + SkillTest(weighted)
         $overallRating = $ueeWeighted + $gwaWeighted + $interviewWeighted + $skillTestWeighted;
         
         return [
             'overall_rating' => round($overallRating, 2),
             'components' => [
                 'uee' => [
-                    'raw' => round($ueeRawPercentage, 2),         // Calculated for display (0-100)
-                    'weighted' => round($ueeWeighted, 2),   // Weighted value
+                    'raw' => round($ueeWeighted, 2),         // UEE is already weighted (0-60)
+                    'weighted' => round($ueeWeighted, 2),   // Same as raw since already weighted
                     'weight' => $ueeWeightPercent,
                 ],
                 'gwa' => [
