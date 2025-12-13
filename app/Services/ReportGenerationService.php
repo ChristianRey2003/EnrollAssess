@@ -239,9 +239,9 @@ class ReportGenerationService
             $applicant->final_score = $rating['overall_rating'];
             
             // Determine recommendation based on overall rating
-            if ($finalScore >= 75) {
+            if ($applicant->final_score >= 75) {
                 $applicant->recommendation = 'recommended';
-            } elseif ($finalScore >= 70) {
+            } elseif ($applicant->final_score >= 70) {
                 $applicant->recommendation = 'waitlisted';
             } else {
                 $applicant->recommendation = 'not_recommended';

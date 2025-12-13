@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DFD Level 0 - Context Diagram</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: black;
+        }
+
+        .container {
+            position: relative;
+            width: 1100px;
+            height: 700px;
+            background: white;
+        }
+
+        .entity {
+            background-color: #F7E396;
+            border: 2px solid black;
+            padding: 15px;
+            font-weight: bold;
+            text-align: center;
+            position: absolute;
+            width: 180px;
+            z-index: 2;
+            box-shadow: 4px 4px 0px black;
+        }
+
+        .process {
+            background-color: white;
+            border: 5px solid black;
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            position: absolute;
+            top: 225px;
+            left: 425px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.4em;
+            z-index: 2;
+        }
+
+        #depthead {
+            top: 50px;
+            left: 460px;
+        }
+
+        #applicant {
+            top: 325px;
+            left: 50px;
+        }
+
+        #instructor {
+            top: 325px;
+            left: 870px;
+        }
+
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .label-bg {
+            fill: white;
+            opacity: 0.9;
+        }
+
+        .label-text {
+            font-size: 11px;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+            text-anchor: middle;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="entity" id="depthead">Department Head<br><small>(Admin)</small></div>
+        <div class="entity" id="applicant">Applicant</div>
+        <div class="entity" id="instructor">Instructor<br><small>(Interviewer)</small></div>
+        <div class="process">0.0<br>EnrollAssess System</div>
+
+        <svg>
+            <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="black" />
+                </marker>
+            </defs>
+
+            <!-- Dept Head (Top) -->
+            <path d="M 520 120 L 520 220" stroke="black" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" />
+            <rect x="360" y="145" width="150" height="45" class="label-bg" />
+            <text x="435" y="158" class="label-text">Applicant Data,</text>
+            <text x="435" y="173" class="label-text">Exam Configuration,</text>
+            <text x="435" y="188" class="label-text">Interviewer Assignments</text>
+
+            <path d="M 580 220 L 580 120" stroke="black" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" />
+            <rect x="590" y="145" width="130" height="45" class="label-bg" />
+            <text x="655" y="158" class="label-text">Final Rank Reports,</text>
+            <text x="655" y="173" class="label-text">System Logs,</text>
+            <text x="655" y="188" class="label-text">Interview Status</text>
+
+            <!-- Applicant (Left) - HORIZONTAL ARROWS -->
+            <!-- Top arrow: Applicant -> System -->
+            <path d="M 230 340 L 425 320" stroke="black" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" />
+            <rect x="240" y="300" width="120" height="30" class="label-bg" />
+            <text x="300" y="313" class="label-text">Access Code,</text>
+            <text x="300" y="326" class="label-text">Exam Answers</text>
+
+            <!-- Bottom arrow: System -> Applicant -->
+            <path d="M 425 380 L 230 360" stroke="black" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" />
+            <rect x="240" y="385" width="140" height="45" class="label-bg" />
+            <text x="310" y="400" class="label-text">Exam Questions,</text>
+            <text x="310" y="415" class="label-text">Timer Data,</text>
+            <text x="310" y="430" class="label-text">Exam Results</text>
+
+            <!-- Instructor (Right) - HORIZONTAL ARROWS -->
+            <!-- Top arrow: Instructor -> System -->
+            <path d="M 870 340 L 675 320" stroke="black" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" />
+            <rect x="740" y="300" width="120" height="30" class="label-bg" />
+            <text x="800" y="313" class="label-text">Interview Scores,</text>
+            <text x="800" y="326" class="label-text">Rubric Data</text>
+
+            <!-- Bottom arrow: System -> Instructor -->
+            <path d="M 675 380 L 870 360" stroke="black" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" />
+            <rect x="720" y="385" width="160" height="30" class="label-bg" />
+            <text x="800" y="398" class="label-text">Assigned Applicant List,</text>
+            <text x="800" y="413" class="label-text">Interview Schedule</text>
+        </svg>
+    </div>
+</body>
+
+</html>

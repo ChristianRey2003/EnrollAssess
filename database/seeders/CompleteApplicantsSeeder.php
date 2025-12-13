@@ -57,7 +57,34 @@ class CompleteApplicantsSeeder extends Seeder
 
         $maleNames = ['Juan', 'Carlos', 'Miguel', 'Paolo', 'Jose', 'Andrei', 'Mark', 'Aaron', 'Francis', 'Rafael', 'Noel', 'Emmanuel', 'Jomar', 'Angelo', 'Michael'];
         $femaleNames = ['Maria', 'Angela', 'Patricia', 'Louise', 'Andrea', 'Katrina', 'Princess', 'Jasmine', 'Sophia', 'Clarisse', 'Faith', 'Camille', 'Joyce', 'Rochelle', 'Dianne'];
-        $lastNames = ['Santos', 'Reyes', 'Cruz', 'Bautista', 'Torres', 'Navarro', 'Garcia', 'Lopez', 'Dela Cruz', 'Ramos', 'Villanueva', 'Mendoza', 'Gonzales', 'Aquino', 'Domingo', 'Ferrer', 'Marquez', 'Salazar', 'Velasquez', 'Flores'];
+        // Common surnames from various municipalities in Leyte, Philippines
+        $lastNames = [
+            // Ormoc, Leyte
+            'Laurente', 'Pepito', 'Perez', 'Parrilla', 'Villamor', 'Mendoza', 'Malinao', 'Gonzales', 'Omega', 'Cabahug',
+            'Matuguina', 'Canete', 'Estrera', 'Ablen', 'Sanchez', 'Magallanes', 'Sacay', 'Pilapil', 'Dela Cruz', 'Donayre',
+            'Pitogo', 'Lopez', 'Roble', 'Gonzaga', 'Tan', 'Garciano', 'Laude', 'Codilla', 'Maglasang', 'Dejano',
+            // Alangalang, Leyte
+            'Gatela', 'Velarde', 'Caones', 'Vergara', 'Catindoy', 'Juntila', 'Sabela', 'Varona', 'Matobato', 'Garlando',
+            'Tante', 'Pedrera', 'Aruta', 'Yu', 'Baldesco', 'Jomadiao', 'Barrantes', 'Apurillo', 'Capon', 'Maraya',
+            // Albuera, Leyte
+            'Cayanong', 'Alao', 'Mandras', 'Rosal', 'Caindoc', 'Celedio', 'Cabiling', 'Antigua', 'Cantiga', 'Pepito',
+            'Montalban', 'Sotto', 'Perales', 'Bernal', 'Cabulong', 'Velarde', 'De Leon', 'Andrade', 'Maquilan', 'Puebla',
+            // Babatngon, Leyte
+            'Alvarez', 'Buena', 'Lacaba', 'Balboa', 'Bito', 'Montaño', 'Alcaraz', 'Salas', 'Ballais', 'Espares',
+            'Agner', 'Cadano', 'Cajeda', 'Rosales', 'Codilan', 'Belches', 'Caysido', 'De La Cruz', 'Cacharro', 'Bobares',
+            // Barugo, Leyte
+            'Arpon', 'Balais', 'Panis', 'Peñaranda', 'Avila', 'Acebo', 'Aruta', 'Colibao', 'Ponferrada', 'Geraldo',
+            'Cubilla', 'Avestruz', 'Astorga', 'Alcober', 'Cadorna', 'Cirera', 'Alberca', 'Cardines', 'Adizas', 'Ariza',
+            // Bato, Leyte
+            'Salvame', 'Mendoza', 'Germano', 'Aguilar', 'Tavera', 'Garzon', 'Perez', 'Cillo', 'Sanoria', 'Inguito',
+            'Vasquez', 'Ruales', 'Rosal', 'Casinillo', 'Salva', 'Sotto', 'Kuizon', 'Albero', 'Bagay', 'Tablo',
+            // Baybay City, Leyte
+            'Fernandez', 'Managbanag', 'Valenzona', 'Nayre', 'Ibañez', 'Mazo', 'Nuñez', 'Varron', 'Morales', 'Loreto',
+            'Gonzaga', 'Sanchez', 'Porazo', 'Alkuino', 'Granada', 'Galenzoga', 'Modina', 'Cerna', 'Prado', 'Bandalan',
+            // Dulag, Leyte
+            'De Paz', 'Cagara', 'Tupaz', 'Silvano', 'Garcia', 'Agullo', 'Raagas', 'Bautista', 'Kempis', 'Adonis',
+            'Cinco', 'Asis', 'Lopez', 'Magos', 'Devaras', 'Medino', 'Lagunzad', 'Saño', 'Advincula', 'Ramos',
+        ];
 
         $cities = ['Ormoc City', 'Baybay City', 'Albuera', 'Kananga', 'Tacloban City'];
         $shsNames = [

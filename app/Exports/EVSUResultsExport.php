@@ -47,27 +47,9 @@ class EVSUResultsExport
         // Configure page setup for PDF export
         $sheet = $spreadsheet->getActiveSheet();
         
-        // Set column widths matching user's Excel settings exactly
-        // Source: Excel Legal Landscape (8.5" x 14") with 130% scale
-        // Note: Column A needs to be wider for signature names
-        $columnWidths = [
-            'A' => 30,     // No. + Signatures (wider for signature names)
-            'B' => 17.5,   // Application No.
-            'C' => 9.17,   // Preferred Program
-            'D' => 17.17,  // Last Name
-            'E' => 19,     // First Name
-            'F' => 12.5,   // Middle Name
-            'G' => 26.83,  // E-mail
-            'H' => 16,     // Contact Number (increased to accommodate + prefix and full phone numbers like +639020500174)
-            'I' => 18.5,   // UEE (60%)
-            'J' => 12,     // Card/TOR GWA (30%)
-            'K' => 15.83,  // Interview/Skill Test (10%)
-            'L' => 12.5,   // Overall Rating
-        ];
-        
-        foreach ($columnWidths as $col => $width) {
-            $sheet->getColumnDimension($col)->setWidth($width);
-        }
+        // IMPORTANT: Do NOT override column widths - preserve template's original column widths
+        // The template (NEW TEMPLATE.xlsx) has carefully set column widths that should be used as-is
+        // Previously hardcoded widths were causing layout issues (e.g., "No." column too wide)
 
         // Configure page setup - Legal 8.5x14 with Fit to width
         $sheet->getPageSetup()
@@ -130,9 +112,17 @@ class EVSUResultsExport
         
         // Create a temporary user installation directory for LibreOffice
         // This prevents permission issues when running as web server user
+        // Use a more isolated path to avoid conflicts with default LibreOffice installation
         $userInstallDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'libreoffice_user_' . uniqid();
         if (!is_dir($userInstallDir)) {
-            @mkdir($userInstallDir, 0755, true);
+            if (!@mkdir($userInstallDir, 0755, true)) {
+                throw new \RuntimeException('Failed to create LibreOffice user installation directory: ' . $userInstallDir);
+            }
+        }
+        
+        // Ensure the directory is writable
+        if (!is_writable($userInstallDir)) {
+            throw new \RuntimeException('LibreOffice user installation directory is not writable: ' . $userInstallDir);
         }
 
         // Set environment variables to prevent dconf and Java errors
@@ -147,14 +137,23 @@ class EVSUResultsExport
 
         // Build command: convert to PDF with custom user installation directory
         // Use -env:UserInstallation to specify a writable directory
-        // Convert path to file:// URL format (use file:/// for absolute paths on Linux)
-        $userInstallUrl = 'file://' . (PHP_OS_FAMILY !== 'Windows' ? '/' : '') . str_replace('\\', '/', $userInstallDir);
+        // Convert path to file:// URL format
+        // Windows needs file:/// (three slashes) for absolute paths
+        // Linux needs file:/// (three slashes) for absolute paths
+        $normalizedPath = str_replace('\\', '/', $userInstallDir);
+        if (PHP_OS_FAMILY === 'Windows') {
+            // Windows: file:///C:/path/to/dir
+            $userInstallUrl = 'file:///' . $normalizedPath;
+        } else {
+            // Linux/Mac: file:///path/to/dir
+            $userInstallUrl = 'file:///' . $normalizedPath;
+        }
         
         // On Linux, prefix with 'env' to set environment variables
         if (PHP_OS_FAMILY !== 'Windows') {
             $envString = 'env ' . implode(' ', array_map('escapeshellarg', $envVars)) . ' ';
             $command = sprintf(
-                '%s%s --headless -env:UserInstallation=%s --convert-to pdf --outdir %s %s 2>&1',
+                '%s%s --headless -nodefault -env:UserInstallation=%s --convert-to pdf --outdir %s %s 2>&1',
                 $envString,
                 escapeshellarg($soffice),
                 escapeshellarg($userInstallUrl),
@@ -162,23 +161,41 @@ class EVSUResultsExport
                 escapeshellarg($xlsxPath)
             );
         } else {
-            // Windows: set environment variables using set command
+            // Windows: Use cmd /c to properly execute batch commands
+            // Build environment variable string without quotes around values (Windows set command)
             $envString = '';
             foreach ($envVars as $envVar) {
                 list($key, $value) = explode('=', $envVar, 2);
-                $envString .= 'set ' . escapeshellarg($key) . '=' . escapeshellarg($value) . ' && ';
+                // Escape special characters in value but don't add quotes
+                $escapedValue = str_replace(['&', '|', '<', '>', '^'], ['^&', '^|', '^<', '^>', '^^'], $value);
+                $envString .= 'set ' . $key . '=' . $escapedValue . ' && ';
             }
+            // Wrap in cmd /c - the entire command chain needs to be in quotes
+            // Add -nodefault to prevent LibreOffice from using default settings
+            $sofficeCmd = escapeshellarg($soffice);
+            $userInstallUrlEscaped = escapeshellarg($userInstallUrl);
+            $outputDirEscaped = escapeshellarg($outputDir);
+            $xlsxPathEscaped = escapeshellarg($xlsxPath);
+            
             $command = sprintf(
-                '%s%s --headless -env:UserInstallation=%s --convert-to pdf --outdir %s %s 2>&1',
+                'cmd /c "%s%s --headless -nodefault -env:UserInstallation=%s --convert-to pdf --outdir %s %s" 2>&1',
                 $envString,
-                escapeshellarg($soffice),
-                escapeshellarg($userInstallUrl),
-                escapeshellarg($outputDir),
-                escapeshellarg($xlsxPath)
+                $sofficeCmd,
+                $userInstallUrlEscaped,
+                $outputDirEscaped,
+                $xlsxPathEscaped
             );
         }
 
-        \Log::info('LibreOffice conversion command', ['command' => $command]);
+        \Log::info('LibreOffice conversion command', [
+            'command' => $command,
+            'soffice_path' => $soffice,
+            'user_install_dir' => $userInstallDir,
+            'user_install_url' => $userInstallUrl,
+            'xlsx_path' => $xlsxPath,
+            'output_dir' => $outputDir,
+            'pdf_path' => $pdfPath
+        ]);
 
         // Execute conversion
         exec($command, $output, $returnCode);
@@ -290,11 +307,13 @@ class EVSUResultsExport
         $spreadsheet = IOFactory::load($templatePath);
         $sheet = $spreadsheet->getActiveSheet();
 
-        // Fill signature settings from database
-        $this->fillSignatureSettings($sheet);
-
-        // Fill ONLY the data table rows
+        // IMPORTANT: Fill data rows FIRST because it may insert/remove rows
+        // which would shift the signature block row numbers
         $this->fillDataRows($sheet);
+        
+        // Fill signature settings AFTER data rows are filled
+        // This ensures we're working with the correct row numbers
+        $this->fillSignatureSettings($sheet);
 
         // Do not alter XLSX page setup or margins. The template dictates XLSX layout.
         return $spreadsheet;
@@ -317,45 +336,76 @@ class EVSUResultsExport
         $approvedName = Settings::getSetting('report_signature_approved_name', 'DENNIS C. DE PAZ, Ph.D.');
         $approvedTitle = Settings::getSetting('report_signature_approved_title', 'University President');
 
-        // Fill document information
+        // Fill document information (these are in fixed header rows, not affected by data insertion)
         $sheet->setCellValue('I3', $controlNo);
         $sheet->setCellValue('I4', $revisionNo);
         $sheet->setCellValue('I5', now()->format('Y-m-d')); // Date
 
-        // Fill signature blocks using exact cell locations with proper formatting
-        // Names should be BOLD and UPPERCASE, titles should match template style
+        // Dynamically find signature label rows (they may have shifted due to data row insertion)
+        $signatureRows = $this->findSignatureRows($sheet);
         
-        // First, read the font size from the template's existing signature cells
-        // This ensures we match the exact formatting from the template
-        $nameFontSize = $this->getTemplateFontSize($sheet, 'A132', 12); // Default to 12 if not found
-        $titleFontSize = $this->getTemplateFontSize($sheet, 'A133', 12);
+        // Default font sizes
+        $nameFontSize = 12;
+        $titleFontSize = 12;
         
-        // First, check and copy merge structure from template cells A144 and A149 to A132 and A139
-        // This ensures border width matches the name length
-        $this->copyMergeStructure($sheet, 'A144', 'A132');
-        $this->copyMergeStructure($sheet, 'A149', 'A139');
+        // Fill signature blocks based on dynamically found rows
+        // Each signature has: Label row, then Name row (+3 from label), then Title row (+4 from label)
         
-        // Prepared By: Label A129, Name A132, Title A133 (with border line)
-        $this->setSignatureName($sheet, 'A132', $preparedByName, $nameFontSize, true);
-        $this->setSignatureTitle($sheet, 'A133', $preparedByTitle, $titleFontSize);
+        if (isset($signatureRows['prepared_by'])) {
+            $nameRow = $signatureRows['prepared_by'] + 3;
+            $titleRow = $signatureRows['prepared_by'] + 4;
+            $this->setSignatureName($sheet, 'A' . $nameRow, $preparedByName, $nameFontSize, true);
+            $this->setSignatureTitle($sheet, 'A' . $titleRow, $preparedByTitle, $titleFontSize);
+        }
 
-        // Noted: Label A136, Name A139, Title A140 (with border line)
-        $this->setSignatureName($sheet, 'A139', $notedName, $nameFontSize, true);
-        $this->setSignatureTitle($sheet, 'A140', $notedTitle, $titleFontSize);
+        if (isset($signatureRows['noted'])) {
+            $nameRow = $signatureRows['noted'] + 3;
+            $titleRow = $signatureRows['noted'] + 4;
+            $this->setSignatureName($sheet, 'A' . $nameRow, $notedName, $nameFontSize, true);
+            $this->setSignatureTitle($sheet, 'A' . $titleRow, $notedTitle, $titleFontSize);
+        }
 
-        // Recommending Approval: Label A142, Name A144, Title A145 (with border line)
-        $this->setSignatureName($sheet, 'A144', $recommendingName, $nameFontSize, true);
-        $this->setSignatureTitle($sheet, 'A145', $recommendingTitle, $titleFontSize);
+        if (isset($signatureRows['recommending'])) {
+            $nameRow = $signatureRows['recommending'] + 2;
+            $titleRow = $signatureRows['recommending'] + 3;
+            $this->setSignatureName($sheet, 'A' . $nameRow, $recommendingName, $nameFontSize, true);
+            $this->setSignatureTitle($sheet, 'A' . $titleRow, $recommendingTitle, $titleFontSize);
+        }
 
-        // Approved: Label A147, Name A149, Title A150 (with border line)
-        $this->setSignatureName($sheet, 'A149', $approvedName, $nameFontSize, true);
-        $this->setSignatureTitle($sheet, 'A150', $approvedTitle, $titleFontSize);
+        if (isset($signatureRows['approved'])) {
+            $nameRow = $signatureRows['approved'] + 2;
+            $titleRow = $signatureRows['approved'] + 3;
+            $this->setSignatureName($sheet, 'A' . $nameRow, $approvedName, $nameFontSize, true);
+            $this->setSignatureTitle($sheet, 'A' . $titleRow, $approvedTitle, $titleFontSize);
+        }
+    }
+    
+    /**
+     * Find signature label rows dynamically (they shift when data rows are inserted)
+     */
+    protected function findSignatureRows($sheet)
+    {
+        $signatureRows = [];
+        $highestRow = $sheet->getHighestRow();
         
-        // Re-apply borders after setting values (in case merge structure needs borders on merged range)
-        $this->applyBorderToCellOrRange($sheet, 'A132');
-        $this->applyBorderToCellOrRange($sheet, 'A139');
-        $this->applyBorderToCellOrRange($sheet, 'A144');
-        $this->applyBorderToCellOrRange($sheet, 'A149');
+        for ($row = 1; $row <= $highestRow; $row++) {
+            $value = (string) $sheet->getCell('A' . $row)->getValue();
+            $valueLower = strtolower(trim($value));
+            
+            if (strpos($valueLower, 'prepared by') !== false) {
+                $signatureRows['prepared_by'] = $row;
+            } elseif ($valueLower === 'noted:' || strpos($valueLower, 'noted:') !== false) {
+                $signatureRows['noted'] = $row;
+            } elseif (strpos($valueLower, 'recommending approval') !== false) {
+                $signatureRows['recommending'] = $row;
+            } elseif ($valueLower === 'approved:' || strpos($valueLower, 'approved:') !== false) {
+                $signatureRows['approved'] = $row;
+            }
+        }
+        
+        \Log::info('Found signature rows', $signatureRows);
+        
+        return $signatureRows;
     }
 
     /**
@@ -522,6 +572,33 @@ class EVSUResultsExport
         // Ensure name is uppercase (CAPS LOCK) - preserve full name
         $name = strtoupper(trim($name));
         
+        // Extract row number from cell reference (e.g., 'A132' -> 132)
+        $row = (int) filter_var($cell, FILTER_SANITIZE_NUMBER_INT);
+        
+        // Ensure signature name cells are merged to span columns A through D
+        // This provides enough width for full names without breaking
+        $mergeRange = 'A' . $row . ':D' . $row;
+        
+        // First, unmerge any existing merge for this cell
+        $existingMerges = $sheet->getMergeCells();
+        foreach ($existingMerges as $existingRange) {
+            try {
+                if ($sheet->getCell($cell)->isInRange($existingRange)) {
+                    $sheet->unmergeCells($existingRange);
+                    break;
+                }
+            } catch (\Exception $e) {
+                // Ignore if cell is not in range
+            }
+        }
+        
+        // Merge the cells for the signature name
+        try {
+            $sheet->mergeCells($mergeRange);
+        } catch (\Exception $e) {
+            \Log::debug('Could not merge cells for signature name', ['range' => $mergeRange, 'error' => $e->getMessage()]);
+        }
+        
         // Set the value - use setValueExplicit to prevent truncation
         $sheet->setCellValueExplicit($cell, $name, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
         
@@ -541,37 +618,27 @@ class EVSUResultsExport
                 'bold' => true, // Names are BOLD
             ]);
             
-            // Add bottom border (cell line) below the name only if requested
-            // Note: Borders will be re-applied after cell structure is copied
+            // IMPORTANT: Disable text wrapping to prevent names from breaking
+            // The merged cells should be wide enough to accommodate full names
+            $sheet->getStyle($cell)->getAlignment()->setWrapText(false);
+            $sheet->getStyle($cell)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
+            $sheet->getStyle($cell)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_BOTTOM);
+            
+            // Add bottom border to the merged range
             if ($addBorder) {
-                $this->applyBorderToCellOrRange($sheet, $cell);
+                $sheet->getStyle($mergeRange)->getBorders()->getBottom()
+                    ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN)
+                    ->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_BLACK));
             }
-            
-            // Also copy alignment if needed
-            $templateAlignment = $templateStyle->getAlignment();
-            $sheet->getStyle($cell)->getAlignment()->applyFromArray([
-                'horizontal' => $templateAlignment->getHorizontal(),
-                'vertical' => $templateAlignment->getVertical(),
-            ]);
-            
-            // Ensure text wrapping is enabled to prevent truncation
-            $sheet->getStyle($cell)->getAlignment()->setWrapText(true);
         } catch (\Exception $e) {
             // Fallback: apply bold, proper size, and conditionally add bottom border
             $sheet->getStyle($cell)->getFont()->setBold(true);
             $sheet->getStyle($cell)->getFont()->setSize($fontSize);
+            $sheet->getStyle($cell)->getAlignment()->setWrapText(false);
             if ($addBorder) {
-                $this->applyBorderToCellOrRange($sheet, $cell);
+                $sheet->getStyle($mergeRange)->getBorders()->getBottom()
+                    ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
             }
-            $sheet->getStyle($cell)->getAlignment()->setWrapText(true);
-        }
-        
-        // Ensure column width is adequate (auto-size or set minimum)
-        $column = preg_replace('/[0-9]/', '', $cell);
-        $currentWidth = $sheet->getColumnDimension($column)->getWidth();
-        if ($currentWidth < 30 || $currentWidth == -1) {
-            // Set minimum width to prevent truncation (30 characters)
-            $sheet->getColumnDimension($column)->setWidth(30);
         }
     }
 
@@ -581,6 +648,33 @@ class EVSUResultsExport
      */
     protected function setSignatureTitle($sheet, $cell, $title, $fontSize = 12)
     {
+        // Extract row number from cell reference (e.g., 'A133' -> 133)
+        $row = (int) filter_var($cell, FILTER_SANITIZE_NUMBER_INT);
+        
+        // Ensure signature title cells are merged to span columns A through D
+        // This provides enough width for full titles without breaking
+        $mergeRange = 'A' . $row . ':D' . $row;
+        
+        // First, unmerge any existing merge for this cell
+        $existingMerges = $sheet->getMergeCells();
+        foreach ($existingMerges as $existingRange) {
+            try {
+                if ($sheet->getCell($cell)->isInRange($existingRange)) {
+                    $sheet->unmergeCells($existingRange);
+                    break;
+                }
+            } catch (\Exception $e) {
+                // Ignore if cell is not in range
+            }
+        }
+        
+        // Merge the cells for the signature title
+        try {
+            $sheet->mergeCells($mergeRange);
+        } catch (\Exception $e) {
+            \Log::debug('Could not merge cells for signature title', ['range' => $mergeRange, 'error' => $e->getMessage()]);
+        }
+        
         // Set the value (titles keep original case) - use setValueExplicit to prevent truncation
         $sheet->setCellValueExplicit($cell, trim($title), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
         
@@ -600,28 +694,19 @@ class EVSUResultsExport
                 'bold' => $templateFont->getBold() ?? false, // Usually false for titles
             ]);
             
-            // Also copy alignment
-            $templateAlignment = $templateStyle->getAlignment();
-            $sheet->getStyle($cell)->getAlignment()->applyFromArray([
-                'horizontal' => $templateAlignment->getHorizontal(),
-                'vertical' => $templateAlignment->getVertical(),
-            ]);
-            
-            // Ensure text wrapping
-            $sheet->getStyle($cell)->getAlignment()->setWrapText(true);
+            // IMPORTANT: Disable text wrapping to prevent titles from breaking
+            // The merged cells should be wide enough to accommodate full titles
+            $sheet->getStyle($cell)->getAlignment()->setWrapText(false);
+            $sheet->getStyle($cell)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
+            $sheet->getStyle($cell)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP);
         } catch (\Exception $e) {
             // Fallback: regular font, not bold, proper size
             $sheet->getStyle($cell)->getFont()->setBold(false);
             $sheet->getStyle($cell)->getFont()->setSize($fontSize);
-            $sheet->getStyle($cell)->getAlignment()->setWrapText(true);
+            $sheet->getStyle($cell)->getAlignment()->setWrapText(false);
         }
         
-        // Ensure column width is adequate
-        $column = preg_replace('/[0-9]/', '', $cell);
-        $currentWidth = $sheet->getColumnDimension($column)->getWidth();
-        if ($currentWidth < 30 || $currentWidth == -1) {
-            $sheet->getColumnDimension($column)->setWidth(30);
-        }
+        // NOTE: Column width is preserved from template - signatures use merged cells
     }
 
     /**

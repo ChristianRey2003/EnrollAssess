@@ -75,9 +75,17 @@ class EVSUQualifiersExport
         
         // Create a temporary user installation directory for LibreOffice
         // This prevents permission issues when running as web server user
+        // Use a more isolated path to avoid conflicts with default LibreOffice installation
         $userInstallDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'libreoffice_user_' . uniqid();
         if (!is_dir($userInstallDir)) {
-            @mkdir($userInstallDir, 0755, true);
+            if (!@mkdir($userInstallDir, 0755, true)) {
+                throw new \RuntimeException('Failed to create LibreOffice user installation directory: ' . $userInstallDir);
+            }
+        }
+        
+        // Ensure the directory is writable
+        if (!is_writable($userInstallDir)) {
+            throw new \RuntimeException('LibreOffice user installation directory is not writable: ' . $userInstallDir);
         }
 
         // Set environment variables to prevent dconf and Java errors
@@ -92,14 +100,23 @@ class EVSUQualifiersExport
 
         // Build command: convert to PDF with custom user installation directory
         // Use -env:UserInstallation to specify a writable directory
-        // Convert path to file:// URL format (use file:/// for absolute paths on Linux)
-        $userInstallUrl = 'file://' . (PHP_OS_FAMILY !== 'Windows' ? '/' : '') . str_replace('\\', '/', $userInstallDir);
+        // Convert path to file:// URL format
+        // Windows needs file:/// (three slashes) for absolute paths
+        // Linux needs file:/// (three slashes) for absolute paths
+        $normalizedPath = str_replace('\\', '/', $userInstallDir);
+        if (PHP_OS_FAMILY === 'Windows') {
+            // Windows: file:///C:/path/to/dir
+            $userInstallUrl = 'file:///' . $normalizedPath;
+        } else {
+            // Linux/Mac: file:///path/to/dir
+            $userInstallUrl = 'file:///' . $normalizedPath;
+        }
         
         // On Linux, prefix with 'env' to set environment variables
         if (PHP_OS_FAMILY !== 'Windows') {
             $envString = 'env ' . implode(' ', array_map('escapeshellarg', $envVars)) . ' ';
             $command = sprintf(
-                '%s%s --headless -env:UserInstallation=%s --convert-to pdf --outdir %s %s 2>&1',
+                '%s%s --headless -nodefault -env:UserInstallation=%s --convert-to pdf --outdir %s %s 2>&1',
                 $envString,
                 escapeshellarg($soffice),
                 escapeshellarg($userInstallUrl),
@@ -107,23 +124,41 @@ class EVSUQualifiersExport
                 escapeshellarg($docxPath)
             );
         } else {
-            // Windows: set environment variables using set command
+            // Windows: Use cmd /c to properly execute batch commands
+            // Build environment variable string without quotes around values (Windows set command)
             $envString = '';
             foreach ($envVars as $envVar) {
                 list($key, $value) = explode('=', $envVar, 2);
-                $envString .= 'set ' . escapeshellarg($key) . '=' . escapeshellarg($value) . ' && ';
+                // Escape special characters in value but don't add quotes
+                $escapedValue = str_replace(['&', '|', '<', '>', '^'], ['^&', '^|', '^<', '^>', '^^'], $value);
+                $envString .= 'set ' . $key . '=' . $escapedValue . ' && ';
             }
+            // Wrap in cmd /c - the entire command chain needs to be in quotes
+            // Add -nodefault to prevent LibreOffice from using default settings
+            $sofficeCmd = escapeshellarg($soffice);
+            $userInstallUrlEscaped = escapeshellarg($userInstallUrl);
+            $outputDirEscaped = escapeshellarg($outputDir);
+            $docxPathEscaped = escapeshellarg($docxPath);
+            
             $command = sprintf(
-                '%s%s --headless -env:UserInstallation=%s --convert-to pdf --outdir %s %s 2>&1',
+                'cmd /c "%s%s --headless -nodefault -env:UserInstallation=%s --convert-to pdf --outdir %s %s" 2>&1',
                 $envString,
-                escapeshellarg($soffice),
-                escapeshellarg($userInstallUrl),
-                escapeshellarg($outputDir),
-                escapeshellarg($docxPath)
+                $sofficeCmd,
+                $userInstallUrlEscaped,
+                $outputDirEscaped,
+                $docxPathEscaped
             );
         }
 
-        \Log::info('LibreOffice conversion command (Qualifiers)', ['command' => $command]);
+        \Log::info('LibreOffice conversion command (Qualifiers)', [
+            'command' => $command,
+            'soffice_path' => $soffice,
+            'user_install_dir' => $userInstallDir,
+            'user_install_url' => $userInstallUrl,
+            'docx_path' => $docxPath,
+            'output_dir' => $outputDir,
+            'pdf_path' => $pdfPath
+        ]);
 
         // Execute conversion
         exec($command, $output, $returnCode);

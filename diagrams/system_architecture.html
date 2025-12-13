@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detailed System Architecture</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: black;
+        }
+
+        .container {
+            position: relative;
+            width: 1000px;
+            /* Wider for detail */
+            padding: 40px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 50px;
+        }
+
+        .layer-container {
+            border: 2px dashed #666;
+            padding: 20px 40px;
+            width: 80%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #fafafa;
+        }
+
+        .layer-label {
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: white;
+            padding: 0 10px;
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+            color: #444;
+            border: 1px solid #ccc;
+        }
+
+        .box {
+            background-color: #F7E396;
+            border: 2px solid black;
+            padding: 15px;
+            text-align: left;
+            /* List content */
+            position: relative;
+            z-index: 2;
+            width: 300px;
+            box-shadow: 4px 4px 0px rgba(0, 0, 0, 1);
+        }
+
+        .box-title {
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+            border-bottom: 2px solid black;
+            padding-bottom: 5px;
+            display: block;
+        }
+
+        .box ul {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 13px;
+        }
+
+        .box li {
+            margin-bottom: 4px;
+        }
+
+        .data-row {
+            display: flex;
+            gap: 150px;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .db-shape {
+            width: 200px;
+            height: 120px;
+            background-color: #F7E396;
+            border: 2px solid black;
+            border-radius: 50% / 20px;
+            /* Cylinder effect top/bottom */
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 4px 4px 0px black;
+        }
+
+        /* Cylinder side lines trick (simple rectangle behind? No, just keep simple shape) */
+
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .arrow-text {
+            font-size: 12px;
+            font-weight: bold;
+            background-color: white;
+            padding: 2px 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <!-- Layer 1: Presentation -->
+        <div class="layer-container" id="layer1">
+            <span class="layer-label">Layer 1: Presentation Layer (Client Side)</span>
+            <div class="box" id="browser">
+                <span class="box-title">Web Browser (Client)</span>
+                <ul>
+                    <li>HTML5 / CSS3 (TailwindCSS)</li>
+                    <li>JavaScript (Alpine.js)</li>
+                    <li>Blade Templates (View)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Layer 2: Application -->
+        <div class="layer-container" id="layer2">
+            <span class="layer-label">Layer 2: Application Layer (Server Side)</span>
+
+            <div class="box" id="nginx" style="width: 200px; text-align: center; margin-bottom: 30px;">
+                <span class="box-title" style="border:none; margin:0;">Nginx Web Server</span>
+            </div>
+
+            <div class="box" id="laravel">
+                <span class="box-title">Laravel App Server (PHP 8.2)</span>
+                <ul>
+                    <li>Auth Middleware (Breeze)</li>
+                    <li>Exam Engine (Scoring Logic)</li>
+                    <li>Interview Manager</li>
+                    <li>Report Generator (DomPDF)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Layer 3: Data -->
+        <div class="layer-container" id="layer3">
+            <span class="layer-label">Layer 3: Data Layer (Storage)</span>
+            <div class="data-row">
+                <div class="db-shape" id="mysql">
+                    <strong>MySQL 8.0</strong>
+                    <small>Relational DB</small>
+                </div>
+                <div class="db-shape" id="redis" style="width: 150px; height: 100px;">
+                    <strong>Redis Cache</strong>
+                    <small>In-Memory Store</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- SVG Connections -->
+        <svg>
+            <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="black" />
+                </marker>
+                <marker id="arrowstart" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                    <polygon points="10 0, 0 3.5, 10 7" fill="black" />
+                </marker>
+            </defs>
+
+            <!-- Browser -> Nginx -->
+            <line x1="500" y1="140" x2="500" y2="240" stroke="black" stroke-width="2" marker-end="url(#arrowhead)" />
+            <rect x="440" y="180" width="120" height="20" fill="white" stroke="none" />
+            <text x="445" y="195" class="arrow-text">HTTPS Requests</text>
+
+            <!-- Nginx -> Laravel -->
+            <line x1="500" y1="295" x2="500" y2="340" stroke="black" stroke-width="2" marker-end="url(#arrowhead)" />
+            <text x="510" y="325" class="arrow-text" style="font-size: 11px;">Passes to PHP-FPM</text>
+
+            <!-- Laravel -> MySQL -->
+            <line x1="450" y1="465" x2="380" y2="580" stroke="black" stroke-width="2" marker-end="url(#arrowhead)"
+                marker-start="url(#arrowstart)" />
+            <rect x="340" y="510" width="100" height="20" fill="white" />
+            <text x="345" y="525" class="arrow-text">Eloquent ORM</text>
+
+            <!-- Laravel -> Redis -->
+            <line x1="550" y1="465" x2="620" y2="585" stroke="black" stroke-width="2" marker-end="url(#arrowhead)"
+                marker-start="url(#arrowstart)" />
+            <rect x="560" y="510" width="120" height="20" fill="white" />
+            <text x="565" y="525" class="arrow-text">Session & Queue</text>
+
+        </svg>
+    </div>
+</body>
+
+</html>

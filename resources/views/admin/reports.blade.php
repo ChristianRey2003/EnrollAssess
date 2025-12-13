@@ -1284,20 +1284,26 @@
                             data.applicants.forEach((applicant) => {
                                 const statusText = (applicant.status || '').split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
                                 
-                                // UEE score is stored as percentage (0-100), display directly
-                                const ueePercentage = applicant.score !== null && applicant.score !== undefined
-                                    ? Number(applicant.score).toFixed(2) + '%'
-                                    : '<span style="color: #9ca3af;">-</span>';
+                                // UEE score - match original template logic
+                                let ueePercentage = '<span style="color: #9ca3af;">-</span>';
+                                if (applicant.score !== null && applicant.score !== undefined && applicant.overall_rating_components && applicant.overall_rating_components.uee) {
+                                    // Use UEE raw value from overall_rating_components (matches original template)
+                                    const ueeRaw = Number(applicant.overall_rating_components.uee.raw);
+                                    ueePercentage = `<div>${ueeRaw.toFixed(2)}%</div>`;
+                                } else if (applicant.score !== null && applicant.score !== undefined) {
+                                    // Fallback to score if overall_rating_components not available
+                                    ueePercentage = `<div>${Number(applicant.score).toFixed(2)}%</div>`;
+                                }
                                 
                                 // Show GWA as weighted value (computed)
                                 let gwa = '<span style="color: #9ca3af;">-</span>';
                                 if (applicant.overall_rating_components && applicant.overall_rating_components.gwa) {
                                     // Use weighted value (computed)
                                     const weighted = Number(applicant.overall_rating_components.gwa.weighted);
-                                    gwa = weighted.toFixed(2) + '%';
+                                    gwa = `<div>${weighted.toFixed(2)}%</div>`;
                                 } else if (applicant.card_tor_gwa) {
                                     // Fallback to raw if no overall rating calculated yet
-                                    gwa = Number(applicant.card_tor_gwa).toFixed(2) + '%';
+                                    gwa = `<div>${Number(applicant.card_tor_gwa).toFixed(2)}%</div>`;
                                 }
                                 
                                 // Combined Interview & Exam (weighted 10% value)
@@ -1306,20 +1312,20 @@
                                 if (applicant.overall_rating_components && applicant.overall_rating_components.interview_skill_combined) {
                                     // Use weighted value (0-10) directly
                                     const weighted = Number(applicant.overall_rating_components.interview_skill_combined.weighted);
-                                    combinedScore = weighted.toFixed(2) + '%';
+                                    combinedScore = `<div>${weighted.toFixed(2)}%</div>`;
                                 } else if (applicant.enrollassess_score !== null && applicant.interview_score !== null) {
                                     // Fallback: calculate weighted value manually
                                     const interviewWeighted = Number(applicant.interview_score) * 0.05;
                                     const examWeighted = Number(applicant.enrollassess_score) * 0.05;
                                     const combinedWeighted = interviewWeighted + examWeighted;
-                                    combinedScore = combinedWeighted.toFixed(2) + '%';
+                                    combinedScore = `<div>${combinedWeighted.toFixed(2)}%</div>`;
                                 } else if (applicant.enrollassess_score !== null || applicant.interview_score !== null) {
                                     // If only one is available, calculate partial weighted value
                                     const availableScore = applicant.enrollassess_score !== null 
                                         ? applicant.enrollassess_score 
                                         : applicant.interview_score;
                                     const partialWeighted = Number(availableScore) * 0.05;
-                                    combinedScore = partialWeighted.toFixed(2) + '%';
+                                    combinedScore = `<div>${partialWeighted.toFixed(2)}%</div>`;
                                 }
                                 
                                 // Build overall rating display
@@ -1361,11 +1367,11 @@
                                         <div>${applicant.full_name || ''}</div>
                                         <div style="font-size: 12px; color: #6b7280;">${applicant.application_no || applicant.formatted_applicant_no || 'N/A'}</div>
                                     </td>
-                                    <td style="text-align: center;">${ueePercentage}</td>
-                                    <td style="text-align: center;">${gwa}</td>
-                                    <td style="text-align: center;">${combinedScore}</td>
-                                    <td style="text-align: center;">${overallRatingHtml}</td>
-                                    <td style="text-align: center;">
+                                    <td class="text-center" style="font-size: 13px; font-weight: normal;">${ueePercentage}</td>
+                                    <td class="text-center" style="font-size: 13px; font-weight: normal;">${gwa}</td>
+                                    <td class="text-center" style="font-size: 13px; font-weight: normal;">${combinedScore}</td>
+                                    <td class="text-center" style="font-size: 13px; font-weight: normal;">${overallRatingHtml}</td>
+                                    <td class="text-center" style="font-size: 13px; font-weight: normal;">
                                         <span class="badge bg-secondary">${statusText}</span>
                                         <div id="actions-${applicant.applicant_id}" class="floating-actions" style="display: none;">
                                             <a href="/admin/applicants/${applicant.applicant_id}" class="action-btn" title="View Details">View</a>
