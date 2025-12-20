@@ -1,8 +1,16 @@
+@if(isset($isReschedule) && $isReschedule)
+Interview Rescheduled
+@else
 Interview Scheduled
+@endif
 
 Dear {{ $applicant->full_name }},
 
+@if(isset($isReschedule) && $isReschedule)
+Your interview has been rescheduled. Please see the updated details below:
+@else
 Your interview has been scheduled! Please see the details below:
+@endif
 
 INTERVIEW DETAILS
 Application No: {{ $applicant->application_no }}

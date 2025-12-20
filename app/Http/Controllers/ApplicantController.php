@@ -579,6 +579,8 @@ class ApplicantController extends BaseController
                 'Applicant No.' => 'application_no',
                 'Weighted Exam Percentage (60%)' => 'score',
                 'Weighted Exam % (60%)' => 'score',
+                'Weighted Exam Percentage' => 'score', // Match import documentation
+                'Weighted Exam %' => 'score',
                 'Verbal Description' => 'verbal_description',
                 // Legacy support
                 'first_name' => 'first_name',

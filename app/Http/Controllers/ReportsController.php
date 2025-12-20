@@ -108,7 +108,10 @@ class ReportsController extends Controller
         // Exam Results Data
         try {
             $query = Applicant::with(['assignedInstructor', 'accessCode', 'latestInterview'])
-                ->whereNotNull('enrollassess_score'); // Only show applicants who completed EnrollAssess exam
+                ->where(function($q) {
+                    $q->whereNotNull('enrollassess_score') // Completed EnrollAssess exam
+                      ->orWhereNotNull('score'); // OR manually entered weighted exam score
+                });
             
             // Apply school year filter
             $this->applySchoolYearFilter($query);
@@ -194,7 +197,10 @@ class ReportsController extends Controller
 
             // Statistics - 4 most important metrics (filtered by school year)
             $scoringService = app(\App\Services\AdmissionScoringService::class);
-            $allApplicantsQuery = Applicant::whereNotNull('enrollassess_score');
+            $allApplicantsQuery = Applicant::where(function($q) {
+                $q->whereNotNull('enrollassess_score') // Completed EnrollAssess exam
+                  ->orWhereNotNull('score'); // OR manually entered weighted exam score
+            });
             $this->applySchoolYearFilter($allApplicantsQuery);
             $allApplicants = $allApplicantsQuery->get();
             

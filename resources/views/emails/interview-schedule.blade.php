@@ -80,7 +80,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>️ @if(isset($isReminder) && $isReminder) Reminder: @endif Interview Scheduled</h1>
+            <h1>️ @if(isset($isReminder) && $isReminder) Reminder: @elseif(isset($isReschedule) && $isReschedule) Interview @else Interview @endif Scheduled</h1>
         </div>
 
         <p>Dear <strong>{{ $applicant->full_name }}</strong>,</p>
@@ -89,9 +89,21 @@
         <div class="highlight">
             <strong>This is a reminder about your scheduled interview.</strong>
         </div>
+        @elseif(isset($isReschedule) && $isReschedule)
+        <div class="highlight" style="background-color: #e7f3ff; border-left-color: #2196F3;">
+            <strong>Your interview has been rescheduled.</strong> Please note the new date and time below.
+        </div>
         @endif
 
-        <p>@if(isset($isReminder) && $isReminder) This is a reminder that @else Your interview has been scheduled! @endif Please see the details below:</p>
+        <p>
+            @if(isset($isReminder) && $isReminder)
+                This is a reminder that your interview has been scheduled! Please see the details below:
+            @elseif(isset($isReschedule) && $isReschedule)
+                Your interview has been rescheduled. Please see the updated details below:
+            @else
+                Your interview has been scheduled! Please see the details below:
+            @endif
+        </p>
 
         <div class="info-box">
             <div class="info-row">

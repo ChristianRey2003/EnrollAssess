@@ -579,6 +579,9 @@
                                             <td class="text-center" style="font-size: 13px; font-weight: normal;">
                                                 @if($applicant->score && $overallRating)
                                                     <div>{{ round($overallRating['components']['uee']['raw'], 2) }}%</div>
+                                                @elseif($applicant->score)
+                                                    {{-- Fallback to score if overall rating not calculated yet --}}
+                                                    <div>{{ round($applicant->score, 2) }}%</div>
                                                 @else
                                                     <span style="color: #9ca3af;">-</span>
                                                 @endif

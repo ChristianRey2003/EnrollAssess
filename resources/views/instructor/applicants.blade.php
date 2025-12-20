@@ -1220,7 +1220,7 @@
         const data = {
             schedule_date: scheduleDateTime,
             notes: formData.get('notes'),
-            notify_email: formData.get('notify_email') ? 1 : 0
+            notify_email: formData.get('notify_email') === '1' || formData.get('notify_email') === 1
         };
         
         fetch(`/instructor/interviews/${interviewId}/reschedule`, {

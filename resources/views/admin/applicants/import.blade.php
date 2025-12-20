@@ -50,7 +50,7 @@
                                             <li><strong>Middle Name</strong> - Middle name of the applicant (optional)</li>
                                             <li><strong>E-mail</strong> - Valid email address (required, must be unique)</li>
                                             <li><strong>Contact #</strong> - Phone/contact number (optional)</li>
-                                            <li><strong>Weighted Exam Percentage (60%)</strong> - Exam score (auto-calculated, can be left empty)</li>
+                                            <li><strong>Weighted Exam Percentage</strong> - Exam score (auto-calculated, can be left empty)</li>
                                             <li><strong>Verbal Description</strong> - Performance description (auto-generated, can be left empty)</li>
                                         </ul>
                                     </div>
@@ -312,7 +312,7 @@
                                     <th>Full Name</th>
                                     <th>Contact Information</th>
                                     <th>Preferred Course</th>
-                                    <th>Weighted Exam % (60%)</th>
+                                    <th>Weighted Exam </th>
                                     <th>Verbal Description</th>
                                     <th>Status</th>
                                 </tr>
@@ -328,8 +328,8 @@
                                         'E-mail': 'email_address',
                                         'Contact #': 'phone_number',
                                         'Applicant No.': 'applicant_no',
-                                        'Weighted Exam Percentage (60%)': 'weighted_exam',
-                                        'Weighted Exam % (60%)': 'weighted_exam',
+                                        'Weighted Exam Percentage': 'weighted_exam',
+                                        'Weighted Exam ': 'weighted_exam',
                                         'Verbal Description': 'verbal_description'
                                     };
                                     

@@ -1,264 +1,384 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DFD Level 1 - Detailed</title>
+    <title>EnrollAssess - Level 1 DFD</title>
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: white;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .diagram-container {
+            position: relative;
+            width: 1400px;
+            height: 900px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            padding: 40px;
+        }
+
+        /* Processes */
+        .process {
+            position: absolute;
+            width: 180px;
+            padding: 15px;
+            background: white;
+            border: 3px solid black;
+            color: black;
+            text-align: center;
+            border-radius: 50%;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 180px;
+        }
+
+        .process-number {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
             color: black;
         }
 
-        .container {
-            position: relative;
-            width: 1400px;
-            /* Wide canvas */
-            height: 900px;
-            background: white;
+        .process h3 {
+            font-size: 15px;
+            margin-bottom: 5px;
+            line-height: 1.3;
+            color: black;
         }
 
-        .process {
-            background-color: white;
-            border: 2px solid black;
-            border-radius: 30px;
-            width: 200px;
-            padding: 15px;
-            text-align: center;
-            position: absolute;
-            z-index: 2;
-            font-weight: bold;
-            box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.1);
+        .process p {
+            font-size: 10px;
+            color: black;
         }
 
-        .store {
-            background-color: white;
-            border-top: 2px solid black;
-            border-bottom: 2px solid black;
-            padding: 10px;
-            width: 180px;
-            text-align: center;
-            position: absolute;
-            z-index: 2;
-        }
-
-        .store::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 15px;
-            border-right: 2px solid black;
-        }
-
+        /* External Entities */
         .entity {
-            background-color: #F7E396;
-            border: 2px solid black;
-            padding: 10px;
-            font-weight: bold;
-            width: 140px;
-            text-align: center;
             position: absolute;
-            z-index: 2;
-            box-shadow: 3px 3px 0px black;
+            width: 140px;
+            padding: 15px;
+            background: #F7E396;
+            color: black;
+            text-align: center;
+            border-radius: 4px;
+            border: 2px solid black;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
-        /* Layout */
-        /* Entities (Inputs) Top/Sides */
-        #applicant {
-            top: 350px;
-            left: 50px;
+        .entity h3 {
+            font-size: 14px;
+            margin-bottom: 3px;
+            color: black;
         }
 
-        #depthead {
-            top: 50px;
-            left: 600px;
+        .entity p {
+            font-size: 10px;
+            color: black;
         }
 
-        #instructor {
-            top: 350px;
-            left: 1150px;
+        /* Data Stores */
+        .datastore {
+            position: absolute;
+            width: 160px;
+            padding: 12px 15px;
+            background: white;
+            border-left: 4px solid black;
+            border-right: 4px solid black;
+            color: black;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
 
-        /* Stores (Central Horizontal Axis) */
-        #d1 {
-            top: 400px;
-            left: 450px;
+        .datastore h4 {
+            font-size: 13px;
+            margin-bottom: 3px;
+            color: black;
         }
 
-        /* Applicant Recs */
-        #d2 {
-            top: 600px;
-            left: 250px;
+        .datastore p {
+            font-size: 10px;
+            color: black;
         }
 
-        /* Questions */
-        #d3 {
-            top: 750px;
-            left: 600px;
-        }
-
-        /* Exam Results */
-        #d4 {
-            top: 550px;
-            left: 950px;
-        }
-
-        /* Interview Scores */
+        /* Positioning */
+        /* External Entities */
+        .entity-applicants { top: 40px; left: 50px; }
+        .entity-admin { top: 40px; right: 50px; }
+        .entity-instructors { bottom: 40px; right: 50px; }
+        .entity-email { bottom: 40px; left: 50px; }
 
         /* Processes */
-        /* 1.0 Auth */
-        #p1 {
-            top: 200px;
-            left: 300px;
-        }
+        .process-1 { top: 120px; left: 280px; }
+        .process-2 { top: 120px; left: 550px; }
+        .process-3 { top: 120px; right: 280px; }
+        .process-4 { bottom: 350px; right: 280px; }
+        .process-5 { bottom: 120px; left: 550px; }
+        .process-6 { bottom: 120px; left: 280px; }
 
-        /* 3.0 Applicant Mgmt (From CSV) */
-        #p3 {
-            top: 200px;
-            left: 850px;
-        }
+        /* Data Stores */
+        .ds-1 { top: 400px; left: 320px; }
+        .ds-2 { top: 400px; left: 530px; }
+        .ds-3 { top: 400px; right: 320px; }
 
-        /* 2.0 Exam */
-        #p2 {
-            top: 550px;
-            left: 50px;
-        }
-
-        /* 4.0 Interview */
-        #p4 {
-            top: 350px;
-            left: 900px;
-        }
-
-        /* 5.0 Reporting */
-        #p5 {
-            top: 750px;
-            left: 1000px;
-        }
-
-        svg {
+        /* Data Flow Lines */
+        .flow-line {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            pointer-events: none;
+            background: black;
+            height: 2px;
         }
 
-        .label {
-            font-size: 11px;
+        .flow-line-vertical {
+            position: absolute;
+            background: black;
+            width: 2px;
+        }
+
+        .flow-vertical {
+            width: 2px;
+            height: auto;
+        }
+
+        /* Flow Labels */
+        .flow-label {
+            position: absolute;
             background: white;
-            padding: 2px;
+            padding: 3px 7px;
+            border: 1px solid black;
+            border-radius: 3px;
+            font-size: 10px;
+            color: black;
+            white-space: nowrap;
+            font-weight: 500;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        /* Arrows */
+        .arrow {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+        }
+
+        .arrow-up { border-bottom: 8px solid black; }
+        .arrow-down { border-top: 8px solid black; }
+        .arrow-left { 
+            border-right: 8px solid black; 
+            border-left: none; 
+            border-top: 5px solid transparent; 
+            border-bottom: 5px solid transparent; 
+        }
+        .arrow-right { 
+            border-left: 8px solid black; 
+            border-right: none; 
+            border-top: 5px solid transparent; 
+            border-bottom: 5px solid transparent; 
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
         }
     </style>
 </head>
-
 <body>
-    <div class="container">
-        <!-- Entities -->
-        <div class="entity" id="applicant">Applicant</div>
-        <div class="entity" id="depthead">Dept. Head</div>
-        <div class="entity" id="instructor">Instructor</div>
+    <div class="diagram-container">
+        <!-- External Entities -->
+        <div class="entity entity-applicants">
+            <h3>Applicants</h3>
+            <p>Students</p>
+        </div>
+
+        <div class="entity entity-admin">
+            <h3>Admin</h3>
+            <p>Department Head</p>
+        </div>
+
+        <div class="entity entity-instructors">
+            <h3>Instructors</h3>
+            <p>Faculty</p>
+        </div>
+
+        <div class="entity entity-email">
+            <h3>Email System</h3>
+            <p>Notifications</p>
+        </div>
 
         <!-- Processes -->
-        <div class="process" id="p1">1.0 Authentication & Access Control<br><small>Verifies Session</small></div>
-        <div class="process" id="p2">2.0 Examination Processing<br><small>Rand. Questions, Anti-Cheat, Scoring</small>
+        <div class="process process-1">
+            <div class="process-number">1.0</div>
+            <h3>Authentication</h3>
+            <p>Login & Access Control</p>
         </div>
-        <div class="process" id="p3">3.0 Applicant Management<br><small>Parse CSV, Gen Codes</small></div>
-        <div class="process" id="p4">4.0 Interview Management<br><small>Score Rubric</small></div>
-        <div class="process" id="p5">5.0 Reporting Engine<br><small>Aggregate 60/30/5/5</small></div>
+
+        <div class="process process-2">
+            <div class="process-number">2.0</div>
+            <h3>Exam Management</h3>
+            <p>Create & Conduct Exams</p>
+        </div>
+
+        <div class="process process-3">
+            <div class="process-number">3.0</div>
+            <h3>Applicant Management</h3>
+            <p>Track & Manage Records</p>
+        </div>
+
+        <div class="process process-4">
+            <div class="process-number">4.0</div>
+            <h3>Interview Assignment</h3>
+            <p>Schedule & Evaluate</p>
+        </div>
+
+        <div class="process process-5">
+            <div class="process-number">5.0</div>
+            <h3>Report Generation</h3>
+            <p>Analytics & Export</p>
+        </div>
+
+        <div class="process process-6">
+            <div class="process-number">6.0</div>
+            <h3>Notification Service</h3>
+            <p>Email & Alerts</p>
+        </div>
 
         <!-- Data Stores -->
-        <div class="store" id="d1">D1: Applicant Records</div>
-        <div class="store" id="d2">D2: Question Bank</div>
-        <div class="store" id="d3">D3: Exam Results</div>
-        <div class="store" id="d4">D4: Interview Scores</div>
+        <div class="datastore ds-1">
+            <h4>D1: Users</h4>
+            <p>User accounts & roles</p>
+        </div>
 
-        <svg>
-            <defs>
-                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-                    <polygon points="0 0, 10 3.5, 0 7" fill="black" />
-                </marker>
-            </defs>
+        <div class="datastore ds-2">
+            <h4>D2: Exams & Results</h4>
+            <p>Questions, answers, scores</p>
+        </div>
 
-            <!-- 1.0 Auth Flows -->
-            <path d="M 170 350 L 300 250" fill="none" stroke="black" stroke-width="1.5" marker-end="url(#arrowhead)" />
-            <!-- App -> Auth -->
-            <text x="180" y="290" class="label">Access Code</text>
+        <div class="datastore ds-3">
+            <h4>D3: Applicants</h4>
+            <p>Personal info & interviews</p>
+        </div>
 
-            <path d="M 410 280 L 480 395" fill="none" stroke="black" stroke-width="1.5" marker-end="url(#arrowhead)" />
-            <!-- Auth Checks D1 -->
-            <text x="440" y="340" class="label">Verify</text>
-            <path d="M 500 395 L 430 280" fill="none" stroke="black" stroke-width="1.5" dashed="5,5"
-                marker-end="url(#arrowhead)" /> <!-- D1 Returns -->
+        <!-- Data Flows with Labels and Arrows -->
+        
+        <!-- Applicants to Authentication -->
+        <div class="flow-line" style="top: 103px; left: 190px; width: 70px;"></div>
+        <div class="flow-label" style="top: 90px; left: 180px;">Access Code</div>
+        <div class="arrow arrow-right" style="top: 103px; left: 260px;"></div>
 
-            <!-- 3.0 Applicant Mgmt Flows -->
-            <path d="M 740 80 L 900 200" fill="none" stroke="black" stroke-width="1.5" marker-end="url(#arrowhead)" />
-            <!-- Head -> P3 -->
-            <text x="800" y="130" class="label">CSV Upload</text>
+        <!-- Authentication to Applicants -->
+        <div class="flow-line" style="top: 123px; left: 280px; width: 90px;"></div>
+        <div class="flow-label" style="top: 110px; left: 180px;">Login Status</div>
+        <div class="arrow arrow-left" style="top: 123px; left: 172px;"></div>
 
-            <path d="M 850 260 L 600 400" fill="none" stroke="black" stroke-width="1.5" marker-end="url(#arrowhead)" />
-            <!-- P3 -> D1 -->
-            <text x="700" y="320" class="label">Store Profiles</text>
+        <!-- Applicants to Exam Management -->
+        <div class="flow-line-vertical" style="top: 110px; left: 465px; height: 10px;"></div>
+        <div class="flow-label" style="top: 70px; left: 430px;">Take Exam</div>
+        <div class="arrow arrow-down" style="top: 110px; left: 465px;"></div>
 
+        <!-- Exam Management to Applicants -->
+        <div class="flow-line-vertical" style="top: 40px; left: 550px; height: 30px;"></div>
+        <div class="flow-label" style="top: 50px; left: 500px;">Exam Results</div>
+        <div class="arrow arrow-up" style="top: 40px; left: 550px; transform: rotate(180deg);"></div>
 
-            <!-- 2.0 Examination Flows -->
-            <path d="M 350 280 L 150 550" fill="none" stroke="black" stroke-width="1.5" marker-end="url(#arrowhead)" />
-            <!-- Auth -> P2 -->
-            <text x="260" y="420" class="label">Valid Session</text>
+        <!-- Admin to Applicant Management -->
+        <div class="flow-line" style="top: 103px; right: 260px; width: 80px;"></div>
+        <div class="flow-label" style="top: 90px; right: 180px;">Manage Records</div>
+        <div class="arrow arrow-left" style="top: 103px; right: 260px;"></div>
 
-            <path d="M 330 600 L 250 600" fill="none" stroke="black" stroke-width="1.5" marker-end="url(#arrowhead)" />
-            <!-- D2 -> P2 -->
-            <text x="270" y="590" class="label">Fetch Qs</text>
+        <!-- Applicant Management to Admin -->
+        <div class="flow-line" style="top: 123px; right: 280px; width: 108px;"></div>
+        <div class="flow-label" style="top: 110px; right: 180px;">View Data</div>
+        <div class="arrow arrow-right" style="top: 123px; right: 172px;"></div>
 
-            <path d="M 120 400 L 120 550" fill="none" stroke="black" stroke-width="1.5" marker-end="url(#arrowhead)" />
-            <!-- Applicant -> P2 -->
-            <text x="130" y="480" class="label">Answers</text>
+        <!-- Admin to Interview Assignment -->
+        <div class="flow-line-vertical" style="top: 290px; right: 280px; height: 60px;"></div>
+        <div class="flow-label" style="top: 250px; right: 210px;">Assign Interviews</div>
+        <div class="arrow arrow-down" style="top: 290px; right: 280px;"></div>
 
-            <path d="M 200 640 L 600 780" fill="none" stroke="black" stroke-width="1.5" marker-end="url(#arrowhead)" />
-            <!-- P2 -> D3 -->
-            <text x="400" y="700" class="label">Save Score</text>
+        <!-- Interview Assignment to Admin -->
+        <div class="flow-line-vertical" style="top: 240px; right: 165px; height: 75px;"></div>
+        <div class="flow-label" style="top: 250px; right: 100px;">Interview Status</div>
+        <div class="arrow arrow-up" style="top: 240px; right: 165px; transform: rotate(180deg);"></div>
 
+        <!-- Instructors to Interview Assignment -->
+        <div class="flow-line" style="bottom: 310px; right: 230px; width: 50px;"></div>
+        <div class="flow-label" style="bottom: 270px; right: 180px;">Submit Scores</div>
+        <div class="arrow arrow-up" style="bottom: 310px; right: 230px; transform: rotate(180deg);"></div>
 
-            <!-- 4.0 Interview Flows -->
-            <path d="M 1150 380 L 1100 380" fill="none" stroke="black" stroke-width="1.5"
-                marker-end="url(#arrowhead)" /> <!-- Instructor -> P4 -->
-            <text x="1110" y="370" class="label">Rubric Scores</text>
+        <!-- Interview Assignment to Instructors -->
+        <div class="flow-line" style="bottom: 280px; right: 150px; width: 50px;"></div>
+        <div class="flow-label" style="bottom: 290px; right: 100px;">View Assignments</div>
+        <div class="arrow arrow-down" style="bottom: 280px; right: 150px;"></div>
 
-            <path d="M 620 450 L 900 400" fill="none" stroke="black" stroke-width="1.5" marker-end="url(#arrowhead)" />
-            <!-- D1 -> P4 -->
-            <text x="750" y="420" class="label">Applicant Info</text>
+        <!-- Admin to Report Generation -->
+        <div class="flow-line-vertical" style="bottom: 290px; left: 360px; height: 40px;"></div>
+        <div class="flow-label" style="bottom: 250px; left: 320px;">Request Reports</div>
+        <div class="arrow arrow-down" style="bottom: 290px; left: 360px;"></div>
 
-            <path d="M 1000 430 L 1000 550" fill="none" stroke="black" stroke-width="1.5"
-                marker-end="url(#arrowhead)" /> <!-- P4 -> D4 -->
-            <text x="1010" y="500" class="label">Save Scores</text>
+        <!-- Report Generation to Admin -->
+        <div class="flow-line-vertical" style="bottom: 260px; left: 490px; height: 30px;"></div>
+        <div class="flow-label" style="bottom: 270px; left: 420px;">Generated Reports</div>
+        <div class="arrow arrow-up" style="bottom: 260px; left: 490px; transform: rotate(180deg);"></div>
 
+        <!-- Notification Service to Email -->
+        <div class="flow-line" style="bottom: 103px; left: 280px; width: 108px;"></div>
+        <div class="flow-label" style="bottom: 90px; left: 180px;">Send Emails</div>
+        <div class="arrow arrow-left" style="bottom: 103px; left: 172px;"></div>
 
-            <!-- 5.0 Reporting Flows -->
-            <path d="M 740 90 L 1300 90 L 1180 750" fill="none" stroke="black" stroke-width="1.5"
-                marker-end="url(#arrowhead)" /> <!-- Head -> P5 (Long path) -->
-            <text x="1310" y="400" class="label">Request Report</text>
+        <!-- Email to Notification Service -->
+        <div class="flow-line" style="bottom: 123px; left: 190px; width: 70px;"></div>
+        <div class="flow-label" style="bottom: 110px; left: 180px;">Delivery Status</div>
+        <div class="arrow arrow-right" style="bottom: 123px; left: 260px;"></div>
 
-            <path d="M 780 780 L 1000 780" fill="none" stroke="black" stroke-width="1.5" marker-end="url(#arrowhead)" />
-            <!-- D3 -> P5 -->
-            <text x="850" y="770" class="label">Exam Scores</text>
+        <!-- Process to Datastore connections -->
+        
+        <!-- Authentication to D1: Users -->
+        <div class="flow-line-vertical" style="top: 310px; left: 360px; height: 90px;"></div>
+        <div class="flow-label" style="top: 320px; left: 300px;">Read/Write</div>
+        <div class="arrow arrow-down" style="top: 350px; left: 360px;"></div>
+        <div class="arrow arrow-up" style="top: 310px; left: 360px; transform: rotate(180deg);"></div>
 
-            <path d="M 1050 600 L 1100 750" fill="none" stroke="black" stroke-width="1.5"
-                marker-end="url(#arrowhead)" /> <!-- D4 -> P5 -->
-            <text x="1080" y="680" class="label">Interview Scores</text>
+        <!-- Exam Management to D2: Exams & Results -->
+        <div class="flow-line-vertical" style="top: 310px; left: 630px; height: 90px;"></div>
+        <div class="flow-label" style="top: 320px; left: 570px;">Store Results</div>
+        <div class="arrow arrow-down" style="top: 350px; left: 630px;"></div>
+        <div class="arrow arrow-up" style="top: 310px; left: 630px; transform: rotate(180deg);"></div>
 
-        </svg>
+        <!-- Applicant Management to D3: Applicants -->
+        <div class="flow-line-vertical" style="top: 310px; right: 390px; height: 90px;"></div>
+        <div class="flow-label" style="top: 320px; right: 330px;">Read/Write</div>
+        <div class="arrow arrow-down" style="top: 350px; right: 390px;"></div>
+        <div class="arrow arrow-up" style="top: 310px; right: 390px; transform: rotate(180deg);"></div>
+
+        <!-- Interview Assignment to D3: Applicants -->
+        <div class="flow-line" style="bottom: 263px; right: 510px; width: 80px;"></div>
+        <div class="flow-label" style="bottom: 250px; right: 430px;">Update Scores</div>
+        <div class="arrow arrow-left" style="bottom: 263px; right: 510px;"></div>
+
+        <!-- Report Generation to all datastores -->
+        <div class="flow-line-vertical" style="bottom: 240px; left: 610px; height: 160px;"></div>
+        <div class="flow-label" style="bottom: 250px; left: 560px;">Query Data</div>
+        <div class="arrow arrow-up" style="bottom: 240px; left: 610px; transform: rotate(180deg);"></div>
+
+        <!-- Notification Service connections -->
+        <div class="flow-line-vertical" style="bottom: 240px; left: 335px; height: 55px;"></div>
+        <div class="flow-label" style="bottom: 250px; left: 270px;">Trigger Events</div>
+        <div class="arrow arrow-up" style="bottom: 240px; left: 335px; transform: rotate(180deg);"></div>
     </div>
 </body>
-
 </html>

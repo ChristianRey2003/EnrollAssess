@@ -939,19 +939,27 @@ class InstructorController extends Controller
 
         // Send email notification if requested
         $emailSent = false;
-        if ($request->notify_email) {
+        // Check notify_email - handle boolean, integer (1/0), and string ('1'/'true') values from JSON
+        $notifyEmail = $request->notify_email;
+        if ($notifyEmail === true || $notifyEmail === 1 || $notifyEmail === '1' || $notifyEmail === 'true') {
             try {
+                // Reload interview with relationships to ensure we have the latest schedule_date and relationships
+                $interview->refresh();
+                $interview->load(['applicant', 'interviewer']);
+                
                 Mail::to($interview->applicant->email_address)->send(
-                    new InterviewScheduleMail($interview->applicant, $interview)
+                    new InterviewScheduleMail($interview->applicant, $interview, false, true) // isReminder=false, isReschedule=true
                 );
                 $emailSent = true;
             } catch (\Exception $e) {
-                \Log::error('Failed to send rescheduled interview email: ' . $e->getMessage());
+                \Log::error('Failed to send rescheduled interview email to ' . $interview->applicant->email_address . ': ' . $e->getMessage());
+                \Log::error('Exception trace: ' . $e->getTraceAsString());
+                // Don't fail the request if email fails, but log it
             }
         }
 
         // Dispatch interview scheduled event (for rescheduling)
-        \App\Helpers\BroadcastHelper::safeDispatch(new \App\Events\InterviewScheduled($interview->load(['applicant', 'instructor'])));
+        \App\Helpers\BroadcastHelper::safeDispatch(new \App\Events\InterviewScheduled($interview->load(['applicant', 'interviewer'])));
 
         return response()->json([
             'success' => true,

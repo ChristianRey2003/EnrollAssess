@@ -202,7 +202,7 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="score" class="form-label">Weighted Exam % (60%)</label>
+                        <label for="score" class="form-label">Weighted Exam</label>
                         <input type="number" 
                                id="score" 
                                name="score" 

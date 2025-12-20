@@ -18,16 +18,18 @@ class InterviewScheduleMail extends Mailable
     public $interview;
     public $instructor;
     public $isReminder;
+    public $isReschedule;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(Applicant $applicant, Interview $interview, $isReminder = false)
+    public function __construct(Applicant $applicant, Interview $interview, $isReminder = false, $isReschedule = false)
     {
         $this->applicant = $applicant;
         $this->interview = $interview;
         $this->instructor = $interview->interviewer;
         $this->isReminder = $isReminder;
+        $this->isReschedule = $isReschedule;
     }
 
     /**
@@ -43,9 +45,13 @@ class InterviewScheduleMail extends Mailable
             $fromAddress = 'noreply@evsu.edu.ph';
         }
 
-        $subject = $this->isReminder 
-            ? 'Reminder: Interview Scheduled - ' . config('app.name')
-            : 'Interview Scheduled - ' . config('app.name');
+        if ($this->isReminder) {
+            $subject = 'Reminder: Interview Scheduled - ' . config('app.name');
+        } elseif ($this->isReschedule) {
+            $subject = 'Interview Rescheduled - ' . config('app.name');
+        } else {
+            $subject = 'Interview Scheduled - ' . config('app.name');
+        }
             
         return new Envelope(
             subject: $subject,
@@ -68,6 +74,7 @@ class InterviewScheduleMail extends Mailable
                 'scheduleDate' => $this->interview->schedule_date->format('F d, Y'),
                 'scheduleTime' => $this->interview->schedule_date->format('g:i A'),
                 'isReminder' => $this->isReminder,
+                'isReschedule' => $this->isReschedule,
             ],
         );
     }

@@ -1,153 +1,226 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DFD Level 0 - Context Diagram</title>
+    <title>EnrollAssess - Level 0 DFD (Context Diagram)</title>
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: white;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .diagram-container {
+            position: relative;
+            width: 1000px;
+            height: 700px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            padding: 40px;
+        }
+
+        /* Central System */
+        .system {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: white;
+            border: 3px solid black;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: black;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .system h2 {
+            font-size: 16px;
+            margin-bottom: 3px;
+            color: black;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        /* External Entities */
+        .entity {
+            position: absolute;
+            width: 160px;
+            padding: 20px;
+            background: #F7E396;
+            color: black;
+            text-align: center;
+            border-radius: 4px;
+            border: 2px solid black;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        .entity h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: black;
+            font-weight: 600;
+        }
+
+        .entity p {
+            font-size: 11px;
             color: black;
         }
 
-        .container {
-            position: relative;
-            width: 1100px;
-            height: 700px;
-            background: white;
-        }
+        /* Entity Positions */
+        .entity-1 { top: 50px; left: 50%; transform: translateX(-50%); }
+        .entity-2 { top: 280px; left: 50px; }
+        .entity-3 { top: 280px; right: 50px; }
+        .entity-4 { bottom: 50px; left: 150px; }
+        .entity-5 { bottom: 50px; right: 150px; }
 
-        .entity {
-            background-color: #F7E396;
-            border: 2px solid black;
-            padding: 15px;
-            font-weight: bold;
-            text-align: center;
+        /* SVG Container for curved arrows */
+        .flow-svg {
             position: absolute;
-            width: 180px;
-            z-index: 2;
-            box-shadow: 4px 4px 0px black;
-        }
-
-        .process {
-            background-color: white;
-            border: 5px solid black;
-            width: 250px;
-            height: 250px;
-            border-radius: 50%;
-            position: absolute;
-            top: 225px;
-            left: 425px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            font-weight: bold;
-            font-size: 1.4em;
-            z-index: 2;
-        }
-
-        #depthead {
-            top: 50px;
-            left: 460px;
-        }
-
-        #applicant {
-            top: 325px;
-            left: 50px;
-        }
-
-        #instructor {
-            top: 325px;
-            left: 870px;
-        }
-
-        svg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
+            top: 40px;
+            left: 40px;
+            width: 920px;
+            height: 620px;
             pointer-events: none;
+            z-index: 1;
         }
 
-        .label-bg {
-            fill: white;
-            opacity: 0.9;
+        .flow-path {
+            fill: none;
+            stroke: black;
+            stroke-width: 2;
+            marker-end: url(#arrowhead);
         }
 
-        .label-text {
+        /* Flow Labels */
+        .flow-label {
+            position: absolute;
+            background: white;
+            padding: 4px 8px;
+            border: 1px solid black;
+            border-radius: 3px;
             font-size: 11px;
-            font-weight: bold;
-            font-family: Arial, sans-serif;
-            text-anchor: middle;
+            color: black;
+            white-space: nowrap;
+            font-weight: 500;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            z-index: 20;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
         }
     </style>
 </head>
-
 <body>
-    <div class="container">
-        <div class="entity" id="depthead">Department Head<br><small>(Admin)</small></div>
-        <div class="entity" id="applicant">Applicant</div>
-        <div class="entity" id="instructor">Instructor<br><small>(Interviewer)</small></div>
-        <div class="process">0.0<br>EnrollAssess System</div>
-
-        <svg>
+    <div class="diagram-container">
+        <!-- SVG for curved arrows -->
+        <svg class="flow-svg" viewBox="0 0 920 620">
             <defs>
-                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-                    <polygon points="0 0, 10 3.5, 0 7" fill="black" />
+                <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                    <polygon points="0 0, 10 3, 0 6" fill="black" />
                 </marker>
             </defs>
-
-            <!-- Dept Head (Top) -->
-            <path d="M 520 120 L 520 220" stroke="black" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" />
-            <rect x="360" y="145" width="150" height="45" class="label-bg" />
-            <text x="435" y="158" class="label-text">Applicant Data,</text>
-            <text x="435" y="173" class="label-text">Exam Configuration,</text>
-            <text x="435" y="188" class="label-text">Interviewer Assignments</text>
-
-            <path d="M 580 220 L 580 120" stroke="black" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" />
-            <rect x="590" y="145" width="130" height="45" class="label-bg" />
-            <text x="655" y="158" class="label-text">Final Rank Reports,</text>
-            <text x="655" y="173" class="label-text">System Logs,</text>
-            <text x="655" y="188" class="label-text">Interview Status</text>
-
-            <!-- Applicant (Left) - HORIZONTAL ARROWS -->
-            <!-- Top arrow: Applicant -> System -->
-            <path d="M 230 340 L 425 320" stroke="black" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" />
-            <rect x="240" y="300" width="120" height="30" class="label-bg" />
-            <text x="300" y="313" class="label-text">Access Code,</text>
-            <text x="300" y="326" class="label-text">Exam Answers</text>
-
-            <!-- Bottom arrow: System -> Applicant -->
-            <path d="M 425 380 L 230 360" stroke="black" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" />
-            <rect x="240" y="385" width="140" height="45" class="label-bg" />
-            <text x="310" y="400" class="label-text">Exam Questions,</text>
-            <text x="310" y="415" class="label-text">Timer Data,</text>
-            <text x="310" y="430" class="label-text">Exam Results</text>
-
-            <!-- Instructor (Right) - HORIZONTAL ARROWS -->
-            <!-- Top arrow: Instructor -> System -->
-            <path d="M 870 340 L 675 320" stroke="black" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" />
-            <rect x="740" y="300" width="120" height="30" class="label-bg" />
-            <text x="800" y="313" class="label-text">Interview Scores,</text>
-            <text x="800" y="326" class="label-text">Rubric Data</text>
-
-            <!-- Bottom arrow: System -> Instructor -->
-            <path d="M 675 380 L 870 360" stroke="black" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" />
-            <rect x="720" y="385" width="160" height="30" class="label-bg" />
-            <text x="800" y="398" class="label-text">Assigned Applicant List,</text>
-            <text x="800" y="413" class="label-text">Interview Schedule</text>
+            
+            <!-- Applicants to System (Access Code) - from entity bottom (460, 90) to system top (460, 160) -->
+            <path class="flow-path" d="M 460 90 Q 460 125, 460 160" />
+            
+            <!-- System to Applicants (Exam & Results) - from system top (460, 160) to entity bottom (460, 90), curved differently -->
+            <path class="flow-path" d="M 460 160 Q 480 125, 460 90" />
+            
+            <!-- Admin to System (Manage System) - from entity right (170, 280) to system left (310, 310) -->
+            <path class="flow-path" d="M 170 280 Q 240 295, 310 310" />
+            
+            <!-- System to Admin (Reports & Analytics) - from system left (310, 350) to entity right (170, 360), curved differently -->
+            <path class="flow-path" d="M 310 350 Q 240 355, 170 360" />
+            
+            <!-- Instructors to System (Interview Scores) - from entity left (750, 280) to system right (610, 310) -->
+            <path class="flow-path" d="M 750 280 Q 680 295, 610 310" />
+            
+            <!-- System to Instructors (Assignments) - from system right (610, 350) to entity left (750, 360), curved differently -->
+            <path class="flow-path" d="M 610 350 Q 680 355, 750 360" />
+            
+            <!-- System to Email (Send Notifications) - from system bottom left (350, 460) to entity top (190, 530) -->
+            <path class="flow-path" d="M 350 460 Q 270 495, 190 530" />
+            
+            <!-- Email to System (Email Requests) - from entity top (190, 530) to system bottom left (370, 460), curved differently -->
+            <path class="flow-path" d="M 190 530 Q 270 495, 370 460" />
+            
+            <!-- System to Database (Store Data) - from system bottom right (570, 460) to entity top (730, 530) -->
+            <path class="flow-path" d="M 570 460 Q 650 495, 730 530" />
+            
+            <!-- Database to System (Retrieve Data) - from entity top (730, 530) to system bottom right (550, 460), curved differently -->
+            <path class="flow-path" d="M 730 530 Q 650 495, 550 460" />
         </svg>
+
+        <!-- Central System -->
+        <div class="system">
+            <h2>0.0</h2>
+            <h2>EnrollAssess</h2>
+            <h2>System</h2>
+        </div>
+
+        <!-- External Entities -->
+        <div class="entity entity-1">
+            <h3>Applicants</h3>
+        </div>
+
+        <div class="entity entity-2">
+            <h3>Admin</h3>
+            <p>Department Head</p>
+        </div>
+
+        <div class="entity entity-3">
+            <h3>Instructors</h3>
+        </div>
+
+        <div class="entity entity-4">
+            <h3>Email System</h3>
+        </div>
+
+        <div class="entity entity-5">
+            <h3>Database</h3>
+        </div>
+
+        <!-- Data Flow Labels -->
+        <!-- Applicants flows -->
+        <div class="flow-label" style="top: 115px; left: 480px;">Access Code</div>
+        <div class="flow-label" style="top: 105px; left: 480px;">Exam & Results</div>
+        
+        <!-- Admin flows -->
+        <div class="flow-label" style="top: 285px; left: 240px;">Manage System</div>
+        <div class="flow-label" style="top: 345px; left: 240px;">Reports & Analytics</div>
+        
+        <!-- Instructors flows -->
+        <div class="flow-label" style="top: 285px; right: 240px;">Interview Scores</div>
+        <div class="flow-label" style="top: 345px; right: 240px;">Assignments</div>
+        
+        <!-- Email System flows -->
+        <div class="flow-label" style="bottom: 135px; left: 260px;">Send Notifications</div>
+        <div class="flow-label" style="bottom: 115px; left: 260px;">Email Requests</div>
+        
+        <!-- Database flows -->
+        <div class="flow-label" style="bottom: 135px; right: 260px;">Store Data</div>
+        <div class="flow-label" style="bottom: 115px; right: 260px;">Retrieve Data</div>
     </div>
 </body>
-
 </html>
